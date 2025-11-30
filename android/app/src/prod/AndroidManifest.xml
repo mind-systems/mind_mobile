@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.mind">
+    <application>
+        <activity android:name=".MainActivity" android:exported="true">
+            <!-- App Links для PROD окружения -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="mind-awake.life"/>
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
