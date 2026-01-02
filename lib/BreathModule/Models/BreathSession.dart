@@ -1,16 +1,10 @@
-import 'package:mind/BreathModule/Models/BreathExercise.dart';
+import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 
-enum TickSource {
-  heartbeat,
-  timer
-}
+enum TickSource { heartbeat, timer }
 
 class BreathSession {
-  final List<BreathExercise> exercises;
+  final List<ExerciseSet> exercises;
   final TickSource tickSource;
 
-  BreathSession({
-    required this.exercises,
-    required this.tickSource,
-  });
+  BreathSession({required this.exercises, required this.tickSource});
 }

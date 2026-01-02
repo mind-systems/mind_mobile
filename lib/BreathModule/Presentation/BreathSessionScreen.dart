@@ -22,7 +22,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
     super.initState();
     // Запускаем сессию при входе на экран
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(breathViewModelProvider.notifier).start();
+      ref.read(breathViewModelProvider.notifier).initState();
     });
   }
 
@@ -30,7 +30,10 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
   Widget build(BuildContext context) {
     final viewModel = ref.read(breathViewModelProvider.notifier);
     final state = ref.watch(breathViewModelProvider);
-    final currentExercise = viewModel.session.exercises[viewModel.exerciseIndex];
+    final currentExercise = viewModel.session.exercises[state.exerciseIndex];
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final shapeDimension = screenWidth * 0.7;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E27),
@@ -41,15 +44,11 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
             _buildHeader(context),
 
             // Основная область с дыхательной фигурой
-            Expanded(
-              flex: 3,
-              child: Center(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final size = constraints.maxWidth * 0.7;
-                    return SizedBox(
-                      width: size,
-                      height: size,
+            Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: SizedBox(
+                      width: shapeDimension,
+                      height: shapeDimension,
                       child: BreathShapeWidget(
                         shape: currentExercise.shape,
                         triangleOrientation: currentExercise.triangleOrientation,
@@ -59,40 +58,23 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
                         strokeWidth: 3.0,
                         pointRadius: 6.0,
                       ),
-                    );
-                  },
                 ),
-              ),
             ),
 
             // Информационная панель
-            Expanded(
-              flex: 2,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
-                  color: Color.fromRGBO(255, 255, 255, 0.05),
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(30),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    // Текущая фаза и оставшееся время
-                    _buildPhaseInfo(state),
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Текущая и следующая фаза
+                  _buildPhaseInfo(state, viewModel),
 
-                    const SizedBox(height: 30),
+                  const SizedBox(height: 40),
 
-                    // Кнопка управления паузой/продолжением
-                    _buildControlButton(state, viewModel),
-
-                    const Spacer(),
-
-                    // Кнопка пропуска упражнения (опционально)
-                    if (state.status != BreathSessionStatus.complete)
-                      _buildSkipButton(viewModel),
-                  ],
-                ),
+                  // Кнопка управления паузой/продолжением
+                  _buildControlButton(state, viewModel),
+                ],
               ),
             ),
           ],
@@ -124,53 +106,55 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
     );
   }
 
-  Widget _buildPhaseInfo(BreathSessionState state) {
-    String phaseText;
+  Widget _buildPhaseInfo(BreathSessionState state, BreathViewModel viewModel) {
+    // Текущая фаза
+    String currentPhaseText;
     switch (state.phase) {
       case BreathPhase.inhale:
-        phaseText = 'Breathe In';
+        currentPhaseText = 'Inhale';
         break;
-      case BreathPhase.holdIn:
-        phaseText = 'Hold';
+      case BreathPhase.hold:
+        currentPhaseText = 'Hold';
         break;
       case BreathPhase.exhale:
-        phaseText = 'Breathe Out';
-        break;
-      case BreathPhase.holdOut:
-        phaseText = 'Hold';
+        currentPhaseText = 'Exhale';
         break;
       case BreathPhase.rest:
-        phaseText = 'Rest';
+        currentPhaseText = 'Rest';
         break;
     }
 
-    String statusText;
-    switch (state.status) {
-      case BreathSessionStatus.pause:
-        statusText = 'Paused';
-        break;
-      case BreathSessionStatus.complete:
-        statusText = 'Complete';
-        phaseText = 'Session Finished';
-        break;
-      default:
-        statusText = '';
+    if (state.status == BreathSessionStatus.complete) {
+      currentPhaseText = 'Session Complete';
+    }
+
+    // Следующая фаза
+    String? nextPhaseText;
+    if (state.status != BreathSessionStatus.complete) {
+      final nextPhaseInfo = viewModel.getNextPhaseInfo();
+      if (nextPhaseInfo != null) {
+        switch (nextPhaseInfo.phase) {
+          case BreathPhase.inhale:
+            nextPhaseText = 'Next: Inhale ${nextPhaseInfo.duration}';
+            break;
+          case BreathPhase.hold:
+            nextPhaseText = 'Next: Hold ${nextPhaseInfo.duration}';
+            break;
+          case BreathPhase.exhale:
+            nextPhaseText = 'Next: Exhale ${nextPhaseInfo.duration}';
+            break;
+          case BreathPhase.rest:
+            nextPhaseText = 'Next: Rest ${nextPhaseInfo.duration}';
+            break;
+        }
+      }
     }
 
     return Column(
       children: [
-        if (statusText.isNotEmpty)
-          Text(
-            statusText,
-            style: const TextStyle(
-              color: Color.fromRGBO(255, 255, 255, 0.6),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        const SizedBox(height: 8),
+        // Текущая фаза
         Text(
-          phaseText,
+          currentPhaseText,
           style: const TextStyle(
             color: Color(0xFF00D9FF),
             fontSize: 32,
@@ -178,15 +162,30 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
           ),
         ),
         const SizedBox(height: 8),
+
+        // Оставшееся время
         if (state.status != BreathSessionStatus.complete)
           Text(
-            '${state.remainingTicks}s',
+            '${state.remainingTicks}',
             style: const TextStyle(
               color: Color.fromRGBO(255, 255, 255, 0.8),
               fontSize: 24,
               fontWeight: FontWeight.w300,
             ),
           ),
+
+        // Следующая фаза
+        if (nextPhaseText != null) ...[
+          const SizedBox(height: 20),
+          Text(
+            nextPhaseText,
+            style: const TextStyle(
+              color: Color.fromRGBO(255, 255, 255, 0.5),
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -195,7 +194,6 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
     if (state.status == BreathSessionStatus.complete) {
       return _ControlButton(
         icon: Icons.check_circle_outline,
-        label: 'Finish',
         onPressed: () => Navigator.pop(context),
       );
     }
@@ -204,7 +202,6 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
 
     return _ControlButton(
       icon: isPaused ? Icons.play_arrow : Icons.pause,
-      label: isPaused ? 'Resume' : 'Pause',
       onPressed: () {
         if (isPaused) {
           viewModel.resume();
@@ -214,35 +211,15 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
       },
     );
   }
-
-  Widget _buildSkipButton(BreathViewModel viewModel) {
-    return TextButton.icon(
-      onPressed: () => viewModel.skipToNextExercise(),
-      icon: const Icon(
-        Icons.skip_next,
-        color: Colors.white60,
-        size: 20,
-      ),
-      label: const Text(
-        'Skip Exercise',
-        style: TextStyle(
-          color: Colors.white60,
-          fontSize: 14,
-        ),
-      ),
-    );
-  }
 }
 
 /// Кнопка управления
 class _ControlButton extends StatelessWidget {
   final IconData icon;
-  final String label;
   final VoidCallback onPressed;
 
   const _ControlButton({
     required this.icon,
-    required this.label,
     required this.onPressed,
   });
 
@@ -265,15 +242,6 @@ class _ControlButton extends StatelessWidget {
                 size: 40,
               ),
             ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
           ),
         ),
       ],

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:mind/BreathModule/Models/BreathExercise.dart';
+import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'dart:math' as math;
 
 /// CustomPainter для отрисовки дыхательной фигуры с анимированной точкой
 class BreathShapePainter extends CustomPainter {
-  final BreathShape shape;
+  final SetShape shape;
   final double normalizedTime; // 0.0 - 1.0
   final TriangleOrientation? triangleOrientation;
 
@@ -108,15 +108,15 @@ class BreathShapePainter extends CustomPainter {
   /// Создание Path для выбранной формы
   Path _getShapePath(Offset center, double size) {
     switch (shape) {
-      case BreathShape.square:
+      case SetShape.square:
         return _createSquarePath(center, size);
-      case BreathShape.triangle:
+      case SetShape.triangle:
         return _createTrianglePath(
           center,
           size,
           triangleOrientation ?? TriangleOrientation.up,
         );
-      case BreathShape.circle:
+      case SetShape.circle:
         return _createCirclePath(center, size);
     }
   }
@@ -189,16 +189,16 @@ class BreathShapePainter extends CustomPainter {
   /// Вычисление позиции точки на траектории
   Offset _getPointPosition(Offset center, double size, double time) {
     switch (shape) {
-      case BreathShape.square:
+      case SetShape.square:
         return _getSquarePointPosition(center, size, time);
-      case BreathShape.triangle:
+      case SetShape.triangle:
         return _getTrianglePointPosition(
           center,
           size,
           time,
           triangleOrientation ?? TriangleOrientation.up,
         );
-      case BreathShape.circle:
+      case SetShape.circle:
         return _getCirclePointPosition(center, size, time);
     }
   }

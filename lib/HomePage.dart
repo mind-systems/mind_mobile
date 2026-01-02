@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionScreen.dart';
 import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
 
 class HomePage extends StatefulWidget {
@@ -23,7 +24,8 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          context.push(OnboardingScreen.path);
+          // context.push(OnboardingScreen.path);
+          context.push(BreathSessionScreen.path);
         },
         child: const Icon(Icons.add),
       ),

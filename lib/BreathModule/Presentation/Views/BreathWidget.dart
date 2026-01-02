@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:mind/BreathModule/Models/BreathExercise.dart';
+import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Presentation/Views/BreathShapePainter.dart';
 
 class BreathShapeController extends ChangeNotifier {
@@ -32,7 +32,7 @@ class BreathShapeController extends ChangeNotifier {
 }
 
 class BreathShapeWidget extends StatefulWidget {
-  final BreathShape shape;
+  final SetShape shape;
   final TriangleOrientation? triangleOrientation;
   final BreathShapeController controller;
 
@@ -56,7 +56,8 @@ class BreathShapeWidget extends StatefulWidget {
   State<BreathShapeWidget> createState() => _BreathShapeWidgetState();
 }
 
-class _BreathShapeWidgetState extends State<BreathShapeWidget> with SingleTickerProviderStateMixin {
+class _BreathShapeWidgetState extends State<BreathShapeWidget>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
   Animation<double>? _animation;
   double _currentProgress = 0.0;
@@ -100,17 +101,14 @@ class _BreathShapeWidgetState extends State<BreathShapeWidget> with SingleTicker
     // Иначе анимируем
     _animationController.duration = duration;
 
-    _animation = Tween<double>(
-      begin: _currentProgress,
-      end: targetProgress,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.linear,
-    ))..addListener(() {
-      setState(() {
-        _currentProgress = _animation!.value;
-      });
-    });
+    _animation =
+        Tween<double>(begin: _currentProgress, end: targetProgress).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.linear),
+        )..addListener(() {
+          setState(() {
+            _currentProgress = _animation!.value;
+          });
+        });
 
     _animationController.forward(from: 0.0);
   }
