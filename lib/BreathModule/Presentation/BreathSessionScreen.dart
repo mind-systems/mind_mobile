@@ -38,13 +38,13 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E27),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Шапка с кнопкой назад
-            _buildHeader(context),
-
-            // Основная область с дыхательной фигурой
-            Padding(
+        child: Align(
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Основная область с дыхательной фигурой
+              Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: SizedBox(
                       width: shapeDimension,
@@ -59,25 +59,26 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
                         pointRadius: 6.0,
                       ),
                 ),
-            ),
-
-            // Информационная панель
-            Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Текущая и следующая фаза
-                  _buildPhaseInfo(state, viewModel),
-
-                  const SizedBox(height: 40),
-
-                  // Кнопка управления паузой/продолжением
-                  _buildControlButton(state, viewModel),
-                ],
               ),
-            ),
-          ],
+
+              // Информационная панель
+              Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Текущая и следующая фаза
+                    _buildPhaseInfo(state, viewModel),
+
+                    const SizedBox(height: 40),
+
+                    // Кнопка управления паузой/продолжением
+                    _buildControlButton(state, viewModel),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

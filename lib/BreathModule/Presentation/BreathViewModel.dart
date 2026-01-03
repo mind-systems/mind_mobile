@@ -43,16 +43,16 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     // Если первое упражнение - это подготовка (пустые steps, только rest)
     if (firstExercise.steps.isEmpty && firstExercise.restDuration > 0) {
       // Начинаем с отдыха
-      _startInitialRest();
+      _setupInitialRest();
     } else {
       // Начинаем с дыхания
-      _startInitialBreath();
+      _setupInitialBreath();
     }
 
     _subscription = tickService.tickStream.listen(_onTick);
   }
 
-  void _startInitialRest() {
+  void _setupInitialRest() {
     state = BreathSessionState(
       status: BreathSessionStatus.pause,
       phase: BreathPhase.rest,
@@ -62,7 +62,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     );
   }
 
-  void _startInitialBreath() {
+  void _setupInitialBreath() {
     final initialStepData = _getCurrentStepData(0);
     final initialProgress = _mapTickToProgress(0);
 
