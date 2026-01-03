@@ -16,16 +16,15 @@ final breathViewModelProvider =
 
 class BreathViewModel extends StateNotifier<BreathSessionState> {
   final ITickService tickService;
-  final BreathSession session;
+  final BreathSession session; // сессия состоит из наборов упражнений (дыхание-разогрев, отдых, основной сет)
   late final BreathShapeController shapeController;
 
   StreamSubscription<TickData>? _subscription;
 
   // Текущее состояние сессии
-  int _exerciseIndex = 0;
-  int _repeatCounter = 0;
-  int _cycleTick = 0;
-  int _restTick = 0;
+  int _exerciseIndex = 0; // индекс упражнения в сете
+  int _repeatCounter = 0; // счетчик повторений сета
+  int _cycleTick = 0; // текущий тик цикла
 
   ExerciseSet get currentExercise => session.exercises[_exerciseIndex];
 
@@ -169,13 +168,13 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   }
 
   void _onRestTick(int intervalMs) {
-    _restTick++;
+    _cycleTick++;
 
     final restDuration = currentExercise.restDuration;
-    final remainingTicks = restDuration - _restTick;
+    final remainingTicks = restDuration - _cycleTick;
 
-    if (_restTick >= restDuration) {
-      _restTick = 0;
+    if (_cycleTick >= restDuration) {
+      _cycleTick = 0;
 
       // После отдыха возвращаемся к дыханию или переходим к следующему упражнению
       if (_repeatCounter >= currentExercise.repeatCount) {
@@ -187,12 +186,19 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       return;
     }
 
+    final targetProgress = _mapRestTickToProgress(_cycleTick);
+
+    shapeController.animateToProgress(
+      targetProgress,
+      Duration(milliseconds: intervalMs),
+    );
+
     state = BreathSessionState(
       status: BreathSessionStatus.rest,
       phase: BreathPhase.rest,
       exerciseIndex: _exerciseIndex,
       remainingTicks: remainingTicks,
-      shapeProgress: state.shapeProgress,
+      shapeProgress: targetProgress,
     );
   }
 
@@ -202,15 +208,15 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     int accumulated = 0;
 
     for (final step in currentExercise.steps) {
-      if (tick < accumulated + step.duration) {
-        final remaining = accumulated + step.duration - tick;
+      if (tick < accumulated + step.duration) { // если текущий тик меньше суммы текущего шага и предыдущих шагов. Если tick = 0,  accumulated = 0 + 3c, мы понимаем, что мы в первом шаге.
+        final remaining = accumulated + step.duration - tick; // посчитали, сколько тиков осталось до конца текущего шага. а зачем? когда в интерфейсе отображается сумма всех шагов..
         return (phase: _mapStepTypeToPhase(step.type), remainingTicks: remaining);
       }
       accumulated += step.duration;
     }
 
-    final lastStep = currentExercise.steps.last;
-    return (phase: _mapStepTypeToPhase(lastStep.type), remainingTicks: 0);
+    final lastStep = currentExercise.steps.last; // сюда попадает, когда тик == step1.duration + step2.duration + step3.duration. Т.е. мы в последнем шаге.
+    return (phase: _mapStepTypeToPhase(lastStep.type), remainingTicks: 0); // todo как буд то тут может быть проблема. Вернул 0 и дальше что? Вообще я не видел в интерфейсе что б 0 показывался.
   }
 
   BreathPhase _mapStepTypeToPhase(StepType stepType) {
@@ -225,6 +231,13 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   }
 
   // ===== Progress mapping =====
+
+  double _mapRestTickToProgress(int tick) {
+    final total = currentExercise.restDuration;
+    if (total == 0) return 0.0;
+
+    return tick / total;
+  }
 
   double _mapTickToProgress(int tick) {
     final total = currentExercise.cycleDuration;
@@ -252,7 +265,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   // ===== Exercise switching =====
 
   void _startRest() {
-    _restTick = 0;
+    _cycleTick = 0;
     state = state.copyWith(
       status: BreathSessionStatus.rest,
       phase: BreathPhase.rest,
@@ -298,7 +311,6 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   void _resetCycle() {
     _cycleTick = 0;
     _repeatCounter = 0;
-    _restTick = 0;
     shapeController.setProgressImmediately(0.0);
   }
 

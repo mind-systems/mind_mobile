@@ -84,29 +84,6 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          const SizedBox(width: 10),
-          const Text(
-            'Breath Session',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPhaseInfo(BreathSessionState state, BreathViewModel viewModel) {
     // Текущая фаза
     String currentPhaseText;
