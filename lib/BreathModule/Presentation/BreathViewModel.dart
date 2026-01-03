@@ -54,7 +54,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   void _startInitialRest() {
     state = BreathSessionState(
-      status: BreathSessionStatus.rest,
+      status: BreathSessionStatus.pause,
       phase: BreathPhase.rest,
       exerciseIndex: _exerciseIndex,
       remainingTicks: currentExercise.restDuration,
@@ -69,7 +69,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     shapeController.setProgressImmediately(initialProgress);
 
     state = BreathSessionState(
-      status: BreathSessionStatus.breath,
+      status: BreathSessionStatus.pause,
       phase: initialStepData.phase,
       exerciseIndex: _exerciseIndex,
       remainingTicks: initialStepData.remainingTicks,
@@ -85,7 +85,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   void resume() {
     if (state.status == BreathSessionStatus.pause) {
-      final wasResting = _restTick > 0;
+      final wasResting = state.phase == BreathPhase.rest;
       state = state.copyWith(
         status: wasResting
             ? BreathSessionStatus.rest
