@@ -11,15 +11,15 @@ class BreathSessionState {
   /// Сколько тиков осталось до конца текущего шага
   final int remainingTicks;
 
-  /// Прогресс фигуры 0..1 (только для breath)
-  final double shapeProgress;
+  /// Интервал от предыдущего тика до текущего в миллисекундах
+  final int currentIntervalMs;
 
   const BreathSessionState({
     required this.status,
     required this.phase,
     required this.exerciseIndex,
     required this.remainingTicks,
-    required this.shapeProgress,
+    required this.currentIntervalMs,
   });
 
   factory BreathSessionState.initial() => const BreathSessionState(
@@ -27,7 +27,7 @@ class BreathSessionState {
     phase: BreathPhase.inhale,
     exerciseIndex: 0,
     remainingTicks: 0,
-    shapeProgress: 0.0,
+    currentIntervalMs: 1000,
   );
 
   BreathSessionState copyWith({
@@ -35,14 +35,14 @@ class BreathSessionState {
     BreathPhase? phase,
     int? exerciseIndex,
     int? remainingTicks,
-    double? shapeProgress,
+    int? currentIntervalMs,
   }) {
     return BreathSessionState(
       status: status ?? this.status,
       phase: phase ?? this.phase,
       exerciseIndex: exerciseIndex ?? this.exerciseIndex,
       remainingTicks: remainingTicks ?? this.remainingTicks,
-      shapeProgress: shapeProgress ?? this.shapeProgress,
+      currentIntervalMs: currentIntervalMs ?? this.currentIntervalMs,
     );
   }
 }

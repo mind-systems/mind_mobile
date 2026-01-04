@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 
 import 'package:mind/BreathModule/Presentation/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathViewModel.dart';
+import 'package:mind/BreathModule/Presentation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/Views/BreathWidget.dart';
 
 /// Экран дыхательной сессии
@@ -16,18 +18,44 @@ class BreathSessionScreen extends ConsumerStatefulWidget {
   ConsumerState<BreathSessionScreen> createState() => _BreathSessionScreenState();
 }
 
-class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
+class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with SingleTickerProviderStateMixin {
+  late final BreathMotionEngine _motionEngine;
+  late StreamSubscription<void> _resetSubscription;
+
   @override
   void initState() {
     super.initState();
+    _motionEngine = BreathMotionEngine(this);
+
     // Запускаем сессию при входе на экран
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(breathViewModelProvider.notifier).initState();
     });
+
+    // Слушаем сброс
+    final viewModel = ref.read(breathViewModelProvider.notifier);
+    _resetSubscription = viewModel.resetStream.listen((_) {
+      _motionEngine.resetPosition();
+    });
+  }
+
+  @override
+  void dispose() {
+    _resetSubscription.cancel();
+    _motionEngine.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(breathViewModelProvider, (prev, next) {
+      _motionEngine.setRemainingTicks(next.remainingTicks);
+      _motionEngine.setIntervalMs(next.currentIntervalMs);
+
+      final isActive = next.status != BreathSessionStatus.pause && next.status != BreathSessionStatus.complete;
+      _motionEngine.setActive(isActive);
+    });
+
     final viewModel = ref.read(breathViewModelProvider.notifier);
     final state = ref.watch(breathViewModelProvider);
     final currentExercise = viewModel.session.exercises[state.exerciseIndex];
@@ -47,17 +75,17 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: SizedBox(
-                      width: shapeDimension,
-                      height: shapeDimension,
-                      child: BreathShapeWidget(
-                        shape: currentExercise.shape,
-                        triangleOrientation: currentExercise.triangleOrientation,
-                        controller: viewModel.shapeController,
-                        shapeColor: const Color(0xFF00D9FF),
-                        pointColor: Colors.white,
-                        strokeWidth: 3.0,
-                        pointRadius: 6.0,
-                      ),
+                  width: shapeDimension,
+                  height: shapeDimension,
+                  child: BreathShapeWidget(
+                    shape: currentExercise.shape,
+                    triangleOrientation: currentExercise.triangleOrientation,
+                    controller: _motionEngine,
+                    shapeColor: const Color(0xFF00D9FF),
+                    pointColor: Colors.white,
+                    strokeWidth: 3.0,
+                    pointRadius: 6.0,
+                  ),
                 ),
               ),
 
