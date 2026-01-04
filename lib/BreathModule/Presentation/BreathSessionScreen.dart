@@ -172,7 +172,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
         // Оставшееся время
         if (state.status != BreathSessionStatus.complete)
           Text(
-            '${state.remainingTicks}',
+            '${viewModel.getCurrentPhaseInfo().remainingInPhase}',
             style: const TextStyle(
               color: Color.fromRGBO(255, 255, 255, 0.8),
               fontSize: 24,

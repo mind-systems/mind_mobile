@@ -1,5 +1,6 @@
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
+import 'package:mind/Logger.dart';
 
 class BreathMotionEngine extends ChangeNotifier {
   double _rawPosition = 0.0;
@@ -43,8 +44,7 @@ class BreathMotionEngine extends ChangeNotifier {
       _smoothedIntervalMs = intervalMs.toDouble();
       _isFirstInterval = false;
     } else {
-      _smoothedIntervalMs = _smoothedIntervalMs +
-          _smoothingFactor * (intervalMs.toDouble() - _smoothedIntervalMs);
+      _smoothedIntervalMs = _smoothedIntervalMs + _smoothingFactor * (intervalMs.toDouble() - _smoothedIntervalMs);
     }
   }
 

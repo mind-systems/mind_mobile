@@ -27,7 +27,7 @@ class BreathSessionState {
     phase: BreathPhase.inhale,
     exerciseIndex: 0,
     remainingTicks: 0,
-    currentIntervalMs: 1000,
+    currentIntervalMs: -1,
   );
 
   BreathSessionState copyWith({

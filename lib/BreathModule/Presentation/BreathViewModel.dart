@@ -51,12 +51,11 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   void _setupInitialRest() {
     state = BreathSessionState(
-      status: BreathSessionStatus.pause, // Начинаем на паузе
+      status: BreathSessionStatus.pause,
       phase: BreathPhase.rest,
       exerciseIndex: _exerciseIndex,
       remainingTicks: currentExercise.restDuration,
-      // Дефолтное значение интервала до первого тика
-      currentIntervalMs: 1000,
+      currentIntervalMs: -1,
     );
   }
 
@@ -64,11 +63,11 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     final initialStepData = _getCurrentStepData(0);
 
     state = BreathSessionState(
-      status: BreathSessionStatus.pause, // Начинаем на паузе
+      status: BreathSessionStatus.pause,
       phase: initialStepData.phase,
       exerciseIndex: _exerciseIndex,
       remainingTicks: initialStepData.remainingTicks,
-      currentIntervalMs: 1000,
+      currentIntervalMs: -1,
     );
   }
 
@@ -156,11 +155,6 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     // 2. Если цикл не закончен, определяем текущий шаг
     final stepData = _getCurrentStepData(_cycleTick);
 
-    // Если фаза сменилась по сравнению с предыдущим состоянием
-    if (state.phase != stepData.phase) {
-      _resetController.add(null);
-    }
-
     state = BreathSessionState(
       status: BreathSessionStatus.breath,
       phase: stepData.phase,
@@ -207,8 +201,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
     for (final step in currentExercise.steps) {
       if (tick < accumulated + step.duration) {
-        final remaining = accumulated + step.duration - tick;
-        return (phase: _mapStepTypeToPhase(step.type), remainingTicks: remaining);
+        final remainingInCycle = currentExercise.cycleDuration - tick;
+        return (phase: _mapStepTypeToPhase(step.type), remainingTicks: remainingInCycle);
       }
       accumulated += step.duration;
     }
@@ -284,6 +278,48 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   void _resetCycleInternal() {
     _cycleTick = 0;
     _repeatCounter = 0;
+  }
+
+  // ===== Current phase info =====
+
+  /// Возвращает информацию о текущей фазе: её тип и оставшееся количество тиков именно в этой фазе.
+  ({BreathPhase phase, int remainingInPhase}) getCurrentPhaseInfo() {
+    if (state.status == BreathSessionStatus.complete) {
+      throw StateError('Cannot get current phase info when session is complete');
+    }
+
+    // Режим отдыха — отдельная логика
+    if (state.status == BreathSessionStatus.rest || state.phase == BreathPhase.rest) {
+      final remainingInRest = currentExercise.restDuration - _cycleTick;
+      return (phase: BreathPhase.rest, remainingInPhase: remainingInRest.clamp(0, remainingInRest));
+    }
+
+    // Если steps пустые — это не ошибка, просто сейчас нет активной дыхательной фазы
+    if (currentExercise.steps.isEmpty) {
+      return (phase: BreathPhase.rest, remainingInPhase: 0,);
+    }
+
+    // Режим дыхания — ищем текущий шаг
+    int accumulated = 0;
+    int currentTickInCycle = _cycleTick;
+
+    for (final step in currentExercise.steps) {
+      if (currentTickInCycle < accumulated + step.duration) {
+        final remainingInThisStep = (accumulated + step.duration) - currentTickInCycle;
+        return (
+          phase: _mapStepTypeToPhase(step.type),
+          remainingInPhase: remainingInThisStep,
+        );
+      }
+      accumulated += step.duration;
+    }
+
+    // Если по какой-то причине вышли за пределы (крайний тик цикла)
+    final lastStep = currentExercise.steps.last;
+    return (
+      phase: _mapStepTypeToPhase(lastStep.type),
+      remainingInPhase: 0,
+    );
   }
 
   // ===== Next phase info (Forecast) =====
