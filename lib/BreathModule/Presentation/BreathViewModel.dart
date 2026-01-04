@@ -380,8 +380,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       return null;
     }
 
-    // Если мы в отдыхе
-    if (state.status == BreathSessionStatus.rest) {
+    // Если мы в отдыхе или на паузе
+    if (state.status == BreathSessionStatus.rest || state.status == BreathSessionStatus.pause) {
       // Отдых между повторами одного упражнения
       if (_repeatCounter < currentExercise.repeatCount) {
         final firstStep = currentExercise.steps.first;
