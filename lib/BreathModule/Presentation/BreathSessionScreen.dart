@@ -4,7 +4,7 @@ import 'dart:async';
 
 import 'package:mind/BreathModule/Presentation/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathViewModel.dart';
-import 'package:mind/BreathModule/Presentation/BreathMotionEngine.dart';
+import 'package:mind/BreathModule/Presentation/Animation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/Views/BreathWidget.dart';
 
 /// Экран дыхательной сессии

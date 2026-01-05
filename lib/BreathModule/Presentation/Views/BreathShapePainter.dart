@@ -1,8 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'dart:math' as math;
+import 'package:flutter/material.dart';
 
-/// CustomPainter для отрисовки дыхательной фигуры с анимированной точкой
+import 'package:mind/BreathModule/Models/ExerciseSet.dart';
+import 'package:mind/BreathModule/Presentation/Views/BreathShapeGeometry.dart';
+
+/// CustomPainter для отрисовки дыхательной фигуры с анимированной точкой.
+/// Не знает о геометрии фигур — получает готовые вершины из BreathShapeGeometry.
 class BreathShapePainter extends CustomPainter {
   final SetShape shape;
   final double normalizedTime; // 0.0 - 1.0
@@ -32,17 +35,25 @@ class BreathShapePainter extends CustomPainter {
     // Размер фигуры — 70% от минимального измерения экрана
     final shapeSize = math.min(size.width, size.height) * 0.7;
 
+    // Получаем геометрию из чистого геометрического слоя
+    final vertices = BreathShapeGeometry.getVertices(
+      shape: shape,
+      center: center,
+      size: shapeSize,
+      triangleOrientation: triangleOrientation,
+    );
+
+    final path = BreathShapeGeometry.verticesToPath(vertices);
+
     // 1. Рисуем фигуру
-    _drawShape(canvas, center, shapeSize);
+    _drawShape(canvas, path);
 
     // 2. Рисуем точку
-    _drawPoint(canvas, center, shapeSize);
+    _drawPoint(canvas, path, center);
   }
 
-  /// Отрисовка геометрии фигуры
-  void _drawShape(Canvas canvas, Offset center, double shapeSize) {
-    final path = _getShapePath(center, shapeSize);
-
+  /// Отрисовка геометрии фигуры с трёхслойным эффектом
+  void _drawShape(Canvas canvas, Path path) {
     // Слой 1: Внешний glow (blur)
     final glowPaint = Paint()
       ..color = shapeColor.withValues(alpha: 0.3)
@@ -73,8 +84,8 @@ class BreathShapePainter extends CustomPainter {
   }
 
   /// Отрисовка анимированной точки
-  void _drawPoint(Canvas canvas, Offset center, double shapeSize) {
-    final pointPosition = _getPointPosition(center, shapeSize, normalizedTime);
+  void _drawPoint(Canvas canvas, Path path, Offset fallbackCenter) {
+    final pointPosition = _getPointPosition(path, normalizedTime, fallbackCenter);
 
     // Слой 1: Внешний glow
     final glowPaint = Paint()
@@ -105,206 +116,43 @@ class BreathShapePainter extends CustomPainter {
     canvas.drawCircle(pointPosition, pointRadius * 0.4, highlightPaint);
   }
 
-  /// Создание Path для выбранной формы
-  Path _getShapePath(Offset center, double size) {
-    switch (shape) {
-      case SetShape.square:
-        return _createSquarePath(center, size);
-      case SetShape.triangle:
-        return _createTrianglePath(
-          center,
-          size,
-          triangleOrientation ?? TriangleOrientation.up,
-        );
-      case SetShape.circle:
-        return _createCirclePath(center, size);
+  /// Вычисление позиции точки на траектории через PathMetrics
+  Offset _getPointPosition(Path path, double time, Offset fallbackCenter) {
+    // Быстрая проверка на пустой path
+    if (path.getBounds().isEmpty) {
+      return fallbackCenter;
     }
-  }
 
-  /// Квадрат
-  Path _createSquarePath(Offset center, double size) {
-    final halfSize = size / 2;
-    final path = Path();
+    final pathMetrics = path.computeMetrics().toList();
 
-    // Начинаем с верхнего правого угла (по часовой стрелке)
-    path.moveTo(center.dx + halfSize, center.dy - halfSize);
-    path.lineTo(center.dx + halfSize, center.dy + halfSize); // вниз
-    path.lineTo(center.dx - halfSize, center.dy + halfSize); // влево
-    path.lineTo(center.dx - halfSize, center.dy - halfSize); // вверх
-    path.close(); // замыкаем к начальной точке
+    if (pathMetrics.isEmpty) {
+      return fallbackCenter;
+    }
 
-    return path;
-  }
-
-  /// Треугольник
-  Path _createTrianglePath(
-    Offset center,
-    double size,
-    TriangleOrientation orientation,
-  ) {
-    final path = Path();
-    final radius = size / 2;
-
-    // Базовые точки равностороннего треугольника (вершина вверху)
-    final point1 = Offset(center.dx, center.dy - radius);
-    final point2 = Offset(
-      center.dx + radius * math.cos(math.pi / 6),
-      center.dy + radius * math.sin(math.pi / 6),
-    );
-    final point3 = Offset(
-      center.dx - radius * math.cos(math.pi / 6),
-      center.dy + radius * math.sin(math.pi / 6),
+    final totalLength = pathMetrics.fold(
+      0.0,
+      (prev, metric) => prev + metric.length,
     );
 
-    // Применяем поворот в зависимости от ориентации
-    List<Offset> points = [point1, point2, point3];
-
-    switch (orientation) {
-      case TriangleOrientation.down:
-        points = _rotatePoints(points, center, math.pi);
-        break;
-      case TriangleOrientation.up:
-        // уже в нужной ориентации
-        break;
+    if (totalLength == 0) {
+      return fallbackCenter; // все точки совпадают
     }
 
-    path.moveTo(points[0].dx, points[0].dy);
-    path.lineTo(points[1].dx, points[1].dy);
-    path.lineTo(points[2].dx, points[2].dy);
-    path.close();
+    final distance = totalLength * (time % 1.0);
+    var accumulated = 0.0;
 
-    return path;
-  }
-
-  /// Круг
-  Path _createCirclePath(Offset center, double size) {
-    final path = Path();
-    final radius = size / 2;
-
-    path.addOval(Rect.fromCircle(center: center, radius: radius));
-
-    return path;
-  }
-
-  /// Вычисление позиции точки на траектории
-  Offset _getPointPosition(Offset center, double size, double time) {
-    switch (shape) {
-      case SetShape.square:
-        return _getSquarePointPosition(center, size, time);
-      case SetShape.triangle:
-        return _getTrianglePointPosition(
-          center,
-          size,
-          time,
-          triangleOrientation ?? TriangleOrientation.up,
-        );
-      case SetShape.circle:
-        return _getCirclePointPosition(center, size, time);
-    }
-  }
-
-  /// Позиция точки на квадрате (движется по периметру)
-  Offset _getSquarePointPosition(Offset center, double size, double time) {
-    final halfSize = size / 2;
-
-    // Делим периметр на 4 стороны (по 0.25 времени на каждую)
-    if (time < 0.25) {
-      // Правая сторона: вниз
-      final progress = time / 0.25;
-      return Offset(
-        center.dx + halfSize,
-        center.dy - halfSize + (size * progress),
-      );
-    } else if (time < 0.5) {
-      // Нижняя сторона: влево
-      final progress = (time - 0.25) / 0.25;
-      return Offset(
-        center.dx + halfSize - (size * progress),
-        center.dy + halfSize,
-      );
-    } else if (time < 0.75) {
-      // Левая сторона: вверх
-      final progress = (time - 0.5) / 0.25;
-      return Offset(
-        center.dx - halfSize,
-        center.dy + halfSize - (size * progress),
-      );
-    } else {
-      // Верхняя сторона: вправо
-      final progress = (time - 0.75) / 0.25;
-      return Offset(
-        center.dx - halfSize + (size * progress),
-        center.dy - halfSize,
-      );
-    }
-  }
-
-  /// Позиция точки на треугольнике
-  Offset _getTrianglePointPosition(
-    Offset center,
-    double size,
-    double time,
-    TriangleOrientation orientation,
-  ) {
-    final radius = size / 2;
-
-    // Базовые вершины
-    final point1 = Offset(center.dx, center.dy - radius);
-    final point2 = Offset(
-      center.dx + radius * math.cos(math.pi / 6),
-      center.dy + radius * math.sin(math.pi / 6),
-    );
-    final point3 = Offset(
-      center.dx - radius * math.cos(math.pi / 6),
-      center.dy + radius * math.sin(math.pi / 6),
-    );
-
-    List<Offset> points = [point1, point2, point3];
-
-    // Применяем поворот
-    switch (orientation) {
-      case TriangleOrientation.down:
-        points = _rotatePoints(points, center, math.pi);
-        break;
-      case TriangleOrientation.up:
-        break;
+    for (final metric in pathMetrics) {
+      if (accumulated + metric.length >= distance) {
+        final tangent = metric.getTangentForOffset(distance - accumulated);
+        return tangent?.position ?? fallbackCenter;
+      }
+      accumulated += metric.length;
     }
 
-    // Движение по трем сторонам
-    if (time < 0.333) {
-      final progress = time / 0.333;
-      return Offset.lerp(points[0], points[1], progress)!;
-    } else if (time < 0.666) {
-      final progress = (time - 0.333) / 0.333;
-      return Offset.lerp(points[1], points[2], progress)!;
-    } else {
-      final progress = (time - 0.666) / 0.334;
-      return Offset.lerp(points[2], points[0], progress)!;
-    }
-  }
-
-  /// Позиция точки на круге
-  Offset _getCirclePointPosition(Offset center, double size, double time) {
-    final radius = size / 2;
-    final angle = time * 2 * math.pi - math.pi / 2; // Начинаем сверху
-
-    return Offset(
-      center.dx + radius * math.cos(angle),
-      center.dy + radius * math.sin(angle),
-    );
-  }
-
-  /// Вспомогательная функция поворота точек
-  List<Offset> _rotatePoints(List<Offset> points, Offset center, double angle) {
-    return points.map((point) {
-      final dx = point.dx - center.dx;
-      final dy = point.dy - center.dy;
-
-      final newX = dx * math.cos(angle) - dy * math.sin(angle);
-      final newY = dx * math.sin(angle) + dy * math.cos(angle);
-
-      return Offset(center.dx + newX, center.dy + newY);
-    }).toList();
+    // Если по какой-то причине вышли за пределы — берём конец последнего сегмента
+    final lastMetric = pathMetrics.last;
+    final lastTangent = lastMetric.getTangentForOffset(lastMetric.length);
+    return lastTangent?.position ?? fallbackCenter;
   }
 
   @override

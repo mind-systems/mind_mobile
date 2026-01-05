@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
-import 'package:mind/BreathModule/Presentation/BreathMotionEngine.dart';
+import 'package:mind/BreathModule/Presentation/Animation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/Views/BreathShapePainter.dart';
 
 class BreathShapeWidget extends StatelessWidget {
