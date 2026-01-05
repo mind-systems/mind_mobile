@@ -232,6 +232,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     state = state.copyWith(
       status: BreathSessionStatus.rest,
       phase: BreathPhase.rest,
+      exerciseIndex: _exerciseIndex,
       remainingTicks: currentExercise.restDuration,
       currentIntervalMs: intervalMs,
     );
@@ -260,7 +261,9 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       return;
     }
 
-    _resetCycleInternal();
+    // Сбрасываем цикл
+    _cycleTick = 0;
+    _repeatCounter = 0;
 
     // Уведомляем о глобальной смене упражнения
     _resetController.add(null);
@@ -273,11 +276,6 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     } else {
       _startNewCycle(intervalMs);
     }
-  }
-
-  void _resetCycleInternal() {
-    _cycleTick = 0;
-    _repeatCounter = 0;
   }
 
   // ===== Current phase info =====
