@@ -1,15 +1,11 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
-
-import 'package:mind/BreathModule/Models/ExerciseSet.dart';
-import 'package:mind/BreathModule/Presentation/Views/BreathShapeGeometry.dart';
+import 'package:mind/BreathModule/Presentation/Animation/BreathShapeShifter.dart';
 
 /// CustomPainter для отрисовки дыхательной фигуры с анимированной точкой.
-/// Не знает о геометрии фигур — получает готовые вершины из BreathShapeGeometry.
+/// Получает готовую геометрию из BreathShapeShifter, который управляет морфингом между формами.
 class BreathShapePainter extends CustomPainter {
-  final SetShape shape;
+  final BreathShapeShifter shapeShifter;
   final double normalizedTime; // 0.0 - 1.0
-  final TriangleOrientation? triangleOrientation;
 
   // Визуальные параметры
   final Color shapeColor;
@@ -18,9 +14,8 @@ class BreathShapePainter extends CustomPainter {
   final double pointRadius;
 
   BreathShapePainter({
-    required this.shape,
+    required this.shapeShifter,
     required this.normalizedTime,
-    this.triangleOrientation,
     this.shapeColor = const Color(0xFF00D9FF),
     this.pointColor = const Color(0xFFFFFFFF),
     this.shapeStrokeWidth = 3.0,
@@ -29,27 +24,14 @@ class BreathShapePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Центрируем всё относительно canvas
-    final center = Offset(size.width / 2, size.height / 2);
-
-    // Размер фигуры — 70% от минимального измерения экрана
-    final shapeSize = math.min(size.width, size.height) * 0.7;
-
-    // Получаем геометрию из чистого геометрического слоя
-    final vertices = BreathShapeGeometry.getVertices(
-      shape: shape,
-      center: center,
-      size: shapeSize,
-      triangleOrientation: triangleOrientation,
-    );
-
-    final path = BreathShapeGeometry.verticesToPath(vertices);
+    // Получаем готовый Path из ShapeShifter
+    final path = shapeShifter.getCurrentPath();
 
     // 1. Рисуем фигуру
     _drawShape(canvas, path);
 
     // 2. Рисуем точку
-    _drawPoint(canvas, path, center);
+    _drawPoint(canvas, path);
   }
 
   /// Отрисовка геометрии фигуры с трёхслойным эффектом
@@ -84,8 +66,9 @@ class BreathShapePainter extends CustomPainter {
   }
 
   /// Отрисовка анимированной точки
-  void _drawPoint(Canvas canvas, Path path, Offset fallbackCenter) {
-    final pointPosition = _getPointPosition(path, normalizedTime, fallbackCenter);
+  void _drawPoint(Canvas canvas, Path path) {
+    // Получаем позицию точки из ShapeShifter
+    final pointPosition = shapeShifter.getPointPosition(normalizedTime);
 
     // Слой 1: Внешний glow
     final glowPaint = Paint()
@@ -116,49 +99,8 @@ class BreathShapePainter extends CustomPainter {
     canvas.drawCircle(pointPosition, pointRadius * 0.4, highlightPaint);
   }
 
-  /// Вычисление позиции точки на траектории через PathMetrics
-  Offset _getPointPosition(Path path, double time, Offset fallbackCenter) {
-    // Быстрая проверка на пустой path
-    if (path.getBounds().isEmpty) {
-      return fallbackCenter;
-    }
-
-    final pathMetrics = path.computeMetrics().toList();
-
-    if (pathMetrics.isEmpty) {
-      return fallbackCenter;
-    }
-
-    final totalLength = pathMetrics.fold(
-      0.0,
-      (prev, metric) => prev + metric.length,
-    );
-
-    if (totalLength == 0) {
-      return fallbackCenter; // все точки совпадают
-    }
-
-    final distance = totalLength * (time % 1.0);
-    var accumulated = 0.0;
-
-    for (final metric in pathMetrics) {
-      if (accumulated + metric.length >= distance) {
-        final tangent = metric.getTangentForOffset(distance - accumulated);
-        return tangent?.position ?? fallbackCenter;
-      }
-      accumulated += metric.length;
-    }
-
-    // Если по какой-то причине вышли за пределы — берём конец последнего сегмента
-    final lastMetric = pathMetrics.last;
-    final lastTangent = lastMetric.getTangentForOffset(lastMetric.length);
-    return lastTangent?.position ?? fallbackCenter;
-  }
-
   @override
   bool shouldRepaint(BreathShapePainter oldDelegate) {
-    return oldDelegate.normalizedTime != normalizedTime ||
-        oldDelegate.shape != shape ||
-        oldDelegate.triangleOrientation != triangleOrientation;
+    return oldDelegate.normalizedTime != normalizedTime;
   }
 }

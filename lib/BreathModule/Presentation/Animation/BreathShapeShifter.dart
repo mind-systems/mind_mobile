@@ -71,8 +71,6 @@ class BreathShapeShifter extends ChangeNotifier {
     // Пересчитываем все точки с новыми параметрами
     if (_morphProgress < 1.0) {
       // Во время морфинга пересчитываем и start, и target
-      final scaleX = center.dx / oldCenter.dx;
-      final scaleY = center.dy / oldCenter.dy;
       final sizeScale = size / oldSize;
 
       _startPoints = _rescalePoints(_startPoints, oldCenter, center, sizeScale);
@@ -148,7 +146,10 @@ class BreathShapeShifter extends ChangeNotifier {
     if (_currentPoints.isEmpty) return _center;
 
     final path = getCurrentPath();
-    final pathMetrics = path.computeMetrics();
+    final pathMetrics = path.computeMetrics().toList();
+
+    if (pathMetrics.isEmpty) return _center;
+
     final totalLength = pathMetrics.fold(
       0.0,
       (prev, metric) => prev + metric.length,
