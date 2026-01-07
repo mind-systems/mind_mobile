@@ -1,7 +1,6 @@
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
 
-enum SetShape { square, triangle, circle }
-enum TriangleOrientation { up, down }
+enum SetShape { square, triangleUp, triangleDown, circle }
 
 class ExerciseSet {
   final List<ExerciseStep> steps;
@@ -19,14 +18,8 @@ class ExerciseSet {
 
   SetShape? get shape {
     if (steps.length == 2) return SetShape.circle;
-    if (steps.length == 3) return SetShape.triangle;
+    if (steps.length == 3) return steps.last.type == StepType.hold ? SetShape.triangleUp : SetShape.triangleDown;
     if (steps.length == 4) return SetShape.square;
     return null;
-  }
-
-  TriangleOrientation get triangleOrientation {
-    return steps.lastOrNull?.type == StepType.hold
-        ? TriangleOrientation.up
-        : TriangleOrientation.down;
   }
 }

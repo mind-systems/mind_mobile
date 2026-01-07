@@ -2,131 +2,98 @@ import 'package:flutter/material.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'dart:math' as math;
 
-/// Центральный "мозг" геометрии дыхательных фигур.
-/// Управляет плавными переходами между формами через морфинг.
-///
-/// Принцип работы: хранит 120 точек, которые постоянно интерполируются
-/// от текущей формы к целевой. Как мастер-кузнец, плавно перетягивающий
-/// светящуюся нить из одной конфигурации в другую.
 class BreathShapeShifter extends ChangeNotifier {
-  /// Фиксированное количество точек для всех фигур
   static const int numSegments = 120;
 
-  /// Текущая форма
   SetShape _currentShape;
-
-  /// Ориентация треугольника (если применимо)
-  TriangleOrientation _triangleOrientation;
-
-  /// Текущие координаты 120 точек (живое состояние нити)
+  SetShape _startShape;
   List<Offset> _currentPoints = [];
-
-  /// Стартовые точки для морфинга
-  List<Offset> _startPoints = [];
-
-  /// Целевые точки для морфинга
-  List<Offset> _targetPoints = [];
-
-  /// Прогресс морфинга от 0.0 (start) до 1.0 (target)
   double _morphProgress = 1.0;
-
-  /// Контроллер анимации морфинга
   AnimationController? _morphController;
-
-  /// Центр и размер фигуры
   Offset _center = Offset.zero;
   double _size = 0.0;
 
-  BreathShapeShifter({
-    required SetShape initialShape,
-    TriangleOrientation triangleOrientation = TriangleOrientation.up,
-  })  : _currentShape = initialShape,
-        _triangleOrientation = triangleOrientation;
+  BreathShapeShifter({required SetShape initialShape})
+      : _currentShape = initialShape,
+        _startShape = initialShape;
 
-  /// Инициализация с параметрами canvas
   void initialize(Offset center, double size, TickerProvider vsync) {
     _center = center;
     _size = size;
 
-    // Генерируем начальные точки
-    _currentPoints = _generateShapePoints(_currentShape, _triangleOrientation);
+    // Генерируем начальные точки для текущей формы
+    _currentPoints = _generateShapePoints(_currentShape);
 
-    // Создаём контроллер для морфинга (800ms с easeInOut)
+    // Создаём контроллер морфинга
     _morphController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: vsync,
     )..addListener(_onMorphTick);
+
+    // Устанавливаем прогресс = 1.0 чтобы форма была завершённой
+    _morphProgress = 1.0;
   }
 
-  /// Обновление размеров (при изменении размера экрана)
   void updateBounds(Offset center, double size) {
     if (_center == center && _size == size) return;
 
-    final oldCenter = _center;
-    final oldSize = _size;
+    final scaleX = size / _size;
+    final scaleY = size / _size;
+    final dx = center.dx - _center.dx;
+    final dy = center.dy - _center.dy;
 
     _center = center;
     _size = size;
 
-    // Пересчитываем все точки с новыми параметрами
-    if (_morphProgress < 1.0) {
-      // Во время морфинга пересчитываем и start, и target
-      final sizeScale = size / oldSize;
-
-      _startPoints = _rescalePoints(_startPoints, oldCenter, center, sizeScale);
-      _targetPoints = _rescalePoints(_targetPoints, oldCenter, center, sizeScale);
-      _currentPoints = _rescalePoints(_currentPoints, oldCenter, center, sizeScale);
-    } else {
-      // Статичное состояние — просто регенерируем
-      _currentPoints = _generateShapePoints(_currentShape, _triangleOrientation);
-    }
+    _currentPoints = _currentPoints.map((p) {
+      return Offset(
+        _center.dx + (p.dx - _center.dx + dx) * scaleX,
+        _center.dy + (p.dy - _center.dy + dy) * scaleY,
+      );
+    }).toList();
 
     notifyListeners();
   }
 
-  /// Запуск морфинга к новой форме
-  void morphTo(SetShape newShape, {TriangleOrientation? orientation}) {
-    if (newShape == _currentShape &&
-        (orientation == null || orientation == _triangleOrientation)) {
-      return; // Уже в этой форме
+  void morphTo(SetShape newShape) {
+    if (newShape == _currentShape) {
+      return;
     }
 
-    // Прерываем текущий морфинг если он идёт
     _morphController?.stop();
-
-    // Фиксируем текущее состояние как старт
-    _startPoints = List.from(_currentPoints);
-
-    // Генерируем целевую форму
-    final targetOrientation = orientation ?? _triangleOrientation;
-    _targetPoints = _generateShapePoints(newShape, targetOrientation);
-
-    // Обновляем состояние
+    _startShape = _currentShape;
     _currentShape = newShape;
-    _triangleOrientation = targetOrientation;
-
-    // Запускаем анимацию
     _morphProgress = 0.0;
     _morphController?.forward(from: 0.0);
   }
 
-  /// Обработчик тика анимации морфинга
   void _onMorphTick() {
     _morphProgress = _morphController?.value ?? 1.0;
+    final t = Curves.easeInOut.transform(_morphProgress);
 
-    // Интерполируем каждую точку
-    for (int i = 0; i < numSegments; i++) {
-      _currentPoints[i] = Offset.lerp(
-        _startPoints[i],
-        _targetPoints[i],
-        Curves.easeInOut.transform(_morphProgress),
-      )!;
+    // Проверяем тип морфинга
+    if (_isRectangularMorph(_startShape, _currentShape)) {
+      // Для треугольник↔квадрат используем старую систему через Path
+      final path = _buildGeometricPath(_startShape, t, _currentShape);
+      _currentPoints = _redistributePointsAlongPath(path);
+    } else {
+      // Для морфингов с кругом используем интерполяцию точек
+      final startPoints = _generateShapePoints(_startShape);
+      final endPoints = _generateShapePoints(_currentShape);
+
+      _currentPoints = List.generate(numSegments, (i) {
+        return Offset.lerp(startPoints[i], endPoints[i], t)!;
+      });
     }
 
     notifyListeners();
   }
 
-  /// Получить текущий Path фигуры
+  // Проверяем, является ли морфинг прямоугольным (без круга)
+  bool _isRectangularMorph(SetShape from, SetShape to) {
+    return from != SetShape.circle && to != SetShape.circle;
+  }
+
   Path getCurrentPath() {
     final path = Path();
     if (_currentPoints.isEmpty) return path;
@@ -136,25 +103,17 @@ class BreathShapeShifter extends ChangeNotifier {
       path.lineTo(_currentPoints[i].dx, _currentPoints[i].dy);
     }
     path.close();
-
     return path;
   }
 
-  /// Получить позицию бегущей точки на текущем контуре
-  /// [normalizedTime] - время от 0.0 до 1.0
   Offset getPointPosition(double normalizedTime) {
     if (_currentPoints.isEmpty) return _center;
 
     final path = getCurrentPath();
     final pathMetrics = path.computeMetrics().toList();
-
     if (pathMetrics.isEmpty) return _center;
 
-    final totalLength = pathMetrics.fold(
-      0.0,
-      (prev, metric) => prev + metric.length,
-    );
-
+    final totalLength = pathMetrics.fold(0.0, (sum, m) => sum + m.length);
     if (totalLength == 0) return _center;
 
     final distance = totalLength * (normalizedTime % 1.0);
@@ -168,81 +127,79 @@ class BreathShapeShifter extends ChangeNotifier {
       accumulated += metric.length;
     }
 
-    final lastTangent = pathMetrics.last.getTangentForOffset(
-      pathMetrics.last.length,
-    );
-    return lastTangent?.position ?? _center;
+    return pathMetrics.last.getTangentForOffset(pathMetrics.last.length)?.position ?? _center;
   }
 
-  /// Генерация 120 точек для заданной формы
-  List<Offset> _generateShapePoints(
-    SetShape shape,
-    TriangleOrientation orientation,
-  ) {
+  // ============================================================
+  // ГЕНЕРАЦИЯ 120 ТОЧЕК ДЛЯ КАЖДОЙ ФИГУРЫ
+  // ============================================================
+
+  List<Offset> _generateShapePoints(SetShape shape) {
     switch (shape) {
       case SetShape.circle:
         return _generateCirclePoints();
       case SetShape.square:
         return _generateSquarePoints();
-      case SetShape.triangle:
-        return _generateTrianglePoints(orientation);
+      case SetShape.triangleUp:
+        return _generateTriangleUpPoints();
+      case SetShape.triangleDown:
+        return _generateTriangleDownPoints();
     }
   }
 
-  /// Генерация точек круга (старт с верхней точки, по часовой)
+  // КРУГ: начинаем с нижней точки (50, 100), идём ПО ЧАСОВОЙ СТРЕЛКЕ
   List<Offset> _generateCirclePoints() {
-    final radius = _size / 2;
     final points = <Offset>[];
+    final half = _size / 2;
 
     for (int i = 0; i < numSegments; i++) {
-      // Начинаем с -π/2 (нижняя точка)
-      final angle = math.pi / 2 + (i / numSegments) * 2 * math.pi;
-      points.add(Offset(
-        _center.dx + radius * math.cos(angle),
-        _center.dy + radius * math.sin(angle),
-      ));
+      // Начинаем с угла π/2 (низ) и идём ПО часовой стрелке (вычитаем угол)
+      final angle = math.pi / 2 + (2 * math.pi * i / numSegments);
+      final x = _center.dx + half * math.cos(angle);
+      final y = _center.dy + half * math.sin(angle);
+      points.add(Offset(x, y));
     }
 
     return points;
   }
 
-  /// Генерация точек квадрата (старт с верхней центральной точки)
-  /// 4 стороны × 30 точек = 120 точек
+  // КВАДРАТ: начинаем с левого нижнего угла (0, 100), идём ПО ЧАСОВОЙ
   List<Offset> _generateSquarePoints() {
-    final half = _size / 2;
-    final n = numSegments ~/ 4;
     final points = <Offset>[];
+    final half = _size / 2;
 
-    // 1. Левая сторона: снизу вверх (ВДОХ)
-    for (int i = 0; i < n; i++) {
-      final t = i / n;
+    final pointsPerSide = numSegments ~/ 4;
+
+    // Левая сторона: (0, 100) → (0, 0) - идём вверх
+    for (int i = 0; i < pointsPerSide; i++) {
+      final t = i / pointsPerSide;
       points.add(Offset(
         _center.dx - half,
         _center.dy + half - _size * t,
       ));
     }
 
-    // 2. Верхняя сторона: слева направо (ЗАДЕРЖКА)
-    for (int i = 0; i < n; i++) {
-      final t = i / n;
+    // Верхняя сторона: (0, 0) → (100, 0) - идём вправо
+    for (int i = 0; i < pointsPerSide; i++) {
+      final t = i / pointsPerSide;
       points.add(Offset(
         _center.dx - half + _size * t,
         _center.dy - half,
       ));
     }
 
-    // 3. Правая сторона: сверху вниз (ВЫДОХ)
-    for (int i = 0; i < n; i++) {
-      final t = i / n;
+    // Правая сторона: (100, 0) → (100, 100) - идём вниз
+    for (int i = 0; i < pointsPerSide; i++) {
+      final t = i / pointsPerSide;
       points.add(Offset(
         _center.dx + half,
         _center.dy - half + _size * t,
       ));
     }
 
-    // 4. Нижняя сторона: справа налево (ЗАДЕРЖКА)
-    for (int i = 0; i < n; i++) {
-      final t = i / n;
+    // Нижняя сторона: (100, 100) → (0, 100) - идём влево
+    for (int i = 0; i < pointsPerSide; i++) {
+      final t = i / pointsPerSide;
       points.add(Offset(
         _center.dx + half - _size * t,
         _center.dy + half,
@@ -252,91 +209,187 @@ class BreathShapeShifter extends ChangeNotifier {
     return points;
   }
 
-  /// Генерация точек треугольника (старт с верхней или нижней вершины в зависимости от ориентации)
-  /// 3 стороны × 40 точек = 120 точек
-  /// Обход всегда по часовой стрелке
-  List<Offset> _generateTrianglePoints(TriangleOrientation orientation) {
-    final radius = _size / 2;
-    final pointsPerSide = numSegments ~/ 3; // 40
-    var points = <Offset>[];
+  // ТРЕУГОЛЬНИК ВВЕРХ: начинаем с левого нижнего угла (0, 100), идём ПО ЧАСОВОЙ
+  List<Offset> _generateTriangleUpPoints() {
+    final points = <Offset>[];
+    final half = _size / 2;
 
-    // Базовые вершины для ориентации up (вершина сверху)
-    Offset topVertex = Offset(_center.dx, _center.dy - radius);
-    Offset leftVertex = Offset(
-      _center.dx - radius * math.cos(math.pi / 6),
-      _center.dy + radius * math.sin(math.pi / 6),
-    );
-    Offset rightVertex = Offset(
-      _center.dx + radius * math.cos(math.pi / 6),
-      _center.dy + radius * math.sin(math.pi / 6),
-    );
+    final pointsPerSide = numSegments ~/ 3;
 
-    List<Offset> vertices = [topVertex, rightVertex, leftVertex]; // Clockwise: top -> right -> left
+    final topVertex = Offset(_center.dx, _center.dy - half);
+    final leftVertex = Offset(_center.dx - half, _center.dy + half);
+    final rightVertex = Offset(_center.dx + half, _center.dy + half);
 
-    if (orientation == TriangleOrientation.down) {
-      // Поворачиваем на 180° для вершины снизу (без инверсии направления, так как поворот сохраняет ориентацию)
-      vertices = _rotatePoints(vertices, _center, math.pi);
-    }
-
-    // Генерация точек по сторонам
+    // Левая сторона: (0, 100) → (50, 0)
     for (int i = 0; i < pointsPerSide; i++) {
-      final progress = i / pointsPerSide.toDouble();
-      points.add(Offset.lerp(vertices[0], vertices[1], progress)!);
-    }
-    for (int i = 0; i < pointsPerSide; i++) {
-      final progress = i / pointsPerSide.toDouble();
-      points.add(Offset.lerp(vertices[1], vertices[2], progress)!);
-    }
-    for (int i = 0; i < pointsPerSide; i++) {
-      final progress = i / pointsPerSide.toDouble();
-      points.add(Offset.lerp(vertices[2], vertices[0], progress)!);
+      final t = i / pointsPerSide;
+      points.add(Offset.lerp(leftVertex, topVertex, t)!);
     }
 
-    // Для ориентации up (когда hold третий шаг) сдвигаем точки, чтобы начинать с левого угла и hold был на третьей стороне (основании)
-    if (orientation == TriangleOrientation.up) {
-      points = points.sublist(80) + points.sublist(0, 80);
+    // Правая сторона: (50, 0) → (100, 100)
+    for (int i = 0; i < pointsPerSide; i++) {
+      final t = i / pointsPerSide;
+      points.add(Offset.lerp(topVertex, rightVertex, t)!);
+    }
+
+    // Нижняя сторона: (100, 100) → (0, 100)
+    for (int i = 0; i < pointsPerSide; i++) {
+      final t = i / pointsPerSide;
+      points.add(Offset.lerp(rightVertex, leftVertex, t)!);
     }
 
     return points;
   }
 
-  /// Поворот точек вокруг центра
-  List<Offset> _rotatePoints(List<Offset> points, Offset center, double angle) {
-    return points.map((point) {
-      final dx = point.dx - center.dx;
-      final dy = point.dy - center.dy;
+  // ТРЕУГОЛЬНИК ВНИЗ: начинаем с вершины (50, 100), идём ПО ЧАСОВОЙ
+  List<Offset> _generateTriangleDownPoints() {
+    final points = <Offset>[];
+    final half = _size / 2;
 
-      final newX = dx * math.cos(angle) - dy * math.sin(angle);
-      final newY = dx * math.sin(angle) + dy * math.cos(angle);
+    final pointsPerSide = numSegments ~/ 3;
 
-      return Offset(center.dx + newX, center.dy + newY);
-    }).toList();
+    final bottomVertex = Offset(_center.dx, _center.dy + half);
+    final leftVertex = Offset(_center.dx - half, _center.dy - half);
+    final rightVertex = Offset(_center.dx + half, _center.dy - half);
+
+    // Левая сторона: (50, 100) → (0, 0)
+    for (int i = 0; i < pointsPerSide; i++) {
+      final t = i / pointsPerSide;
+      points.add(Offset.lerp(bottomVertex, leftVertex, t)!);
+    }
+
+    // Верхняя сторона: (0, 0) → (100, 0)
+    for (int i = 0; i < pointsPerSide; i++) {
+      final t = i / pointsPerSide;
+      points.add(Offset.lerp(leftVertex, rightVertex, t)!);
+    }
+
+    // Правая сторона: (100, 0) → (50, 100)
+    for (int i = 0; i < pointsPerSide; i++) {
+      final t = i / pointsPerSide;
+      points.add(Offset.lerp(rightVertex, bottomVertex, t)!);
+    }
+
+    return points;
   }
 
-  /// Масштабирование точек при изменении размера canvas
-  List<Offset> _rescalePoints(
-    List<Offset> points,
-    Offset oldCenter,
-    Offset newCenter,
-    double sizeScale,
-  ) {
-    return points.map((point) {
-      // Переводим в относительные координаты
-      final relativeX = (point.dx - oldCenter.dx) * sizeScale;
-      final relativeY = (point.dy - oldCenter.dy) * sizeScale;
+  // ============================================================
+  // СТАРАЯ СИСТЕМА ДЛЯ ПРЯМОУГОЛЬНЫХ МОРФИНГОВ (треугольник↔квадрат)
+  // ============================================================
 
-      // Применяем новый центр
-      return Offset(newCenter.dx + relativeX, newCenter.dy + relativeY);
-    }).toList();
+  Path _buildGeometricPath(SetShape from, double t, SetShape to) {
+    if ((from == SetShape.square && to == SetShape.triangleUp) ||
+        (from == SetShape.triangleUp && to == SetShape.square)) {
+      final progress = from == SetShape.square ? t : (1.0 - t);
+      return _buildTrapezoidTopNarrowing(progress);
+    }
+
+    if ((from == SetShape.square && to == SetShape.triangleDown) ||
+        (from == SetShape.triangleDown && to == SetShape.square)) {
+      final progress = from == SetShape.square ? t : (1.0 - t);
+      return _buildTrapezoidBottomNarrowing(progress);
+    }
+
+    if ((from == SetShape.triangleUp && to == SetShape.triangleDown) ||
+        (from == SetShape.triangleDown && to == SetShape.triangleUp)) {
+      final progress = from == SetShape.triangleUp ? t : (1.0 - t);
+      return _buildTrapezoidSymmetric(progress);
+    }
+
+    // Fallback
+    return Path()..addOval(Rect.fromCenter(center: _center, width: _size, height: _size));
   }
 
-  /// Текущая форма
+  Path _buildTrapezoidTopNarrowing(double t) {
+    final half = _size / 2;
+
+    final topWidth = _size * (1.0 - t);
+    final topLeft = Offset(_center.dx - topWidth / 2, _center.dy - half);
+    final topRight = Offset(_center.dx + topWidth / 2, _center.dy - half);
+
+    final bottomLeft = Offset(_center.dx - half, _center.dy + half);
+    final bottomRight = Offset(_center.dx + half, _center.dy + half);
+
+    return Path()
+      ..moveTo(bottomLeft.dx, bottomLeft.dy)
+      ..lineTo(topLeft.dx, topLeft.dy)
+      ..lineTo(topRight.dx, topRight.dy)
+      ..lineTo(bottomRight.dx, bottomRight.dy)
+      ..close();
+  }
+
+  Path _buildTrapezoidBottomNarrowing(double t) {
+    final half = _size / 2;
+
+    final topLeft = Offset(_center.dx - half, _center.dy - half);
+    final topRight = Offset(_center.dx + half, _center.dy - half);
+
+    final bottomWidth = _size * (1.0 - t);
+    final bottomLeft = Offset(_center.dx - bottomWidth / 2, _center.dy + half);
+    final bottomRight = Offset(_center.dx + bottomWidth / 2, _center.dy + half);
+
+    return Path()
+      ..moveTo(bottomLeft.dx, bottomLeft.dy)
+      ..lineTo(topLeft.dx, topLeft.dy)
+      ..lineTo(topRight.dx, topRight.dy)
+      ..lineTo(bottomRight.dx, bottomRight.dy)
+      ..close();
+  }
+
+  Path _buildTrapezoidSymmetric(double t) {
+    final half = _size / 2;
+
+    final topWidth = _size * t;
+    final topLeft = Offset(_center.dx - topWidth / 2, _center.dy - half);
+    final topRight = Offset(_center.dx + topWidth / 2, _center.dy - half);
+
+    final bottomWidth = _size * (1.0 - t);
+    final bottomLeft = Offset(_center.dx - bottomWidth / 2, _center.dy + half);
+    final bottomRight = Offset(_center.dx + bottomWidth / 2, _center.dy + half);
+
+    return Path()
+      ..moveTo(bottomLeft.dx, bottomLeft.dy)
+      ..lineTo(topLeft.dx, topLeft.dy)
+      ..lineTo(topRight.dx, topRight.dy)
+      ..lineTo(bottomRight.dx, bottomRight.dy)
+      ..close();
+  }
+
+  List<Offset> _redistributePointsAlongPath(Path path) {
+    final pathMetrics = path.computeMetrics().toList();
+    if (pathMetrics.isEmpty) return List.filled(numSegments, _center);
+
+    final totalLength = pathMetrics.fold(0.0, (sum, m) => sum + m.length);
+    if (totalLength == 0) return List.filled(numSegments, _center);
+
+    final points = <Offset>[];
+
+    for (int i = 0; i < numSegments; i++) {
+      final position = i / numSegments;
+      final distance = position * totalLength;
+      var accumulated = 0.0;
+
+      for (final metric in pathMetrics) {
+        if (accumulated + metric.length >= distance) {
+          final tangent = metric.getTangentForOffset(distance - accumulated);
+          if (tangent != null) {
+            points.add(tangent.position);
+            break;
+          }
+        }
+        accumulated += metric.length;
+      }
+    }
+
+    while (points.length < numSegments) {
+      points.add(_center);
+    }
+
+    return points;
+  }
+
   SetShape get currentShape => _currentShape;
-
-  /// Идёт ли морфинг в данный момент
   bool get isMorphing => _morphProgress < 1.0;
-
-  /// Прогресс морфинга
   double get morphProgress => _morphProgress;
 
   @override

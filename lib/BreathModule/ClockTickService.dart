@@ -9,9 +9,9 @@ class ClockTickService implements ITickService {
   Stream<TickData> get tickStream => _tickController.stream;
 
   void simulateTick() {
-    Timer.periodic(Duration(milliseconds: 2000), (timer) {
+    Timer.periodic(Duration(milliseconds: 1000), (timer) {
       _tickController.add(
-        TickData(Duration(milliseconds: 2000).inMilliseconds),
+        TickData(Duration(milliseconds: 1000).inMilliseconds),
       );
     });
   }

@@ -73,10 +73,7 @@ class BreathAnimationCoordinator {
     }
 
     if (shapeSource?.shape != null) {
-      shapeShifter.morphTo(
-        shapeSource!.shape!,
-        orientation: shapeSource.triangleOrientation,
-      );
+      shapeShifter.morphTo(shapeSource!.shape!);
     }
 
     motionEngine.resetPosition(0.0);

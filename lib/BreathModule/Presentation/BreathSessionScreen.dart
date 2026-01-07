@@ -37,7 +37,6 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
     final firstExercise = viewModel.getNextExerciseWithShape();
     _shapeShifter = BreathShapeShifter(
       initialShape: firstExercise?.shape ?? SetShape.circle,
-      triangleOrientation: firstExercise?.triangleOrientation ?? TriangleOrientation.down
     );
 
     // Инициализируем с примерными размерами СРАЗУ
