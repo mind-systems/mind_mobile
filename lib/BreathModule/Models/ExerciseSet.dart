@@ -17,16 +17,11 @@ class ExerciseSet {
 
   int get cycleDuration => steps.fold(0, (sum, step) => sum + step.duration);
 
-  SetShape get shape {
-    if (steps.length == 2) {
-      return SetShape.circle;
-    } else if (steps.length == 3) {
-      return SetShape.triangle;
-    } else if (steps.length == 4) {
-      return SetShape.square;
-    } else {
-      return SetShape.circle;
-    }
+  SetShape? get shape {
+    if (steps.length == 2) return SetShape.circle;
+    if (steps.length == 3) return SetShape.triangle;
+    if (steps.length == 4) return SetShape.square;
+    return null;
   }
 
   TriangleOrientation get triangleOrientation {

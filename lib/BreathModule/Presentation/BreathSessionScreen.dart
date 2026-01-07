@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathViewModel.dart';
 import 'package:mind/BreathModule/Presentation/Animation/BreathMotionEngine.dart';
@@ -33,10 +34,10 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
 
     // Создаём shapeShifter с начальной формой
     final viewModel = ref.read(breathViewModelProvider.notifier);
-    final firstExercise = viewModel.currentExercise;
+    final firstExercise = viewModel.getNextExerciseWithShape();
     _shapeShifter = BreathShapeShifter(
-      initialShape: firstExercise.shape,
-      triangleOrientation: firstExercise.triangleOrientation
+      initialShape: firstExercise?.shape ?? SetShape.circle,
+      triangleOrientation: firstExercise?.triangleOrientation ?? TriangleOrientation.down
     );
 
     // Инициализируем с примерными размерами СРАЗУ

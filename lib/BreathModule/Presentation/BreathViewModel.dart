@@ -6,6 +6,12 @@ import 'package:mind/BreathModule/Models/ExerciseStep.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionState.dart';
 
+enum ResetReason {
+  newCycle,
+  rest,
+  exerciseChange,
+}
+
 final breathViewModelProvider =
     StateNotifierProvider<BreathViewModel, BreathSessionState>((ref) {
   throw UnimplementedError(
@@ -20,8 +26,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   StreamSubscription<TickData>? _subscription;
 
   // Контроллер для события сброса цикла
-  final _resetController = StreamController<void>.broadcast();
-  Stream<void> get resetStream => _resetController.stream;
+  final _resetController = StreamController<ResetReason>.broadcast();
+  Stream<ResetReason> get resetStream => _resetController.stream;
 
   // Текущее состояние сессии (внутренние счетчики)
   int _exerciseIndex = 0; // индекс упражнения в сете
@@ -227,7 +233,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     _cycleTick = 0;
 
     // Уведомляем о смене контекста (визуально это может быть другая фигура или режим)
-    _resetController.add(null);
+    _resetController.add(ResetReason.rest);
 
     state = state.copyWith(
       status: BreathSessionStatus.rest,
@@ -240,7 +246,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   void _startNewCycle(int intervalMs) {
     // Сигнал для визуального слоя: "Мы начали сначала" (нужен сброс rawPosition)
-    _resetController.add(null);
+    _resetController.add(ResetReason.newCycle);
 
     final stepData = _getCurrentStepData(0);
 
@@ -266,7 +272,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     _repeatCounter = 0;
 
     // Уведомляем о глобальной смене упражнения
-    _resetController.add(null);
+    _resetController.add(ResetReason.exerciseChange);
 
     final nextExercise = session.exercises[_exerciseIndex];
 
@@ -318,6 +324,28 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       phase: _mapStepTypeToPhase(lastStep.type),
       remainingInPhase: 0,
     );
+  }
+
+  // ===== Next exercise (Forecast) =====
+
+  ExerciseSet? getNextExerciseWithShape() {
+    // текущий сет
+    final current = currentExercise;
+
+    // если текущий сет сам имеет форму — она и есть актуальная
+    if (current.steps.isNotEmpty) {
+      return current;
+    }
+
+    // иначе ищем следующий дыхательный сет
+    for (int i = _exerciseIndex + 1; i < session.exercises.length; i++) {
+      final candidate = session.exercises[i];
+      if (candidate.steps.isNotEmpty) {
+        return candidate;
+      }
+    }
+
+    return null;
   }
 
   // ===== Next phase info (Forecast) =====

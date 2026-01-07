@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Presentation/Animation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/Animation/BreathShapeShifter.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionState.dart';
@@ -61,13 +62,22 @@ class BreathAnimationCoordinator {
     }
   }
 
-  void _onReset(void _) {
-    final exercise = viewModel.currentExercise;
+  void _onReset(ResetReason reason) {
+    ExerciseSet? shapeSource;
 
-    shapeShifter.morphTo(
-      exercise.shape,
-      orientation: exercise.triangleOrientation,
-    );
+    if (reason == ResetReason.exerciseChange ||
+        reason == ResetReason.rest) {
+      shapeSource = viewModel.getNextExerciseWithShape();
+    } else {
+      shapeSource = viewModel.currentExercise;
+    }
+
+    if (shapeSource?.shape != null) {
+      shapeShifter.morphTo(
+        shapeSource!.shape!,
+        orientation: shapeSource.triangleOrientation,
+      );
+    }
 
     motionEngine.resetPosition(0.0);
   }
