@@ -195,8 +195,8 @@ class BreathShapeShifter extends ChangeNotifier {
     final points = <Offset>[];
 
     for (int i = 0; i < numSegments; i++) {
-      // Начинаем с -π/2 (верхняя точка)
-      final angle = -math.pi / 2 + (i / numSegments) * 2 * math.pi;
+      // Начинаем с -π/2 (нижняя точка)
+      final angle = math.pi / 2 + (i / numSegments) * 2 * math.pi;
       points.add(Offset(
         _center.dx + radius * math.cos(angle),
         _center.dy + radius * math.sin(angle),
@@ -209,90 +209,92 @@ class BreathShapeShifter extends ChangeNotifier {
   /// Генерация точек квадрата (старт с верхней центральной точки)
   /// 4 стороны × 30 точек = 120 точек
   List<Offset> _generateSquarePoints() {
-    final halfSize = _size / 2;
-    final pointsPerSide = numSegments ~/ 4; // 30
+    final half = _size / 2;
+    final n = numSegments ~/ 4;
     final points = <Offset>[];
 
-    // Верхняя сторона: слева направо (начинаем с центра верхней стороны)
-    for (int i = 0; i < pointsPerSide; i++) {
-      final progress = i / pointsPerSide;
+    // 1. Левая сторона: снизу вверх (ВДОХ)
+    for (int i = 0; i < n; i++) {
+      final t = i / n;
       points.add(Offset(
-        _center.dx - halfSize + _size * progress,
-        _center.dy - halfSize,
+        _center.dx - half,
+        _center.dy + half - _size * t,
       ));
     }
 
-    // Правая сторона: сверху вниз
-    for (int i = 0; i < pointsPerSide; i++) {
-      final progress = i / pointsPerSide;
+    // 2. Верхняя сторона: слева направо (ЗАДЕРЖКА)
+    for (int i = 0; i < n; i++) {
+      final t = i / n;
       points.add(Offset(
-        _center.dx + halfSize,
-        _center.dy - halfSize + _size * progress,
+        _center.dx - half + _size * t,
+        _center.dy - half,
       ));
     }
 
-    // Нижняя сторона: справа налево
-    for (int i = 0; i < pointsPerSide; i++) {
-      final progress = i / pointsPerSide;
+    // 3. Правая сторона: сверху вниз (ВЫДОХ)
+    for (int i = 0; i < n; i++) {
+      final t = i / n;
       points.add(Offset(
-        _center.dx + halfSize - _size * progress,
-        _center.dy + halfSize,
+        _center.dx + half,
+        _center.dy - half + _size * t,
       ));
     }
 
-    // Левая сторона: снизу вверх
-    for (int i = 0; i < pointsPerSide; i++) {
-      final progress = i / pointsPerSide;
+    // 4. Нижняя сторона: справа налево (ЗАДЕРЖКА)
+    for (int i = 0; i < n; i++) {
+      final t = i / n;
       points.add(Offset(
-        _center.dx - halfSize,
-        _center.dy + halfSize - _size * progress,
+        _center.dx + half - _size * t,
+        _center.dy + half,
       ));
     }
 
     return points;
   }
 
-  /// Генерация точек треугольника (старт с верхней вершины)
+  /// Генерация точек треугольника (старт с верхней или нижней вершины в зависимости от ориентации)
   /// 3 стороны × 40 точек = 120 точек
+  /// Обход всегда по часовой стрелке
   List<Offset> _generateTrianglePoints(TriangleOrientation orientation) {
     final radius = _size / 2;
     final pointsPerSide = numSegments ~/ 3; // 40
-    final points = <Offset>[];
+    var points = <Offset>[];
 
-    // Вершины равностороннего треугольника (вершина вверх)
-    final topVertex = Offset(_center.dx, _center.dy - radius);
-    final rightVertex = Offset(
-      _center.dx + radius * math.cos(math.pi / 6),
-      _center.dy + radius * math.sin(math.pi / 6),
-    );
-    final leftVertex = Offset(
+    // Базовые вершины для ориентации up (вершина сверху)
+    Offset topVertex = Offset(_center.dx, _center.dy - radius);
+    Offset leftVertex = Offset(
       _center.dx - radius * math.cos(math.pi / 6),
       _center.dy + radius * math.sin(math.pi / 6),
     );
+    Offset rightVertex = Offset(
+      _center.dx + radius * math.cos(math.pi / 6),
+      _center.dy + radius * math.sin(math.pi / 6),
+    );
 
-    List<Offset> vertices = [topVertex, rightVertex, leftVertex];
+    List<Offset> vertices = [topVertex, rightVertex, leftVertex]; // Clockwise: top -> right -> left
 
-    // Поворот для ориентации вниз
     if (orientation == TriangleOrientation.down) {
+      // Поворачиваем на 180° для вершины снизу (без инверсии направления, так как поворот сохраняет ориентацию)
       vertices = _rotatePoints(vertices, _center, math.pi);
     }
 
-    // Сторона 1: от vertices[0] к vertices[1]
+    // Генерация точек по сторонам
     for (int i = 0; i < pointsPerSide; i++) {
-      final progress = i / pointsPerSide;
+      final progress = i / pointsPerSide.toDouble();
       points.add(Offset.lerp(vertices[0], vertices[1], progress)!);
     }
-
-    // Сторона 2: от vertices[1] к vertices[2]
     for (int i = 0; i < pointsPerSide; i++) {
-      final progress = i / pointsPerSide;
+      final progress = i / pointsPerSide.toDouble();
       points.add(Offset.lerp(vertices[1], vertices[2], progress)!);
     }
-
-    // Сторона 3: от vertices[2] к vertices[0]
     for (int i = 0; i < pointsPerSide; i++) {
-      final progress = i / pointsPerSide;
+      final progress = i / pointsPerSide.toDouble();
       points.add(Offset.lerp(vertices[2], vertices[0], progress)!);
+    }
+
+    // Для ориентации up (когда hold третий шаг) сдвигаем точки, чтобы начинать с левого угла и hold был на третьей стороне (основании)
+    if (orientation == TriangleOrientation.up) {
+      points = points.sublist(80) + points.sublist(0, 80);
     }
 
     return points;
