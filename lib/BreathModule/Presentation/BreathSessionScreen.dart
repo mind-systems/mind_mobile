@@ -7,7 +7,7 @@ import 'package:mind/BreathModule/Presentation/BreathViewModel.dart';
 import 'package:mind/BreathModule/Presentation/Animation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/Animation/BreathShapeShifter.dart';
 import 'package:mind/BreathModule/Presentation/Animation/BreathAnimationCoordinator.dart';
-import 'package:mind/BreathModule/Presentation/Views/BreathWidget.dart';
+import 'package:mind/BreathModule/Presentation/Views/BreathShapeWidget.dart';
 
 /// Экран дыхательной сессии
 class BreathSessionScreen extends ConsumerStatefulWidget {
