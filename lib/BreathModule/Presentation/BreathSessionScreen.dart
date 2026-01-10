@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionState.dart';
+import 'package:mind/BreathModule/Presentation/Models/TimelineStep.dart';
+import 'package:mind/BreathModule/Presentation/Models/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathViewModel.dart';
 import 'package:mind/BreathModule/Presentation/Animation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/Animation/BreathShapeShifter.dart';
 import 'package:mind/BreathModule/Presentation/Animation/BreathAnimationCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/Views/BreathShapeWidget.dart';
+import 'package:mind/BreathModule/Presentation/Views/BreathTimelineWidget.dart';
 
 /// Экран дыхательной сессии
 class BreathSessionScreen extends ConsumerStatefulWidget {
@@ -24,6 +26,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
   late final BreathMotionEngine _motionEngine;
   late final BreathShapeShifter _shapeShifter;
   late final BreathAnimationCoordinator _coordinator;
+  late final ScrollController _scrollController;
 
   @override
   void initState() {
@@ -32,15 +35,11 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
     // Создаём motionEngine
     _motionEngine = BreathMotionEngine(this);
 
-    // Создаём shapeShifter с начальной формой
     final viewModel = ref.read(breathViewModelProvider.notifier);
     final firstExercise = viewModel.getNextExerciseWithShape();
-    _shapeShifter = BreathShapeShifter(
-      initialShape: firstExercise?.shape ?? SetShape.circle,
-    );
 
-    // Инициализируем с примерными размерами СРАЗУ
-    // Это предотвратит краш при первой отрисовке
+    // Создаём shapeShifter с начальной формой
+    _shapeShifter = BreathShapeShifter(initialShape: firstExercise?.shape ?? SetShape.circle);
     _shapeShifter.initialize(const Offset(100, 100), 200, this);
 
     // Создаём и инициализируем координатор после инициализации shapeShifter
@@ -50,6 +49,8 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
       viewModel: viewModel,
     );
 
+    _scrollController = ScrollController();
+
     // Инициализация coordinator после первого рендера
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final initialState = ref.read(breathViewModelProvider);
@@ -57,7 +58,17 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
 
       // Запускаем сессию
       viewModel.initState();
+      _scrollToActive(initialState.activeStepId);
     });
+
+    ref.listenManual<BreathSessionState>(
+      breathViewModelProvider,
+      (prev, next) {
+        if (prev?.activeStepId != next.activeStepId) {
+          _scrollToActive(next.activeStepId);
+        }
+      },
+    );
   }
 
   @override
@@ -65,7 +76,35 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
     _coordinator.dispose();
     _motionEngine.dispose();
     _shapeShifter.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToActive(String? activeStepId) {
+    if (!_scrollController.hasClients) return;
+
+    final viewportHeight = _scrollController.position.viewportDimension;
+    if (viewportHeight == 0) return;
+
+    const itemHeight = 48.0;
+    const separatorHeight = 0.5;
+
+    final steps = ref.read(breathViewModelProvider).timelineSteps;
+    final activeIndex = steps.indexWhere((s) => s.id == activeStepId);
+
+    double offset = 0.0;
+    for (int i = 0; i < activeIndex; i++) {
+      offset += steps[i].type == TimelineStepType.separator ? separatorHeight : itemHeight;
+    }
+
+    _scrollController.animateTo(
+      offset.clamp(
+        _scrollController.position.minScrollExtent,
+        _scrollController.position.maxScrollExtent,
+      ),
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeInOutCubic,
+    );
   }
 
   @override
@@ -77,6 +116,10 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
       builder: (context, constraints) {
         final screenWidth = MediaQuery.of(context).size.width;
         final shapeDimension = screenWidth * 0.7;
+        const itemHeight = 48.0; // todo copypaste from BreathTimelineWidget!
+        final timelineHeight = itemHeight * 4.5;
+
+        final phaseInfo = viewModel.getCurrentPhaseInfo();
 
         return Scaffold(
           backgroundColor: const Color(0xFF0A0E27),
@@ -92,32 +135,44 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
                     child: SizedBox(
                       width: shapeDimension,
                       height: shapeDimension,
-                      child: BreathShapeWidget(
-                        motionController: _motionEngine,
-                        shapeController: _shapeShifter,
-                        shapeColor: const Color(0xFF00D9FF),
-                        pointColor: Colors.white,
-                        strokeWidth: 3.0,
-                        pointRadius: 6.0,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          BreathShapeWidget(
+                            motionController: _motionEngine,
+                            shapeController: _shapeShifter,
+                            shapeColor: const Color(0xFF00D9FF),
+                            pointColor: Colors.white,
+                            strokeWidth: 3.0,
+                            pointRadius: 6.0,
+                          ),
+                          if (state.status != BreathSessionStatus.complete)
+                            Text(
+                              '${phaseInfo.remainingInPhase}',
+                              style: const TextStyle(
+                                color: Color(0xFF00D9FF),
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
 
-                  // Информационная панель
+                  SizedBox(
+                    height: timelineHeight,
+                    child: BreathTimelineWidget(
+                      steps: state.timelineSteps,
+                      activeStepId: state.activeStepId,
+                      scrollController: _scrollController,
+                      status: state.status,
+                    ),
+                  ),
+
                   Padding(
                     padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Текущая и следующая фаза
-                        _buildPhaseInfo(state, viewModel),
-
-                        const SizedBox(height: 40),
-
-                        // Кнопка управления паузой/продолжением
-                        _buildControlButton(state, viewModel),
-                      ],
-                    ),
+                    child: _buildControlButton(state, viewModel),
                   ),
                 ],
               ),
@@ -125,90 +180,6 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
           ),
         );
       },
-    );
-  }
-
-  Widget _buildPhaseInfo(BreathSessionState state, BreathViewModel viewModel) {
-    // Текущая фаза
-    String currentPhaseText;
-    switch (state.phase) {
-      case BreathPhase.inhale:
-        currentPhaseText = 'Inhale';
-        break;
-      case BreathPhase.hold:
-        currentPhaseText = 'Hold';
-        break;
-      case BreathPhase.exhale:
-        currentPhaseText = 'Exhale';
-        break;
-      case BreathPhase.rest:
-        currentPhaseText = 'Rest';
-        break;
-    }
-
-    if (state.status == BreathSessionStatus.complete) {
-      currentPhaseText = 'Session Complete';
-    }
-
-    // Следующая фаза
-    String? nextPhaseText;
-    if (state.status != BreathSessionStatus.complete) {
-      final nextPhaseInfo = viewModel.getNextPhaseInfo();
-      if (nextPhaseInfo != null) {
-        switch (nextPhaseInfo.phase) {
-          case BreathPhase.inhale:
-            nextPhaseText = 'Next: Inhale ${nextPhaseInfo.duration}';
-            break;
-          case BreathPhase.hold:
-            nextPhaseText = 'Next: Hold ${nextPhaseInfo.duration}';
-            break;
-          case BreathPhase.exhale:
-            nextPhaseText = 'Next: Exhale ${nextPhaseInfo.duration}';
-            break;
-          case BreathPhase.rest:
-            nextPhaseText = 'Next: Rest ${nextPhaseInfo.duration}';
-            break;
-        }
-      }
-    }
-
-    return Column(
-      children: [
-        // Текущая фаза
-        Text(
-          currentPhaseText,
-          style: const TextStyle(
-            color: Color(0xFF00D9FF),
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Оставшееся время
-        if (state.status != BreathSessionStatus.complete)
-          Text(
-            '${viewModel.getCurrentPhaseInfo().remainingInPhase}',
-            style: const TextStyle(
-              color: Color.fromRGBO(255, 255, 255, 0.8),
-              fontSize: 24,
-              fontWeight: FontWeight.w300,
-            ),
-          ),
-
-        // Следующая фаза
-        if (nextPhaseText != null) ...[
-          const SizedBox(height: 20),
-          Text(
-            nextPhaseText,
-            style: const TextStyle(
-              color: Color.fromRGBO(255, 255, 255, 0.5),
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
-      ],
     );
   }
 

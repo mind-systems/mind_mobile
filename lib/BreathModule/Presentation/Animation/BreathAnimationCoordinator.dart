@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Presentation/Animation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/Animation/BreathShapeShifter.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionState.dart';
+import 'package:mind/BreathModule/Presentation/Models/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathViewModel.dart';
 
 class BreathAnimationCoordinator {

@@ -1,0 +1,165 @@
+import 'package:flutter/material.dart';
+import 'package:mind/BreathModule/Presentation/Models/TimelineStep.dart';
+import 'package:mind/BreathModule/Presentation/Models/BreathSessionState.dart';
+
+class BreathTimelineWidget extends StatefulWidget {
+  final List<TimelineStep> steps;
+  final String? activeStepId;
+  final ScrollController scrollController;
+  final BreathSessionStatus? status;
+
+  final double itemHeight;
+  final double fadeExtent;
+
+  const BreathTimelineWidget({
+    super.key,
+    required this.steps,
+    required this.activeStepId,
+    required this.scrollController,
+    this.status,
+    this.itemHeight = 48.0,
+    this.fadeExtent = 0.15, // доля высоты под fade сверху/снизу
+  });
+
+  @override
+  State<BreathTimelineWidget> createState() => _BreathTimelineWidgetState();
+}
+
+class _BreathTimelineWidgetState extends State<BreathTimelineWidget> {
+  @override
+  Widget build(BuildContext context) {
+    final isPausedOrComplete =
+        widget.status == BreathSessionStatus.pause ||
+            widget.status == BreathSessionStatus.complete;
+
+    final isComplete = widget.status == BreathSessionStatus.complete;
+
+    return SizedBox(
+      width: double.infinity,
+      child: Opacity(
+        opacity: isComplete ? 0.5 : 1.0,
+        child: ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (rect) {
+            final fade = widget.fadeExtent.clamp(0.0, 0.4);
+            return LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: const [
+                Colors.transparent,
+                Colors.white,
+                Colors.white,
+                Colors.transparent,
+              ],
+              stops: [
+                0.0,
+                fade,
+                1.0 - fade,
+                1.0,
+              ],
+            ).createShader(rect);
+          },
+          child: _buildList(isPausedOrComplete),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildList(bool isPausedOrComplete) {
+    return ListView.builder(
+      controller: widget.scrollController,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(vertical: widget.itemHeight),
+      itemCount: widget.steps.length,
+      itemBuilder: (context, index) {
+        final step = widget.steps[index];
+        final isActive = step.id == widget.activeStepId;
+
+        if (step.type == TimelineStepType.separator) {
+          return _buildSeparator(step);
+        }
+
+        return SizedBox(
+          height: widget.itemHeight,
+          child: _TimelineItem(
+            step: step,
+            index: index,
+            isActive: isActive,
+            isPausedOrComplete: isPausedOrComplete,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSeparator(TimelineStep step) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Container(
+        width: double.infinity,
+        height: 1,
+        color: Colors.white.withValues(alpha: 0.15),
+      ),
+    );
+  }
+}
+
+class _TimelineItem extends StatelessWidget {
+  final TimelineStep step;
+  final int index;
+  final bool isActive;
+  final bool isPausedOrComplete;
+
+  const _TimelineItem({
+    required this.step,
+    required this.index,
+    required this.isActive,
+    required this.isPausedOrComplete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final opacity = isActive ? 1.0 : 0.6;
+    final scale = isActive ? 1.15 : 1.0;
+    final color =
+    isActive ? const Color(0xFF00D9FF) : Colors.white.withValues(alpha: 0.45);
+
+    return Center(
+      child: AnimatedScale(
+        scale: scale,
+        duration:
+        isPausedOrComplete ? Duration.zero : const Duration(milliseconds: 280),
+        curve: Curves.easeOut,
+        child: AnimatedOpacity(
+          opacity: opacity,
+          duration:
+          isPausedOrComplete ? Duration.zero : const Duration(milliseconds: 280),
+          child: Text(
+            _label(step),
+            style: TextStyle(
+              fontSize: isActive ? 22 : 16,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+              color: color,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _label(TimelineStep step) {
+    switch (step.type) {
+      case TimelineStepType.inhale:
+        return 'Inhale ${step.duration}';
+      case TimelineStepType.hold:
+        return 'Hold ${step.duration}';
+      case TimelineStepType.exhale:
+        return 'Exhale ${step.duration}';
+      case TimelineStepType.rest:
+        return 'Rest ${step.duration}';
+      case TimelineStepType.separator:
+        return '';
+    }
+  }
+}

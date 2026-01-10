@@ -1,3 +1,5 @@
+import 'package:mind/BreathModule/Presentation/Models/TimelineStep.dart';
+
 enum BreathSessionStatus { pause, breath, rest, complete }
 enum BreathPhase { inhale, hold, exhale, rest }
 
@@ -14,12 +16,17 @@ class BreathSessionState {
   /// Интервал от предыдущего тика до текущего в миллисекундах
   final int currentIntervalMs;
 
+  final List<TimelineStep> timelineSteps;
+  final String? activeStepId;
+
   const BreathSessionState({
     required this.status,
     required this.phase,
     required this.exerciseIndex,
     required this.remainingTicks,
     required this.currentIntervalMs,
+    this.timelineSteps = const [],
+    this.activeStepId,
   });
 
   factory BreathSessionState.initial() => const BreathSessionState(
@@ -28,6 +35,8 @@ class BreathSessionState {
     exerciseIndex: 0,
     remainingTicks: 0,
     currentIntervalMs: -1,
+    timelineSteps: [],
+    activeStepId: null,
   );
 
   BreathSessionState copyWith({
@@ -36,6 +45,8 @@ class BreathSessionState {
     int? exerciseIndex,
     int? remainingTicks,
     int? currentIntervalMs,
+    List<TimelineStep>? timelineSteps,
+    String? activeStepId,
   }) {
     return BreathSessionState(
       status: status ?? this.status,
@@ -43,6 +54,8 @@ class BreathSessionState {
       exerciseIndex: exerciseIndex ?? this.exerciseIndex,
       remainingTicks: remainingTicks ?? this.remainingTicks,
       currentIntervalMs: currentIntervalMs ?? this.currentIntervalMs,
+      timelineSteps: timelineSteps ?? this.timelineSteps,
+      activeStepId: activeStepId ?? this.activeStepId,
     );
   }
 }
