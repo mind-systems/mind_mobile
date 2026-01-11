@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
-import 'package:mind/BreathModule/Presentation/Models/TimelineStep.dart';
 import 'package:mind/BreathModule/Presentation/Models/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathViewModel.dart';
 import 'package:mind/BreathModule/Presentation/Animation/BreathMotionEngine.dart';
@@ -27,6 +26,9 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
   late final BreathShapeShifter _shapeShifter;
   late final BreathAnimationCoordinator _coordinator;
   late final ScrollController _scrollController;
+
+  // GlobalKey для доступа к методам BreathTimelineWidget
+  final GlobalKey<BreathTimelineWidgetState> _timelineKey = GlobalKey();
 
   @override
   void initState() {
@@ -81,30 +83,35 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
   }
 
   void _scrollToActive(String? activeStepId) {
-    if (!_scrollController.hasClients) return;
+    if (activeStepId == null || !_scrollController.hasClients) return;
 
-    final viewportHeight = _scrollController.position.viewportDimension;
-    if (viewportHeight == 0) return;
+    // Даём время на layout, потом получаем реальную координату
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final timelineState = _timelineKey.currentState;
+      if (timelineState == null) return;
 
-    const itemHeight = 48.0;
-    const separatorHeight = 0.5;
+      final itemOffset = timelineState.getItemOffsetById(activeStepId);
+      if (itemOffset == null) return;
 
-    final steps = ref.read(breathViewModelProvider).timelineSteps;
-    final activeIndex = steps.indexWhere((s) => s.id == activeStepId);
+      final viewportHeight = _scrollController.position.viewportDimension;
 
-    double offset = 0.0;
-    for (int i = 0; i < activeIndex; i++) {
-      offset += steps[i].type == TimelineStepType.separator ? separatorHeight : itemHeight;
-    }
+      // Центрируем элемент в viewport
+      // itemOffset - это позиция элемента ВНУТРИ BreathTimelineWidget (который скроллится через ListView)
+      // Но погоди, BreathTimelineWidget возвращает offset относительно себя (своего RenderBox).
+      // А ListView внутри него.
+      // Если мы хотим центрировать, нам нужно знать где этот элемент относительно видимой области.
 
-    _scrollController.animateTo(
-      offset.clamp(
-        _scrollController.position.minScrollExtent,
-        _scrollController.position.maxScrollExtent,
-      ),
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeInOutCubic,
-    );
+      final targetScroll = _scrollController.offset + itemOffset - (viewportHeight / 3);
+
+      _scrollController.animateTo(
+        targetScroll.clamp(
+          _scrollController.position.minScrollExtent,
+          _scrollController.position.maxScrollExtent,
+        ),
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOutCubic,
+      );
+    });
   }
 
   @override
@@ -163,10 +170,12 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
                   SizedBox(
                     height: timelineHeight,
                     child: BreathTimelineWidget(
+                      key: _timelineKey,
                       steps: state.timelineSteps,
                       activeStepId: state.activeStepId,
                       scrollController: _scrollController,
                       status: state.status,
+                      itemHeight: itemHeight,
                     ),
                   ),
 

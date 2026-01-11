@@ -22,10 +22,54 @@ class BreathTimelineWidget extends StatefulWidget {
   });
 
   @override
-  State<BreathTimelineWidget> createState() => _BreathTimelineWidgetState();
+  State<BreathTimelineWidget> createState() => BreathTimelineWidgetState();
 }
 
-class _BreathTimelineWidgetState extends State<BreathTimelineWidget> {
+class BreathTimelineWidgetState extends State<BreathTimelineWidget> {
+  // Карта для хранения GlobalKey каждого элемента
+  final Map<String, GlobalKey> _itemKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _updateKeys();
+  }
+
+  @override
+  void didUpdateWidget(BreathTimelineWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Обновляем ключи если список шагов изменился
+    if (widget.steps != oldWidget.steps) {
+      _updateKeys();
+    }
+  }
+
+  void _updateKeys() {
+    _itemKeys.clear();
+    for (final step in widget.steps) {
+      if (step.id != null) {
+        _itemKeys[step.id!] = GlobalKey();
+      }
+    }
+  }
+
+  /// Получить Y-координату элемента по ID
+  double? getItemOffsetById(String id) {
+    final key = _itemKeys[id];
+    if (key == null) return null;
+
+    final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null || !renderBox.hasSize) return null;
+
+    // Получаем позицию относительно ListView (который является context этого виджета или его частью)
+    // В данном случае context.findRenderObject() вернет RenderBox всего BreathTimelineWidget
+    final listRenderBox = context.findRenderObject() as RenderBox?;
+    if (listRenderBox == null) return null;
+
+    final offset = renderBox.localToGlobal(Offset.zero, ancestor: listRenderBox);
+    return offset.dy;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isPausedOrComplete =
@@ -80,6 +124,7 @@ class _BreathTimelineWidgetState extends State<BreathTimelineWidget> {
         }
 
         return SizedBox(
+          key: step.id != null ? _itemKeys[step.id!] : null,
           height: widget.itemHeight,
           child: _TimelineItem(
             step: step,
