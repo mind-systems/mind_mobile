@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mind/BreathModule/Presentation/Models/TimelineStep.dart';
-import 'package:mind/BreathModule/Presentation/Models/BreathSessionState.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
 
 class BreathTimelineWidget extends StatefulWidget {
   final List<TimelineStep> steps;

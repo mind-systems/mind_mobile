@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
-import 'package:mind/BreathModule/Presentation/Animation/BreathMotionEngine.dart';
-import 'package:mind/BreathModule/Presentation/Animation/BreathShapeShifter.dart';
-import 'package:mind/BreathModule/Presentation/Models/BreathSessionState.dart';
-import 'package:mind/BreathModule/Presentation/BreathViewModel.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMotionEngine.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathShapeShifter.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
 
 class BreathAnimationCoordinator {
   final BreathMotionEngine motionEngine;

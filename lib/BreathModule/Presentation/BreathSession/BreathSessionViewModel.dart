@@ -4,8 +4,8 @@ import 'package:mind/BreathModule/ITickService.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
-import 'package:mind/BreathModule/Presentation/Models/TimelineStep.dart';
-import 'package:mind/BreathModule/Presentation/Models/BreathSessionState.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
 
 enum ResetReason {
   newCycle,

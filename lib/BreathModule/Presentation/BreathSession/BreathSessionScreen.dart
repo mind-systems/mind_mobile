@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
-import 'package:mind/BreathModule/Presentation/Models/BreathSessionState.dart';
-import 'package:mind/BreathModule/Presentation/BreathViewModel.dart';
-import 'package:mind/BreathModule/Presentation/Animation/BreathMotionEngine.dart';
-import 'package:mind/BreathModule/Presentation/Animation/BreathShapeShifter.dart';
-import 'package:mind/BreathModule/Presentation/Animation/BreathAnimationCoordinator.dart';
-import 'package:mind/BreathModule/Presentation/Views/BreathShapeWidget.dart';
-import 'package:mind/BreathModule/Presentation/Views/BreathTimelineWidget.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMotionEngine.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathShapeShifter.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathAnimationCoordinator.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Views/BreathShapeWidget.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Views/BreathTimelineWidget.dart';
 
 /// Экран дыхательной сессии
 class BreathSessionScreen extends ConsumerStatefulWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionScreen.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
 import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
 
 class HomePage extends StatefulWidget {

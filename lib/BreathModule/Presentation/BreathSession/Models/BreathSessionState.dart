@@ -1,4 +1,4 @@
-import 'package:mind/BreathModule/Presentation/Models/TimelineStep.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep.dart';
 
 enum BreathSessionStatus { pause, breath, rest, complete }
 enum BreathPhase { inhale, hold, exhale, rest }

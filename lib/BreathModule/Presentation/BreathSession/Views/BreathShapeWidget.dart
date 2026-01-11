@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
-import 'package:mind/BreathModule/Presentation/Animation/BreathMotionEngine.dart';
-import 'package:mind/BreathModule/Presentation/Animation/BreathShapeShifter.dart';
-import 'package:mind/BreathModule/Presentation/Views/BreathShapePainter.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMotionEngine.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathShapeShifter.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Views/BreathShapePainter.dart';
 
 class BreathShapeWidget extends StatelessWidget {
   final BreathMotionEngine motionController;

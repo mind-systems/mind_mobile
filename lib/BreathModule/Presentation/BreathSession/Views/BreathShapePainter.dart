@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mind/BreathModule/Presentation/Animation/BreathShapeShifter.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathShapeShifter.dart';
 
 /// CustomPainter для отрисовки дыхательной фигуры с анимированной точкой.
 /// Получает готовую геометрию из BreathShapeShifter, который управляет морфингом между формами.
