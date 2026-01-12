@@ -6,7 +6,7 @@ import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSe
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Views/ExerciseEditCell.dart';
 
 /// Экран конструктора дыхательных сессий
-class BreathSessionConstructorScreen extends ConsumerStatefulWidget {
+class BreathSessionConstructorScreen extends ConsumerWidget {
   const BreathSessionConstructorScreen({
     super.key,
     this.initialSession,
@@ -17,52 +17,19 @@ class BreathSessionConstructorScreen extends ConsumerStatefulWidget {
   static String name = 'breath_session_constructor';
   static String path = '/$name';
 
-  @override
-  ConsumerState<BreathSessionConstructorScreen> createState() =>
-      _BreathSessionConstructorScreenState();
-}
-
-class _BreathSessionConstructorScreenState
-    extends ConsumerState<BreathSessionConstructorScreen> {
-  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
-
-  @override
-  void initState() {
-    super.initState();
+  void _addExercise(WidgetRef ref) {
+    ref.read(breathSessionConstructorProvider.notifier).addExercise();
   }
 
-  void _addExercise() {
-    final provider = breathSessionConstructorProvider;
-    final currentExerciseCount = ref.read(provider).exercises.length;
-
-    ref.read(provider.notifier).addExercise();
-
-    // Анимация добавления
-    _listKey.currentState?.insertItem(currentExerciseCount);
+  void _removeExercise(WidgetRef ref, String id) {
+    ref.read(breathSessionConstructorProvider.notifier).removeExercise(id);
   }
 
-  void _removeExercise(String id, int index) {
-    final provider = breathSessionConstructorProvider;
-    final exercise = ref.read(provider).exercises[index];
-
-    // Анимация удаления
-    _listKey.currentState?.removeItem(
-      index,
-      (context, animation) => _buildExerciseItem(exercise, animation, index),
-      duration: const Duration(milliseconds: 300),
-    );
-
-    // Удаляем из стейта после анимации
-    Future.delayed(const Duration(milliseconds: 300), () {
-      ref.read(provider.notifier).removeExercise(id);
-    });
-  }
-
-  Future<void> _saveSession() async {
+  Future<void> _saveSession(BuildContext context, WidgetRef ref) async {
     final vm = ref.read(breathSessionConstructorProvider.notifier);
 
     if (!vm.canSave) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please configure at least one valid exercise'),
@@ -73,7 +40,7 @@ class _BreathSessionConstructorScreenState
     }
 
     // Диалог для ввода имени сессии
-    final name = await _showNameDialog();
+    final name = await _showNameDialog(context);
     if (name == null) return;
 
     // Сборка сессии
@@ -82,7 +49,7 @@ class _BreathSessionConstructorScreenState
     // TODO: Сохранение в репозиторий (SharedPreferences / SQLite)
     // await ref.read(sessionRepositoryProvider).saveSession(name, session);
 
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     // Показываем подтверждение
     ScaffoldMessenger.of(context).showSnackBar(
@@ -93,16 +60,10 @@ class _BreathSessionConstructorScreenState
     );
 
     // TODO: Навигация на экран сессии или закрытие
-    // Navigator.pushReplacementNamed(
-    //   context,
-    //   BreathSessionScreen.path,
-    //   arguments: session,
-    // );
-
     Navigator.pop(context);
   }
 
-  Future<String?> _showNameDialog() async {
+  Future<String?> _showNameDialog(BuildContext context) async {
     final controller = TextEditingController();
     final now = DateTime.now();
     final defaultName = 'Practice ${now.day}.${now.month}.${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}';
@@ -166,28 +127,11 @@ class _BreathSessionConstructorScreenState
     return '${secs}s';
   }
 
-  Widget _buildExerciseItem(dynamic exercise, Animation<double> animation, int index) {
-    return SizeTransition(
-      sizeFactor: animation,
-      child: FadeTransition(
-        opacity: animation,
-        child: ExerciseEditCell(
-          key: ValueKey(exercise.id),
-          model: exercise,
-          onChanged: (updated) => ref
-              .read(breathSessionConstructorProvider.notifier)
-              .updateExercise(exercise.id, updated),
-          onDelete: () => _removeExercise(exercise.id, index),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddButton() {
+  Widget _buildAddButton(WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: OutlinedButton.icon(
-        onPressed: _addExercise,
+        onPressed: () => _addExercise(ref),
         icon: const Icon(Icons.add, color: Color(0xFF00D9FF)),
         label: const Text(
           'Add exercise',
@@ -212,75 +156,38 @@ class _BreathSessionConstructorScreenState
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.air,
-              size: 64,
-              color: Colors.white.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No exercises yet',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Tap "Add exercise" to start building your practice',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.3),
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildAddButton(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExercisesList(List<dynamic> exercises) {
+  Widget _buildExercisesList(List<dynamic> exercises, WidgetRef ref) {
     return NotificationListener<ScrollUpdateNotification>(
       onNotification: (notification) {
-        // Схлопываем клавиатуру при свайпе вниз
-        if (notification.scrollDelta != null && notification.scrollDelta! < 0) {
-          FocusScope.of(context).unfocus();
+        if (notification.scrollDelta != null &&
+            notification.scrollDelta! < 0) {
+          FocusScope.of(notification.context!).unfocus();
         }
         return false;
       },
-      child: AnimatedList(
-        key: _listKey,
+      child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        initialItemCount: exercises.length + 1,
-        itemBuilder: (context, index, animation) {
-          if (index >= exercises.length + 1) {
-            return const SizedBox.shrink();
-          }
-
+        itemCount: exercises.length + 1,
+        itemBuilder: (context, index) {
           if (index < exercises.length) {
             final exercise = exercises[index];
-            return _buildExerciseItem(exercise, animation, index);
+            return ExerciseEditCell(
+              key: ValueKey(exercise.id),
+              model: exercise,
+              onChanged: (updated) => ref
+                  .read(breathSessionConstructorProvider.notifier)
+                  .updateExercise(exercise.id, updated),
+              onDelete: () => _removeExercise(ref, exercise.id),
+            );
           }
 
-          return _buildAddButton();
+          return _buildAddButton(ref);
         },
       ),
     );
   }
 
-  Widget _buildFooter(int totalDuration) {
+  Widget _buildFooter(BuildContext context, WidgetRef ref, int totalDuration) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1A2433).withValues(alpha: 0.5),
@@ -317,7 +224,7 @@ class _BreathSessionConstructorScreenState
             ],
           ),
           ElevatedButton(
-            onPressed: _saveSession,
+            onPressed: () => _saveSession(context, ref),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00D9FF),
               foregroundColor: const Color(0xFF0A0E27),
@@ -344,7 +251,7 @@ class _BreathSessionConstructorScreenState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(breathSessionConstructorProvider);
     final exercises = state.exercises;
     final totalDuration = state.totalDuration;
@@ -356,11 +263,9 @@ class _BreathSessionConstructorScreenState
         child: Column(
           children: [
             Expanded(
-              child: exercises.isEmpty
-                  ? _buildEmptyState()
-                  : _buildExercisesList(exercises),
+              child: _buildExercisesList(exercises, ref),
             ),
-            _buildFooter(totalDuration),
+            _buildFooter(context, ref, totalDuration),
           ],
         ),
       ),
