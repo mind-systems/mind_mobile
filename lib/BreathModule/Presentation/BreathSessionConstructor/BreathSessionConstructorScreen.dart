@@ -183,7 +183,7 @@ class _BreathSessionConstructorScreenState
     );
   }
 
-  Widget _buildAddButtonItem() {
+  Widget _buildAddButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: OutlinedButton.icon(
@@ -212,156 +212,155 @@ class _BreathSessionConstructorScreenState
     );
   }
 
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.air,
+              size: 64,
+              color: Colors.white.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No exercises yet',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tap "Add exercise" to start building your practice',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.3),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 24),
+            _buildAddButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExercisesList(List<dynamic> exercises) {
+    return NotificationListener<ScrollUpdateNotification>(
+      onNotification: (notification) {
+        // Схлопываем клавиатуру при свайпе вниз
+        if (notification.scrollDelta != null && notification.scrollDelta! < 0) {
+          FocusScope.of(context).unfocus();
+        }
+        return false;
+      },
+      child: AnimatedList(
+        key: _listKey,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        initialItemCount: exercises.length + 1,
+        itemBuilder: (context, index, animation) {
+          if (index >= exercises.length + 1) {
+            return const SizedBox.shrink();
+          }
+
+          if (index < exercises.length) {
+            final exercise = exercises[index];
+            return _buildExerciseItem(exercise, animation, index);
+          }
+
+          return _buildAddButton();
+        },
+      ),
+    );
+  }
+
+  Widget _buildFooter(int totalDuration) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A2433).withValues(alpha: 0.5),
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Total duration',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                _formatTotalDuration(totalDuration),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          ElevatedButton(
+            onPressed: _saveSession,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00D9FF),
+              foregroundColor: const Color(0xFF0A0E27),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 32,
+                vertical: 14,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: const Text(
+              'Save',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(breathSessionConstructorProvider);
+    final exercises = state.exercises;
     final totalDuration = state.totalDuration;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E27),
-      body: SafeArea(bottom: false,
+      body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
-            // Область со списком упражнений
             Expanded(
-              child: state.exercises.isEmpty
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.air,
-                              size: 64,
-                              color: Colors.white.withValues(alpha: 0.3),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No exercises yet',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.5),
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Tap "Add exercise" to start building your practice',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.3),
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            OutlinedButton.icon(
-                              onPressed: _addExercise,
-                              icon: const Icon(Icons.add, color: Color(0xFF00D9FF)),
-                              label: const Text(
-                                'Add exercise',
-                                style: TextStyle(
-                                  color: Color(0xFF00D9FF),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                side: const BorderSide(
-                                  color: Color(0xFF00D9FF),
-                                  width: 2,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                minimumSize: const Size(double.infinity, 0),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  : AnimatedList(
-                      key: _listKey,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      initialItemCount: state.exercises.length + 1,
-                      itemBuilder: (context, index, animation) {
-                        if (index >= state.exercises.length + 1) {
-                          return const SizedBox.shrink();
-                        }
-                        if (index < state.exercises.length) {
-                          final exercise = state.exercises[index];
-                          return _buildExerciseItem(exercise, animation, index);
-                        } else {
-                          return _buildAddButtonItem();
-                        }
-                      },
-                    ),
+              child: exercises.isEmpty
+                  ? _buildEmptyState()
+                  : _buildExercisesList(exercises),
             ),
-
-            // Футер с информацией
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A2433).withValues(alpha: 0.5),
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    width: 1,
-                  ),
-                ),
-              ),
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 32),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Total duration',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.5),
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _formatTotalDuration(totalDuration),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  ElevatedButton(
-                    onPressed: _saveSession,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00D9FF),
-                      foregroundColor: const Color(0xFF0A0E27),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 14,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Save',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildFooter(totalDuration),
           ],
         ),
       ),

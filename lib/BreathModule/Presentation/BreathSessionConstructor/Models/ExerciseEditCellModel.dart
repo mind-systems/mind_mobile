@@ -35,6 +35,11 @@ class ExerciseEditCellModel {
 
   // Расчёт полной длительности упражнения включая отдых между циклами
   int get totalDuration {
+      // Если это rest-only упражнение (все фазы = 0)
+    if (cycleDuration == 0) {
+      return rest;
+    }
+
     // Отдых идёт между циклами, поэтому (cycles - 1) * rest
     final restBetweenCycles = cycles > 1 ? (cycles - 1) * rest : 0;
     return totalCyclesDuration + restBetweenCycles;
