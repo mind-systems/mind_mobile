@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mind/Views/ControlButton.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorViewModel.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Views/ExerciseEditCell.dart';
 
 /// Экран конструктора дыхательных сессий
 class BreathSessionConstructorScreen extends ConsumerWidget {
   const BreathSessionConstructorScreen({
     super.key,
-    this.initialSession,
   });
-
-  final BreathSession? initialSession;
 
   static String name = 'breath_session_constructor';
   static String path = '/$name';
@@ -23,6 +22,59 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
 
   void _removeExercise(WidgetRef ref, String id) {
     ref.read(breathSessionConstructorProvider.notifier).removeExercise(id);
+  }
+
+  Future<void> _deleteSession(BuildContext context, WidgetRef ref) async {
+    final confirmed = await _showDeleteConfirmation(context);
+    if (confirmed != true) return;
+
+    // TODO: Удаление из репозитория
+    // await ref.read(sessionRepositoryProvider).deleteSession(state.sessionId!);
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Done'),
+        backgroundColor: Color(0xFF00D9FF),
+      ),
+    );
+
+    Navigator.pop(context);
+  }
+
+  Future<bool?> _showDeleteConfirmation(BuildContext context) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2433),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Delete session?',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'This action cannot be undone.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Color(0xFFD90000)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _saveSession(BuildContext context, WidgetRef ref) async {
@@ -39,83 +91,22 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
       return;
     }
 
-    // Диалог для ввода имени сессии
-    final name = await _showNameDialog(context);
-    if (name == null) return;
-
     // Сборка сессии
     final session = vm.buildSession(tickSource: TickSource.timer);
 
-    // TODO: Сохранение в репозиторий (SharedPreferences / SQLite)
-    // await ref.read(sessionRepositoryProvider).saveSession(name, session);
+    // TODO: Сохранение в репозиторий
+    // await ref.read(sessionRepositoryProvider).saveSession(session);
 
     if (!context.mounted) return;
 
-    // Показываем подтверждение
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Session "$name" saved!'),
-        backgroundColor: const Color(0xFF00D9FF),
+      const SnackBar(
+        content: Text('Done'),
+        backgroundColor: Color(0xFF00D9FF),
       ),
     );
 
-    // TODO: Навигация на экран сессии или закрытие
     Navigator.pop(context);
-  }
-
-  Future<String?> _showNameDialog(BuildContext context) async {
-    final controller = TextEditingController();
-    final now = DateTime.now();
-    final defaultName = 'Practice ${now.day}.${now.month}.${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}';
-    controller.text = defaultName;
-
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A2433),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Name your session',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: 'Enter session name',
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF00D9FF), width: 2),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              final name = controller.text.trim();
-              Navigator.pop(context, name.isEmpty ? defaultName : name);
-            },
-            child: const Text(
-              'Save',
-              style: TextStyle(color: Color(0xFF00D9FF)),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   String _formatTotalDuration(int seconds) {
@@ -125,6 +116,44 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     if (minutes > 0 && secs > 0) return '${minutes}m ${secs}s';
     if (minutes > 0) return '${minutes}m';
     return '${secs}s';
+  }
+
+  Widget _buildDescriptionField(WidgetRef ref, String description) {
+    final controller = TextEditingController(text: description)
+      ..selection = TextSelection.collapsed(offset: description.length);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SizedBox(
+        height: 32,
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A2433).withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+            ),
+          ),
+          alignment: Alignment.center,
+          child: TextField(
+            controller: controller,
+            onChanged: (value) => ref
+                .read(breathSessionConstructorProvider.notifier)
+                .updateDescription(value),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              height: 1.2,
+            ),
+            decoration: const InputDecoration(
+              isDense: true,
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 16),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildAddButton(WidgetRef ref) {
@@ -156,7 +185,11 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildExercisesList(List<dynamic> exercises, WidgetRef ref) {
+  Widget _buildExercisesList(
+    String description,
+    List<dynamic> exercises,
+    WidgetRef ref,
+  ) {
     return NotificationListener<ScrollUpdateNotification>(
       onNotification: (notification) {
         if (notification.scrollDelta != null &&
@@ -167,10 +200,14 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
       },
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: exercises.length + 1,
+        itemCount: exercises.length + 2, // description + exercises + add button
         itemBuilder: (context, index) {
-          if (index < exercises.length) {
-            final exercise = exercises[index];
+          if (index == 0) {
+            return _buildDescriptionField(ref, description);
+          }
+
+          if (index <= exercises.length) {
+            final exercise = exercises[index - 1];
             return ExerciseEditCell(
               key: ValueKey(exercise.id),
               model: exercise,
@@ -187,7 +224,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFooter(BuildContext context, WidgetRef ref, int totalDuration) {
+Widget _buildFooter(BuildContext context, WidgetRef ref, ConstructorMode mode, int totalDuration) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1A2433).withValues(alpha: 0.5),
@@ -206,7 +243,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Total duration',
+                'Total',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.5),
                   fontSize: 12,
@@ -223,27 +260,31 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
               ),
             ],
           ),
-          ElevatedButton(
-            onPressed: () => _saveSession(context, ref),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00D9FF),
-              foregroundColor: const Color(0xFF0A0E27),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 32,
-                vertical: 14,
+          Row(
+            children: [
+              if (mode == ConstructorMode.edit) ...[
+                SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: ControlButton(
+                    icon: Icons.delete_outline,
+                    onPressed: () => _deleteSession(context, ref),
+                    destructive: true,
+                    iconSize: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+              ],
+              SizedBox(
+                width: 50,
+                height: 50,
+                child: ControlButton(
+                  icon: Icons.check,
+                  onPressed: () => _saveSession(context, ref),
+                  iconSize: 28,
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            child: const Text(
-              'Save',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            ],
           ),
         ],
       ),
@@ -253,8 +294,10 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(breathSessionConstructorProvider);
+    final description = state.description;
     final exercises = state.exercises;
     final totalDuration = state.totalDuration;
+    final mode = state.mode;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E27),
@@ -263,9 +306,9 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
         child: Column(
           children: [
             Expanded(
-              child: _buildExercisesList(exercises, ref),
+              child: _buildExercisesList(description, exercises, ref),
             ),
-            _buildFooter(context, ref, totalDuration),
+            _buildFooter(context, ref, mode, totalDuration),
           ],
         ),
       ),

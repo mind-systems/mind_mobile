@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mind/Views/ControlButton.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
@@ -194,59 +195,33 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
 
   Widget _buildControlButton(BreathSessionState state, BreathViewModel viewModel) {
     if (state.status == BreathSessionStatus.complete) {
-      return _ControlButton(
-        icon: Icons.check_circle_outline,
-        onPressed: () => Navigator.pop(context),
+      return SizedBox(
+        width: 80,
+        height: 80,
+        child: ControlButton(
+          icon: Icons.check_circle_outline,
+          onPressed: () => Navigator.pop(context),
+          iconSize: 40,
+        ),
       );
     }
 
     final isPaused = state.status == BreathSessionStatus.pause;
 
-    return _ControlButton(
-      icon: isPaused ? Icons.play_arrow : Icons.pause,
-      onPressed: () {
-        if (isPaused) {
-          viewModel.resume();
-        } else {
-          viewModel.pause();
-        }
-      },
-    );
-  }
-}
-
-/// Кнопка управления
-class _ControlButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  const _ControlButton({
-    required this.icon,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Material(
-          color: const Color.fromRGBO(0, 217, 255, 0.2),
-          borderRadius: BorderRadius.circular(50),
-          child: InkWell(
-            onTap: onPressed,
-            borderRadius: BorderRadius.circular(50),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              child: Icon(
-                icon,
-                color: const Color(0xFF00D9FF),
-                size: 40,
-              ),
-            ),
-          ),
-        ),
-      ],
+    return SizedBox(
+      width: 80,
+      height: 80,
+      child: ControlButton(
+        icon: isPaused ? Icons.play_arrow : Icons.pause,
+        onPressed: () {
+          if (isPaused) {
+            viewModel.resume();
+          } else {
+            viewModel.pause();
+          }
+        },
+        iconSize: 40,
+      ),
     );
   }
 }

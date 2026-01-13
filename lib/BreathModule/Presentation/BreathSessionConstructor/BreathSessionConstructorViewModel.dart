@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/ExerciseEditCellModel.dart';
@@ -12,13 +13,19 @@ final breathSessionConstructorProvider =
   },
 );
 
-class BreathSessionConstructorViewModel
-    extends StateNotifier<BreathSessionConstructorState> {
+class BreathSessionConstructorViewModel extends StateNotifier<BreathSessionConstructorState> {
   BreathSessionConstructorViewModel({
-    BreathSession? initialSession,
+    required String currentUserId,
+    required ConstructorMode mode,
+    required BreathSession initialSession,
   }) : super(
           BreathSessionConstructorState.initial(
-            initialExercises: initialSession?.exercises
+            mode: mode,
+            userId: currentUserId,
+            sessionId: mode == ConstructorMode.edit ? initialSession.id : null,
+            description: initialSession.description,
+            shared: mode == ConstructorMode.create ? false : initialSession.shared,
+            initialExercises: initialSession.exercises
                 .map((set) => ExerciseEditCellModel.fromExerciseSet(set))
                 .toList(),
           ),
@@ -49,6 +56,12 @@ class BreathSessionConstructorViewModel
     );
   }
 
+  // ===== Редактирование метаданных =====
+
+  void updateDescription(String description) {
+    state = state.copyWith(description: description);
+  }
+
   // ===== Валидация =====
 
   bool get canSave => state.isValid;
@@ -69,7 +82,14 @@ class BreathSessionConstructorViewModel
         .map((e) => e.toExerciseSet())
         .toList();
 
+    final sessionId = state.sessionId ?? const Uuid().v4();
+    final shared = state.mode == ConstructorMode.create ? false : state.shared;
+
     return BreathSession(
+      id: sessionId,
+      userId: state.userId,
+      description: state.description.trim(),
+      shared: shared,
       exercises: sets,
       tickSource: tickSource,
     );
