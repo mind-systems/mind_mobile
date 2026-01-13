@@ -1,6 +1,14 @@
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
 
+enum ExerciseIcon {
+  circle,
+  triangleUp,
+  triangleDown,
+  square,
+  rest,
+}
+
 class ExerciseEditCellModel {
   final String id;
   int inhale;
@@ -46,17 +54,19 @@ class ExerciseEditCellModel {
   }
 
   // Определение формы на основе ненулевых фаз
-  SetShape? get shape {
+  ExerciseIcon? get icon {
     final nonZeroSteps = _getNonZeroSteps();
 
-    if (nonZeroSteps.length == 2) return SetShape.circle;
+    if (nonZeroSteps.length == 2) return ExerciseIcon.circle;
     if (nonZeroSteps.length == 3) {
       // Если последний шаг hold - треугольник вверх, иначе вниз
       return nonZeroSteps.last == StepType.hold
-          ? SetShape.triangleUp
-          : SetShape.triangleDown;
+          ? ExerciseIcon.triangleUp
+          : ExerciseIcon.triangleDown;
     }
-    if (nonZeroSteps.length == 4) return SetShape.square;
+    if (nonZeroSteps.length == 4) return ExerciseIcon.square;
+
+    if (isRestOnly) return ExerciseIcon.rest;
 
     return null;
   }

@@ -105,7 +105,7 @@ class ExerciseEditCell extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                if (model.shape != null) _buildShapeIcon(model.shape!),
+                if (model.icon != null) _buildShapeIcon(model.icon!),
                 const Spacer(),
                 IconButton(
                   icon: Icon(
@@ -229,19 +229,22 @@ class ExerciseEditCell extends StatelessWidget {
     );
   }
 
-  Widget _buildShapeIcon(SetShape shape) {
+  Widget _buildShapeIcon(ExerciseIcon icon) {
     IconData iconData;
 
-    switch (shape) {
-      case SetShape.circle:
+    switch (icon) {
+      case ExerciseIcon.circle:
         iconData = Icons.panorama_fish_eye;
         break;
-      case SetShape.triangleUp:
-      case SetShape.triangleDown:
+      case ExerciseIcon.triangleUp:
+      case ExerciseIcon.triangleDown:
         iconData = Icons.change_history;
         break;
-      case SetShape.square:
+      case ExerciseIcon.square:
         iconData = Icons.crop_square;
+        break;
+      case ExerciseIcon.rest:
+        iconData = Icons.self_improvement;
         break;
     }
 
