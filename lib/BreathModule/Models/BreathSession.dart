@@ -1,7 +1,6 @@
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
-
-enum TickSource { heartbeat, timer }
+import 'package:mind/BreathModule/Presentation/CommonModels/TickSource.dart';
 
 class BreathSession {
   final String id;

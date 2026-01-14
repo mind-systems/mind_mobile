@@ -1,35 +1,37 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
-import 'package:mind/BreathModule/Models/BreathSession.dart';
+
+import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/IBreathSessionConstructorService.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/ExerciseEditCellModel.dart';
+import 'package:mind/BreathModule/Presentation/CommonModels/TickSource.dart';
 
-final breathSessionConstructorProvider =
-    StateNotifierProvider.autoDispose<BreathSessionConstructorViewModel, BreathSessionConstructorState>(
+final breathSessionConstructorProvider = StateNotifierProvider.autoDispose<BreathSessionConstructorViewModel, BreathSessionConstructorState>(
   (ref) {
-    throw UnimplementedError(
-      'BreathSessionConstructorViewModel должен быть передан через override в BreathModule',
-    );
+    throw UnimplementedError('BreathSessionConstructorViewModel должен быть передан через override в роутере');
   },
 );
 
 class BreathSessionConstructorViewModel extends StateNotifier<BreathSessionConstructorState> {
-  BreathSessionConstructorViewModel({
-    required String currentUserId,
-    required ConstructorMode mode,
-    required BreathSession initialSession,
-  }) : super(
-          BreathSessionConstructorState.initial(
-            mode: mode,
-            userId: currentUserId,
-            sessionId: mode == ConstructorMode.edit ? initialSession.id : null,
-            description: initialSession.description,
-            shared: mode == ConstructorMode.create ? false : initialSession.shared,
-            initialExercises: initialSession.exercises
-                .map((set) => ExerciseEditCellModel.fromExerciseSet(set))
-                .toList(),
-          ),
-        );
+  final IBreathSessionConstructorService service;
+
+  BreathSessionConstructorViewModel({required this.service}) : super(_initializeState(service));
+
+  // Приватный статический метод для инициализации State из сервиса
+  static BreathSessionConstructorState _initializeState(
+      IBreathSessionConstructorService service,
+      ) {
+    final dto = service.getInitialState();
+    final mode = service.getInitialConstructorMode();
+
+    return BreathSessionConstructorState.initial(
+      mode: mode,
+      description: dto.description,
+      shared: dto.shared,
+      tickSource: dto.tickSource,
+      initialExercises: dto.exercises,
+    );
+  }
 
   // ===== CRUD упражнений =====
 
@@ -62,36 +64,50 @@ class BreathSessionConstructorViewModel extends StateNotifier<BreathSessionConst
     state = state.copyWith(description: description);
   }
 
+  void updateShared(bool shared) {
+    state = state.copyWith(shared: shared);
+  }
+
+  void updateTickSource(TickSource source) {
+    state = state.copyWith(tickSource: source);
+  }
+
   // ===== Валидация =====
 
   bool get canSave => state.isValid;
 
   // ===== Вычисляемые значения =====
 
-  int get totalSessionDuration {
-    return state.exercises
-        .where((e) => e.isValid)
-        .fold(0, (sum, e) => sum + e.totalDuration);
+  int get totalSessionDuration => state.totalDuration;
+
+  // ===== Работа с сервисом =====
+
+  /// Сохранить текущий draft
+  Future<void> save() async {
+    if (!canSave) return;
+
+    final dto = _buildDTO();
+    await service.save(dto);
+    // Навигация/закрытие экрана — ответственность UI
   }
 
-  // ===== Сборка BreathSession =====
+  /// Удалить сессию (только в режиме edit)
+  Future<void> delete() async {
+    if (state.mode != ConstructorMode.edit) return;
 
-  BreathSession buildSession({required TickSource tickSource}) {
-    final sets = state.exercises
-        .where((e) => e.isValid)
-        .map((e) => e.toExerciseSet())
-        .toList();
+    await service.delete();
+    // Навигация/закрытие экрана — ответственность UI
+  }
 
-    final sessionId = state.sessionId ?? const Uuid().v4();
-    final shared = state.mode == ConstructorMode.create ? false : state.shared;
-
-    return BreathSession(
-      id: sessionId,
-      userId: state.userId,
+  /// Собрать DTO из текущего состояния (приватный метод)
+  BreathSessionDTO _buildDTO() {
+    return BreathSessionDTO(
       description: state.description.trim(),
-      shared: shared,
-      exercises: sets,
-      tickSource: tickSource,
+      shared: state.shared,
+      tickSource: state.tickSource,
+      exercises: state.exercises
+          .where((e) => e.isValid)
+          .toList(),
     );
   }
 }

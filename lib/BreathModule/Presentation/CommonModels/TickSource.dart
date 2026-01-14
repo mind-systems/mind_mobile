@@ -1,0 +1,1 @@
+enum TickSource { heartbeat, timer }

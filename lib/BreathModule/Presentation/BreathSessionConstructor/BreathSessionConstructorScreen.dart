@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mind/Views/ControlButton.dart';
-import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Views/ExerciseEditCell.dart';
@@ -28,19 +27,29 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     final confirmed = await _showDeleteConfirmation(context);
     if (confirmed != true) return;
 
-    // TODO: Удаление из репозитория
-    // await ref.read(sessionRepositoryProvider).deleteSession(state.sessionId!);
+    try {
+      await ref.read(breathSessionConstructorProvider.notifier).delete();
 
-    if (!context.mounted) return;
+      if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Done'),
-        backgroundColor: Color(0xFF00D9FF),
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Session deleted'),
+          backgroundColor: Color(0xFF00D9FF),
+        ),
+      );
 
-    Navigator.pop(context);
+      Navigator.pop(context);
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting session: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   Future<bool?> _showDeleteConfirmation(BuildContext context) async {
@@ -91,22 +100,29 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
       return;
     }
 
-    // Сборка сессии
-    final session = vm.buildSession(tickSource: TickSource.timer);
+    try {
+      await vm.save();
 
-    // TODO: Сохранение в репозиторий
-    // await ref.read(sessionRepositoryProvider).saveSession(session);
+      if (!context.mounted) return;
 
-    if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Session saved'),
+          backgroundColor: Color(0xFF00D9FF),
+        ),
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Done'),
-        backgroundColor: Color(0xFF00D9FF),
-      ),
-    );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!context.mounted) return;
 
-    Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving session: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   String _formatTotalDuration(int seconds) {
@@ -224,7 +240,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     );
   }
 
-Widget _buildFooter(BuildContext context, WidgetRef ref, ConstructorMode mode, int totalDuration) {
+  Widget _buildFooter(BuildContext context, WidgetRef ref, ConstructorMode mode, int totalDuration) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1A2433).withValues(alpha: 0.5),

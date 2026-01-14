@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorScreen.dart';
+import 'package:mind/BreathSessionMocks.dart';
 import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
 
 class HomePage extends StatefulWidget {
@@ -24,8 +26,17 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          // Выбери нужную тестовую сессию:
+          // final session = BreathSessionMocks.quickTestSession;       // Быстрая
+          // final session = BreathSessionMocks.triangleOnlySession;    // Только треугольники
+          // final session = BreathSessionMocks.boxOnlySession;         // Только квадраты
+          // final session = BreathSessionMocks.mixedShapesSession;     // Микс форм
+          final session = BreathSessionMocks.fullTestSession;        // Полная тестовая
+          // final session = BreathSessionMocks.longSession;            // Длинная сессия
+
           // context.push(OnboardingScreen.path);
-          context.push(BreathSessionScreen.path);
+          // context.push(BreathSessionScreen.path);
+          context.push(BreathSessionConstructorScreen.path, extra: session);
         },
         child: const Icon(Icons.add),
       ),

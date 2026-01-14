@@ -1,38 +1,36 @@
+import 'package:mind/BreathModule/Presentation/CommonModels/TickSource.dart';
+
 import 'ExerciseEditCellModel.dart';
 
 enum ConstructorMode { create, edit }
 
 class BreathSessionConstructorState {
   final ConstructorMode mode;
-  final String? sessionId;
-  final String userId;
   final String description;
   final bool shared;
+  final TickSource tickSource;
   final List<ExerciseEditCellModel> exercises;
 
   const BreathSessionConstructorState({
     required this.mode,
-    required this.sessionId,
-    required this.userId,
     required this.description,
     required this.shared,
+    required this.tickSource,
     required this.exercises,
   });
 
   factory BreathSessionConstructorState.initial({
     required ConstructorMode mode,
-    required String userId,
-    String? sessionId,
     String? description,
     bool? shared,
+    TickSource? tickSource,
     List<ExerciseEditCellModel>? initialExercises,
   }) {
     return BreathSessionConstructorState(
       mode: mode,
-      sessionId: mode == ConstructorMode.create ? null : sessionId,
-      userId: userId,
       description: description ?? '',
       shared: shared ?? false,
+      tickSource: tickSource ?? TickSource.timer,
       exercises: initialExercises ?? [],
     );
   }
@@ -43,14 +41,14 @@ class BreathSessionConstructorState {
     String? userId,
     String? description,
     bool? shared,
+    TickSource? tickSource,
     List<ExerciseEditCellModel>? exercises,
   }) {
     return BreathSessionConstructorState(
       mode: mode ?? this.mode,
-      sessionId: sessionId ?? this.sessionId,
-      userId: userId ?? this.userId,
       description: description ?? this.description,
       shared: shared ?? this.shared,
+      tickSource: tickSource ?? this.tickSource,
       exercises: exercises ?? this.exercises,
     );
   }
