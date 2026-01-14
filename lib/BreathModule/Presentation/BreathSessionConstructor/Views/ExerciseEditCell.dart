@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/ExerciseEditCellModel.dart';
 
 class ExerciseEditCell extends StatelessWidget {
@@ -19,13 +18,13 @@ class ExerciseEditCell extends StatelessWidget {
   static const double _inputFieldWidth = 62.0;
   static const double _inputFieldHeight = 32.0;
 
-  static const double _spaceBetweenPhaseAndControls = 12.0;
+  static const double _spaceBetweenPhaseAndControls = 4.0;
   static const double _spaceBetweenControls = 4.0;
-  static const double _spaceBetweenControlsAndFooter = 8.0;
   static const double _spaceAfterSeparator = 6.0;
 
   static const double _footerRowHeight = 24.0;
   static const double _controlRowHeight = 38.0;
+  static const double _narrowControlRowHeight = 32.0; // Narrower height for repeat and rest rows
 
   @override
   Widget build(BuildContext context) {
@@ -34,10 +33,10 @@ class ExerciseEditCell extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(8), // Smaller corner radius for sharper corners
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
@@ -67,20 +66,28 @@ class ExerciseEditCell extends StatelessWidget {
           _buildHorizontalField(
             'Repeat',
             model.cycles,
-                (v) => onChanged(model.copyWith(cycles: v)),
+            (v) => onChanged(model.copyWith(cycles: v)),
+            height: _narrowControlRowHeight,
+            useNoBorderInput: true,
           ),
 
           const SizedBox(height: _spaceBetweenControls),
+
+          // ===== SEPARATOR =====
+          Container(
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.1),
+          ),
 
           // ===== REST =====
           _buildHorizontalField(
             'Rest',
             model.rest,
-                (v) => onChanged(model.copyWith(rest: v)),
+            (v) => onChanged(model.copyWith(rest: v)),
             showIcon: true,
+            height: _narrowControlRowHeight,
+            useNoBorderInput: true,
           ),
-
-          const SizedBox(height: _spaceBetweenControlsAndFooter),
 
           // ===== SEPARATOR =====
           Container(
@@ -149,9 +156,11 @@ class ExerciseEditCell extends StatelessWidget {
       int value,
       ValueChanged<int> onChanged, {
         bool showIcon = false,
+        double height = _controlRowHeight,
+        useNoBorderInput = true,
       }) {
     return SizedBox(
-      height: _controlRowHeight,
+      height: height,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -167,18 +176,70 @@ class ExerciseEditCell extends StatelessWidget {
               ),
             ),
           ),
-          if (showIcon) ...[
-            Icon(
-              Icons.access_time,
-              size: 16,
-              color: Colors.white.withValues(alpha: 0.5),
-            ),
-            const SizedBox(width: 8),
-          ],
           Center(
-            child: _buildNumericInput(value, onChanged),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _buildNumericInputRightAligned(value, onChanged),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: showIcon
+                      ? Icon(
+                    Icons.access_time,
+                    size: 16,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildNumericInputRightAligned(
+      int value,
+      ValueChanged<int> onChanged,
+      ) {
+    final controller = TextEditingController(text: value.toString())
+      ..selection = TextSelection.fromPosition(
+        TextPosition(offset: value.toString().length),
+      );
+
+    return SizedBox(
+      width: _inputFieldWidth,
+      height: _inputFieldHeight,
+      child: Container(
+        alignment: Alignment.center,
+        child: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          textAlign: TextAlign.right,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            height: 1.1,
+            fontWeight: FontWeight.w500,
+          ),
+          decoration: const InputDecoration(
+            isDense: true,
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+          ),
+          onChanged: (text) {
+            if (text.isEmpty) {
+              onChanged(0);
+              return;
+            }
+            final parsed = int.tryParse(text);
+            if (parsed != null) onChanged(parsed);
+          },
+        ),
       ),
     );
   }
@@ -194,7 +255,7 @@ class ExerciseEditCell extends StatelessWidget {
       height: _inputFieldHeight,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.1),
           ),
