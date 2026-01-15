@@ -1,3 +1,4 @@
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/CommonModels/StepType.dart';
 
 enum TimelineStepType { inhale, hold, exhale, rest, separator }
@@ -19,8 +20,9 @@ class TimelineStep {
     required int exerciseIndex,
     required int repeatCounter,
     required int stepIndex,
+    required TimelineStepType type,
   }) {
-    return 'exerciseIndex:$exerciseIndex;repeatCounter:$repeatCounter;stepIndex:$stepIndex';
+    return 'exerciseIndex:$exerciseIndex;repeatCounter:$repeatCounter;stepIndex:$stepIndex;type:$type';
   }
 
   static TimelineStepType mapStepTypeToTimelineType(StepType type) {
@@ -28,6 +30,15 @@ class TimelineStep {
       case StepType.inhale: return TimelineStepType.inhale;
       case StepType.hold: return TimelineStepType.hold;
       case StepType.exhale: return TimelineStepType.exhale;
+    }
+  }
+
+  static TimelineStepType mapBreathPhaseToTimelineType(BreathPhase phase) {
+    switch (phase) {
+      case BreathPhase.inhale: return TimelineStepType.inhale;
+      case BreathPhase.hold: return TimelineStepType.hold;
+      case BreathPhase.exhale: return TimelineStepType.exhale;
+      case BreathPhase.rest: return TimelineStepType.rest;
     }
   }
 }

@@ -16,6 +16,7 @@ class BreathSessionState {
   /// Интервал от предыдущего тика до текущего в миллисекундах
   final int currentIntervalMs;
 
+  /// Список шагов в текущем упражнении
   final List<TimelineStep> timelineSteps;
   final String? activeStepId;
 

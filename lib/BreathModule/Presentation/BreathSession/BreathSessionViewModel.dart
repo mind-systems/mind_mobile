@@ -80,6 +80,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
               exerciseIndex: exerciseIndex,
               repeatCounter: 0,
               stepIndex: 0,
+              type: TimelineStepType.rest,
             ),
           ),
         );
@@ -91,14 +92,16 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
         // дыхательные шаги цикла
         for (var stepIndex = 0; stepIndex < exercise.steps.length; stepIndex++) {
           final step = exercise.steps[stepIndex];
+          final timelineStepType = TimelineStep.mapStepTypeToTimelineType(step.type);
           steps.add(
             TimelineStep(
-              type: TimelineStep.mapStepTypeToTimelineType(step.type),
+              type: timelineStepType,
               duration: step.duration,
               id: TimelineStep.generateId(
                 exerciseIndex: exerciseIndex,
                 repeatCounter: repeatCounter,
                 stepIndex: stepIndex,
+                type: timelineStepType,
               ),
             ),
           );
@@ -115,6 +118,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
                 exerciseIndex: exerciseIndex,
                 repeatCounter: repeatCounter + 1,
                 stepIndex: 0,
+                type: TimelineStepType.rest,
               ),
             ),
           );
@@ -135,6 +139,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
         exerciseIndex: _exerciseIndex,
         repeatCounter: 0,
         stepIndex: 0,
+        type: TimelineStepType.rest,
       ),
       currentIntervalMs: -1,
     );
@@ -152,6 +157,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
         exerciseIndex: _exerciseIndex,
         repeatCounter: 0,
         stepIndex: 0,
+        type: TimelineStep.mapBreathPhaseToTimelineType(initialStepData.phase),
       ),
       currentIntervalMs: -1,
     );
@@ -246,6 +252,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       exerciseIndex: _exerciseIndex,
       repeatCounter: _repeatCounter,
       stepIndex: stepData.stepIndex,
+      type: TimelineStep.mapBreathPhaseToTimelineType(stepData.phase),
     );
 
     state = state.copyWith(
@@ -284,6 +291,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       exerciseIndex: _exerciseIndex,
       repeatCounter: _repeatCounter,
       stepIndex: 0,
+      type: TimelineStepType.rest,
     );
 
     state = state.copyWith(
@@ -340,6 +348,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
         exerciseIndex: _exerciseIndex,
         repeatCounter: _repeatCounter,
         stepIndex: 0,
+        type: TimelineStepType.rest,
       ),
       currentIntervalMs: intervalMs,
     );
@@ -360,6 +369,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
         exerciseIndex: _exerciseIndex,
         repeatCounter: _repeatCounter,
         stepIndex: stepData.stepIndex,
+        type: TimelineStep.mapBreathPhaseToTimelineType(stepData.phase),
       ),
       currentIntervalMs: intervalMs,
     );
