@@ -37,8 +37,6 @@ class BreathSessionConstructorState {
 
   BreathSessionConstructorState copyWith({
     ConstructorMode? mode,
-    String? sessionId,
-    String? userId,
     String? description,
     bool? shared,
     TickSource? tickSource,

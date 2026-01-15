@@ -1,4 +1,5 @@
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
+import 'package:mind/BreathModule/Presentation/CommonModels/StepType.dart';
 
 enum SetShape { square, triangleUp, triangleDown, circle }
 

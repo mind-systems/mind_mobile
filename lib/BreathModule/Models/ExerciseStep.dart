@@ -1,4 +1,4 @@
-enum StepType { inhale, hold, exhale }
+import 'package:mind/BreathModule/Presentation/CommonModels/StepType.dart';
 
 class ExerciseStep {
   final StepType type;
