@@ -34,7 +34,16 @@ class BreathAnimationCoordinator {
     _previousExerciseIndex = state.exerciseIndex;
     _previousRemainingTicks = state.remainingTicks;
 
-    motionEngine.setRemainingTicks(state.remainingTicks);
+    if (viewModel.currentExercise.steps.isNotEmpty) {
+      final phaseMeta = viewModel.getCurrentPhaseMeta();
+      motionEngine.setPhaseInfo(
+        totalPhases: phaseMeta.totalPhases,
+        currentPhaseIndex: phaseMeta.currentPhaseIndex,
+      );
+      motionEngine.setRemainingPhaseTicks(state.remainingTicks);
+    } else {
+      motionEngine.setRemainingPhaseTicks(0);
+    }
     motionEngine.setActive(state.status == BreathSessionStatus.breath);
   }
 
@@ -42,6 +51,20 @@ class BreathAnimationCoordinator {
     // 1. Активность
     final shouldBeActive = state.status == BreathSessionStatus.breath;
     if (shouldBeActive != motionEngine.isActive) {
+      if (shouldBeActive) {
+        if (viewModel.currentExercise.steps.isNotEmpty) {
+          final phaseMeta = viewModel.getCurrentPhaseMeta();
+          motionEngine.setPhaseInfo(
+            totalPhases: phaseMeta.totalPhases,
+            currentPhaseIndex: phaseMeta.currentPhaseIndex,
+          );
+          motionEngine.setRemainingPhaseTicks(state.remainingTicks);
+          _previousRemainingTicks = state.remainingTicks;
+        } else {
+          motionEngine.setRemainingPhaseTicks(0);
+          _previousRemainingTicks = 0;
+        }
+      }
       motionEngine.setActive(shouldBeActive);
     }
 
@@ -50,9 +73,20 @@ class BreathAnimationCoordinator {
       motionEngine.setIntervalMs(state.currentIntervalMs);
     }
 
-    // 3. Оставшиеся тики
-    if (state.remainingTicks != _previousRemainingTicks) {
-      motionEngine.setRemainingTicks(state.remainingTicks);
+    // 3. Структура фаз и оставшиеся тики в текущей фазе
+    if (state.status == BreathSessionStatus.breath &&
+        viewModel.currentExercise.steps.isNotEmpty) {
+      final phaseMeta = viewModel.getCurrentPhaseMeta();
+      motionEngine.setPhaseInfo(
+        totalPhases: phaseMeta.totalPhases,
+        currentPhaseIndex: phaseMeta.currentPhaseIndex,
+      );
+
+      if (state.remainingTicks != _previousRemainingTicks) {
+        motionEngine.setRemainingPhaseTicks(state.remainingTicks);
+        _previousRemainingTicks = state.remainingTicks;
+      }
+    } else {
       _previousRemainingTicks = state.remainingTicks;
     }
 
@@ -65,8 +99,7 @@ class BreathAnimationCoordinator {
   void _onReset(ResetReason reason) {
     ExerciseSet? shapeSource;
 
-    if (reason == ResetReason.exerciseChange ||
-        reason == ResetReason.rest) {
+    if (reason == ResetReason.exerciseChange || reason == ResetReason.rest) {
       shapeSource = viewModel.getNextExerciseWithShape();
     } else {
       shapeSource = viewModel.currentExercise;

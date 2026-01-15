@@ -12,9 +12,14 @@ class BreathMotionEngine extends ChangeNotifier {
   bool _isLinearLocked = false;
   bool _isActive = false;
 
+  // Фазовая структура цикла
+  int _totalPhases = 0;
+  int _currentPhaseIndex = 0;
+  int _remainingPhaseTicks = 0;
+  double _phaseTargetPosition = 1.0;
+
   // Данные от ViewModel
   double _smoothedIntervalMs = 1000.0;
-  int _remainingTicks = 0;
   bool _isFirstInterval = true;
 
   // Константы
@@ -34,6 +39,20 @@ class BreathMotionEngine extends ChangeNotifier {
   double get normalizedPosition => _position.clamp(0.0, 1.0);
   bool get isActive => _isActive;
 
+  // Конфигурация фаз
+  void setPhaseInfo({required int totalPhases, required int currentPhaseIndex}) {
+    if (totalPhases <= 0) {
+      _totalPhases = 0;
+      _currentPhaseIndex = 0;
+      _phaseTargetPosition = 1.0;
+      return;
+    }
+
+    _totalPhases = totalPhases;
+    _currentPhaseIndex = currentPhaseIndex.clamp(0, totalPhases - 1);
+    _phaseTargetPosition = (_currentPhaseIndex + 1) / _totalPhases;
+  }
+
   // Управление активностью
   void setActive(bool active) {
     _isActive = active;
@@ -46,15 +65,15 @@ class BreathMotionEngine extends ChangeNotifier {
     }
   }
 
-  // Подача "топлива" от ViewModel
-  void setRemainingTicks(int ticks) {
-    _remainingTicks = ticks < 0 ? 0 : ticks;
-    _targetDurationMs = _remainingTicks * _smoothedIntervalMs;
+  // Подача "топлива" от ViewModel (тики до конца ТЕКУЩЕЙ фазы)
+  void setRemainingPhaseTicks(int ticks) {
+    _remainingPhaseTicks = ticks < 0 ? 0 : ticks;
+    _targetDurationMs = _remainingPhaseTicks * _smoothedIntervalMs;
     _elapsedMs = 0.0;
     _isLinearLocked = false;
 
-    // Пересчитываем целевую скорость сразу
-    final double remainingDistance = 1.0 - _position;
+    // Пересчитываем целевую скорость сразу относительно цели текущей фазы
+    final double remainingDistance = _phaseTargetPosition - _position;
     if (_targetDurationMs > 0 && remainingDistance > 0) {
       _targetVelocity = remainingDistance / _targetDurationMs;
     } else {
@@ -69,8 +88,8 @@ class BreathMotionEngine extends ChangeNotifier {
       _smoothedIntervalMs = intervalMs.toDouble();
       _isFirstInterval = false;
     } else {
-      _smoothedIntervalMs = _smoothedIntervalMs +
-          _smoothingFactor * (intervalMs.toDouble() - _smoothedIntervalMs);
+      _smoothedIntervalMs =
+      _smoothedIntervalMs + _smoothingFactor * (intervalMs.toDouble() - _smoothedIntervalMs);
     }
   }
 
@@ -103,7 +122,7 @@ class BreathMotionEngine extends ChangeNotifier {
 
     // 2. Пересчёт целевой скорости (если не заблокирован)
     if (!_isLinearLocked) {
-      final double remainingDistance = 1.0 - _position;
+      final double remainingDistance = _phaseTargetPosition - _position;
       final double remainingTime = _targetDurationMs - _elapsedMs;
 
       if (remainingTime > 0 && remainingDistance > 0) {
@@ -120,7 +139,7 @@ class BreathMotionEngine extends ChangeNotifier {
 
     // 4. Проверка выхода на линейный режим
     if (!_isLinearLocked && (_targetVelocity - _currentVelocity).abs() < _velocityTolerance) {
-      final double remainingDistance = 1.0 - _position;
+      final double remainingDistance = _phaseTargetPosition - _position;
       final double remainingTime = _targetDurationMs - _elapsedMs;
 
       if (remainingTime > 0 && remainingDistance > 0) {

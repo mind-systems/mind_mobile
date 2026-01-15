@@ -312,8 +312,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     for (int i = 0; i < currentExercise.steps.length; i++) {
       final step = currentExercise.steps[i];
       if (tick < accumulated + step.duration) {
-        final remainingInCycle = currentExercise.cycleDuration - tick;
-        return (phase: _mapStepTypeToPhase(step.type), remainingTicks: remainingInCycle, stepIndex: i);
+        final remainingInStep = (accumulated + step.duration) - tick;
+        return (phase: _mapStepTypeToPhase(step.type), remainingTicks: remainingInStep, stepIndex: i);
       }
       accumulated += step.duration;
     }
@@ -463,6 +463,28 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     }
 
     return null;
+  }
+
+  // ===== Phase meta for motion engine =====
+
+  ({int totalPhases, int currentPhaseIndex}) getCurrentPhaseMeta() {
+    if (currentExercise.steps.isEmpty) {
+      return (totalPhases: 0, currentPhaseIndex: 0);
+    }
+
+    int accumulated = 0;
+    int currentIndex = 0;
+
+    for (int i = 0; i < currentExercise.steps.length; i++) {
+      final step = currentExercise.steps[i];
+      if (_cycleTick < accumulated + step.duration) {
+        currentIndex = i;
+        break;
+      }
+      accumulated += step.duration;
+    }
+
+    return (totalPhases: currentExercise.steps.length, currentPhaseIndex: currentIndex);
   }
 
   // ===== Next phase info (Forecast) =====
