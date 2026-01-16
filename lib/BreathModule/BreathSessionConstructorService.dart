@@ -31,7 +31,6 @@ class BreathSessionConstructorService implements IBreathSessionConstructorServic
     return BreathSessionDTO(
       description: existingSession!.description,
       shared: existingSession!.shared,
-      tickSource: existingSession!.tickSource,
       exercises: existingSession!.exercises
           .map((set) => _exerciseSetToEditModel(set))
           .toList(),
@@ -59,7 +58,6 @@ class BreathSessionConstructorService implements IBreathSessionConstructorServic
       userId: userId,
       description: dto.description,
       shared: dto.shared,
-      tickSource: dto.tickSource,
       exercises: exercises,
     );
 

@@ -1,7 +1,6 @@
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
 import 'package:mind/BreathModule/Presentation/CommonModels/StepType.dart';
-import 'package:mind/BreathModule/Presentation/CommonModels/TickSource.dart';
 
 class BreathSession {
   final String id;
@@ -10,7 +9,6 @@ class BreathSession {
   final bool shared;
 
   final List<ExerciseSet> exercises;
-  final TickSource tickSource;
 
   BreathSession({
     required this.id,
@@ -18,7 +16,6 @@ class BreathSession {
     required this.description,
     required this.shared,
     required this.exercises,
-    required this.tickSource,
   });
 
   BreathSession copyWith({
@@ -27,7 +24,6 @@ class BreathSession {
     String? description,
     bool? shared,
     List<ExerciseSet>? exercises,
-    TickSource? tickSource,
   }) {
     return BreathSession(
       id: id ?? this.id,
@@ -35,7 +31,6 @@ class BreathSession {
       description: description ?? this.description,
       shared: shared ?? this.shared,
       exercises: exercises ?? this.exercises,
-      tickSource: tickSource ?? this.tickSource,
     );
   }
 
@@ -51,7 +46,6 @@ class BreathSession {
       description: defaultName,
       shared: false,
       exercises: [rest, squareBreathing],
-      tickSource: TickSource.timer,
     );
   }
 }

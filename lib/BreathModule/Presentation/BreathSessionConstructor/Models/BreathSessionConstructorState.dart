@@ -1,4 +1,3 @@
-import 'package:mind/BreathModule/Presentation/CommonModels/TickSource.dart';
 
 import 'ExerciseEditCellModel.dart';
 
@@ -8,14 +7,12 @@ class BreathSessionConstructorState {
   final ConstructorMode mode;
   final String description;
   final bool shared;
-  final TickSource tickSource;
   final List<ExerciseEditCellModel> exercises;
 
   const BreathSessionConstructorState({
     required this.mode,
     required this.description,
     required this.shared,
-    required this.tickSource,
     required this.exercises,
   });
 
@@ -23,14 +20,12 @@ class BreathSessionConstructorState {
     required ConstructorMode mode,
     String? description,
     bool? shared,
-    TickSource? tickSource,
     List<ExerciseEditCellModel>? initialExercises,
   }) {
     return BreathSessionConstructorState(
       mode: mode,
       description: description ?? '',
       shared: shared ?? false,
-      tickSource: tickSource ?? TickSource.timer,
       exercises: initialExercises ?? [],
     );
   }
@@ -39,14 +34,12 @@ class BreathSessionConstructorState {
     ConstructorMode? mode,
     String? description,
     bool? shared,
-    TickSource? tickSource,
     List<ExerciseEditCellModel>? exercises,
   }) {
     return BreathSessionConstructorState(
       mode: mode ?? this.mode,
       description: description ?? this.description,
       shared: shared ?? this.shared,
-      tickSource: tickSource ?? this.tickSource,
       exercises: exercises ?? this.exercises,
     );
   }

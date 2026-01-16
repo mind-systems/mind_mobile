@@ -4,7 +4,6 @@ import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/IBreathS
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/ExerciseEditCellModel.dart';
-import 'package:mind/BreathModule/Presentation/CommonModels/TickSource.dart';
 
 final breathSessionConstructorProvider = StateNotifierProvider.autoDispose<BreathSessionConstructorViewModel, BreathSessionConstructorState>(
   (ref) {
@@ -28,7 +27,6 @@ class BreathSessionConstructorViewModel extends StateNotifier<BreathSessionConst
       mode: mode,
       description: dto.description,
       shared: dto.shared,
-      tickSource: dto.tickSource,
       initialExercises: dto.exercises,
     );
   }
@@ -68,10 +66,6 @@ class BreathSessionConstructorViewModel extends StateNotifier<BreathSessionConst
     state = state.copyWith(shared: shared);
   }
 
-  void updateTickSource(TickSource source) {
-    state = state.copyWith(tickSource: source);
-  }
-
   // ===== Валидация =====
 
   bool get canSave => state.isValid;
@@ -104,7 +98,6 @@ class BreathSessionConstructorViewModel extends StateNotifier<BreathSessionConst
     return BreathSessionDTO(
       description: state.description.trim(),
       shared: state.shared,
-      tickSource: state.tickSource,
       exercises: state.exercises
           .where((e) => e.isValid)
           .toList(),
