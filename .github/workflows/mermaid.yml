@@ -1,0 +1,63 @@
+name: Generate Mermaid Diagrams
+
+on:
+  push:
+    paths:
+      - '**/*.mmd'
+      - '.github/workflows/mermaid.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libnss3 \
+            libnspr4 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2t64
+
+      - name: Install Mermaid CLI
+        run: npm install -g @mermaid-js/mermaid-cli
+
+      - name: Generate SVG files
+        run: |
+          find . -name "*.mmd" -type f | while read -r file; do
+            output="${file%.mmd}.svg"
+            echo "Converting $file -> $output"
+            mmdc -i "$file" -o "$output" -t default -b transparent --configFile mermaid-config.json --puppeteerConfigFile .puppeteer.json
+          done
+
+      - name: Commit SVG files
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add "**/*.svg"
+          git diff --staged --quiet || git commit -m "Auto-generate SVG diagrams from mermaid files"
+          git push
