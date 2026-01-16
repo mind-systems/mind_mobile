@@ -1,3 +1,4 @@
+import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/Core/Models/ApiExeption.dart';
 import 'package:mind/User/Models/AuthRequest.dart';
 import 'Environment.dart';
@@ -73,6 +74,48 @@ class ApiService {
         default:
           return ApiException(message: e.message ?? 'Network error');
       }
+    }
+  }
+}
+
+extension BreathSessionApi on ApiService {
+  Future<void> saveBreathSession(BreathSession session) async {
+    try {
+      await _dio.post(
+        '/breath_sessions',
+        data: session.toJson(),
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<void> deleteBreathSession(String sessionId) async {
+    try {
+      await _dio.delete(
+        '/breath_sessions/$sessionId',
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<List<BreathSession>> fetchBreathSessions(int page, int pageSize) async {
+    try {
+      final response = await _dio.get('/breath_sessions/list?page=$page&pageSize=$pageSize');
+
+      if (response.statusCode == 200) {
+        final List data = response.data as List<dynamic>;
+        return data.map((raw) => BreathSession.fromJson(raw as Map<String, dynamic>)).toList();
+      } else {
+        throw ApiException(
+          message: 'Unexpected status code',
+          statusCode: response.statusCode,
+          data: response.data,
+        );
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
   }
 }

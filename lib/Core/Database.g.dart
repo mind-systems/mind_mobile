@@ -362,16 +362,391 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
   }
 }
 
+class $BreathSessionsTable extends BreathSessions
+    with TableInfo<$BreathSessionsTable, BreathSessionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BreathSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sharedMeta = const VerificationMeta('shared');
+  @override
+  late final GeneratedColumn<bool> shared = GeneratedColumn<bool>(
+    'shared',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("shared" IN (0, 1))',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<List<ExerciseSet>, String>
+  exercises = GeneratedColumn<String>(
+    'exercises',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<List<ExerciseSet>>($BreathSessionsTable.$converterexercises);
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    description,
+    shared,
+    exercises,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'breath_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BreathSessionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_descriptionMeta);
+    }
+    if (data.containsKey('shared')) {
+      context.handle(
+        _sharedMeta,
+        shared.isAcceptableOrUnknown(data['shared']!, _sharedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sharedMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BreathSessionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BreathSessionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      shared: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}shared'],
+      )!,
+      exercises: $BreathSessionsTable.$converterexercises.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}exercises'],
+        )!,
+      ),
+    );
+  }
+
+  @override
+  $BreathSessionsTable createAlias(String alias) {
+    return $BreathSessionsTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<List<ExerciseSet>, String> $converterexercises =
+      const ExerciseSetListConverter();
+}
+
+class BreathSessionRow extends DataClass
+    implements Insertable<BreathSessionRow> {
+  final String id;
+  final String userId;
+  final String description;
+  final bool shared;
+  final List<ExerciseSet> exercises;
+  const BreathSessionRow({
+    required this.id,
+    required this.userId,
+    required this.description,
+    required this.shared,
+    required this.exercises,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['description'] = Variable<String>(description);
+    map['shared'] = Variable<bool>(shared);
+    {
+      map['exercises'] = Variable<String>(
+        $BreathSessionsTable.$converterexercises.toSql(exercises),
+      );
+    }
+    return map;
+  }
+
+  BreathSessionsCompanion toCompanion(bool nullToAbsent) {
+    return BreathSessionsCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      description: Value(description),
+      shared: Value(shared),
+      exercises: Value(exercises),
+    );
+  }
+
+  factory BreathSessionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BreathSessionRow(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      description: serializer.fromJson<String>(json['description']),
+      shared: serializer.fromJson<bool>(json['shared']),
+      exercises: serializer.fromJson<List<ExerciseSet>>(json['exercises']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
+      'description': serializer.toJson<String>(description),
+      'shared': serializer.toJson<bool>(shared),
+      'exercises': serializer.toJson<List<ExerciseSet>>(exercises),
+    };
+  }
+
+  BreathSessionRow copyWith({
+    String? id,
+    String? userId,
+    String? description,
+    bool? shared,
+    List<ExerciseSet>? exercises,
+  }) => BreathSessionRow(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    description: description ?? this.description,
+    shared: shared ?? this.shared,
+    exercises: exercises ?? this.exercises,
+  );
+  BreathSessionRow copyWithCompanion(BreathSessionsCompanion data) {
+    return BreathSessionRow(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      shared: data.shared.present ? data.shared.value : this.shared,
+      exercises: data.exercises.present ? data.exercises.value : this.exercises,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BreathSessionRow(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('description: $description, ')
+          ..write('shared: $shared, ')
+          ..write('exercises: $exercises')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, userId, description, shared, exercises);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BreathSessionRow &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.description == this.description &&
+          other.shared == this.shared &&
+          other.exercises == this.exercises);
+}
+
+class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
+  final Value<String> id;
+  final Value<String> userId;
+  final Value<String> description;
+  final Value<bool> shared;
+  final Value<List<ExerciseSet>> exercises;
+  final Value<int> rowid;
+  const BreathSessionsCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.description = const Value.absent(),
+    this.shared = const Value.absent(),
+    this.exercises = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BreathSessionsCompanion.insert({
+    required String id,
+    required String userId,
+    required String description,
+    required bool shared,
+    required List<ExerciseSet> exercises,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       userId = Value(userId),
+       description = Value(description),
+       shared = Value(shared),
+       exercises = Value(exercises);
+  static Insertable<BreathSessionRow> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<String>? description,
+    Expression<bool>? shared,
+    Expression<String>? exercises,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (description != null) 'description': description,
+      if (shared != null) 'shared': shared,
+      if (exercises != null) 'exercises': exercises,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BreathSessionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? userId,
+    Value<String>? description,
+    Value<bool>? shared,
+    Value<List<ExerciseSet>>? exercises,
+    Value<int>? rowid,
+  }) {
+    return BreathSessionsCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      description: description ?? this.description,
+      shared: shared ?? this.shared,
+      exercises: exercises ?? this.exercises,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (shared.present) {
+      map['shared'] = Variable<bool>(shared.value);
+    }
+    if (exercises.present) {
+      map['exercises'] = Variable<String>(
+        $BreathSessionsTable.$converterexercises.toSql(exercises.value),
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BreathSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('description: $description, ')
+          ..write('shared: $shared, ')
+          ..write('exercises: $exercises, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$Database extends GeneratedDatabase {
   _$Database(QueryExecutor e) : super(e);
   $DatabaseManager get managers => $DatabaseManager(this);
   late final $UserRecordTable userRecord = $UserRecordTable(this);
+  late final $BreathSessionsTable breathSessions = $BreathSessionsTable(this);
   late final UserDao userDao = UserDao(this as Database);
+  late final BreathSessionDao breathSessionDao = BreathSessionDao(
+    this as Database,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [userRecord];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    userRecord,
+    breathSessions,
+  ];
 }
 
 typedef $$UserRecordTableCreateCompanionBuilder =
@@ -570,14 +945,222 @@ typedef $$UserRecordTableProcessedTableManager =
       Users,
       PrefetchHooks Function()
     >;
+typedef $$BreathSessionsTableCreateCompanionBuilder =
+    BreathSessionsCompanion Function({
+      required String id,
+      required String userId,
+      required String description,
+      required bool shared,
+      required List<ExerciseSet> exercises,
+      Value<int> rowid,
+    });
+typedef $$BreathSessionsTableUpdateCompanionBuilder =
+    BreathSessionsCompanion Function({
+      Value<String> id,
+      Value<String> userId,
+      Value<String> description,
+      Value<bool> shared,
+      Value<List<ExerciseSet>> exercises,
+      Value<int> rowid,
+    });
+
+class $$BreathSessionsTableFilterComposer
+    extends Composer<_$Database, $BreathSessionsTable> {
+  $$BreathSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get shared => $composableBuilder(
+    column: $table.shared,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<ExerciseSet>, List<ExerciseSet>, String>
+  get exercises => $composableBuilder(
+    column: $table.exercises,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+}
+
+class $$BreathSessionsTableOrderingComposer
+    extends Composer<_$Database, $BreathSessionsTable> {
+  $$BreathSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get shared => $composableBuilder(
+    column: $table.shared,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get exercises => $composableBuilder(
+    column: $table.exercises,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BreathSessionsTableAnnotationComposer
+    extends Composer<_$Database, $BreathSessionsTable> {
+  $$BreathSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get shared =>
+      $composableBuilder(column: $table.shared, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<List<ExerciseSet>, String> get exercises =>
+      $composableBuilder(column: $table.exercises, builder: (column) => column);
+}
+
+class $$BreathSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$Database,
+          $BreathSessionsTable,
+          BreathSessionRow,
+          $$BreathSessionsTableFilterComposer,
+          $$BreathSessionsTableOrderingComposer,
+          $$BreathSessionsTableAnnotationComposer,
+          $$BreathSessionsTableCreateCompanionBuilder,
+          $$BreathSessionsTableUpdateCompanionBuilder,
+          (
+            BreathSessionRow,
+            BaseReferences<_$Database, $BreathSessionsTable, BreathSessionRow>,
+          ),
+          BreathSessionRow,
+          PrefetchHooks Function()
+        > {
+  $$BreathSessionsTableTableManager(_$Database db, $BreathSessionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BreathSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BreathSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BreathSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<bool> shared = const Value.absent(),
+                Value<List<ExerciseSet>> exercises = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BreathSessionsCompanion(
+                id: id,
+                userId: userId,
+                description: description,
+                shared: shared,
+                exercises: exercises,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String userId,
+                required String description,
+                required bool shared,
+                required List<ExerciseSet> exercises,
+                Value<int> rowid = const Value.absent(),
+              }) => BreathSessionsCompanion.insert(
+                id: id,
+                userId: userId,
+                description: description,
+                shared: shared,
+                exercises: exercises,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BreathSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Database,
+      $BreathSessionsTable,
+      BreathSessionRow,
+      $$BreathSessionsTableFilterComposer,
+      $$BreathSessionsTableOrderingComposer,
+      $$BreathSessionsTableAnnotationComposer,
+      $$BreathSessionsTableCreateCompanionBuilder,
+      $$BreathSessionsTableUpdateCompanionBuilder,
+      (
+        BreathSessionRow,
+        BaseReferences<_$Database, $BreathSessionsTable, BreathSessionRow>,
+      ),
+      BreathSessionRow,
+      PrefetchHooks Function()
+    >;
 
 class $DatabaseManager {
   final _$Database _db;
   $DatabaseManager(this._db);
   $$UserRecordTableTableManager get userRecord =>
       $$UserRecordTableTableManager(_db, _db.userRecord);
+  $$BreathSessionsTableTableManager get breathSessions =>
+      $$BreathSessionsTableTableManager(_db, _db.breathSessions);
 }
 
 mixin _$UserDaoMixin on DatabaseAccessor<Database> {
   $UserRecordTable get userRecord => attachedDatabase.userRecord;
+}
+mixin _$BreathSessionDaoMixin on DatabaseAccessor<Database> {
+  $BreathSessionsTable get breathSessions => attachedDatabase.breathSessions;
 }

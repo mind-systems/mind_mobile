@@ -23,4 +23,20 @@ class ExerciseSet {
     if (steps.length == 4) return SetShape.square;
     return null;
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'steps': steps.map((step) => step.toJson()).toList(),
+      'restDuration': restDuration,
+      'repeatCount': repeatCount,
+    };
+  }
+
+  factory ExerciseSet.fromJson(Map<String, dynamic> json) {
+    return ExerciseSet(
+      steps: (json['steps'] as List).map((step) => ExerciseStep.fromJson(step as Map<String, dynamic>)).toList(),
+      restDuration: json['restDuration'] as int,
+      repeatCount: json['repeatCount'] as int,
+    );
+  }
 }

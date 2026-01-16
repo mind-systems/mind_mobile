@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/BreathModule/Core/BreathSessionProvider.dart';
+import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
 import 'package:mind/router.dart';
 
 import 'package:mind/Core/ApiService.dart';
@@ -28,6 +29,8 @@ class AppInitializer {
     final deeplinkRouter = DeeplinkRouter(firebaseHandler: firebaseHandler);
     await deeplinkRouter.init();
 
+    final breathSessionRepository = BreathSessionRepository(db: db, api: api);
+
     runApp(
       ProviderScope(
         overrides: [
@@ -38,7 +41,7 @@ class AppInitializer {
             ),
           ),
           breathSessionNotifierProvider.overrideWith(
-            () => BreathSessionNotifier(),
+            () => BreathSessionNotifier(repository: breathSessionRepository),
           ),
         ],
         child: const MyApp(),

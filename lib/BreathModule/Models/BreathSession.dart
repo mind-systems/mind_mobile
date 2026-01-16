@@ -48,4 +48,24 @@ class BreathSession {
       exercises: [rest, squareBreathing],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'description': description,
+      'shared': shared,
+      'exercises': exercises.map((exercise) => exercise.toJson()).toList(),
+    };
+  }
+
+  factory BreathSession.fromJson(Map<String, dynamic> json) {
+    return BreathSession(
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      description: json['description'] as String,
+      shared: json['shared'] as bool,
+      exercises: (json['exercises'] as List).map((exercise) => ExerciseSet.fromJson(exercise as Map<String, dynamic>)).toList(),
+    );
+  }
 }
