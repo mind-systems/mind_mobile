@@ -24,7 +24,7 @@ class BreathMotionEngine extends ChangeNotifier {
 
   // Константы
   static const double _smoothingFactor = 0.2;
-  static const double _dampingFactor = 0.005;
+  static const double _dampingFactor = 0.08;
   static const double _velocityTolerance = 1e-6;
 
   // Ticker
