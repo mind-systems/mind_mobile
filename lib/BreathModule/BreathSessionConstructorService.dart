@@ -109,7 +109,7 @@ class BreathSessionConstructorService implements IBreathSessionConstructorServic
     }
 
     return ExerciseEditCellModel(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       inhale: inhale,
       hold1: hold1,
       exhale: exhale,

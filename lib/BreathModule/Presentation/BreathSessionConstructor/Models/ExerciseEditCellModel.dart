@@ -1,4 +1,5 @@
 import 'package:mind/BreathModule/Presentation/CommonModels/StepType.dart';
+import 'package:uuid/uuid.dart';
 
 enum ExerciseIcon {
   circle,
@@ -10,27 +11,33 @@ enum ExerciseIcon {
 
 class ExerciseEditCellModel {
   final String id;
-  int inhale;
-  int hold1;
-  int exhale;
-  int hold2;
-  int cycles;
-  int rest;
+  final int inhale;
+  final int hold1;
+  final int exhale;
+  final int hold2;
+  final int cycles;
+  final int rest;
 
   ExerciseEditCellModel({
     required this.id,
-    this.inhale = 0,
-    this.hold1 = 0,
-    this.exhale = 0,
-    this.hold2 = 0,
-    this.cycles = 1,
-    this.rest = 0,
+    required this.inhale,
+    required this.hold1,
+    required this.exhale,
+    required this.hold2,
+    required this.cycles,
+    required this.rest,
   });
 
   // Создание нового упражнения с генерацией ID
   factory ExerciseEditCellModel.create() {
     return ExerciseEditCellModel(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
+      inhale: 0,
+      hold1: 0,
+      exhale: 0,
+      hold2: 0,
+      cycles: 1,
+      rest: 0,
     );
   }
 
