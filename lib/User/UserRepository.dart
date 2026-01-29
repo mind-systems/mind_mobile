@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:mind/Core/ApiService.dart';
-import 'package:mind/Core/Database.dart';
+import 'package:mind/Core/Api/ApiService.dart';
+import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/Core/Environment.dart';
 import 'package:mind/User/Models/AuthRequest.dart';
 import 'package:shared_preferences/shared_preferences.dart';

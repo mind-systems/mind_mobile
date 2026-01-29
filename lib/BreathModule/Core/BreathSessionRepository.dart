@@ -1,5 +1,5 @@
-import 'package:mind/Core/ApiService.dart';
-import 'package:mind/Core/Database.dart';
+import 'package:mind/Core/Api/ApiService.dart';
+import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 
 class BreathSessionRepository {

@@ -6,8 +6,8 @@ import 'package:mind/BreathModule/Core/BreathSessionProvider.dart';
 import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
 import 'package:mind/router.dart';
 
-import 'package:mind/Core/ApiService.dart';
-import 'package:mind/Core/Database.dart';
+import 'package:mind/Core/Api/ApiService.dart';
+import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/Core/DeeplinkRouter.dart';
 import 'package:mind/Core/Handlers/FirebaseDeeplinkHandler.dart';
 import 'package:mind/User/UserProvider.dart';

@@ -1,7 +1,7 @@
 import 'package:mind/BreathModule/Models/BreathSession.dart';
-import 'package:mind/Core/Models/ApiExeption.dart';
+import 'package:mind/Core/Api/Models/ApiExeption.dart';
 import 'package:mind/User/Models/AuthRequest.dart';
-import 'Environment.dart';
+import '../Environment.dart';
 
 import 'package:mind/User/Models/User.dart';
 import 'package:dio/dio.dart';

@@ -14,6 +14,7 @@ class BreathSessionNotifier extends Notifier<List<BreathSession>> {
 
   Future<void> load(int page, int pageSize) async {
     final sessions = await repository.fetch(page, pageSize);
+    // todo paging
     state = sessions;
   }
 
