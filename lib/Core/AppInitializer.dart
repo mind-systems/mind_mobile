@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:mind/BreathModule/Core/BreathSessionProvider.dart';
+import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
-import 'package:mind/Core/LogoutNotifier.dart';
+import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/router.dart';
 
 import 'package:mind/Core/Api/ApiService.dart';
@@ -13,7 +13,7 @@ import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/Core/DeeplinkRouter.dart';
 import 'package:mind/Core/Handlers/FirebaseDeeplinkHandler.dart';
-import 'package:mind/User/UserProvider.dart';
+import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
 
 class AppInitializer {

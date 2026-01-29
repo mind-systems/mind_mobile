@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:mind/Core/LogoutNotifier.dart';
+import 'package:mind/User/LogoutNotifier.dart';
 
 class AuthInterceptor extends Interceptor {
   final FlutterSecureStorage _storage;

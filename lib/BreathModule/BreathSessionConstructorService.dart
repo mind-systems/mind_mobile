@@ -1,4 +1,4 @@
-import 'package:mind/BreathModule/Core/BreathSessionProvider.dart';
+import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/IBreathSessionConstructorService.dart';

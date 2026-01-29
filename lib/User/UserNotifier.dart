@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mind/Core/LogoutNotifier.dart';
+import 'package:mind/User/LogoutNotifier.dart';
 
 import 'Models/AuthState.dart';
 import 'Models/User.dart';

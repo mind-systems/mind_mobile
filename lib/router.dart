@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mind/BreathModule/BreathSessionConstructorService.dart';
-import 'package:mind/BreathModule/Core/BreathSessionProvider.dart';
+import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
@@ -13,7 +13,7 @@ import 'package:mind/User/Presentation/Login/LoginViewModel.dart';
 import 'package:mind/HomePage.dart';
 import 'package:mind/BreathModule/ClockTickService.dart';
 import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
-import 'package:mind/User/UserProvider.dart';
+import 'package:mind/User/UserNotifier.dart';
 
 final appRouter = GoRouter(
   onEnter: (context, currentState, nextState, router) {

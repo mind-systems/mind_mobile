@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'LoginState.dart';
 import 'package:mind/User/Models/AuthState.dart';
-import 'package:mind/User/UserProvider.dart';
+import 'package:mind/User/UserNotifier.dart';
 
 // Базовый провайдер для LoginViewModel (переопределяется в модуле)
 final loginViewModelProvider = StateNotifierProvider<LoginViewModel, LoginState>((ref) {
