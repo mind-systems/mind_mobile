@@ -1,12 +1,15 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/BreathModule/Core/BreathSessionProvider.dart';
 import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
+import 'package:mind/Core/LogoutNotifier.dart';
 import 'package:mind/router.dart';
 
 import 'package:mind/Core/Api/ApiService.dart';
+import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/Core/DeeplinkRouter.dart';
 import 'package:mind/Core/Handlers/FirebaseDeeplinkHandler.dart';
@@ -21,7 +24,10 @@ class AppInitializer {
     await GoogleSignIn.instance.initialize();
 
     final db = Database();
-    final api = ApiService();
+    final logoutNotifier = LogoutNotifier();
+    final authInterceptor = AuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
+    final api = ApiService(authInterceptor: authInterceptor);
+
     final userRepository = UserRepository(db: db, api: api);
     final initialUser = await userRepository.loadUser();
 
@@ -34,6 +40,7 @@ class AppInitializer {
     runApp(
       ProviderScope(
         overrides: [
+          logoutNotifierProvider.overrideWith(() => logoutNotifier),
           userNotifierProvider.overrideWith(
             () => UserNotifier(
               repository: userRepository,

@@ -127,9 +127,14 @@ class UserRepository {
   }
 
   Future<User> logout(User currentUser) async {
+    await _api.logout(currentUser);
+    return await clearSession(currentUser);
+  }
+
+  Future<User> clearSession(User currentUser) async {
     await _firebaseAuth.signOut();
     await _googleSignIn.signOut();
-    await _api.logout(currentUser);
+    await _api.clearToken();
 
     await _deleteUser(currentUser.id);
 

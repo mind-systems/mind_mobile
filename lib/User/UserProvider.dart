@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mind/Core/LogoutNotifier.dart';
 
 import 'Models/AuthState.dart';
 import 'Models/User.dart';
@@ -12,6 +13,10 @@ class UserNotifier extends Notifier<AuthState> {
 
   @override
   AuthState build() {
+    ref.listen(logoutNotifierProvider, (_, _) {
+      clearSession();
+    });
+
     return initialUser.isGuest ? GuestState(initialUser) : AuthenticatedState(initialUser);
   }
 
@@ -33,6 +38,13 @@ class UserNotifier extends Notifier<AuthState> {
     final currentUser = state.user;
 
     final newGuest = await repository.logout(currentUser);
+    state = GuestState(newGuest);
+  }
+
+  Future<void> clearSession() async {
+    final currentUser = state.user;
+
+    final newGuest = await repository.clearSession(currentUser);
     state = GuestState(newGuest);
   }
 }
