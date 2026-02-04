@@ -13,8 +13,10 @@ import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/Core/DeeplinkRouter.dart';
 import 'package:mind/Core/Handlers/FirebaseDeeplinkHandler.dart';
+import 'package:mind/Core/GlobalUI/GlobalKeys.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
+import 'package:mind/Core/GlobalUI/GlobalListeners.dart';
 
 class AppInitializer {
   static Future<void> initialize({required FirebaseOptions firebaseOptions,}) async {
@@ -63,11 +65,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(context) {
     return MaterialApp.router(
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       title: 'Mind',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       routerConfig: appRouter,
+      builder: (context, child) {
+        return GlobalListeners(child: child!);
+      },
     );
   }
 }
