@@ -26,11 +26,17 @@ alwaysApply: true
 - **РАЗРЕШЕНО:** View подписывается на callbacks ViewModel в `initState` через `addPostFrameCallback`
 
 ### ViewModel
-- **РАЗРЕШЕНО:** ViewModel может слушать любые глобальные провайдеры через `ref.listen`, `ref.watch`, `ref.read`
+- **ЗАПРЕЩЕНО:** ViewModel НЕ МОЖЕТ напрямую обращаться к глобальным провайдерам через `ref`
+- **РАЗРЕШЕНО:** ViewModel работает ТОЛЬКО через Service, переданный через DI
 - **ОБЯЗАТЕЛЬНО:** ViewModel предоставляет nullable callbacks для событий (`onError`, `onSuccess`, и т.д.)
 - **ОБЯЗАТЕЛЬНО:** ViewModel содержит всю бизнес-логику экрана
 
-**Правило:** View знает ТОЛЬКО о своей ViewModel. Всё остальное - через ViewModel.
+### Service
+- **РАЗРЕШЕНО:** Service может работать с провайдерами (Notifier) для доступа к данным
+- **ОБЯЗАТЕЛЬНО:** Service - прослойка между ViewModel и глобальными провайдерами
+- **ОБЯЗАТЕЛЬНО:** Провайдер (Notifier) - единственный источник правды для данных модуля
+
+**Правило:** View знает ТОЛЬКО о своей ViewModel. ViewModel знает ТОЛЬКО о Service. Service работает с провайдерами.
 
 ## Навигация
 - Корень — экран с TabBar/BottomNavigation.

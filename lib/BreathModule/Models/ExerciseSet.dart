@@ -17,6 +17,22 @@ class ExerciseSet {
 
   int get cycleDuration => steps.fold(0, (sum, step) => sum + step.duration);
 
+  /// Полная длительность сета с учётом повторений и отдыхов
+  int get totalDuration {
+    // Если нет упражнений — это одноразовый отдых между сетами
+    if (steps.isEmpty) {
+      return restDuration;
+    }
+
+    // Длительность всех повторений цикла
+    final exerciseDuration = cycleDuration * repeatCount;
+
+    // Отдых между повторениями внутри сета (на 1 меньше, чем повторений)
+    final internalRests = restDuration * (repeatCount - 1);
+
+    return exerciseDuration + internalRests;
+  }
+
   SetShape? get shape {
     if (steps.length == 2) return SetShape.circle;
     if (steps.length == 3) return steps.last.type == StepType.hold ? SetShape.triangleUp : SetShape.triangleDown;

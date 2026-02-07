@@ -1,12 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mind/BreathModule/BreathSessionConstructorService.dart';
+import 'package:mind/BreathModule/BreathSessionListService.dart';
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorViewModel.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListScreen.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListViewModel.dart';
 import 'package:mind/BreathSessionMocks.dart';
 import 'package:mind/User/Presentation/Login/LoginScreen.dart';
 import 'package:mind/User/Presentation/Login/LoginViewModel.dart';
@@ -65,9 +68,9 @@ final appRouter = GoRouter(
         // Выбери нужную тестовую сессию:
         // final session = BreathSessionMocks.quickTestSession;       // Быстрая
         // final session = BreathSessionMocks.triangleOnlySession;    // Только треугольники
-        // final session = BreathSessionMocks.boxOnlySession;         // Только квадраты
+        final session = BreathSessionMocks.boxOnlySession;         // Только квадраты
         // final session = BreathSessionMocks.mixedShapesSession;     // Микс форм
-        final session = BreathSessionMocks.fullTestSession;        // Полная тестовая
+        // final session = BreathSessionMocks.fullTestSession;        // Полная тестовая
         // final session = BreathSessionMocks.longSession;            // Длинная сессия
 
         return ProviderScope(
@@ -101,6 +104,25 @@ final appRouter = GoRouter(
             ),
           ],
           child: const BreathSessionConstructorScreen(),
+        );
+      },
+    ),
+    GoRoute(
+      path: BreathSessionListScreen.path,
+      name: BreathSessionListScreen.name,
+      builder: (context, state) {
+        final container = ProviderScope.containerOf(context);
+        final provider = container.read(breathSessionNotifierProvider.notifier);
+
+        final service = BreathSessionListService(provider: provider);
+
+        return ProviderScope(
+          overrides: [
+            breathSessionListViewModelProvider.overrideWith(
+              (ref) => BreathSessionListViewModel(service: service),
+            ),
+          ],
+          child: const BreathSessionListScreen(),
         );
       },
     ),
