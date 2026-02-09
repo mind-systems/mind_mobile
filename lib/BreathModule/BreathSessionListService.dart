@@ -1,45 +1,94 @@
+import 'dart:async';
+
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
+import 'package:mind/BreathModule/Core/Models/BreathSessionNotifierEvent.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/IBreathSessionListService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItemDTO.dart';
-import 'package:rxdart/rxdart.dart';
 
 class BreathSessionListService implements IBreathSessionListService {
-  final BreathSessionNotifier provider;
-  final BehaviorSubject<List<BreathSessionListItemDTO>> _subject;
+  final BreathSessionNotifier notifier;
 
-  BreathSessionListService({required this.provider})
-      : _subject = BehaviorSubject<List<BreathSessionListItemDTO>>() {
-    _subject.add(_transformSessions(provider.currentState));
+  final StreamController<BreathSessionListEvent> _controller =
+      StreamController<BreathSessionListEvent>.broadcast();
 
-    provider.stream.listen((sessions) {
-      _subject.add(_transformSessions(sessions));
-    });
+  late final StreamSubscription _subscription;
+
+  BreathSessionListService({required this.notifier}) {
+    _subscription = notifier.stream.listen(_onNotifierState);
   }
 
   @override
-  Stream<List<BreathSessionListItemDTO>> observeChanges() => _subject.stream;
+  Stream<BreathSessionListEvent> observeChanges() => _controller.stream;
+
+  /// ---------- Pagination ----------
 
   @override
   Future<void> fetchPage(int page, int pageSize) async {
-    await provider.load(page, pageSize);
+    await notifier.load(page, pageSize);
   }
 
   @override
-  Future<void> syncSessions(int pageSize) async {
-    await provider.load(0, pageSize);
+  Future<void> refresh(int pageSize) async {
+    await notifier.refresh(pageSize);
   }
 
-  List<BreathSessionListItemDTO> _transformSessions(List<BreathSession> sessions) {
-    return sessions.map(_sessionToDTO).toList();
+  /// ---------- Notifier → Service ----------
+
+  void _onNotifierState(BreathSessionsState state) {
+    final event = state.lastEvent;
+    if (event == null) return;
+
+    switch (event) {
+      case PageLoaded e:
+        _controller.add(
+          PageLoadedEvent(
+            page: e.page,
+            items: _mapSessions(e.sessions),
+            hasMore: e.hasMore,
+          ),
+        );
+        break;
+
+      case SessionsRefreshed e:
+        _controller.add(
+          SessionsRefreshedEvent(
+            items: _mapSessions(e.sessions),
+            hasMore: e.hasMore,
+          ),
+        );
+        break;
+
+      case SessionCreated e:
+        _controller.add(
+          SessionCreatedEvent(_mapSession(e.session)),
+        );
+        break;
+
+      case SessionUpdated e:
+        _controller.add(
+          SessionUpdatedEvent(_mapSession(e.session)),
+        );
+        break;
+
+      case SessionDeleted e:
+        _controller.add(
+          SessionDeletedEvent(e.id),
+        );
+        break;
+    }
   }
 
-  void dispose() {
-    _subject.close();
+  /// ---------- Mapping ----------
+
+  List<BreathSessionListItemDTO> _mapSessions(
+    List<BreathSession> sessions,
+  ) {
+    return sessions.map(_mapSession).toList();
   }
 
-  BreathSessionListItemDTO _sessionToDTO(BreathSession session) {
+  BreathSessionListItemDTO _mapSession(BreathSession session) {
     final patterns = session.exercises.map(_exerciseSetToPattern).toList();
     final totalDuration = _calculateTotalDuration(session.exercises);
 
@@ -52,11 +101,11 @@ class BreathSessionListService implements IBreathSessionListService {
   }
 
   BreathPatternDTO _exerciseSetToPattern(ExerciseSet exerciseSet) {
-    final shape = _mapShape(exerciseSet.shape);
-    final durations = exerciseSet.steps.map((step) => step.duration).toList();
+    final durations =
+        exerciseSet.steps.map((step) => step.duration).toList();
 
     return BreathPatternDTO(
-      shape: shape,
+      shape: _mapShape(exerciseSet.shape),
       durations: durations,
       repeatCount: exerciseSet.repeatCount,
     );
@@ -78,6 +127,16 @@ class BreathSessionListService implements IBreathSessionListService {
   }
 
   int _calculateTotalDuration(List<ExerciseSet> exercises) {
-    return exercises.fold(0, (total, exercise) => total + exercise.totalDuration);
+    return exercises.fold(
+      0,
+      (total, exercise) => total + exercise.totalDuration,
+    );
+  }
+
+  /// ---------- Lifecycle ----------
+
+  void dispose() {
+    _subscription.cancel();
+    _controller.close();
   }
 }

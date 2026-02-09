@@ -1,26 +1,93 @@
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItemDTO.dart';
 
 /// Сервис адаптации доменных моделей BreathSession в презентационные DTO
-/// для списка сессий. Не знает про UI, не формирует строки, только структурные данные.
+/// для списка сессий.
 ///
-/// Все методы асинхронные и завершаются после выполнения запроса.
-/// Данные приходят через поток observeChanges(), а не через return.
+/// - Не знает про UI
+/// - Не формирует строки
+/// - Работает только с DTO и событиями
+///
+/// Все изменения приходят через observeChanges().
+/// Методы fetch/refresh завершаются после выполнения запроса (для обработки ошибок), данные эмитятся через stream.
 abstract class IBreathSessionListService {
-  /// Подписка на изменения данных.
-  /// Возвращает поток DTO, который обновляется при любых изменениях в источнике данных.
-  /// При подписке сразу эмитит текущее состояние (если данные есть).
-  Stream<List<BreathSessionListItemDTO>> observeChanges();
+  /// Подписка на все события изменения списка сессий.
+  ///
+  /// Эмитит:
+  /// - PageLoadedEvent (пагинация)
+  /// - SessionsRefreshedEvent (pull-to-refresh)
+  /// - SessionCreatedEvent
+  /// - SessionUpdatedEvent
+  /// - SessionDeletedEvent
+  ///
+  /// При подписке может сразу эмитить актуальное состояние,
+  /// если данные уже есть в кеше.
+  Stream<BreathSessionListEvent> observeChanges();
 
   /// Загружает страницу сессий.
   ///
-  /// [page] - номер страницы (начиная с 0)
-  /// [pageSize] - количество элементов на странице
+  /// Результат приходит через observeChanges()
+  /// как PageLoadedEvent.
+  ///
+  /// [page] — номер страницы (начиная с 0)
+  /// [pageSize] — количество элементов на странице
   Future<void> fetchPage(int page, int pageSize);
 
-  /// Полная синхронизация сессий (для pull-to-refresh).
-  /// Метод завершается после выполнения запроса.
-  /// Данные придут через observeChanges().
+  /// Полная синхронизация (pull-to-refresh).
   ///
-  /// [pageSize] - количество элементов на странице
-  Future<void> syncSessions(int pageSize);
+  /// Полностью сбрасывает текущий список
+  /// и загружает первую страницу.
+  ///
+  /// Результат приходит через observeChanges()
+  /// как SessionsRefreshedEvent.
+  ///
+  /// [pageSize] — количество элементов первой страницы
+  Future<void> refresh(int pageSize);
+}
+
+/// Базовый тип всех событий списка сессий
+sealed class BreathSessionListEvent {}
+
+/// Загружена страница данных (пагинация)
+class PageLoadedEvent extends BreathSessionListEvent {
+  final int page;
+  final List<BreathSessionListItemDTO> items;
+  final bool hasMore;
+
+  PageLoadedEvent({
+    required this.page,
+    required this.items,
+    required this.hasMore,
+  });
+}
+
+/// Полный рефреш списка (pull-to-refresh)
+class SessionsRefreshedEvent extends BreathSessionListEvent {
+  final List<BreathSessionListItemDTO> items;
+  final bool hasMore;
+
+  SessionsRefreshedEvent({
+    required this.items,
+    required this.hasMore,
+  });
+}
+
+/// Создана новая сессия
+class SessionCreatedEvent extends BreathSessionListEvent {
+  final BreathSessionListItemDTO session;
+
+  SessionCreatedEvent(this.session);
+}
+
+/// Обновлена существующая сессия
+class SessionUpdatedEvent extends BreathSessionListEvent {
+  final BreathSessionListItemDTO session;
+
+  SessionUpdatedEvent(this.session);
+}
+
+/// Удалена сессия
+class SessionDeletedEvent extends BreathSessionListEvent {
+  final String id;
+
+  SessionDeletedEvent(this.id);
 }

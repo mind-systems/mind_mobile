@@ -22,7 +22,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
   final int pageSize;
 
   int _currentPage = 0;
-  StreamSubscription<List<BreathSessionListItemDTO>>? _subscription;
+  StreamSubscription<BreathSessionListEvent>? _subscription;
 
   void Function(SessionListError error)? onErrorEvent;
 
@@ -34,39 +34,81 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
             hasMore: true,
           ),
         ) {
-    _subscription = service.observeChanges().listen(_onDataChanged);
+    _subscription = service.observeChanges().listen(_onEvent);
     _loadInitialPage();
   }
 
-  void _onDataChanged(List<BreathSessionListItemDTO> dtos) {
-    final cellModels = _transformDTOsToModels(dtos);
+  void _onEvent(BreathSessionListEvent event) {
+    switch (event) {
+      case PageLoadedEvent e:
+        _handlePageLoaded(e);
+        break;
 
-    if (state.mode == BreathSessionListMode.initialLoading) {
-      state = BreathSessionListState(
-        items: cellModels,
-        mode: cellModels.isEmpty
-            ? BreathSessionListMode.empty
-            : BreathSessionListMode.content,
-        hasMore: dtos.length >= pageSize,
-      );
-    } else if (state.mode == BreathSessionListMode.paging) {
-      state = BreathSessionListState(
-        items: cellModels,
-        mode: BreathSessionListMode.content,
-        hasMore: dtos.length >= pageSize,
-      );
-    } else if (state.mode == BreathSessionListMode.syncing) {
-      state = BreathSessionListState(
-        items: cellModels,
-        mode: cellModels.isEmpty
-            ? BreathSessionListMode.empty
-            : BreathSessionListMode.content,
-        hasMore: dtos.length >= pageSize,
-      );
-      _currentPage = 0;
-    } else {
-      state = state.copyWith(items: cellModels);
+      case SessionsRefreshedEvent e:
+        _handleSessionsRefreshed(e);
+        break;
+
+      case SessionCreatedEvent e:
+        _handleSessionCreated(e);
+        break;
+
+      case SessionUpdatedEvent e:
+        _handleSessionUpdated(e);
+        break;
+
+      case SessionDeletedEvent e:
+        _handleSessionDeleted(e);
+        break;
     }
+  }
+
+  void _handlePageLoaded(PageLoadedEvent event) {
+    final newItems = _transformDTOsToModels(event.items);
+    final updatedItems = event.page == 0 ? newItems : [...state.items, ...newItems];
+
+    state = BreathSessionListState(
+      items: updatedItems,
+      mode: updatedItems.isEmpty
+          ? BreathSessionListMode.empty
+          : BreathSessionListMode.content,
+      hasMore: event.hasMore,
+    );
+  }
+
+  void _handleSessionsRefreshed(SessionsRefreshedEvent event) {
+    final items = _transformDTOsToModels(event.items);
+
+    state = BreathSessionListState(
+      items: items,
+      mode: items.isEmpty
+          ? BreathSessionListMode.empty
+          : BreathSessionListMode.content,
+      hasMore: event.hasMore,
+    );
+
+    _currentPage = 0;
+  }
+
+  void _handleSessionCreated(SessionCreatedEvent event) {
+    final newItem = _dtoToCellModel(event.session);
+    state = state.copyWith(items: [newItem, ...state.items]);
+  }
+
+  void _handleSessionUpdated(SessionUpdatedEvent event) {
+    final updatedItem = _dtoToCellModel(event.session);
+    final updatedItems = [
+      for (final item in state.items)
+        if (item.id == event.session.id) updatedItem else item
+    ];
+    state = state.copyWith(items: updatedItems);
+  }
+
+  void _handleSessionDeleted(SessionDeletedEvent event) {
+    final items = state.items.where((item) => item.id != event.id).toList();
+    state = state.copyWith(
+      items: items,
+      mode: items.isEmpty ? BreathSessionListMode.empty : BreathSessionListMode.content,
+    );
   }
 
   Future<void> _loadInitialPage() async {
@@ -101,7 +143,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
     state = state.copyWith(mode: BreathSessionListMode.syncing);
 
     try {
-      await service.syncSessions(pageSize);
+      await service.refresh(pageSize);
     } catch (e) {
       onErrorEvent?.call(SessionListError.syncFailed);
       state = state.copyWith(mode: BreathSessionListMode.content);
