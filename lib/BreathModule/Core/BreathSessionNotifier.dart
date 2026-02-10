@@ -6,23 +6,18 @@ import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Core/Models/BreathSessionNotifierEvent.dart';
 
 class BreathSessionsState {
-  final List<BreathSession> cachedSessions;
+  final Map<String, BreathSession> byId;
+  final List<String> order;
   final BreathSessionNotifierEvent? lastEvent;
 
   const BreathSessionsState({
-    required this.cachedSessions,
+    required this.byId,
+    required this.order,
     required this.lastEvent,
   });
 
-  BreathSessionsState copyWith({
-    List<BreathSession>? cachedSessions,
-    BreathSessionNotifierEvent? lastEvent,
-  }) {
-    return BreathSessionsState(
-      cachedSessions: cachedSessions ?? this.cachedSessions,
-      lastEvent: lastEvent,
-    );
-  }
+  List<BreathSession> get orderedSessions =>
+      order.map((id) => byId[id]!).toList();
 }
 
 class BreathSessionNotifier extends Notifier<BreathSessionsState> {
@@ -42,7 +37,8 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
     });
 
     return const BreathSessionsState(
-      cachedSessions: [],
+      byId: {},
+      order: [],
       lastEvent: null,
     );
   }
@@ -59,15 +55,35 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
     final sessions = await repository.fetch(page, pageSize);
     final hasMore = sessions.length >= pageSize;
 
-    final updatedCache = page == 0
-        ? sessions
-        : [...state.cachedSessions, ...sessions];
+    final Map<String, BreathSession> updatedById;
+    final List<String> updatedOrder;
+    final List<BreathSession> newSessions;
 
-    state = state.copyWith(
-      cachedSessions: updatedCache,
+    if (page == 0) {
+      updatedById = {for (final s in sessions) s.id: s};
+      updatedOrder = sessions.map((s) => s.id).toList();
+      newSessions = sessions;
+    } else {
+      updatedById = Map.from(state.byId);
+      updatedOrder = List.from(state.order);
+      newSessions = [];
+
+      for (final session in sessions) {
+        final isNew = !state.byId.containsKey(session.id);
+        updatedById[session.id] = session;
+        if (isNew) {
+          updatedOrder.add(session.id);
+          newSessions.add(session);
+        }
+      }
+    }
+
+    state = BreathSessionsState(
+      byId: updatedById,
+      order: updatedOrder,
       lastEvent: PageLoaded(
         page: page,
-        sessions: sessions,
+        sessions: newSessions,
         hasMore: hasMore,
       ),
     );
@@ -77,8 +93,9 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
     final sessions = await repository.fetch(0, pageSize);
     final hasMore = sessions.length >= pageSize;
 
-    state = state.copyWith(
-      cachedSessions: sessions,
+    state = BreathSessionsState(
+      byId: {for (final s in sessions) s.id: s},
+      order: sessions.map((s) => s.id).toList(),
       lastEvent: SessionsRefreshed(
         sessions: sessions,
         hasMore: hasMore,
@@ -91,37 +108,35 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
   Future<void> save(BreathSession session) async {
     await repository.save(session);
 
-    final index =
-    state.cachedSessions.indexWhere((s) => s.id == session.id);
+    final isNew = !state.byId.containsKey(session.id);
 
-    if (index == -1) {
-      final updatedCache = [...state.cachedSessions, session];
+    final updatedById = Map<String, BreathSession>.from(state.byId);
+    updatedById[session.id] = session;
 
-      state = state.copyWith(
-        cachedSessions: updatedCache,
-        lastEvent: SessionCreated(session),
-      );
-    } else {
-      final updatedCache = [
-        for (final s in state.cachedSessions)
-          if (s.id == session.id) session else s,
-      ];
-
-      state = state.copyWith(
-        cachedSessions: updatedCache,
-        lastEvent: SessionUpdated(session),
-      );
+    final updatedOrder = List<String>.from(state.order);
+    if (isNew) {
+      updatedOrder.insert(0, session.id);
     }
+
+    state = BreathSessionsState(
+      byId: updatedById,
+      order: updatedOrder,
+      lastEvent: isNew ? SessionCreated(session) : SessionUpdated(session),
+    );
   }
 
   Future<void> delete(String id) async {
     await repository.delete(id);
 
-    final updatedCache =
-    state.cachedSessions.where((s) => s.id != id).toList();
+    final updatedById = Map<String, BreathSession>.from(state.byId);
+    updatedById.remove(id);
 
-    state = state.copyWith(
-      cachedSessions: updatedCache,
+    final updatedOrder = List<String>.from(state.order);
+    updatedOrder.remove(id);
+
+    state = BreathSessionsState(
+      byId: updatedById,
+      order: updatedOrder,
       lastEvent: SessionDeleted(id),
     );
   }
@@ -129,10 +144,7 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
   /// ---------- Sync access ----------
 
   BreathSession? getById(String id) {
-    for (final session in state.cachedSessions) {
-      if (session.id == id) return session;
-    }
-    return null;
+    return state.byId[id];
   }
 }
 
