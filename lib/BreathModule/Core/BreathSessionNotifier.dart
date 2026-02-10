@@ -26,6 +26,8 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
   final StreamController<BreathSessionsState> _controller =
   StreamController<BreathSessionsState>.broadcast();
 
+  bool _isLoading = false;
+
   BreathSessionNotifier({required this.repository});
 
   Stream<BreathSessionsState> get stream => _controller.stream;
@@ -52,55 +54,71 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
   /// ---------- Pagination ----------
 
   Future<void> load(int page, int pageSize) async {
-    final sessions = await repository.fetch(page, pageSize);
-    final hasMore = sessions.length >= pageSize;
+    if (_isLoading) return;
 
-    final Map<String, BreathSession> updatedById;
-    final List<String> updatedOrder;
-    final List<BreathSession> newSessions;
+    _isLoading = true;
 
-    if (page == 0) {
-      updatedById = {for (final s in sessions) s.id: s};
-      updatedOrder = sessions.map((s) => s.id).toList();
-      newSessions = sessions;
-    } else {
-      updatedById = Map.from(state.byId);
-      updatedOrder = List.from(state.order);
-      newSessions = [];
+    try {
+      final sessions = await repository.fetch(page, pageSize);
+      final hasMore = sessions.length >= pageSize;
 
-      for (final session in sessions) {
-        final isNew = !state.byId.containsKey(session.id);
-        updatedById[session.id] = session;
-        if (isNew) {
-          updatedOrder.add(session.id);
-          newSessions.add(session);
+      final Map<String, BreathSession> updatedById;
+      final List<String> updatedOrder;
+      final List<BreathSession> newSessions;
+
+      if (page == 0) {
+        updatedById = {for (final s in sessions) s.id: s};
+        updatedOrder = sessions.map((s) => s.id).toList();
+        newSessions = sessions;
+      } else {
+        updatedById = Map.from(state.byId);
+        updatedOrder = List.from(state.order);
+        newSessions = [];
+
+        for (final session in sessions) {
+          final isNew = !state.byId.containsKey(session.id);
+          updatedById[session.id] = session;
+          if (isNew) {
+            updatedOrder.add(session.id);
+            newSessions.add(session);
+          }
         }
       }
-    }
 
-    state = BreathSessionsState(
-      byId: updatedById,
-      order: updatedOrder,
-      lastEvent: PageLoaded(
-        page: page,
-        sessions: newSessions,
-        hasMore: hasMore,
-      ),
-    );
+      state = BreathSessionsState(
+        byId: updatedById,
+        order: updatedOrder,
+        lastEvent: PageLoaded(
+          page: page,
+          sessions: newSessions,
+          hasMore: hasMore,
+        ),
+      );
+    } finally {
+      _isLoading = false;
+    }
   }
 
   Future<void> refresh(int pageSize) async {
-    final sessions = await repository.fetch(0, pageSize);
-    final hasMore = sessions.length >= pageSize;
+    if (_isLoading) return;
 
-    state = BreathSessionsState(
-      byId: {for (final s in sessions) s.id: s},
-      order: sessions.map((s) => s.id).toList(),
-      lastEvent: SessionsRefreshed(
-        sessions: sessions,
-        hasMore: hasMore,
-      ),
-    );
+    _isLoading = true;
+
+    try {
+      final sessions = await repository.fetch(0, pageSize);
+      final hasMore = sessions.length >= pageSize;
+
+      state = BreathSessionsState(
+        byId: {for (final s in sessions) s.id: s},
+        order: sessions.map((s) => s.id).toList(),
+        lastEvent: SessionsRefreshed(
+          sessions: sessions,
+          hasMore: hasMore,
+        ),
+      );
+    } finally {
+      _isLoading = false;
+    }
   }
 
   /// ---------- CRUD ----------
