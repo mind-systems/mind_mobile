@@ -1,56 +1,66 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
+
+import 'package:rxdart/rxdart.dart';
+
 import 'package:mind/User/LogoutNotifier.dart';
+import 'package:mind/User/Models/AuthState.dart';
+import 'package:mind/User/Models/User.dart';
+import 'package:mind/User/UserRepository.dart';
 
-import 'Models/AuthState.dart';
-import 'Models/User.dart';
-import 'UserRepository.dart';
-
-class UserNotifier extends Notifier<AuthState> {
+/// Доменный нотифаер — источник правды по состоянию аутентификации.
+class UserNotifier {
   final UserRepository repository;
-  final User initialUser;
+  final LogoutNotifier logoutNotifier;
 
-  UserNotifier({required this.repository, required this.initialUser});
+  final BehaviorSubject<AuthState> _subject;
+  StreamSubscription<void>? _logoutSubscription;
 
-  @override
-  AuthState build() {
-    ref.listen(logoutNotifierProvider, (_, _) {
+  UserNotifier({
+    required this.repository,
+    required this.logoutNotifier,
+    required User initialUser,
+  }) : _subject = BehaviorSubject<AuthState>.seeded(
+    initialUser.isGuest ? GuestState(initialUser) : AuthenticatedState(initialUser),
+  ) {
+    _logoutSubscription = logoutNotifier.stream.listen((_) {
       clearSession();
     });
-
-    return initialUser.isGuest ? GuestState(initialUser) : AuthenticatedState(initialUser);
   }
 
-  User get currentUser => state.user;
+  Stream<AuthState> get stream => _subject.stream;
+
+  AuthState get currentState => _subject.value;
+
+  User get currentUser => _subject.value.user;
 
   Future<void> sendPasswordlessSignInLink(String email) async {
     await repository.sendPasswordlessSignInLink(email);
   }
 
   Future<void> completePasswordlessSignIn(String emailLink) async {
-    final authenticatedUser = await repository.completePasswordlessSignIn(emailLink,);
-    state = AuthenticatedState(authenticatedUser);
+    final authenticatedUser = await repository.completePasswordlessSignIn(emailLink);
+    _subject.add(AuthenticatedState(authenticatedUser));
   }
 
   Future<void> loginWithGoogle() async {
     final authenticatedUser = await repository.loginWithGoogle();
-    state = AuthenticatedState(authenticatedUser);
+    _subject.add(AuthenticatedState(authenticatedUser));
   }
 
   Future<void> logout() async {
-    final currentUser = state.user;
-
+    final currentUser = _subject.value.user;
     final newGuest = await repository.logout(currentUser);
-    state = GuestState(newGuest);
+    _subject.add(GuestState(newGuest));
   }
 
   Future<void> clearSession() async {
-    final currentUser = state.user;
-
+    final currentUser = _subject.value.user;
     final newGuest = await repository.clearSession(currentUser);
-    state = GuestState(newGuest);
+    _subject.add(GuestState(newGuest));
+  }
+
+  void dispose() {
+    _logoutSubscription?.cancel();
+    _subject.close();
   }
 }
-
-final userNotifierProvider = NotifierProvider<UserNotifier, AuthState>(() {
-  throw UnimplementedError('UserNotifier должен быть передан в ProviderScope');
-});

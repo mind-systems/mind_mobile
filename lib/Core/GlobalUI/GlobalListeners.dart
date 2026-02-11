@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/Core/GlobalUI/GlobalKeys.dart';
@@ -13,13 +15,39 @@ import 'package:mind/Views/SnackBarModule/SnackBarBuilder.dart';
 /// - События логаута через [LogoutNotifier]
 ///
 /// Должен оборачивать корневой виджет приложения.
-class GlobalListeners extends ConsumerWidget {
+class GlobalListeners extends ConsumerStatefulWidget {
+  final LogoutNotifier logoutNotifier;
   final Widget child;
 
-  const GlobalListeners({required this.child, super.key});
+  const GlobalListeners({
+    required this.logoutNotifier,
+    required this.child,
+    super.key,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GlobalListeners> createState() => _GlobalListenersState();
+}
+
+class _GlobalListenersState extends ConsumerState<GlobalListeners> {
+  StreamSubscription<void>? _logoutSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _logoutSubscription = widget.logoutNotifier.stream.listen((_) {
+      _showSnackBar(SnackBarEvent.error('Сессия истекла'));
+    });
+  }
+
+  @override
+  void dispose() {
+    _logoutSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     ref.listen<SnackBarEvent?>(globalSnackBarNotifierProvider, (
       previous,
       next,
@@ -29,11 +57,7 @@ class GlobalListeners extends ConsumerWidget {
       }
     });
 
-    ref.listen<void>(logoutNotifierProvider, (previous, next) {
-      _showSnackBar(SnackBarEvent.error('Сессия истекла'));
-    });
-
-    return child;
+    return widget.child;
   }
 
   void _showSnackBar(SnackBarEvent event) {

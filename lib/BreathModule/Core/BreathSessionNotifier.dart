@@ -1,6 +1,5 @@
-import 'dart:async';
+import 'package:rxdart/rxdart.dart';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Core/Models/BreathSessionNotifierEvent.dart';
@@ -20,36 +19,21 @@ class BreathSessionsState {
       order.map((id) => byId[id]!).toList();
 }
 
-class BreathSessionNotifier extends Notifier<BreathSessionsState> {
+/// Доменный нотифаер — источник правды по сессиям дыхания.
+class BreathSessionNotifier {
   final BreathSessionRepository repository;
 
-  final StreamController<BreathSessionsState> _controller =
-  StreamController<BreathSessionsState>.broadcast();
+  final BehaviorSubject<BreathSessionsState> _subject = BehaviorSubject.seeded(
+    const BreathSessionsState(byId: {}, order: [], lastEvent: null),
+  );
 
   bool _isLoading = false;
 
   BreathSessionNotifier({required this.repository});
 
-  Stream<BreathSessionsState> get stream => _controller.stream;
+  Stream<BreathSessionsState> get stream => _subject.stream;
 
-  @override
-  BreathSessionsState build() {
-    ref.onDispose(() {
-      _controller.close();
-    });
-
-    return const BreathSessionsState(
-      byId: {},
-      order: [],
-      lastEvent: null,
-    );
-  }
-
-  @override
-  set state(BreathSessionsState value) {
-    super.state = value;
-    _controller.add(value);
-  }
+  BreathSessionsState get currentState => _subject.value;
 
   /// ---------- Pagination ----------
 
@@ -65,6 +49,8 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
       final Map<String, BreathSession> updatedById;
       final List<String> updatedOrder;
       final List<BreathSession> newSessions;
+
+      final state = _subject.value;
 
       if (page == 0) {
         updatedById = {for (final s in sessions) s.id: s};
@@ -85,7 +71,7 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
         }
       }
 
-      state = BreathSessionsState(
+      _subject.add(BreathSessionsState(
         byId: updatedById,
         order: updatedOrder,
         lastEvent: PageLoaded(
@@ -93,7 +79,7 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
           sessions: newSessions,
           hasMore: hasMore,
         ),
-      );
+      ));
     } finally {
       _isLoading = false;
     }
@@ -108,14 +94,14 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
       final sessions = await repository.fetch(0, pageSize);
       final hasMore = sessions.length >= pageSize;
 
-      state = BreathSessionsState(
+      _subject.add(BreathSessionsState(
         byId: {for (final s in sessions) s.id: s},
         order: sessions.map((s) => s.id).toList(),
         lastEvent: SessionsRefreshed(
           sessions: sessions,
           hasMore: hasMore,
         ),
-      );
+      ));
     } finally {
       _isLoading = false;
     }
@@ -126,6 +112,7 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
   Future<void> save(BreathSession session) async {
     await repository.save(session);
 
+    final state = _subject.value;
     final isNew = !state.byId.containsKey(session.id);
 
     final updatedById = Map<String, BreathSession>.from(state.byId);
@@ -136,39 +123,37 @@ class BreathSessionNotifier extends Notifier<BreathSessionsState> {
       updatedOrder.insert(0, session.id);
     }
 
-    state = BreathSessionsState(
+    _subject.add(BreathSessionsState(
       byId: updatedById,
       order: updatedOrder,
       lastEvent: isNew ? SessionCreated(session) : SessionUpdated(session),
-    );
+    ));
   }
 
   Future<void> delete(String id) async {
     await repository.delete(id);
 
+    final state = _subject.value;
     final updatedById = Map<String, BreathSession>.from(state.byId);
     updatedById.remove(id);
 
     final updatedOrder = List<String>.from(state.order);
     updatedOrder.remove(id);
 
-    state = BreathSessionsState(
+    _subject.add(BreathSessionsState(
       byId: updatedById,
       order: updatedOrder,
       lastEvent: SessionDeleted(id),
-    );
+    ));
   }
 
   /// ---------- Sync access ----------
 
   BreathSession? getById(String id) {
-    return state.byId[id];
+    return _subject.value.byId[id];
+  }
+
+  void dispose() {
+    _subject.close();
   }
 }
-
-final breathSessionNotifierProvider =
-    NotifierProvider<BreathSessionNotifier, BreathSessionsState>(() {
-  throw UnimplementedError(
-    'BreathSessionNotifier должен быть передан в ProviderScope',
-  );
-});

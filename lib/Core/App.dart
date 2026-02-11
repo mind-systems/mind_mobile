@@ -19,7 +19,29 @@ import 'package:mind/User/UserRepository.dart';
 import 'package:mind/Core/GlobalUI/GlobalListeners.dart';
 
 class App {
-  static Future<void> initialize({required FirebaseOptions firebaseOptions,}) async {
+  static late App shared;
+
+  final Database db;
+  final ApiService api;
+  final LogoutNotifier logoutNotifier;
+  final UserRepository userRepository;
+  final BreathSessionRepository breathSessionRepository;
+  final UserNotifier userNotifier;
+  final BreathSessionNotifier breathSessionNotifier;
+  final DeeplinkRouter deeplinkRouter;
+
+  App._({
+    required this.db,
+    required this.api,
+    required this.logoutNotifier,
+    required this.userRepository,
+    required this.breathSessionRepository,
+    required this.userNotifier,
+    required this.breathSessionNotifier,
+    required this.deeplinkRouter,
+  });
+
+  static Future<void> initialize({required FirebaseOptions firebaseOptions}) async {
     WidgetsFlutterBinding.ensureInitialized();
 
     await Firebase.initializeApp(options: firebaseOptions);
@@ -27,35 +49,34 @@ class App {
 
     final db = Database();
     final logoutNotifier = LogoutNotifier();
+
     final authInterceptor = AuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
     final api = ApiService(authInterceptor: authInterceptor);
 
     final userRepository = UserRepository(db: db, api: api);
+    final breathSessionRepository = BreathSessionRepository(db: db, api: api);
+
     final initialUser = await userRepository.loadUser();
+    final userNotifier = UserNotifier(repository: userRepository, logoutNotifier: logoutNotifier, initialUser: initialUser);
+    final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository);
 
     final firebaseHandler = FirebaseDeeplinkHandler(userRepository: userRepository);
     final deeplinkRouter = DeeplinkRouter(firebaseHandler: firebaseHandler);
-    await deeplinkRouter.init();
 
-    final breathSessionRepository = BreathSessionRepository(db: db, api: api);
-
-    runApp(
-      ProviderScope(
-        overrides: [
-          logoutNotifierProvider.overrideWith(() => logoutNotifier),
-          userNotifierProvider.overrideWith(
-            () => UserNotifier(
-              repository: userRepository,
-              initialUser: initialUser,
-            ),
-          ),
-          breathSessionNotifierProvider.overrideWith(
-            () => BreathSessionNotifier(repository: breathSessionRepository),
-          ),
-        ],
-        child: const MyApp(),
-      ),
+    shared = App._(
+      db: db,
+      api: api,
+      logoutNotifier: logoutNotifier,
+      userRepository: userRepository,
+      breathSessionRepository: breathSessionRepository,
+      userNotifier: userNotifier,
+      breathSessionNotifier: breathSessionNotifier,
+      deeplinkRouter: deeplinkRouter,
     );
+
+    await shared.deeplinkRouter.init();
+
+    runApp(const ProviderScope(child: MyApp()));
   }
 }
 
@@ -72,7 +93,7 @@ class MyApp extends StatelessWidget {
       ),
       routerConfig: appRouter,
       builder: (context, child) {
-        return GlobalListeners(child: child!);
+        return GlobalListeners(logoutNotifier: App.shared.logoutNotifier, child: child!);
       },
     );
   }

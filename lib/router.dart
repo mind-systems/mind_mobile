@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mind/BreathModule/BreathSessionConstructorService.dart';
 import 'package:mind/BreathModule/BreathSessionListService.dart';
-import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
@@ -11,12 +10,13 @@ import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSe
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListViewModel.dart';
 import 'package:mind/BreathSessionMocks.dart';
-import 'package:mind/User/Presentation/Login/LoginScreen.dart';
-import 'package:mind/User/Presentation/Login/LoginViewModel.dart';
+import 'package:mind/Core/App.dart';
 import 'package:mind/HomePage.dart';
 import 'package:mind/BreathModule/ClockTickService.dart';
+import 'package:mind/User/Presentation/Login/LoginScreen.dart';
+import 'package:mind/User/Presentation/Login/LoginService.dart';
+import 'package:mind/User/Presentation/Login/LoginViewModel.dart';
 import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
-import 'package:mind/User/UserNotifier.dart';
 
 final appRouter = GoRouter(
   onEnter: (context, currentState, nextState, router) {
@@ -34,10 +34,11 @@ final appRouter = GoRouter(
       name: OnboardingScreen.name,
       builder: (context, state) {
         final returnPath = state.extra as String? ?? '/';
+        final service = LoginService(userNotifier: App.shared.userNotifier);
         return ProviderScope(
           overrides: [
             loginViewModelProvider.overrideWith(
-              (ref) => LoginViewModel(ref: ref, returnPath: returnPath),
+              (ref) => LoginViewModel(service: service, returnPath: returnPath),
             ),
           ],
           child: const OnboardingScreen(),
@@ -49,10 +50,11 @@ final appRouter = GoRouter(
       name: LoginScreen.name,
       builder: (context, state) {
         final returnPath = state.extra as String? ?? '/';
+        final service = LoginService(userNotifier: App.shared.userNotifier);
         return ProviderScope(
           overrides: [
             loginViewModelProvider.overrideWith(
-              (ref) => LoginViewModel(ref: ref, returnPath: returnPath),
+              (ref) => LoginViewModel(service: service, returnPath: returnPath),
             ),
           ],
           child: const LoginScreen(),
@@ -90,12 +92,11 @@ final appRouter = GoRouter(
       path: BreathSessionConstructorScreen.path,
       name: BreathSessionConstructorScreen.name,
       builder: (context, state) {
-        final container = ProviderScope.containerOf(context);
-        final userId = container.read(userNotifierProvider).user.id;
+        final app = App.shared;
+        final userId = app.userNotifier.currentState.user.id;
         final session = state.extra is BreathSession ? state.extra as BreathSession : BreathSession.defaultSession();
-        final provider = container.read(breathSessionNotifierProvider.notifier);
 
-        final service = BreathSessionConstructorService(userId: userId, existingSession: session, provider: provider);
+        final service = BreathSessionConstructorService(userId: userId, existingSession: session, provider: app.breathSessionNotifier);
 
         return ProviderScope(
           overrides: [
@@ -111,11 +112,8 @@ final appRouter = GoRouter(
       path: BreathSessionListScreen.path,
       name: BreathSessionListScreen.name,
       builder: (context, state) {
-        final container = ProviderScope.containerOf(context);
-        final breathSessionNotifier = container.read(breathSessionNotifierProvider.notifier);
-        final userNotifier = container.read(userNotifierProvider.notifier);
-
-        final service = BreathSessionListService(notifier: breathSessionNotifier, userNotifier: userNotifier);
+        final app = App.shared;
+        final service = BreathSessionListService(notifier: app.breathSessionNotifier, userNotifier: app.userNotifier);
 
         return ProviderScope(
           overrides: [

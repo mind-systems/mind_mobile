@@ -1,14 +1,19 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rxdart/rxdart.dart';
 
-class LogoutNotifier extends Notifier<void> {
-  @override
-  void build() {}
+/// Доменный нотифаер для события логаута (сессия истекла, 401).
+///
+/// Эмитит событие при [triggerLogout].
+/// Используется AuthInterceptor и GlobalListeners.
+class LogoutNotifier {
+  final PublishSubject<void> _subject = PublishSubject<void>();
+
+  Stream<void> get stream => _subject.stream;
 
   void triggerLogout() {
-    ref.notifyListeners();
+    _subject.add(null);
+  }
+
+  void dispose() {
+    _subject.close();
   }
 }
-
-final logoutNotifierProvider = NotifierProvider<LogoutNotifier, void>(() {
-  throw UnimplementedError('LogoutNotifier должен быть передан в ProviderScope');
-});
