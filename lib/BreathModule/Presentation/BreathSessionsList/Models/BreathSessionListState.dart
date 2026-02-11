@@ -1,15 +1,15 @@
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListCellModel.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItem.dart';
 
 enum BreathSessionListMode {
-  initialLoading, // нет данных, первый вход → shimmer
-  content,        // нормальный список
-  paging,         // подгрузка следующей страницы
+  initialLoading, // первый вход → одна анимированная skeleton
+  content,        // нормальный список с данными
+  paging,         // подгрузка следующей страницы → skeleton в конце
   syncing,        // pull-to-refresh / тотальный синк
-  empty,          // данных нет, но без shimmer (статичные шаблоны)
+  empty,          // данных нет → одна статичная skeleton
 }
 
 class BreathSessionListState {
-  final List<BreathSessionListCellModel> items;
+  final List<BreathSessionListItem> items;
   final BreathSessionListMode mode;
   final bool hasMore;
 

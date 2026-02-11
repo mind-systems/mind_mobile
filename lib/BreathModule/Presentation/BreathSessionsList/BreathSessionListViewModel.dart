@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/IBreathSessionListService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListCellModel.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItem.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItemDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListState.dart';
 
@@ -28,8 +28,8 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
 
   BreathSessionListViewModel({required this.service, this.pageSize = 50})
       : super(
-          const BreathSessionListState(
-            items: [],
+          BreathSessionListState(
+            items: [SkeletonCell(animated: true)],
             mode: BreathSessionListMode.initialLoading,
             hasMore: true,
           ),
@@ -63,24 +63,40 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
   }
 
   void _handlePageLoaded(PageLoadedEvent event) {
-    final newItems = _transformDTOsToModels(event.items);
-    final updatedItems = event.page == 0 ? newItems : [...state.items, ...newItems];
+    final cellModels = _transformDTOsToModels(event.items);
 
-    state = BreathSessionListState(
-      items: updatedItems,
-      mode: updatedItems.isEmpty
-          ? BreathSessionListMode.empty
-          : BreathSessionListMode.content,
-      hasMore: event.hasMore,
-    );
+    if (event.page == 0) {
+      // Первая страница
+      state = BreathSessionListState(
+        items: cellModels.isEmpty
+            ? [SkeletonCell(animated: false)]
+            : _buildItemsWithSections(cellModels),
+        mode: cellModels.isEmpty
+            ? BreathSessionListMode.empty
+            : BreathSessionListMode.content,
+        hasMore: event.hasMore,
+      );
+    } else {
+      // Пагинация - добавляем к существующим
+      final currentCells = _extractCellModels(state.items);
+      final allCells = [...currentCells, ...cellModels];
+
+      state = BreathSessionListState(
+        items: _buildItemsWithSections(allCells),
+        mode: BreathSessionListMode.content,
+        hasMore: event.hasMore,
+      );
+    }
   }
 
   void _handleSessionsRefreshed(SessionsRefreshedEvent event) {
-    final items = _transformDTOsToModels(event.items);
+    final cellModels = _transformDTOsToModels(event.items);
 
     state = BreathSessionListState(
-      items: items,
-      mode: items.isEmpty
+      items: cellModels.isEmpty
+          ? [SkeletonCell(animated: false)]
+          : _buildItemsWithSections(cellModels),
+      mode: cellModels.isEmpty
           ? BreathSessionListMode.empty
           : BreathSessionListMode.content,
       hasMore: event.hasMore,
@@ -90,24 +106,39 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
   }
 
   void _handleSessionCreated(SessionCreatedEvent event) {
-    final newItem = _dtoToCellModel(event.session);
-    state = state.copyWith(items: [newItem, ...state.items]);
+    final newCell = _dtoToCellModel(event.session);
+    final currentCells = _extractCellModels(state.items);
+    final allCells = [newCell, ...currentCells];
+
+    state = state.copyWith(
+      items: _buildItemsWithSections(allCells),
+      mode: BreathSessionListMode.content,
+    );
   }
 
   void _handleSessionUpdated(SessionUpdatedEvent event) {
-    final updatedItem = _dtoToCellModel(event.session);
-    final updatedItems = [
-      for (final item in state.items)
-        if (item.id == event.session.id) updatedItem else item
+    final updatedCell = _dtoToCellModel(event.session);
+    final currentCells = _extractCellModels(state.items);
+
+    final updatedCells = [
+      for (final cell in currentCells)
+        if (cell.id == event.session.id) updatedCell else cell
     ];
-    state = state.copyWith(items: updatedItems);
+
+    state = state.copyWith(items: _buildItemsWithSections(updatedCells));
   }
 
   void _handleSessionDeleted(SessionDeletedEvent event) {
-    final items = state.items.where((item) => item.id != event.id).toList();
+    final currentCells = _extractCellModels(state.items);
+    final remainingCells = currentCells.where((cell) => cell.id != event.id).toList();
+
     state = state.copyWith(
-      items: items,
-      mode: items.isEmpty ? BreathSessionListMode.empty : BreathSessionListMode.content,
+      items: remainingCells.isEmpty
+          ? [SkeletonCell(animated: false)]
+          : _buildItemsWithSections(remainingCells),
+      mode: remainingCells.isEmpty
+          ? BreathSessionListMode.empty
+          : BreathSessionListMode.content,
     );
   }
 
@@ -117,8 +148,8 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
       _currentPage = 0;
     } catch (e) {
       onErrorEvent?.call(SessionListError.loadFailed);
-      state = const BreathSessionListState(
-        items: [],
+      state = BreathSessionListState(
+        items: [SkeletonCell(animated: false)],
         mode: BreathSessionListMode.empty,
         hasMore: false,
       );
@@ -128,14 +159,26 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
   Future<void> loadNextPage() async {
     if (!state.hasMore || state.isPaging) return;
 
-    state = state.copyWith(mode: BreathSessionListMode.paging);
+    // Добавляем skeleton в конец
+    final itemsWithLoader = [...state.items, SkeletonCell(animated: true)];
+    state = state.copyWith(
+      items: itemsWithLoader,
+      mode: BreathSessionListMode.paging,
+    );
 
     try {
       await service.fetchPage(_currentPage + 1, pageSize);
       _currentPage++;
     } catch (e) {
       onErrorEvent?.call(SessionListError.pagingFailed);
-      state = state.copyWith(mode: BreathSessionListMode.content);
+      // Убираем skeleton обратно
+      final itemsWithoutLoader = state.items
+          .where((item) => item is! SkeletonCell)
+          .toList();
+      state = state.copyWith(
+        items: itemsWithoutLoader,
+        mode: BreathSessionListMode.content,
+      );
     }
   }
 
@@ -156,6 +199,35 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
     super.dispose();
   }
 
+  /// Извлекает только ячейки с данными из items (без headers/skeletons)
+  List<BreathSessionListCellModel> _extractCellModels(
+    List<BreathSessionListItem> items,
+  ) {
+    return items.whereType<BreathSessionListCellModel>().toList();
+  }
+
+  /// Строит финальный список items с секциями
+  /// mine (без хедера) → shared (с хедером "Shared Sessions")
+  List<BreathSessionListItem> _buildItemsWithSections(
+    List<BreathSessionListCellModel> cells,
+  ) {
+    final result = <BreathSessionListItem>[];
+    SessionOwnership? lastOwnership;
+
+    for (final cell in cells) {
+      // При переходе на shared вставляем хедер
+      if (cell.ownership == SessionOwnership.shared &&
+          lastOwnership != SessionOwnership.shared) {
+        result.add(SectionHeader('Shared Sessions'));
+      }
+
+      result.add(cell);
+      lastOwnership = cell.ownership;
+    }
+
+    return result;
+  }
+
   List<BreathSessionListCellModel> _transformDTOsToModels(
     List<BreathSessionListItemDTO> dtos,
   ) {
@@ -168,6 +240,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
       title: dto.description,
       subtitle: _formatPatterns(dto.patterns),
       duration: _formatDuration(dto.totalDurationSeconds),
+      ownership: dto.ownership,
     );
   }
 
@@ -206,7 +279,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
 
 extension _BreathSessionListStateExtension on BreathSessionListState {
   BreathSessionListState copyWith({
-    List<BreathSessionListCellModel>? items,
+    List<BreathSessionListItem>? items,
     BreathSessionListMode? mode,
     bool? hasMore,
   }) {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListCellModel.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItem.dart';
 
 class BreathSessionListCell extends StatelessWidget {
   final BreathSessionListCellModel model;

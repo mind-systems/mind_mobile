@@ -20,6 +20,8 @@ class UserNotifier extends Notifier<AuthState> {
     return initialUser.isGuest ? GuestState(initialUser) : AuthenticatedState(initialUser);
   }
 
+  User get currentUser => state.user;
+
   Future<void> sendPasswordlessSignInLink(String email) async {
     await repository.sendPasswordlessSignInLink(email);
   }

@@ -112,9 +112,10 @@ final appRouter = GoRouter(
       name: BreathSessionListScreen.name,
       builder: (context, state) {
         final container = ProviderScope.containerOf(context);
-        final notifier = container.read(breathSessionNotifierProvider.notifier);
+        final breathSessionNotifier = container.read(breathSessionNotifierProvider.notifier);
+        final userNotifier = container.read(userNotifierProvider.notifier);
 
-        final service = BreathSessionListService(notifier: notifier);
+        final service = BreathSessionListService(notifier: breathSessionNotifier, userNotifier: userNotifier);
 
         return ProviderScope(
           overrides: [

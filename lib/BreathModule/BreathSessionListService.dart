@@ -5,17 +5,20 @@ import 'package:mind/BreathModule/Core/Models/BreathSessionNotifierEvent.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/IBreathSessionListService.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItem.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItemDTO.dart';
+import 'package:mind/User/UserNotifier.dart';
 
 class BreathSessionListService implements IBreathSessionListService {
   final BreathSessionNotifier notifier;
+  final UserNotifier userNotifier;
 
   final StreamController<BreathSessionListEvent> _controller =
       StreamController<BreathSessionListEvent>.broadcast();
 
   late final StreamSubscription _subscription;
 
-  BreathSessionListService({required this.notifier}) {
+  BreathSessionListService({required this.notifier, required this.userNotifier}) {
     _subscription = notifier.stream.listen(_onNotifierState);
   }
 
@@ -91,12 +94,14 @@ class BreathSessionListService implements IBreathSessionListService {
   BreathSessionListItemDTO _mapSession(BreathSession session) {
     final patterns = session.exercises.map(_exerciseSetToPattern).toList();
     final totalDuration = _calculateTotalDuration(session.exercises);
+    final ownership = _determineOwnership(session);
 
     return BreathSessionListItemDTO(
       id: session.id,
       description: session.description,
       patterns: patterns,
       totalDurationSeconds: totalDuration,
+      ownership: ownership,
     );
   }
 
@@ -131,6 +136,18 @@ class BreathSessionListService implements IBreathSessionListService {
       0,
       (total, exercise) => total + exercise.totalDuration,
     );
+  }
+
+  SessionOwnership _determineOwnership(BreathSession session) {
+    final currentUser = userNotifier.currentUser;
+
+    // Если текущий пользователь — владелец сессии
+    if (session.userId == currentUser.id) {
+      return SessionOwnership.mine;
+    }
+
+    // Иначе это публичная сессия другого пользователя
+    return SessionOwnership.shared;
   }
 
   /// ---------- Lifecycle ----------

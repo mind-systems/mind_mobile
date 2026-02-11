@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListViewModel.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItem.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListCell.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListSectionHeader.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListSkeletonCell.dart';
 import 'package:mind/Views/SnackBarModule/GlobalSnackBarNotifier.dart';
 import 'package:mind/Views/SnackBarModule/Models/SnackBarEvent.dart';
@@ -87,44 +89,28 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
   }
 
   Widget _buildBody(BreathSessionListState state) {
-    // Initial loading - показываем одну анимированную skeleton ячейку
-    if (state.mode == BreathSessionListMode.initialLoading) {
-      return ListView(
-        children: const [
-          BreathSessionListSkeletonCell(animated: true),
-        ],
-      );
-    }
-
-    // Empty state - показываем одну статичную skeleton ячейку
-    if (state.mode == BreathSessionListMode.empty) {
-      return ListView(
-        children: const [
-          BreathSessionListSkeletonCell(animated: false),
-        ],
-      );
-    }
-
-    // Content with pull-to-refresh
     return RefreshIndicator(
       onRefresh: _onRefresh,
       backgroundColor: const Color(0xFF1A2433),
       color: const Color(0xFF00D9FF),
       child: ListView.builder(
         controller: _scrollController,
-        itemCount: state.items.length + (state.isPaging ? 1 : 0),
+        itemCount: state.items.length,
         itemBuilder: (context, index) {
-          // Skeleton ячейка для пагинации
-          if (index == state.items.length && state.isPaging) {
-            return const BreathSessionListSkeletonCell(animated: true);
-          }
+          final item = state.items[index];
 
-          // Обычная ячейка с данными
-          final model = state.items[index];
-          return GestureDetector(
-            onTap: () => _onSessionTap(model.id),
-            child: BreathSessionListCell(model: model),
-          );
+          return switch (item) {
+            BreathSessionListCellModel cell => GestureDetector(
+                onTap: () => _onSessionTap(cell.id),
+                child: BreathSessionListCell(model: cell),
+              ),
+            SectionHeader header => BreathSessionListSectionHeader(
+                title: header.title,
+              ),
+            SkeletonCell skeleton => BreathSessionListSkeletonCell(
+                animated: skeleton.animated,
+              ),
+          };
         },
       ),
     );
