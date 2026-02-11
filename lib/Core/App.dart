@@ -18,7 +18,7 @@ import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
 import 'package:mind/Core/GlobalUI/GlobalListeners.dart';
 
-class AppInitializer {
+class App {
   static Future<void> initialize({required FirebaseOptions firebaseOptions,}) async {
     WidgetsFlutterBinding.ensureInitialized();
 
