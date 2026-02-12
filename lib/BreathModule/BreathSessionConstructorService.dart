@@ -9,7 +9,8 @@ import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Presentation/CommonModels/StepType.dart';
 import 'package:uuid/uuid.dart';
 
-class BreathSessionConstructorService implements IBreathSessionConstructorService {
+class BreathSessionConstructorService
+    implements IBreathSessionConstructorService {
   final String userId;
   final BreathSession? existingSession;
   final BreathSessionNotifier provider;
@@ -21,14 +22,14 @@ class BreathSessionConstructorService implements IBreathSessionConstructorServic
   });
 
   @override
-  BreathSessionDTO getInitialState() {
+  BreathSessionConstructorDTO getInitialState() {
     // Если сессии нет — возвращаем пустой DTO для создания
     if (existingSession == null) {
-      return BreathSessionDTO.empty();
+      return BreathSessionConstructorDTO.empty();
     }
 
     // Если есть — конвертируем в DTO для редактирования
-    return BreathSessionDTO(
+    return BreathSessionConstructorDTO(
       description: existingSession!.description,
       shared: existingSession!.shared,
       exercises: existingSession!.exercises
@@ -40,13 +41,15 @@ class BreathSessionConstructorService implements IBreathSessionConstructorServic
   @override
   ConstructorMode getInitialConstructorMode() {
     if (existingSession != null) {
-      return existingSession!.userId == userId ? ConstructorMode.edit : ConstructorMode.create;
+      return existingSession!.userId == userId
+          ? ConstructorMode.edit
+          : ConstructorMode.create;
     }
     return ConstructorMode.create;
   }
 
   @override
-  Future<void> save(BreathSessionDTO dto) async {
+  Future<void> save(BreathSessionConstructorDTO dto) async {
     // Конвертируем упражнения из DTO в доменную модель
     final exercises = dto.exercises
         .map((e) => _editModelToExerciseSet(e))
@@ -123,24 +126,16 @@ class BreathSessionConstructorService implements IBreathSessionConstructorServic
     final steps = <ExerciseStep>[];
 
     if (model.inhale > 0) {
-      steps.add(
-        ExerciseStep(type: StepType.inhale, duration: model.inhale),
-      );
+      steps.add(ExerciseStep(type: StepType.inhale, duration: model.inhale));
     }
     if (model.hold1 > 0) {
-      steps.add(
-        ExerciseStep(type: StepType.hold, duration: model.hold1),
-      );
+      steps.add(ExerciseStep(type: StepType.hold, duration: model.hold1));
     }
     if (model.exhale > 0) {
-      steps.add(
-        ExerciseStep(type: StepType.exhale, duration: model.exhale),
-      );
+      steps.add(ExerciseStep(type: StepType.exhale, duration: model.exhale));
     }
     if (model.hold2 > 0) {
-      steps.add(
-        ExerciseStep(type: StepType.hold, duration: model.hold2),
-      );
+      steps.add(ExerciseStep(type: StepType.hold, duration: model.hold2));
     }
 
     return ExerciseSet(

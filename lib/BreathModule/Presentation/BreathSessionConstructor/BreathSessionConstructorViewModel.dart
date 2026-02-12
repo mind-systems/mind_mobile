@@ -5,21 +5,27 @@ import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/B
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/ExerciseEditCellModel.dart';
 
-final breathSessionConstructorProvider = StateNotifierProvider.autoDispose<BreathSessionConstructorViewModel, BreathSessionConstructorState>(
-  (ref) {
-    throw UnimplementedError('BreathSessionConstructorViewModel должен быть передан через override в роутере');
-  },
-);
+final breathSessionConstructorProvider =
+    StateNotifierProvider.autoDispose<
+      BreathSessionConstructorViewModel,
+      BreathSessionConstructorState
+    >((ref) {
+      throw UnimplementedError(
+        'BreathSessionConstructorViewModel должен быть передан через override в роутере',
+      );
+    });
 
-class BreathSessionConstructorViewModel extends StateNotifier<BreathSessionConstructorState> {
+class BreathSessionConstructorViewModel
+    extends StateNotifier<BreathSessionConstructorState> {
   final IBreathSessionConstructorService service;
 
-  BreathSessionConstructorViewModel({required this.service}) : super(_initializeState(service));
+  BreathSessionConstructorViewModel({required this.service})
+    : super(_initializeState(service));
 
   // Приватный статический метод для инициализации State из сервиса
   static BreathSessionConstructorState _initializeState(
-      IBreathSessionConstructorService service,
-      ) {
+    IBreathSessionConstructorService service,
+  ) {
     final dto = service.getInitialState();
     final mode = service.getInitialConstructorMode();
 
@@ -35,10 +41,7 @@ class BreathSessionConstructorViewModel extends StateNotifier<BreathSessionConst
 
   void addExercise() {
     state = state.copyWith(
-      exercises: [
-        ...state.exercises,
-        ExerciseEditCellModel.create(),
-      ],
+      exercises: [...state.exercises, ExerciseEditCellModel.create()],
     );
   }
 
@@ -50,9 +53,7 @@ class BreathSessionConstructorViewModel extends StateNotifier<BreathSessionConst
 
   void updateExercise(String id, ExerciseEditCellModel updated) {
     state = state.copyWith(
-      exercises: state.exercises
-          .map((e) => e.id == id ? updated : e)
-          .toList(),
+      exercises: state.exercises.map((e) => e.id == id ? updated : e).toList(),
     );
   }
 
@@ -94,13 +95,11 @@ class BreathSessionConstructorViewModel extends StateNotifier<BreathSessionConst
   }
 
   /// Собрать DTO из текущего состояния (приватный метод)
-  BreathSessionDTO _buildDTO() {
-    return BreathSessionDTO(
+  BreathSessionConstructorDTO _buildDTO() {
+    return BreathSessionConstructorDTO(
       description: state.description.trim(),
       shared: state.shared,
-      exercises: state.exercises
-          .where((e) => e.isValid)
-          .toList(),
+      exercises: state.exercises.where((e) => e.isValid).toList(),
     );
   }
 }

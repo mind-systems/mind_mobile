@@ -10,7 +10,7 @@ abstract class IBreathSessionConstructorService {
   /// или заполненный DTO для редактирования существующей.
   ///
   /// Метод синхронный — данные должны быть готовы до показа UI.
-  BreathSessionDTO getInitialState();
+  BreathSessionConstructorDTO getInitialState();
 
   /// Получить начальный режим конструктора.
   /// Возвращает режим создания или редактирования
@@ -24,7 +24,7 @@ abstract class IBreathSessionConstructorService {
   /// - привязать к текущему userId
   /// - выполнить валидацию на уровне приложения
   /// - синхронизировать с сервером (если нужно)
-  Future<void> save(BreathSessionDTO dto);
+  Future<void> save(BreathSessionConstructorDTO dto);
 
   /// Удалить текущую сессию.
   /// Вызывается только в режиме редактирования.
