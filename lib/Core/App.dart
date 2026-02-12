@@ -58,7 +58,7 @@ class App {
 
     final initialUser = await userRepository.loadUser();
     final userNotifier = UserNotifier(repository: userRepository, logoutNotifier: logoutNotifier, initialUser: initialUser);
-    final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository);
+    final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository, userNotifier: userNotifier);
 
     final firebaseHandler = FirebaseDeeplinkHandler(userRepository: userRepository);
     final deeplinkRouter = DeeplinkRouter(firebaseHandler: firebaseHandler);

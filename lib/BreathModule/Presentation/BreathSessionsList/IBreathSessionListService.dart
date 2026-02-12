@@ -15,6 +15,7 @@ abstract class IBreathSessionListService {
   /// Эмитит:
   /// - PageLoadedEvent (пагинация)
   /// - SessionsRefreshedEvent (pull-to-refresh)
+  /// - SessionsInvalidatedEvent (смена пользователя)
   /// - SessionCreatedEvent
   /// - SessionUpdatedEvent
   /// - SessionDeletedEvent
@@ -91,3 +92,6 @@ class SessionDeletedEvent extends BreathSessionListEvent {
 
   SessionDeletedEvent(this.id);
 }
+
+/// Инвалидация списка (смена пользователя)
+class SessionsInvalidatedEvent extends BreathSessionListEvent {}

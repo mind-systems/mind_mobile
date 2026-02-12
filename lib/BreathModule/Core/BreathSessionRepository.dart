@@ -30,4 +30,8 @@ class BreathSessionRepository {
     await _api.deleteBreathSession(id);
     await _db.breathSessionDao.deleteSession(id);
   }
+
+  Future<void> deleteAll() async {
+    await _db.breathSessionDao.deleteAllSessions();
+  }
 }

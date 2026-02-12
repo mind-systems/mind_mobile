@@ -41,3 +41,5 @@ class SessionDeleted extends BreathSessionNotifierEvent {
 
   SessionDeleted(this.id);
 }
+
+class SessionsInvalidated extends BreathSessionNotifierEvent {}

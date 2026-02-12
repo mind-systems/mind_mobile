@@ -48,6 +48,10 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
         _handleSessionsRefreshed(e);
         break;
 
+      case SessionsInvalidatedEvent _:
+        _handleSessionsInvalidated();
+        break;
+
       case SessionCreatedEvent e:
         _handleSessionCreated(e);
         break;
@@ -60,6 +64,16 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
         _handleSessionDeleted(e);
         break;
     }
+  }
+
+  void _handleSessionsInvalidated() {
+    _currentPage = 0;
+    state = BreathSessionListState(
+      items: [SkeletonCell(animated: true)],
+      mode: BreathSessionListMode.initialLoading,
+      hasMore: true,
+    );
+    _loadInitialPage();
   }
 
   void _handlePageLoaded(PageLoadedEvent event) {

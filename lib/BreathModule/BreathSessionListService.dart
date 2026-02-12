@@ -80,6 +80,10 @@ class BreathSessionListService implements IBreathSessionListService {
           SessionDeletedEvent(e.id),
         );
         break;
+
+      case SessionsInvalidated _:
+        _controller.add(SessionsInvalidatedEvent());
+        break;
     }
   }
 

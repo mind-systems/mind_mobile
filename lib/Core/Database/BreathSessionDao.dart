@@ -96,6 +96,10 @@ class BreathSessionDao extends DatabaseAccessor<Database>
     await (delete(breathSessions)..where((tbl) => tbl.id.equals(id))).go();
   }
 
+  Future<void> deleteAllSessions() async {
+    await delete(breathSessions).go();
+  }
+
   /// ----------
   /// Mapping
   /// ----------
