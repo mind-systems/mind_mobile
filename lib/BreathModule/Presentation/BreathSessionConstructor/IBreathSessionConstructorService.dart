@@ -1,5 +1,5 @@
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorState.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionDTO.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorDTO.dart';
 
 /// Интерфейс сервиса для работы с конструктором сессий.
 /// Модуль конструктора не знает о деталях хранения, userId, sessionId.
