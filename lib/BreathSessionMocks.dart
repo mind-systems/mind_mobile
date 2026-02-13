@@ -3,7 +3,7 @@ import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
 import 'package:mind/BreathModule/Presentation/CommonModels/TickSource.dart';
 
-import 'BreathModule/Presentation/CommonModels/StepType.dart';
+import 'BreathModule/Models/StepType.dart';
 
 /// Моки дыхательных сессий для тестирования
 class BreathSessionMocks {

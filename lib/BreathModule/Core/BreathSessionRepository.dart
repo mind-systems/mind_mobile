@@ -10,6 +10,14 @@ class BreathSessionRepository {
       : _db = db,
         _api = api;
 
+  Future<BreathSession> fetchById(String id) async {
+    final session = await _db.breathSessionDao.getSessionById(id);
+    if (session != null) {
+      return session;
+    }
+    return await _api.fetchBreathSession(id);
+  }
+
   Future<List<BreathSession>> fetch(int page, int pageSize) async {
     // from repo if empty api
     final sessions = await _db.breathSessionDao.getSessions();

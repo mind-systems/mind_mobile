@@ -7,7 +7,7 @@ import 'package:mind/User/Models/User.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
-import 'package:mind/BreathModule/Presentation/CommonModels/StepType.dart';
+import 'package:mind/BreathModule/Models/StepType.dart';
 
 
 part 'Database.g.dart';

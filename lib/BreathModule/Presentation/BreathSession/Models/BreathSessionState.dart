@@ -2,8 +2,10 @@ import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep
 
 enum BreathSessionStatus { pause, breath, rest, complete }
 enum BreathPhase { inhale, hold, exhale, rest }
+enum SessionLoadState { loading, ready, error }
 
 class BreathSessionState {
+  final SessionLoadState loadState;
   final BreathSessionStatus status;
   final BreathPhase phase;
 
@@ -21,6 +23,7 @@ class BreathSessionState {
   final String? activeStepId;
 
   const BreathSessionState({
+    required this.loadState,
     required this.status,
     required this.phase,
     required this.exerciseIndex,
@@ -31,7 +34,8 @@ class BreathSessionState {
   });
 
   factory BreathSessionState.initial() => const BreathSessionState(
-    status: BreathSessionStatus.breath,
+    loadState: SessionLoadState.loading,
+    status: BreathSessionStatus.pause,
     phase: BreathPhase.inhale,
     exerciseIndex: 0,
     remainingTicks: 0,
@@ -41,6 +45,7 @@ class BreathSessionState {
   );
 
   BreathSessionState copyWith({
+    SessionLoadState? loadState,
     BreathSessionStatus? status,
     BreathPhase? phase,
     int? exerciseIndex,
@@ -50,6 +55,7 @@ class BreathSessionState {
     String? activeStepId,
   }) {
     return BreathSessionState(
+      loadState: loadState ?? this.loadState,
       status: status ?? this.status,
       phase: phase ?? this.phase,
       exerciseIndex: exerciseIndex ?? this.exerciseIndex,

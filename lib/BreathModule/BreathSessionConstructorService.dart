@@ -6,7 +6,7 @@ import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/B
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/ExerciseEditCellModel.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
-import 'package:mind/BreathModule/Presentation/CommonModels/StepType.dart';
+import 'package:mind/BreathModule/Models/StepType.dart';
 import 'package:uuid/uuid.dart';
 
 class BreathSessionConstructorService

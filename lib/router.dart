@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mind/BreathModule/BreathSessionConstructorService.dart';
 import 'package:mind/BreathModule/BreathSessionListService.dart';
+import 'package:mind/BreathModule/BreathSessionService.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
@@ -9,7 +10,6 @@ import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSe
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListViewModel.dart';
-import 'package:mind/BreathSessionMocks.dart';
 import 'package:mind/Core/App.dart';
 import 'package:mind/HomePage.dart';
 import 'package:mind/BreathModule/ClockTickService.dart';
@@ -67,20 +67,18 @@ final appRouter = GoRouter(
       builder: (context, state) {
         ClockTickService tickService = ClockTickService();
         tickService.simulateTick();
-        // Выбери нужную тестовую сессию:
-        // final session = BreathSessionMocks.quickTestSession;       // Быстрая
-        // final session = BreathSessionMocks.triangleOnlySession;    // Только треугольники
-        final session = BreathSessionMocks.boxOnlySession;         // Только квадраты
-        // final session = BreathSessionMocks.mixedShapesSession;     // Микс форм
-        // final session = BreathSessionMocks.fullTestSession;        // Полная тестовая
-        // final session = BreathSessionMocks.longSession;            // Длинная сессия
+        final notifier = App.shared.breathSessionNotifier;
+        final service = BreathSessionService(notifier: notifier);
+
+        final sessionId = state.extra as String;
 
         return ProviderScope(
           overrides: [
             breathViewModelProvider.overrideWith(
               (ref) => BreathViewModel(
                 tickService: tickService,
-                session: session,
+                service: service,
+                sessionId: sessionId,
               ),
             ),
           ],

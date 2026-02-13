@@ -119,6 +119,24 @@ extension BreathSessionApi on ApiService {
     }
   }
 
+  Future<BreathSession> fetchBreathSession(String id) async {
+    try {
+      final response = await _dio.get('/breath_sessions/$id');
+
+      if (response.statusCode == 200) {
+        return BreathSession.fromJson(response.data as Map<String, dynamic>);
+      }
+
+      throw ApiException(
+        message: 'Unexpected status code',
+        statusCode: response.statusCode,
+        data: response.data,
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   Future<List<BreathSession>> fetchBreathSessions(int page, int pageSize) async {
     try {
       final response = await _dio.get('/breath_sessions/list?page=$page&pageSize=$pageSize');

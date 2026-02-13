@@ -38,12 +38,11 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
     // Создаём motionEngine
     _motionEngine = BreathMotionEngine(this);
 
-    final viewModel = ref.read(breathViewModelProvider.notifier);
-    final firstExercise = viewModel.getNextExerciseWithShape();
-
-    // Создаём shapeShifter с начальной формой
-    _shapeShifter = BreathShapeShifter(initialShape: firstExercise?.shape ?? SetShape.circle);
+    // Дефолтная форма — круг. При загрузке данных shapeShifter обновится через координатор.
+    _shapeShifter = BreathShapeShifter(initialShape: SetShape.circle);
     _shapeShifter.initialize(const Offset(100, 100), 200, this);
+
+    final viewModel = ref.read(breathViewModelProvider.notifier);
 
     // Создаём и инициализируем координатор после инициализации shapeShifter
     _coordinator = BreathAnimationCoordinator(
@@ -59,9 +58,8 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
       final initialState = ref.read(breathViewModelProvider);
       _coordinator.initialize(initialState);
 
-      // Запускаем сессию
+      // Запускаем загрузку сессии
       viewModel.initState();
-      _scrollToActive(initialState.activeStepId);
     });
 
     ref.listenManual<BreathSessionState>(
@@ -95,12 +93,6 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
       if (itemOffset == null) return;
 
       final viewportHeight = _scrollController.position.viewportDimension;
-
-      // Центрируем элемент в viewport
-      // itemOffset - это позиция элемента ВНУТРИ BreathTimelineWidget (который скроллится через ListView)
-      // Но погоди, BreathTimelineWidget возвращает offset относительно себя (своего RenderBox).
-      // А ListView внутри него.
-      // Если мы хотим центрировать, нам нужно знать где этот элемент относительно видимой области.
 
       final targetScroll = _scrollController.offset + itemOffset - (viewportHeight / 3);
 
@@ -207,13 +199,14 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
     }
 
     final isPaused = state.status == BreathSessionStatus.pause;
+    final isLoading = state.loadState != SessionLoadState.ready;
 
     return SizedBox(
       width: 80,
       height: 80,
       child: ControlButton(
         icon: isPaused ? Icons.play_arrow : Icons.pause,
-        onPressed: () {
+        onPressed: isLoading ? null : () {
           if (isPaused) {
             viewModel.resume();
           } else {

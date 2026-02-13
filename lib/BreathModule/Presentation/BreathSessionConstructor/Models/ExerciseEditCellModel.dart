@@ -1,4 +1,4 @@
-import 'package:mind/BreathModule/Presentation/CommonModels/StepType.dart';
+import 'package:mind/BreathModule/Models/StepType.dart';
 import 'package:uuid/uuid.dart';
 
 enum ExerciseIcon {

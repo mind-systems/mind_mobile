@@ -77,3 +77,5 @@ android/key.properties
 .env
 .env.local
 .env.*.local
+
+worktrees.json

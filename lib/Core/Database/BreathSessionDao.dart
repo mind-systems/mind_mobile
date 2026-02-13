@@ -100,6 +100,14 @@ class BreathSessionDao extends DatabaseAccessor<Database>
     await delete(breathSessions).go();
   }
 
+  Future<BreathSession?> getSessionById(String id) async {
+    final row = await (select(breathSessions)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+    if (row == null) {
+      return null;
+    }
+    return _mapRowToDomain(row);
+  }
+
   /// ----------
   /// Mapping
   /// ----------

@@ -169,8 +169,11 @@ class BreathSessionNotifier {
 
   /// ---------- Sync access ----------
 
-  BreathSession? getById(String id) {
-    return _subject.value.byId[id];
+  Future<BreathSession?> getById(String id) async {
+    if (_subject.value.byId.containsKey(id)) {
+      return _subject.value.byId[id];
+    }
+    return await repository.fetchById(id);
   }
 
   void dispose() {

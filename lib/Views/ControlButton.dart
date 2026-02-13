@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class ControlButton extends StatelessWidget {
   final IconData icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool destructive;
   final double iconSize;
 
@@ -16,17 +16,21 @@ class ControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: const Color.fromRGBO(0, 217, 255, 0.2),
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        onTap: onPressed,
+    final isDisabled = onPressed == null;
+    return Opacity(
+      opacity: isDisabled ? 0.4 : 1.0,
+      child: Material(
+        color: const Color.fromRGBO(0, 217, 255, 0.2),
         borderRadius: BorderRadius.circular(999),
-        child: Center(
-          child: Icon(
-            icon,
-            color: destructive ? const Color(0xFFD90000) : const Color(0xFF00D9FF),
-            size: iconSize,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(999),
+          child: Center(
+            child: Icon(
+              icon,
+              color: destructive ? const Color(0xFFD90000) : const Color(0xFF00D9FF),
+              size: iconSize,
+            ),
           ),
         ),
       ),

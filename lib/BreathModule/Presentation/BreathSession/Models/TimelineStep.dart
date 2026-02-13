@@ -1,5 +1,4 @@
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
-import 'package:mind/BreathModule/Presentation/CommonModels/StepType.dart';
 
 enum TimelineStepType { inhale, hold, exhale, rest, separator }
 
@@ -14,26 +13,32 @@ class TimelineStep {
     this.duration,
   });
 
+  const TimelineStep.separator() : id = null, type = TimelineStepType.separator, duration = null;
+
+  /// Создаёт TimelineStep из BreathPhase
+  factory TimelineStep.fromPhase({
+    required BreathPhase phase,
+    required int duration,
+    required String id,
+  }) {
+    return TimelineStep(
+      id: id,
+      type: _mapPhaseToType(phase),
+      duration: duration,
+    );
+  }
+
   /// Генерирует уникальный ID для шага timeline
-  /// Separator не имеет ID (id = null)
   static String generateId({
     required int exerciseIndex,
     required int repeatCounter,
     required int stepIndex,
-    required TimelineStepType type,
+    required BreathPhase phase,
   }) {
-    return 'exerciseIndex:$exerciseIndex;repeatCounter:$repeatCounter;stepIndex:$stepIndex;type:$type';
+    return 'exerciseIndex:$exerciseIndex;repeatCounter:$repeatCounter;stepIndex:$stepIndex;type:${_mapPhaseToType(phase)}';
   }
 
-  static TimelineStepType mapStepTypeToTimelineType(StepType type) {
-    switch (type) {
-      case StepType.inhale: return TimelineStepType.inhale;
-      case StepType.hold: return TimelineStepType.hold;
-      case StepType.exhale: return TimelineStepType.exhale;
-    }
-  }
-
-  static TimelineStepType mapBreathPhaseToTimelineType(BreathPhase phase) {
+  static TimelineStepType _mapPhaseToType(BreathPhase phase) {
     switch (phase) {
       case BreathPhase.inhale: return TimelineStepType.inhale;
       case BreathPhase.hold: return TimelineStepType.hold;

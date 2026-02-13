@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/ITickService.dart';
-import 'package:mind/BreathModule/Models/ExerciseSet.dart';
-import 'package:mind/BreathModule/Models/BreathSession.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
-import 'package:mind/BreathModule/Presentation/CommonModels/StepType.dart';
 
 enum ResetReason {
   newCycle,
@@ -22,8 +22,10 @@ final breathViewModelProvider =
 
 class BreathViewModel extends StateNotifier<BreathSessionState> {
   final ITickService tickService;
-  final BreathSession session;
+  final IBreathSessionService service;
+  final String sessionId;
 
+  BreathSessionDTO? _sessionDTO;
   StreamSubscription<TickData>? _subscription;
 
   // Контроллер для события сброса цикла
@@ -35,30 +37,40 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   int _repeatCounter = 0; // счетчик повторений сета
   int _cycleTick = 0;     // текущий тик цикла
 
-  ExerciseSet get currentExercise => session.exercises[_exerciseIndex];
+  BreathExerciseDTO get currentExercise => _sessionDTO!.exercises[_exerciseIndex];
 
-  BreathViewModel({required this.tickService, required this.session})
-      : super(BreathSessionState.initial());
+  BreathViewModel({
+    required this.tickService,
+    required this.service,
+    required this.sessionId,
+  }) : super(BreathSessionState.initial());
 
   // ===== Lifecycle =====
 
-  void initState() {
-    _generateTimelineSteps();
+  Future<void> initState() async {
+    try {
+      _sessionDTO = await service.getSession(sessionId);
+      state = state.copyWith(loadState: SessionLoadState.ready);
 
-    // Проверяем первое упражнение
-    final firstExercise = session.exercises[0];
+      _generateTimelineSteps();
 
-    // Если первое упражнение - это подготовка (пустые steps, только rest)
-    if (firstExercise.steps.isEmpty && firstExercise.restDuration > 0) {
-      _setupInitialRest();
-    } else {
-      _setupInitialBreath();
+      final firstExercise = _sessionDTO!.exercises[0];
+
+      // Если первое упражнение - это подготовка (пустые steps, только rest)
+      if (firstExercise.isRestOnly) {
+        _setupInitialRest();
+      } else {
+        _setupInitialBreath();
+      }
+
+      _subscription = tickService.tickStream.listen(_onTick);
+    } catch (e) {
+      state = state.copyWith(loadState: SessionLoadState.error);
     }
-
-    _subscription = tickService.tickStream.listen(_onTick);
   }
 
   void _generateTimelineSteps() {
+    final session = _sessionDTO!;
     final List<TimelineStep> steps = [];
 
     for (var exerciseIndex = 0; exerciseIndex < session.exercises.length; exerciseIndex++) {
@@ -66,21 +78,21 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
       // separator между сетами (кроме первого)
       if (exerciseIndex > 0) {
-        steps.add(const TimelineStep(type: TimelineStepType.separator));
+        steps.add(const TimelineStep.separator());
       }
 
       // === СЕТ ТОЛЬКО С ОТДЫХОМ ===
-      if (exercise.steps.isEmpty && exercise.restDuration > 0) {
+      if (exercise.isRestOnly) {
         // для standalone rest repeatCounter и cycleTick всегда 0
         steps.add(
-          TimelineStep(
-            type: TimelineStepType.rest,
+          TimelineStep.fromPhase(
+            phase: BreathPhase.rest,
             duration: exercise.restDuration,
             id: TimelineStep.generateId(
               exerciseIndex: exerciseIndex,
               repeatCounter: 0,
               stepIndex: 0,
-              type: TimelineStepType.rest,
+              phase: BreathPhase.rest,
             ),
           ),
         );
@@ -92,16 +104,15 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
         // дыхательные шаги цикла
         for (var stepIndex = 0; stepIndex < exercise.steps.length; stepIndex++) {
           final step = exercise.steps[stepIndex];
-          final timelineStepType = TimelineStep.mapStepTypeToTimelineType(step.type);
           steps.add(
-            TimelineStep(
-              type: timelineStepType,
+            TimelineStep.fromPhase(
+              phase: step.phase,
               duration: step.duration,
               id: TimelineStep.generateId(
                 exerciseIndex: exerciseIndex,
                 repeatCounter: repeatCounter,
                 stepIndex: stepIndex,
-                type: timelineStepType,
+                phase: step.phase,
               ),
             ),
           );
@@ -111,14 +122,14 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
         final isLastRepeat = repeatCounter == exercise.repeatCount - 1;
         if (!isLastRepeat && exercise.restDuration > 0) {
           steps.add(
-            TimelineStep(
-              type: TimelineStepType.rest,
+            TimelineStep.fromPhase(
+              phase: BreathPhase.rest,
               duration: exercise.restDuration,
               id: TimelineStep.generateId(
                 exerciseIndex: exerciseIndex,
                 repeatCounter: repeatCounter + 1,
                 stepIndex: 0,
-                type: TimelineStepType.rest,
+                phase: BreathPhase.rest,
               ),
             ),
           );
@@ -139,7 +150,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
         exerciseIndex: _exerciseIndex,
         repeatCounter: 0,
         stepIndex: 0,
-        type: TimelineStepType.rest,
+        phase: BreathPhase.rest,
       ),
       currentIntervalMs: -1,
     );
@@ -157,7 +168,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
         exerciseIndex: _exerciseIndex,
         repeatCounter: 0,
         stepIndex: 0,
-        type: TimelineStep.mapBreathPhaseToTimelineType(initialStepData.phase),
+        phase: initialStepData.phase,
       ),
       currentIntervalMs: -1,
     );
@@ -170,14 +181,15 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   }
 
   void resume() {
-    if (state.status == BreathSessionStatus.pause) {
-      final wasResting = state.phase == BreathPhase.rest;
-      state = state.copyWith(
-        status: wasResting
-            ? BreathSessionStatus.rest
-            : BreathSessionStatus.breath,
-      );
-    }
+    if (state.status != BreathSessionStatus.pause) return;
+    if (state.loadState != SessionLoadState.ready) return;
+
+    final wasResting = state.phase == BreathPhase.rest;
+    state = state.copyWith(
+      status: wasResting
+          ? BreathSessionStatus.rest
+          : BreathSessionStatus.breath,
+    );
   }
 
   void complete() {
@@ -252,7 +264,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       exerciseIndex: _exerciseIndex,
       repeatCounter: _repeatCounter,
       stepIndex: stepData.stepIndex,
-      type: TimelineStep.mapBreathPhaseToTimelineType(stepData.phase),
+      phase: stepData.phase,
     );
 
     state = state.copyWith(
@@ -291,7 +303,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       exerciseIndex: _exerciseIndex,
       repeatCounter: _repeatCounter,
       stepIndex: 0,
-      type: TimelineStepType.rest,
+      phase: BreathPhase.rest,
     );
 
     state = state.copyWith(
@@ -313,22 +325,14 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       final step = currentExercise.steps[i];
       if (tick < accumulated + step.duration) {
         final remainingInStep = (accumulated + step.duration) - tick;
-        return (phase: _mapStepTypeToPhase(step.type), remainingTicks: remainingInStep, stepIndex: i);
+        return (phase: step.phase, remainingTicks: remainingInStep, stepIndex: i);
       }
       accumulated += step.duration;
     }
 
     // Если tick == cycleDuration (или больше)
     final lastStep = currentExercise.steps.last;
-    return (phase: _mapStepTypeToPhase(lastStep.type), remainingTicks: 0, stepIndex: currentExercise.steps.length - 1);
-  }
-
-  BreathPhase _mapStepTypeToPhase(StepType stepType) {
-    switch (stepType) {
-      case StepType.inhale: return BreathPhase.inhale;
-      case StepType.hold:   return BreathPhase.hold;
-      case StepType.exhale: return BreathPhase.exhale;
-    }
+    return (phase: lastStep.phase, remainingTicks: 0, stepIndex: currentExercise.steps.length - 1);
   }
 
   // ===== Transitions =====
@@ -348,7 +352,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
         exerciseIndex: _exerciseIndex,
         repeatCounter: _repeatCounter,
         stepIndex: 0,
-        type: TimelineStepType.rest,
+        phase: BreathPhase.rest,
       ),
       currentIntervalMs: intervalMs,
     );
@@ -369,7 +373,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
         exerciseIndex: _exerciseIndex,
         repeatCounter: _repeatCounter,
         stepIndex: stepData.stepIndex,
-        type: TimelineStep.mapBreathPhaseToTimelineType(stepData.phase),
+        phase: stepData.phase,
       ),
       currentIntervalMs: intervalMs,
     );
@@ -378,7 +382,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   void _advanceExercise(int intervalMs) {
     _exerciseIndex++;
 
-    if (_exerciseIndex >= session.exercises.length) {
+    if (_exerciseIndex >= _sessionDTO!.exercises.length) {
       complete();
       return;
     }
@@ -391,10 +395,10 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     // todo здесь не нужен этот резет. он вызовется на стартРэст или стартНьюСайкл. Возможно нужен на комплит..
     _resetController.add(ResetReason.exerciseChange);
 
-    final nextExercise = session.exercises[_exerciseIndex];
+    final nextExercise = _sessionDTO!.exercises[_exerciseIndex];
 
     // Если следующее упражнение - только отдых
-    if (nextExercise.steps.isEmpty && nextExercise.restDuration > 0) {
+    if (nextExercise.isRestOnly) {
       _startRest(intervalMs);
     } else {
       _startNewCycle(intervalMs);
@@ -405,7 +409,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   /// Возвращает информацию о текущей фазе: её тип и оставшееся количество тиков именно в этой фазе.
   ({BreathPhase phase, int remainingInPhase}) getCurrentPhaseInfo() {
-    if (state.status == BreathSessionStatus.complete) {
+    if (_sessionDTO == null || state.status == BreathSessionStatus.complete) {
       return (phase: BreathPhase.rest, remainingInPhase: 0);
     }
 
@@ -428,7 +432,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       if (currentTickInCycle < accumulated + step.duration) {
         final remainingInThisStep = (accumulated + step.duration) - currentTickInCycle;
         return (
-          phase: _mapStepTypeToPhase(step.type),
+          phase: step.phase,
           remainingInPhase: remainingInThisStep,
         );
       }
@@ -438,14 +442,16 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     // Если по какой-то причине вышли за пределы (крайний тик цикла)
     final lastStep = currentExercise.steps.last;
     return (
-      phase: _mapStepTypeToPhase(lastStep.type),
+      phase: lastStep.phase,
       remainingInPhase: 0,
     );
   }
 
   // ===== Next exercise (Forecast) =====
 
-  ExerciseSet? getNextExerciseWithShape() {
+  BreathExerciseDTO? getNextExerciseWithShape() {
+    if (_sessionDTO == null) return null;
+
     // текущий сет
     final current = currentExercise;
 
@@ -455,8 +461,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     }
 
     // иначе ищем следующий дыхательный сет
-    for (int i = _exerciseIndex + 1; i < session.exercises.length; i++) {
-      final candidate = session.exercises[i];
+    for (int i = _exerciseIndex + 1; i < _sessionDTO!.exercises.length; i++) {
+      final candidate = _sessionDTO!.exercises[i];
       if (candidate.steps.isNotEmpty) {
         return candidate;
       }
@@ -468,7 +474,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   // ===== Phase meta for motion engine =====
 
   ({int totalPhases, int currentPhaseIndex}) getCurrentPhaseMeta() {
-    if (currentExercise.steps.isEmpty) {
+    if (_sessionDTO == null || currentExercise.steps.isEmpty) {
       return (totalPhases: 0, currentPhaseIndex: 0);
     }
 
@@ -491,7 +497,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   /// Возвращает информацию о следующей фазе для отображения в UI.
   ({BreathPhase phase, int duration})? getNextPhaseInfo() {
-    if (state.status == BreathSessionStatus.complete) {
+    if (_sessionDTO == null || state.status == BreathSessionStatus.complete) {
       return null;
     }
 
@@ -511,7 +517,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       // 1. Следующий шаг внутри текущего цикла
       if (currentStepIndex >= 0 && currentStepIndex < currentExercise.steps.length - 1) {
         final nextStep = currentExercise.steps[currentStepIndex + 1];
-        return (phase: _mapStepTypeToPhase(nextStep.type), duration: nextStep.duration);
+        return (phase: nextStep.phase, duration: nextStep.duration);
       }
 
       // 2. Новый цикл или отдых между циклами
@@ -520,18 +526,18 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
           return (phase: BreathPhase.rest, duration: currentExercise.restDuration);
         } else {
           final firstStep = currentExercise.steps.first;
-          return (phase: _mapStepTypeToPhase(firstStep.type), duration: firstStep.duration);
+          return (phase: firstStep.phase, duration: firstStep.duration);
         }
       }
 
       // 3. Следующее упражнение
-      if (_exerciseIndex + 1 < session.exercises.length) {
-        final nextExercise = session.exercises[_exerciseIndex + 1];
-        if (nextExercise.steps.isEmpty && nextExercise.restDuration > 0) {
+      if (_exerciseIndex + 1 < _sessionDTO!.exercises.length) {
+        final nextExercise = _sessionDTO!.exercises[_exerciseIndex + 1];
+        if (nextExercise.isRestOnly) {
           return (phase: BreathPhase.rest, duration: nextExercise.restDuration);
         } else if (nextExercise.steps.isNotEmpty) {
           final firstStep = nextExercise.steps.first;
-          return (phase: _mapStepTypeToPhase(firstStep.type), duration: firstStep.duration);
+          return (phase: firstStep.phase, duration: firstStep.duration);
         }
       }
       return null;
@@ -542,14 +548,14 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       // Отдых между повторами
       if (_repeatCounter < currentExercise.repeatCount) {
         final firstStep = currentExercise.steps.first;
-        return (phase: _mapStepTypeToPhase(firstStep.type), duration: firstStep.duration);
+        return (phase: firstStep.phase, duration: firstStep.duration);
       }
       // Отдых перед следующим упражнением
-      if (_exerciseIndex + 1 < session.exercises.length) {
-        final nextExercise = session.exercises[_exerciseIndex + 1];
+      if (_exerciseIndex + 1 < _sessionDTO!.exercises.length) {
+        final nextExercise = _sessionDTO!.exercises[_exerciseIndex + 1];
         if (nextExercise.steps.isNotEmpty) {
           final firstStep = nextExercise.steps.first;
-          return (phase: _mapStepTypeToPhase(firstStep.type), duration: firstStep.duration);
+          return (phase: firstStep.phase, duration: firstStep.duration);
         }
       }
     }

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mind/BreathModule/Models/ExerciseSet.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathShapeShifter.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
@@ -34,6 +34,11 @@ class BreathAnimationCoordinator {
     _previousExerciseIndex = state.exerciseIndex;
     _previousRemainingTicks = state.remainingTicks;
 
+    if (state.loadState != SessionLoadState.ready) {
+      motionEngine.setActive(false);
+      return;
+    }
+
     if (viewModel.currentExercise.steps.isNotEmpty) {
       final phaseMeta = viewModel.getCurrentPhaseMeta();
       motionEngine.setPhaseInfo(
@@ -48,6 +53,8 @@ class BreathAnimationCoordinator {
   }
 
   void _onStateChanged(BreathSessionState state) {
+    if (state.loadState != SessionLoadState.ready) return;
+
     // 1. Активность
     final shouldBeActive = state.status == BreathSessionStatus.breath;
     if (shouldBeActive != motionEngine.isActive) {
@@ -97,7 +104,7 @@ class BreathAnimationCoordinator {
   }
 
   void _onReset(ResetReason reason) {
-    ExerciseSet? shapeSource;
+    BreathExerciseDTO? shapeSource;
 
     if (reason == ResetReason.exerciseChange || reason == ResetReason.rest) {
       shapeSource = viewModel.getNextExerciseWithShape();
