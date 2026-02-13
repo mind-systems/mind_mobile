@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItem.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListState.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListCell.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListSectionHeader.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListSkeletonCell.dart';
@@ -73,7 +71,7 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
   }
 
   void _onSessionTap(String sessionId) {
-    context.push(BreathSessionScreen.path, extra: sessionId);
+    ref.read(breathSessionListViewModelProvider.notifier).onSessionTap(sessionId);
   }
 
   @override

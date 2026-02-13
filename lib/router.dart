@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mind/BreathModule/BreathSessionConstructorService.dart';
+import 'package:mind/BreathModule/BreathSessionListCoordinator.dart';
 import 'package:mind/BreathModule/BreathSessionListService.dart';
 import 'package:mind/BreathModule/BreathSessionService.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
@@ -33,11 +34,12 @@ final appRouter = GoRouter(
       builder: (context, state) {
         final app = App.shared;
         final service = BreathSessionListService(notifier: app.breathSessionNotifier, userNotifier: app.userNotifier);
+        final coordinator = BreathSessionListCoordinator(context);
 
         return ProviderScope(
           overrides: [
             breathSessionListViewModelProvider.overrideWith(
-              (ref) => BreathSessionListViewModel(service: service),
+              (ref) => BreathSessionListViewModel(service: service, coordinator: coordinator),
             ),
           ],
           child: const BreathSessionListScreen(),

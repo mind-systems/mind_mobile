@@ -5,6 +5,7 @@ import 'package:mind/BreathModule/Presentation/BreathSessionsList/IBreathSession
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItem.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItemDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListState.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionsList/IBreathSessionListCoordinator.dart';
 
 enum SessionListError { loadFailed, pagingFailed, syncFailed }
 
@@ -19,6 +20,7 @@ final breathSessionListViewModelProvider =
 
 class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
   final IBreathSessionListService service;
+  final IBreathSessionListCoordinator coordinator;
   final int pageSize;
 
   int _currentPage = 0;
@@ -26,7 +28,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
 
   void Function(SessionListError error)? onErrorEvent;
 
-  BreathSessionListViewModel({required this.service, this.pageSize = 50})
+  BreathSessionListViewModel({required this.service, required this.coordinator, this.pageSize = 50})
       : super(
           BreathSessionListState(
             items: [SkeletonCell(animated: true)],
@@ -205,6 +207,10 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
       onErrorEvent?.call(SessionListError.syncFailed);
       state = state.copyWith(mode: BreathSessionListMode.content);
     }
+  }
+
+  void onSessionTap(String sessionId) {
+    coordinator.openSession(sessionId);
   }
 
   @override
