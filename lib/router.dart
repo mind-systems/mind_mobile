@@ -11,7 +11,6 @@ import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSe
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListViewModel.dart';
 import 'package:mind/Core/App.dart';
-import 'package:mind/HomePage.dart';
 import 'package:mind/BreathModule/ClockTickService.dart';
 import 'package:mind/User/Presentation/Login/LoginScreen.dart';
 import 'package:mind/User/Presentation/Login/LoginService.dart';
@@ -28,7 +27,23 @@ final appRouter = GoRouter(
     return const Allow();
   },
   routes: [
-    GoRoute(path: '/', name: 'home', builder: (_, _) => const HomePage()),
+    GoRoute(
+      path: "/",
+      name: "home",
+      builder: (context, state) {
+        final app = App.shared;
+        final service = BreathSessionListService(notifier: app.breathSessionNotifier, userNotifier: app.userNotifier);
+
+        return ProviderScope(
+          overrides: [
+            breathSessionListViewModelProvider.overrideWith(
+              (ref) => BreathSessionListViewModel(service: service),
+            ),
+          ],
+          child: const BreathSessionListScreen(),
+        );
+      },
+    ),
     GoRoute(
       path: OnboardingScreen.path,
       name: OnboardingScreen.name,
@@ -103,23 +118,6 @@ final appRouter = GoRouter(
             ),
           ],
           child: const BreathSessionConstructorScreen(),
-        );
-      },
-    ),
-    GoRoute(
-      path: BreathSessionListScreen.path,
-      name: BreathSessionListScreen.name,
-      builder: (context, state) {
-        final app = App.shared;
-        final service = BreathSessionListService(notifier: app.breathSessionNotifier, userNotifier: app.userNotifier);
-
-        return ProviderScope(
-          overrides: [
-            breathSessionListViewModelProvider.overrideWith(
-              (ref) => BreathSessionListViewModel(service: service),
-            ),
-          ],
-          child: const BreathSessionListScreen(),
         );
       },
     ),
