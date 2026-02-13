@@ -1,17 +1,12 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/ITickService.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionEngine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
-
-enum ResetReason {
-  newCycle,
-  rest,
-  exerciseChange,
-}
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep.dart';
 
 final breathViewModelProvider =
     StateNotifierProvider<BreathViewModel, BreathSessionState>((ref) {
@@ -25,19 +20,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   final IBreathSessionService service;
   final String sessionId;
 
-  BreathSessionDTO? _sessionDTO;
-  StreamSubscription<TickData>? _subscription;
-
-  // Контроллер для события сброса цикла
-  final _resetController = StreamController<ResetReason>.broadcast();
-  Stream<ResetReason> get resetStream => _resetController.stream;
-
-  // Текущее состояние сессии (внутренние счетчики)
-  int _exerciseIndex = 0; // индекс упражнения в сете
-  int _repeatCounter = 0; // счетчик повторений сета
-  int _cycleTick = 0;     // текущий тик цикла
-
-  BreathExerciseDTO get currentExercise => _sessionDTO!.exercises[_exerciseIndex];
+  BreathSessionEngine? _engine;
+  StreamSubscription<BreathEngineState>? _engineSubscription;
 
   BreathViewModel({
     required this.tickService,
@@ -49,517 +33,138 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   Future<void> initState() async {
     try {
-      _sessionDTO = await service.getSession(sessionId);
-      state = state.copyWith(loadState: SessionLoadState.ready);
+      final dto = await service.getSession(sessionId);
 
-      _generateTimelineSteps();
+      _engine = BreathSessionEngine(
+        session: dto,
+        tickService: tickService,
+      );
 
-      final firstExercise = _sessionDTO!.exercises[0];
+      _engineSubscription = _engine!.stateStream.listen(_onEngineState);
 
-      // Если первое упражнение - это подготовка (пустые steps, только rest)
-      if (firstExercise.isRestOnly) {
-        _setupInitialRest();
-      } else {
-        _setupInitialBreath();
-      }
+      final timelineSteps = _buildTimelineSteps(dto);
 
-      _subscription = tickService.tickStream.listen(_onTick);
+      state = state.copyWith(
+        loadState: SessionLoadState.ready,
+        timelineSteps: timelineSteps,
+        status: _engine!.currentState.status,
+        phase: _engine!.currentState.phase,
+        exerciseIndex: _engine!.currentState.exerciseIndex,
+        remainingTicks: _engine!.currentState.remainingTicks,
+        activeStepId: _engine!.currentState.activeStepId,
+        currentIntervalMs: _engine!.currentState.currentIntervalMs,
+      );
     } catch (e) {
       state = state.copyWith(loadState: SessionLoadState.error);
     }
   }
 
-  void _generateTimelineSteps() {
-    final session = _sessionDTO!;
-    final List<TimelineStep> steps = [];
+  void _onEngineState(BreathEngineState engineState) {
+    state = state.copyWith(
+      status: engineState.status,
+      phase: engineState.phase,
+      exerciseIndex: engineState.exerciseIndex,
+      remainingTicks: engineState.remainingTicks,
+      activeStepId: engineState.activeStepId,
+      currentIntervalMs: engineState.currentIntervalMs,
+    );
+  }
 
-    for (var exerciseIndex = 0; exerciseIndex < session.exercises.length; exerciseIndex++) {
-      final exercise = session.exercises[exerciseIndex];
+  // ===== Timeline =====
 
-      // separator между сетами (кроме первого)
+  List<TimelineStep> _buildTimelineSteps(BreathSessionDTO dto) {
+    final steps = <TimelineStep>[];
+
+    for (var exerciseIndex = 0; exerciseIndex < dto.exercises.length; exerciseIndex++) {
+      final exercise = dto.exercises[exerciseIndex];
+
       if (exerciseIndex > 0) {
         steps.add(const TimelineStep.separator());
       }
 
-      // === СЕТ ТОЛЬКО С ОТДЫХОМ ===
       if (exercise.isRestOnly) {
-        // для standalone rest repeatCounter и cycleTick всегда 0
-        steps.add(
-          TimelineStep.fromPhase(
+        steps.add(TimelineStep.fromPhase(
+          phase: BreathPhase.rest,
+          duration: exercise.restDuration,
+          id: TimelineStep.generateId(
+            exerciseIndex: exerciseIndex,
+            repeatCounter: 0,
+            stepIndex: 0,
+            phase: BreathPhase.rest,
+          ),
+        ));
+        continue;
+      }
+
+      for (var repeatCounter = 0; repeatCounter < exercise.repeatCount; repeatCounter++) {
+        for (var stepIndex = 0; stepIndex < exercise.steps.length; stepIndex++) {
+          final step = exercise.steps[stepIndex];
+          steps.add(TimelineStep.fromPhase(
+            phase: step.phase,
+            duration: step.duration,
+            id: TimelineStep.generateId(
+              exerciseIndex: exerciseIndex,
+              repeatCounter: repeatCounter,
+              stepIndex: stepIndex,
+              phase: step.phase,
+            ),
+          ));
+        }
+
+        final isLastRepeat = repeatCounter == exercise.repeatCount - 1;
+        if (!isLastRepeat && exercise.restDuration > 0) {
+          steps.add(TimelineStep.fromPhase(
             phase: BreathPhase.rest,
             duration: exercise.restDuration,
             id: TimelineStep.generateId(
               exerciseIndex: exerciseIndex,
-              repeatCounter: 0,
+              repeatCounter: repeatCounter + 1,
               stepIndex: 0,
               phase: BreathPhase.rest,
             ),
-          ),
-        );
-        continue;
-      }
-
-      // === ДЫХАТЕЛЬНЫЙ СЕТ ===
-      for (var repeatCounter = 0; repeatCounter < exercise.repeatCount; repeatCounter++) {
-        // дыхательные шаги цикла
-        for (var stepIndex = 0; stepIndex < exercise.steps.length; stepIndex++) {
-          final step = exercise.steps[stepIndex];
-          steps.add(
-            TimelineStep.fromPhase(
-              phase: step.phase,
-              duration: step.duration,
-              id: TimelineStep.generateId(
-                exerciseIndex: exerciseIndex,
-                repeatCounter: repeatCounter,
-                stepIndex: stepIndex,
-                phase: step.phase,
-              ),
-            ),
-          );
-        }
-
-        // отдых между повторами
-        final isLastRepeat = repeatCounter == exercise.repeatCount - 1;
-        if (!isLastRepeat && exercise.restDuration > 0) {
-          steps.add(
-            TimelineStep.fromPhase(
-              phase: BreathPhase.rest,
-              duration: exercise.restDuration,
-              id: TimelineStep.generateId(
-                exerciseIndex: exerciseIndex,
-                repeatCounter: repeatCounter + 1,
-                stepIndex: 0,
-                phase: BreathPhase.rest,
-              ),
-            ),
-          );
+          ));
         }
       }
     }
 
-    state = state.copyWith(timelineSteps: steps);
+    return steps;
   }
 
-  void _setupInitialRest() {
-    state = state.copyWith(
-      status: BreathSessionStatus.pause,
-      phase: BreathPhase.rest,
-      exerciseIndex: _exerciseIndex,
-      remainingTicks: currentExercise.restDuration,
-      activeStepId: TimelineStep.generateId(
-        exerciseIndex: _exerciseIndex,
-        repeatCounter: 0,
-        stepIndex: 0,
-        phase: BreathPhase.rest,
-      ),
-      currentIntervalMs: -1,
-    );
-  }
+  // ===== Public controls =====
 
-  void _setupInitialBreath() {
-    final initialStepData = _getCurrentStepData(0);
+  void pause() => _engine?.pause();
 
-    state = state.copyWith(
-      status: BreathSessionStatus.pause,
-      phase: initialStepData.phase,
-      exerciseIndex: _exerciseIndex,
-      remainingTicks: initialStepData.remainingTicks,
-      activeStepId: TimelineStep.generateId(
-        exerciseIndex: _exerciseIndex,
-        repeatCounter: 0,
-        stepIndex: 0,
-        phase: initialStepData.phase,
-      ),
-      currentIntervalMs: -1,
-    );
-  }
+  void resume() => _engine?.resume();
 
-  void pause() {
-    if (state.status != BreathSessionStatus.complete) {
-      state = state.copyWith(status: BreathSessionStatus.pause);
-    }
-  }
+  void complete() => _engine?.complete();
 
-  void resume() {
-    if (state.status != BreathSessionStatus.pause) return;
-    if (state.loadState != SessionLoadState.ready) return;
+  // ===== Facade =====
 
-    final wasResting = state.phase == BreathPhase.rest;
-    state = state.copyWith(
-      status: wasResting
-          ? BreathSessionStatus.rest
-          : BreathSessionStatus.breath,
-    );
-  }
+  Stream<ResetReason> get resetStream =>
+      _engine?.resetStream ?? const Stream.empty();
 
-  void complete() {
-    state = state.copyWith(status: BreathSessionStatus.complete);
-    _subscription?.cancel();
-    _resetController.close();
-  }
+  BreathExerciseDTO get currentExercise => _engine!.currentExercise;
+
+  ({BreathPhase phase, int remainingInPhase}) getCurrentPhaseInfo() =>
+      _engine?.getCurrentPhaseInfo() ??
+      (phase: BreathPhase.rest, remainingInPhase: 0);
+
+  ({int totalPhases, int currentPhaseIndex}) getCurrentPhaseMeta() =>
+      _engine?.getCurrentPhaseMeta() ??
+      (totalPhases: 0, currentPhaseIndex: 0);
+
+  BreathExerciseDTO? getNextExerciseWithShape() =>
+      _engine?.getNextExerciseWithShape();
+
+  ({BreathPhase phase, int duration})? getNextPhaseInfo() =>
+      _engine?.getNextPhaseInfo();
+
+  // ===== Dispose =====
 
   @override
   void dispose() {
-    _subscription?.cancel();
-    _resetController.close();
+    _engineSubscription?.cancel();
+    _engine?.dispose();
     super.dispose();
-  }
-
-  // ===== Tick processing =====
-
-  void _onTick(TickData tickData) {
-    state = state.copyWith(currentIntervalMs: tickData.intervalMs);
-
-    // Проверяем активность
-    if (state.status == BreathSessionStatus.pause ||
-        state.status == BreathSessionStatus.complete) {
-      return;
-    }
-
-    switch (state.status) {
-      case BreathSessionStatus.breath:
-        _onBreathTick(tickData.intervalMs);
-        break;
-      case BreathSessionStatus.rest:
-        _onRestTick(tickData.intervalMs);
-        break;
-      default:
-        break;
-    }
-  }
-
-  void _onBreathTick(int intervalMs) {
-    _cycleTick++;
-
-    final cycleDuration = currentExercise.cycleDuration;
-
-    // 1. Проверяем завершение цикла
-    if (_cycleTick >= cycleDuration) {
-      _cycleTick = 0;
-      _repeatCounter++;
-
-      // Проверяем завершение всех повторений упражнения
-      if (_repeatCounter >= currentExercise.repeatCount) {
-        _repeatCounter = 0;
-        _advanceExercise(intervalMs);
-        return;
-      }
-
-      // Отдых после каждого подхода (если он задан внутри сета)
-      if (currentExercise.restDuration > 0) {
-        _startRest(intervalMs);
-        return;
-      }
-
-      // Если отдыха нет, начинаем новый цикл
-      _startNewCycle(intervalMs);
-      return;
-    }
-
-    // 2. Если цикл не закончен, определяем текущий шаг
-    final stepData = _getCurrentStepData(_cycleTick);
-
-    // Генерим ID после всех изменений счётчиков
-    final activeStepId = TimelineStep.generateId(
-      exerciseIndex: _exerciseIndex,
-      repeatCounter: _repeatCounter,
-      stepIndex: stepData.stepIndex,
-      phase: stepData.phase,
-    );
-
-    state = state.copyWith(
-      status: BreathSessionStatus.breath,
-      phase: stepData.phase,
-      exerciseIndex: _exerciseIndex,
-      remainingTicks: stepData.remainingTicks,
-      activeStepId: activeStepId,
-      currentIntervalMs: intervalMs,
-    );
-  }
-
-  void _onRestTick(int intervalMs) {
-    _cycleTick++;
-
-    final restDuration = currentExercise.restDuration;
-    final remainingTicks = restDuration - _cycleTick;
-
-    if (_cycleTick >= restDuration) {
-      _cycleTick = 0;
-
-      // Определяем тип отдыха по структуре текущего упражнения
-      if (currentExercise.steps.isEmpty) {
-        // Это был самостоятельный отдых (отдельное упражнение) → идём дальше
-        _advanceExercise(intervalMs);
-        return;
-      }
-
-      // Это был отдых между циклами упражнения → начинаем новый цикл
-      _startNewCycle(intervalMs);
-      return;
-    }
-
-    // Генерим ID после всех изменений счётчиков
-    final activeStepId = TimelineStep.generateId(
-      exerciseIndex: _exerciseIndex,
-      repeatCounter: _repeatCounter,
-      stepIndex: 0,
-      phase: BreathPhase.rest,
-    );
-
-    state = state.copyWith(
-      status: BreathSessionStatus.rest,
-      phase: BreathPhase.rest,
-      exerciseIndex: _exerciseIndex,
-      remainingTicks: remainingTicks,
-      activeStepId: activeStepId,
-      currentIntervalMs: intervalMs,
-    );
-  }
-
-  // ===== Step calculation =====
-
-  ({BreathPhase phase, int remainingTicks, int stepIndex}) _getCurrentStepData(int tick) {
-    int accumulated = 0;
-
-    for (int i = 0; i < currentExercise.steps.length; i++) {
-      final step = currentExercise.steps[i];
-      if (tick < accumulated + step.duration) {
-        final remainingInStep = (accumulated + step.duration) - tick;
-        return (phase: step.phase, remainingTicks: remainingInStep, stepIndex: i);
-      }
-      accumulated += step.duration;
-    }
-
-    // Если tick == cycleDuration (или больше)
-    final lastStep = currentExercise.steps.last;
-    return (phase: lastStep.phase, remainingTicks: 0, stepIndex: currentExercise.steps.length - 1);
-  }
-
-  // ===== Transitions =====
-
-  void _startRest(int intervalMs) {
-    _cycleTick = 0;
-
-    // Уведомляем о смене контекста (визуально это может быть другая фигура или режим)
-    _resetController.add(ResetReason.rest);
-
-    state = state.copyWith(
-      status: BreathSessionStatus.rest,
-      phase: BreathPhase.rest,
-      exerciseIndex: _exerciseIndex,
-      remainingTicks: currentExercise.restDuration,
-      activeStepId: TimelineStep.generateId(
-        exerciseIndex: _exerciseIndex,
-        repeatCounter: _repeatCounter,
-        stepIndex: 0,
-        phase: BreathPhase.rest,
-      ),
-      currentIntervalMs: intervalMs,
-    );
-  }
-
-  void _startNewCycle(int intervalMs) {
-    // Сигнал для визуального слоя: "Мы начали сначала" (нужен сброс rawPosition)
-    _resetController.add(ResetReason.newCycle);
-
-    final stepData = _getCurrentStepData(0);
-
-    state = state.copyWith(
-      status: BreathSessionStatus.breath,
-      phase: stepData.phase,
-      exerciseIndex: _exerciseIndex,
-      remainingTicks: stepData.remainingTicks,
-      activeStepId: TimelineStep.generateId(
-        exerciseIndex: _exerciseIndex,
-        repeatCounter: _repeatCounter,
-        stepIndex: stepData.stepIndex,
-        phase: stepData.phase,
-      ),
-      currentIntervalMs: intervalMs,
-    );
-  }
-
-  void _advanceExercise(int intervalMs) {
-    _exerciseIndex++;
-
-    if (_exerciseIndex >= _sessionDTO!.exercises.length) {
-      complete();
-      return;
-    }
-
-    // Сбрасываем цикл
-    _cycleTick = 0;
-    _repeatCounter = 0;
-
-    // Уведомляем о глобальной смене упражнения
-    // todo здесь не нужен этот резет. он вызовется на стартРэст или стартНьюСайкл. Возможно нужен на комплит..
-    _resetController.add(ResetReason.exerciseChange);
-
-    final nextExercise = _sessionDTO!.exercises[_exerciseIndex];
-
-    // Если следующее упражнение - только отдых
-    if (nextExercise.isRestOnly) {
-      _startRest(intervalMs);
-    } else {
-      _startNewCycle(intervalMs);
-    }
-  }
-
-  // ===== Current phase info =====
-
-  /// Возвращает информацию о текущей фазе: её тип и оставшееся количество тиков именно в этой фазе.
-  ({BreathPhase phase, int remainingInPhase}) getCurrentPhaseInfo() {
-    if (_sessionDTO == null || state.status == BreathSessionStatus.complete) {
-      return (phase: BreathPhase.rest, remainingInPhase: 0);
-    }
-
-    // Режим отдыха — отдельная логика
-    if (state.status == BreathSessionStatus.rest || state.phase == BreathPhase.rest) {
-      final remainingInRest = currentExercise.restDuration - _cycleTick;
-      return (phase: BreathPhase.rest, remainingInPhase: remainingInRest.clamp(0, remainingInRest));
-    }
-
-    // Если steps пустые — это не ошибка, просто сейчас нет активной дыхательной фазы
-    if (currentExercise.steps.isEmpty) {
-      return (phase: BreathPhase.rest, remainingInPhase: 0);
-    }
-
-    // Режим дыхания — ищем текущий шаг
-    int accumulated = 0;
-    int currentTickInCycle = _cycleTick;
-
-    for (final step in currentExercise.steps) {
-      if (currentTickInCycle < accumulated + step.duration) {
-        final remainingInThisStep = (accumulated + step.duration) - currentTickInCycle;
-        return (
-          phase: step.phase,
-          remainingInPhase: remainingInThisStep,
-        );
-      }
-      accumulated += step.duration;
-    }
-
-    // Если по какой-то причине вышли за пределы (крайний тик цикла)
-    final lastStep = currentExercise.steps.last;
-    return (
-      phase: lastStep.phase,
-      remainingInPhase: 0,
-    );
-  }
-
-  // ===== Next exercise (Forecast) =====
-
-  BreathExerciseDTO? getNextExerciseWithShape() {
-    if (_sessionDTO == null) return null;
-
-    // текущий сет
-    final current = currentExercise;
-
-    // если текущий сет сам имеет форму — она и есть актуальная
-    if (current.steps.isNotEmpty) {
-      return current;
-    }
-
-    // иначе ищем следующий дыхательный сет
-    for (int i = _exerciseIndex + 1; i < _sessionDTO!.exercises.length; i++) {
-      final candidate = _sessionDTO!.exercises[i];
-      if (candidate.steps.isNotEmpty) {
-        return candidate;
-      }
-    }
-
-    return null;
-  }
-
-  // ===== Phase meta for motion engine =====
-
-  ({int totalPhases, int currentPhaseIndex}) getCurrentPhaseMeta() {
-    if (_sessionDTO == null || currentExercise.steps.isEmpty) {
-      return (totalPhases: 0, currentPhaseIndex: 0);
-    }
-
-    int accumulated = 0;
-    int currentIndex = 0;
-
-    for (int i = 0; i < currentExercise.steps.length; i++) {
-      final step = currentExercise.steps[i];
-      if (_cycleTick < accumulated + step.duration) {
-        currentIndex = i;
-        break;
-      }
-      accumulated += step.duration;
-    }
-
-    return (totalPhases: currentExercise.steps.length, currentPhaseIndex: currentIndex);
-  }
-
-  // ===== Next phase info (Forecast) =====
-
-  /// Возвращает информацию о следующей фазе для отображения в UI.
-  ({BreathPhase phase, int duration})? getNextPhaseInfo() {
-    if (_sessionDTO == null || state.status == BreathSessionStatus.complete) {
-      return null;
-    }
-
-    // Логика для режима дыхания
-    if (state.status == BreathSessionStatus.breath) {
-      int accumulated = 0;
-      int currentStepIndex = -1;
-
-      for (int i = 0; i < currentExercise.steps.length; i++) {
-        if (_cycleTick < accumulated + currentExercise.steps[i].duration) {
-          currentStepIndex = i;
-          break;
-        }
-        accumulated += currentExercise.steps[i].duration;
-      }
-
-      // 1. Следующий шаг внутри текущего цикла
-      if (currentStepIndex >= 0 && currentStepIndex < currentExercise.steps.length - 1) {
-        final nextStep = currentExercise.steps[currentStepIndex + 1];
-        return (phase: nextStep.phase, duration: nextStep.duration);
-      }
-
-      // 2. Новый цикл или отдых между циклами
-      if (_repeatCounter + 1 < currentExercise.repeatCount) {
-        if (currentExercise.restDuration > 0) {
-          return (phase: BreathPhase.rest, duration: currentExercise.restDuration);
-        } else {
-          final firstStep = currentExercise.steps.first;
-          return (phase: firstStep.phase, duration: firstStep.duration);
-        }
-      }
-
-      // 3. Следующее упражнение
-      if (_exerciseIndex + 1 < _sessionDTO!.exercises.length) {
-        final nextExercise = _sessionDTO!.exercises[_exerciseIndex + 1];
-        if (nextExercise.isRestOnly) {
-          return (phase: BreathPhase.rest, duration: nextExercise.restDuration);
-        } else if (nextExercise.steps.isNotEmpty) {
-          final firstStep = nextExercise.steps.first;
-          return (phase: firstStep.phase, duration: firstStep.duration);
-        }
-      }
-      return null;
-    }
-
-    // Логика для режима отдыха или паузы
-    if (state.status == BreathSessionStatus.rest || state.status == BreathSessionStatus.pause) {
-      // Отдых между повторами
-      if (_repeatCounter < currentExercise.repeatCount) {
-        final firstStep = currentExercise.steps.first;
-        return (phase: firstStep.phase, duration: firstStep.duration);
-      }
-      // Отдых перед следующим упражнением
-      if (_exerciseIndex + 1 < _sessionDTO!.exercises.length) {
-        final nextExercise = _sessionDTO!.exercises[_exerciseIndex + 1];
-        if (nextExercise.steps.isNotEmpty) {
-          final firstStep = nextExercise.steps.first;
-          return (phase: firstStep.phase, duration: firstStep.duration);
-        }
-      }
-    }
-
-    return null;
   }
 }

@@ -6,6 +6,7 @@ import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMot
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathShapeShifter.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionEngine.dart';
 
 class BreathAnimationCoordinator {
   final BreathMotionEngine motionEngine;
