@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItem.dart';
@@ -7,6 +8,7 @@ import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathS
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListCell.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListSectionHeader.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListSkeletonCell.dart';
+import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
 import 'package:mind/Views/SnackBarModule/GlobalSnackBarNotifier.dart';
 import 'package:mind/Views/SnackBarModule/Models/SnackBarEvent.dart';
 
@@ -58,8 +60,7 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
   void _onScroll() {
     if (!_scrollController.hasClients) return;
 
-    final threshold = _scrollController.position.maxScrollExtent -
-        (10 * _estimatedCellHeight);
+    final threshold = _scrollController.position.maxScrollExtent - (10 * _estimatedCellHeight);
 
     if (_scrollController.position.pixels >= threshold) {
       ref.read(breathSessionListViewModelProvider.notifier).loadNextPage();
@@ -80,8 +81,10 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E27),
-      body: SafeArea(
-        child: _buildBody(state),
+      body: SafeArea(child: _buildBody(state)),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push(OnboardingScreen.path),
+        child: const Text('+'),
       ),
     );
   }
@@ -93,21 +96,22 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
       color: const Color(0xFF00D9FF),
       child: ListView.builder(
         controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         itemCount: state.items.length,
         itemBuilder: (context, index) {
           final item = state.items[index];
 
           return switch (item) {
             BreathSessionListCellModel cell => GestureDetector(
-                onTap: () => _onSessionTap(cell.id),
-                child: BreathSessionListCell(model: cell),
-              ),
-            SectionHeader header => BreathSessionListSectionHeader(
-                title: header.title,
-              ),
-            SkeletonCell skeleton => BreathSessionListSkeletonCell(
-                animated: skeleton.animated,
-              ),
+              onTap: () => _onSessionTap(cell.id),
+              child: BreathSessionListCell(model: cell),
+            ),
+            SectionHeaderModel header => BreathSessionListSectionHeader(
+              title: header.title,
+            ),
+            SkeletonCellModel skeleton => BreathSessionListSkeletonCell(
+              animated: skeleton.animated,
+            ),
           };
         },
       ),

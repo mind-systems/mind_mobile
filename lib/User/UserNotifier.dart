@@ -54,6 +54,10 @@ class UserNotifier {
   }
 
   Future<void> clearSession() async {
+    // защита от циклических попыток вылогинить юзера, если сервер продолжает на все запросы отдавать 401
+    // логика логина в определенные модули не зависит от 401 ошибки, а должна решаться на месте
+    if (_subject.value is GuestState) return;
+
     final currentUser = _subject.value.user;
     final newGuest = await repository.clearSession(currentUser);
     _subject.add(GuestState(newGuest));

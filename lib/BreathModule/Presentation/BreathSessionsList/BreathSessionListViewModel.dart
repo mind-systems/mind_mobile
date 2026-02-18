@@ -30,12 +30,12 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
 
   BreathSessionListViewModel({required this.service, required this.coordinator, this.pageSize = 50})
       : super(
-          BreathSessionListState(
-            items: [SkeletonCell(animated: true)],
-            mode: BreathSessionListMode.initialLoading,
-            hasMore: true,
-          ),
-        ) {
+         BreathSessionListState(
+           items: [SkeletonCellModel(animated: true)],
+           mode: BreathSessionListMode.initialLoading,
+           hasMore: true,
+         ),
+       ) {
     _subscription = service.observeChanges().listen(_onEvent);
     _loadInitialPage();
   }
@@ -71,7 +71,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
   void _handleSessionsInvalidated() {
     _currentPage = 0;
     state = BreathSessionListState(
-      items: [SkeletonCell(animated: true)],
+      items: [SkeletonCellModel(animated: true)],
       mode: BreathSessionListMode.initialLoading,
       hasMore: true,
     );
@@ -85,7 +85,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
       // Первая страница
       state = BreathSessionListState(
         items: cellModels.isEmpty
-            ? [SkeletonCell(animated: false)]
+            ? [SkeletonCellModel(animated: false)]
             : _buildItemsWithSections(cellModels),
         mode: cellModels.isEmpty
             ? BreathSessionListMode.empty
@@ -110,7 +110,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
 
     state = BreathSessionListState(
       items: cellModels.isEmpty
-          ? [SkeletonCell(animated: false)]
+          ? [SkeletonCellModel(animated: false)]
           : _buildItemsWithSections(cellModels),
       mode: cellModels.isEmpty
           ? BreathSessionListMode.empty
@@ -150,7 +150,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
 
     state = state.copyWith(
       items: remainingCells.isEmpty
-          ? [SkeletonCell(animated: false)]
+          ? [SkeletonCellModel(animated: false)]
           : _buildItemsWithSections(remainingCells),
       mode: remainingCells.isEmpty
           ? BreathSessionListMode.empty
@@ -165,7 +165,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
     } catch (e) {
       onErrorEvent?.call(SessionListError.loadFailed);
       state = BreathSessionListState(
-        items: [SkeletonCell(animated: false)],
+        items: [SkeletonCellModel(animated: false)],
         mode: BreathSessionListMode.empty,
         hasMore: false,
       );
@@ -176,7 +176,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
     if (!state.hasMore || state.isPaging) return;
 
     // Добавляем skeleton в конец
-    final itemsWithLoader = [...state.items, SkeletonCell(animated: true)];
+    final itemsWithLoader = [...state.items, SkeletonCellModel(animated: true)];
     state = state.copyWith(
       items: itemsWithLoader,
       mode: BreathSessionListMode.paging,
@@ -189,7 +189,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
       onErrorEvent?.call(SessionListError.pagingFailed);
       // Убираем skeleton обратно
       final itemsWithoutLoader = state.items
-          .where((item) => item is! SkeletonCell)
+          .where((item) => item is! SkeletonCellModel)
           .toList();
       state = state.copyWith(
         items: itemsWithoutLoader,
@@ -238,7 +238,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
       // При переходе на shared вставляем хедер
       if (cell.ownership == SessionOwnership.shared &&
           lastOwnership != SessionOwnership.shared) {
-        result.add(SectionHeader('Shared Sessions'));
+        result.add(SectionHeaderModel('Shared Sessions'));
       }
 
       result.add(cell);

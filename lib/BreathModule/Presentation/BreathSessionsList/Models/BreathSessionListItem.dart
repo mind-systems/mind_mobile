@@ -22,15 +22,15 @@ class BreathSessionListCellModel extends BreathSessionListItem {
 }
 
 /// Заголовок секции (разделитель групп)
-class SectionHeader extends BreathSessionListItem {
+class SectionHeaderModel extends BreathSessionListItem {
   final String title;
-  SectionHeader(this.title);
+  SectionHeaderModel(this.title);
 }
 
 /// Skeleton-ячейка (для initial/empty/paging)
-class SkeletonCell extends BreathSessionListItem {
+class SkeletonCellModel extends BreathSessionListItem {
   final bool animated;
-  SkeletonCell({required this.animated});
+  SkeletonCellModel({required this.animated});
 }
 
 /// Тип владения сессией
