@@ -1,5 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
+import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/Core/Api/Models/ApiExeption.dart';
 import 'package:mind/User/Models/AuthRequest.dart';
@@ -31,24 +32,17 @@ class ApiService {
 
   Future<User> authenticate(AuthRequest authRequest) async {
     try {
-      final path = '/auth/authenticate';
+      final path = '/auth/register';
       final data = authRequest.toJson();
       final response = await _dio.post(path, data: data);
 
-      if (response.statusCode == 200) {
-        final authHeader = response.headers.value('Authorization');
-        if (authHeader != null) {
-          final token = authHeader.replaceFirst('Bearer ', '');
-          await _storage.write(key: _tokenKey, value: token);
-        }
-
-        return User.fromJson(response.data);
+      final authHeader = response.headers.value('Authorization');
+      if (authHeader != null) {
+        final token = authHeader.replaceFirst('Bearer ', '');
+        await _storage.write(key: _tokenKey, value: token);
       }
 
-      throw ApiException(
-        message: 'Unexpected status code',
-        statusCode: response.statusCode,
-      );
+      return User.fromJson(response.data);
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
@@ -123,15 +117,7 @@ extension BreathSessionApi on ApiService {
     try {
       final response = await _dio.get('/breath_sessions/$id');
 
-      if (response.statusCode == 200) {
-        return BreathSession.fromJson(response.data as Map<String, dynamic>);
-      }
-
-      throw ApiException(
-        message: 'Unexpected status code',
-        statusCode: response.statusCode,
-        data: response.data,
-      );
+      return BreathSession.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _handleDioError(e);
     }
@@ -141,16 +127,9 @@ extension BreathSessionApi on ApiService {
     try {
       final response = await _dio.get('/breath_sessions/list?page=$page&pageSize=$pageSize');
 
-      if (response.statusCode == 200) {
-        final List data = response.data as List<dynamic>;
-        return data.map((raw) => BreathSession.fromJson(raw as Map<String, dynamic>)).toList();
-      } else {
-        throw ApiException(
-          message: 'Unexpected status code',
-          statusCode: response.statusCode,
-          data: response.data,
-        );
-      }
+      final Map<String, dynamic> data = response.data as Map<String, dynamic>;
+      final sessions = BreathSessionsListResponse.fromJson(data).data;
+      return sessions;
     } on DioException catch (e) {
       throw _handleDioError(e);
     }

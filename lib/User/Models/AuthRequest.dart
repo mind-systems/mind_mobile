@@ -1,37 +1,20 @@
 import 'package:mind/User/Models/User.dart';
 
-class AuthUserData {
+class AuthRequest {
+  final String token;
   final String? firebaseUid;
   final String name;
   final String email;
 
-  AuthUserData({
-    this.firebaseUid,
-    required this.email,
-    required this.name,
-  });
+  AuthRequest({required this.token, required User user})
+  : firebaseUid = user.firebaseUid,
+    name = user.name,
+    email = user.email;
 
   Map<String, dynamic> toJson() => {
-    'firebaseUid': firebaseUid,
+    'token': token,
+    'firebase_uid': firebaseUid,
     'name': name,
     'email': email,
-  };
-
-  factory AuthUserData.fromUser(User user) => AuthUserData(
-    firebaseUid: user.firebaseUid,
-    name: user.name,
-    email: user.email,
-  );
-}
-
-class AuthRequest {
-  final String idToken;
-  final AuthUserData user;
-
-  AuthRequest({required this.idToken, required this.user});
-
-  Map<String, dynamic> toJson() => {
-    'idToken': idToken,
-    'user': user.toJson(),
   };
 }

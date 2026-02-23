@@ -111,7 +111,7 @@ class BreathSessionNotifier {
     _isLoading = true;
 
     try {
-      final sessions = await repository.fetch(0, pageSize);
+      final sessions = await repository.fetch(1, pageSize);
       final hasMore = sessions.length >= pageSize;
 
       _subject.add(BreathSessionsState(

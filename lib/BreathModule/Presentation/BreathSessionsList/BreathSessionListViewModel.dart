@@ -23,7 +23,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
   final IBreathSessionListCoordinator coordinator;
   final int pageSize;
 
-  int _currentPage = 0;
+  int _currentPage = 1;
   StreamSubscription<BreathSessionListEvent>? _subscription;
 
   void Function(SessionListError error)? onErrorEvent;
@@ -69,7 +69,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
   }
 
   void _handleSessionsInvalidated() {
-    _currentPage = 0;
+    _currentPage = 1;
     state = BreathSessionListState(
       items: [SkeletonCellModel(animated: true)],
       mode: BreathSessionListMode.initialLoading,
@@ -118,7 +118,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
       hasMore: event.hasMore,
     );
 
-    _currentPage = 0;
+    _currentPage = 1;
   }
 
   void _handleSessionCreated(SessionCreatedEvent event) {
@@ -160,8 +160,8 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
 
   Future<void> _loadInitialPage() async {
     try {
-      await service.fetchPage(0, pageSize);
-      _currentPage = 0;
+      await service.fetchPage(1, pageSize);
+      _currentPage = 1;
     } catch (e) {
       onErrorEvent?.call(SessionListError.loadFailed);
       state = BreathSessionListState(

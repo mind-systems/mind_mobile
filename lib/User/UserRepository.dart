@@ -95,7 +95,7 @@ class UserRepository {
     }
 
     final user = User.fromFirebaseUser(firebaseUser);
-    final authRequest = AuthRequest(idToken: idToken, user: AuthUserData.fromUser(user));
+    final authRequest = AuthRequest(token: idToken, user: user);
     final authenticatedUser = await _api.authenticate(authRequest);
 
     await _replaceGuestWithUser(authenticatedUser);
@@ -120,7 +120,7 @@ class UserRepository {
       throw Exception('Failed to get ID token');
     }
 
-    final authenticatedUser = await _api.authenticate(AuthRequest(idToken: idToken, user: AuthUserData.fromUser(user)));
+    final authenticatedUser = await _api.authenticate(AuthRequest(token: idToken, user: user));
 
     await _replaceGuestWithUser(authenticatedUser);
     return authenticatedUser;

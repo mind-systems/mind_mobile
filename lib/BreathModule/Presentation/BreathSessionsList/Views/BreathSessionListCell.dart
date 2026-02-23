@@ -12,51 +12,60 @@ class BreathSessionListCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final pixel = 1 / MediaQuery.of(context).devicePixelRatio;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title (max 2 lines)
-          Text(
-            model.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleMedium,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 14),
+
+              // Title
+              Text(
+                model.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium,
+              ),
+
+              const SizedBox(height: 6),
+
+              // Duration + Subtitle
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    model.duration,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      model.subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 14),
+            ],
           ),
+        ),
 
-          const SizedBox(height: 8),
-
-          // Subtitle (1 line)
-          Text(
-            model.subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium,
-          ),
-
-          const SizedBox(height: 12),
-
-          // Separator
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: theme.dividerColor,
-          ),
-
-          const SizedBox(height: 8),
-
-          // Duration
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              model.duration,
-              style: theme.textTheme.bodySmall,
-            ),
-          ),
-        ],
-      ),
+        // Hairline divider (1 physical pixel)
+        Container(
+          height: pixel,
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          color: theme.dividerColor,
+        ),
+      ],
     );
   }
 }
