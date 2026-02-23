@@ -265,9 +265,11 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
   }
 
   String _formatPatterns(List<BreathPatternDTO> patterns) {
-    if (patterns.isEmpty) return '';
+    final visible = patterns.where((p) => !p.isRestOnly).toList();
 
-    final patternStrings = patterns.map((pattern) {
+    if (visible.isEmpty) return '';
+
+    final patternStrings = visible.map((pattern) {
       final shape = _getShapeSymbol(pattern.shape);
       final durations = pattern.durations.join('-');
       final repeatSuffix = pattern.repeatCount > 1 ? ' ×${pattern.repeatCount}' : '';

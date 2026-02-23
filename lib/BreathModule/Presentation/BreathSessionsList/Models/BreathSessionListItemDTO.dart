@@ -21,10 +21,13 @@ class BreathPatternDTO {
   final List<int> durations;
   final int repeatCount;
 
+  final bool isRestOnly;
+
   const BreathPatternDTO({
     required this.shape,
     required this.durations,
     required this.repeatCount,
+    required this.isRestOnly,
   });
 }
 

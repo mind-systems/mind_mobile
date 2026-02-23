@@ -110,6 +110,7 @@ class BreathSessionListService implements IBreathSessionListService {
   }
 
   BreathPatternDTO _exerciseSetToPattern(ExerciseSet exerciseSet) {
+    final isRestOnly = exerciseSet.steps.isEmpty;
     final durations =
         exerciseSet.steps.map((step) => step.duration).toList();
 
@@ -117,6 +118,7 @@ class BreathSessionListService implements IBreathSessionListService {
       shape: _mapShape(exerciseSet.shape),
       durations: durations,
       repeatCount: exerciseSet.repeatCount,
+      isRestOnly: isRestOnly,
     );
   }
 
