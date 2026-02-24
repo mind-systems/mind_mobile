@@ -119,8 +119,6 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
         const itemHeight = 48.0; // todo copypaste from BreathTimelineWidget!
         final timelineHeight = itemHeight * 4.5;
 
-        final phaseInfo = viewModel.getCurrentPhaseInfo();
-
         return Scaffold(
           backgroundColor: const Color(0xFF0A0E27),
           body: SafeArea(
@@ -146,15 +144,6 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
                             strokeWidth: 3.0,
                             pointRadius: 6.0,
                           ),
-                          if (state.status != BreathSessionStatus.complete)
-                            Text(
-                              '${phaseInfo.remainingInPhase}',
-                              style: const TextStyle(
-                                color: Color(0xFF00D9FF),
-                                fontSize: 24,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
                         ],
                       ),
                     ),

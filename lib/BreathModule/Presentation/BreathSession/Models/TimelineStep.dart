@@ -38,6 +38,14 @@ class TimelineStep {
     return 'exerciseIndex:$exerciseIndex;repeatCounter:$repeatCounter;stepIndex:$stepIndex;type:${_mapPhaseToType(phase)}';
   }
 
+  TimelineStep copyWith({int? duration}) {
+    return TimelineStep(
+      id: id,
+      type: type,
+      duration: duration ?? this.duration,
+    );
+  }
+
   static TimelineStepType _mapPhaseToType(BreathPhase phase) {
     switch (phase) {
       case BreathPhase.inhale: return TimelineStepType.inhale;

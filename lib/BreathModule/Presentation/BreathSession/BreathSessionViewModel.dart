@@ -60,6 +60,22 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   }
 
   void _onEngineState(BreathEngineState engineState) {
+    final previousActiveId = state.activeStepId;
+    final newActiveId = engineState.activeStepId;
+    final remaining = _engine!.getCurrentPhaseInfo().remainingInPhase;
+
+    List<TimelineStep> updatedSteps = state.timelineSteps;
+
+    if (newActiveId != null) {
+      final stepChanged = previousActiveId != newActiveId;
+      updatedSteps = state.timelineSteps.map((step) {
+        if (step.id == null) return step;
+        if (step.id == newActiveId) return step.copyWith(duration: remaining);
+        if (stepChanged && step.id == previousActiveId) return step.copyWith(duration: 0);
+        return step;
+      }).toList();
+    }
+
     state = state.copyWith(
       status: engineState.status,
       phase: engineState.phase,
@@ -67,6 +83,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       remainingTicks: engineState.remainingTicks,
       activeStepId: engineState.activeStepId,
       currentIntervalMs: engineState.currentIntervalMs,
+      timelineSteps: updatedSteps,
     );
   }
 

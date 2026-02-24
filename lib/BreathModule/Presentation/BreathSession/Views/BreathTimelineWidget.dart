@@ -45,9 +45,8 @@ class BreathTimelineWidgetState extends State<BreathTimelineWidget> {
   }
 
   void _updateKeys() {
-    _itemKeys.clear();
     for (final step in widget.steps) {
-      if (step.id != null) {
+      if (step.id != null && !_itemKeys.containsKey(step.id!)) {
         _itemKeys[step.id!] = GlobalKey();
       }
     }
@@ -168,6 +167,12 @@ class _TimelineItem extends StatelessWidget {
     final scale = isActive ? 1.15 : 1.0;
     final color =
     isActive ? const Color(0xFF00D9FF) : Colors.white.withValues(alpha: 0.45);
+    final textStyle = TextStyle(
+      fontSize: isActive ? 22 : 16,
+      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+      color: color,
+      letterSpacing: 0.5,
+    );
 
     return Center(
       child: AnimatedScale(
@@ -179,32 +184,26 @@ class _TimelineItem extends StatelessWidget {
           opacity: opacity,
           duration:
           isPausedOrComplete ? Duration.zero : const Duration(milliseconds: 280),
-          child: Text(
-            _label(step),
-            style: TextStyle(
-              fontSize: isActive ? 22 : 16,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-              color: color,
-              letterSpacing: 0.5,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_phaseName(step.type), style: textStyle),
+              const SizedBox(width: 6),
+              Text('${step.duration ?? 0}', style: textStyle),
+            ],
           ),
         ),
       ),
     );
   }
 
-  String _label(TimelineStep step) {
-    switch (step.type) {
-      case TimelineStepType.inhale:
-        return 'Inhale ${step.duration}';
-      case TimelineStepType.hold:
-        return 'Hold ${step.duration}';
-      case TimelineStepType.exhale:
-        return 'Exhale ${step.duration}';
-      case TimelineStepType.rest:
-        return 'Rest ${step.duration}';
-      case TimelineStepType.separator:
-        return '';
+  String _phaseName(TimelineStepType type) {
+    switch (type) {
+      case TimelineStepType.inhale: return 'Inhale';
+      case TimelineStepType.hold: return 'Hold';
+      case TimelineStepType.exhale: return 'Exhale';
+      case TimelineStepType.rest: return 'Rest';
+      case TimelineStepType.separator: return '';
     }
   }
 }
