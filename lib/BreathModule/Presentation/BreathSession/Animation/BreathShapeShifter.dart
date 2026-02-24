@@ -13,6 +13,8 @@ class BreathShapeShifter extends ChangeNotifier {
   Offset _center = Offset.zero;
   double _size = 0.0;
 
+  Path? _cachedPath;
+
   BreathShapeShifter({required SetShape initialShape})
       : _currentShape = initialShape,
         _startShape = initialShape;
@@ -23,6 +25,7 @@ class BreathShapeShifter extends ChangeNotifier {
 
     // Генерируем начальные точки для текущей формы
     _currentPoints = _generateShapePoints(_currentShape);
+    _cachedPath = null;
 
     // Создаём контроллер морфинга
     _morphController = AnimationController(
@@ -52,6 +55,7 @@ class BreathShapeShifter extends ChangeNotifier {
       );
     }).toList();
 
+    _cachedPath = null;
     notifyListeners();
   }
 
@@ -86,6 +90,7 @@ class BreathShapeShifter extends ChangeNotifier {
       });
     }
 
+    _cachedPath = null;
     notifyListeners();
   }
 
@@ -95,6 +100,8 @@ class BreathShapeShifter extends ChangeNotifier {
   }
 
   Path getCurrentPath() {
+    if (_cachedPath != null) return _cachedPath!;
+
     final path = Path();
     if (_currentPoints.isEmpty) return path;
 
@@ -103,6 +110,7 @@ class BreathShapeShifter extends ChangeNotifier {
       path.lineTo(_currentPoints[i].dx, _currentPoints[i].dy);
     }
     path.close();
+    _cachedPath = path;
     return path;
   }
 

@@ -19,6 +19,10 @@ class BreathAnimationCoordinator {
   int? _previousExerciseIndex;
   int? _previousRemainingTicks;
 
+  // Engine создаётся асинхронно в ViewModel.initState(), поэтому при initialize()
+  // resetStream может быть пустым. Переподписываемся при первом ready-состоянии.
+  bool _resetStreamSubscribed = false;
+
   BreathAnimationCoordinator({
     required this.motionEngine,
     required this.shapeShifter,
@@ -55,6 +59,12 @@ class BreathAnimationCoordinator {
 
   void _onStateChanged(BreathSessionState state) {
     if (state.loadState != SessionLoadState.ready) return;
+
+    if (!_resetStreamSubscribed) {
+      _resetSubscription?.cancel();
+      _resetSubscription = viewModel.resetStream.listen(_onReset);
+      _resetStreamSubscribed = true;
+    }
 
     // 1. Активность
     final shouldBeActive = state.status == BreathSessionStatus.breath;
@@ -118,6 +128,22 @@ class BreathAnimationCoordinator {
     }
 
     motionEngine.resetPosition(0.0);
+
+    // Ресинк фазовой структуры сразу после сброса позиции.
+    // _onStateChanged уже отработал с position=1.0 до того как этот callback
+    // выполнился (Riverpod listener синхронный, Stream broadcast — асинхронный),
+    // поэтому пересчитываем скорость здесь с корректной position=0.0.
+    // todo костыль какой то! почему то после первого прохода фигуры дыхания, анимация замирала
+    if (viewModel.currentExercise.steps.isNotEmpty) {
+      final phaseMeta = viewModel.getCurrentPhaseMeta();
+      motionEngine.setPhaseInfo(
+        totalPhases: phaseMeta.totalPhases,
+        currentPhaseIndex: phaseMeta.currentPhaseIndex,
+      );
+      final phaseInfo = viewModel.getCurrentPhaseInfo();
+      motionEngine.setRemainingPhaseTicks(phaseInfo.remainingInPhase);
+      _previousRemainingTicks = phaseInfo.remainingInPhase;
+    }
   }
 
   void dispose() {
