@@ -65,7 +65,10 @@ class BreathSessionEngine {
   late BreathEngineState _state;
   BreathEngineState get currentState => _state;
 
-  BreathExerciseDTO get currentExercise => session.exercises[_exerciseIndex];
+  BreathExerciseDTO get currentExercise {
+    final safeIndex = _exerciseIndex.clamp(0, session.exercises.length - 1);
+    return session.exercises[safeIndex];
+  }
 
   BreathSessionEngine({
     required this.session,
@@ -274,6 +277,9 @@ class BreathSessionEngine {
     _exerciseIndex++;
 
     if (_exerciseIndex >= session.exercises.length) {
+      // Reset to last valid index so facade methods (currentExercise, etc.)
+      // don't throw while async emits from before complete() are still in flight.
+      _exerciseIndex = session.exercises.length - 1;
       complete();
       return;
     }
