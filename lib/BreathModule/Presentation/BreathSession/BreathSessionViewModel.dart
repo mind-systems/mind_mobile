@@ -22,6 +22,11 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   BreathSessionEngine? _engine;
   StreamSubscription<BreathEngineState>? _engineSubscription;
+  StreamSubscription<ResetReason>? _resetProxySubscription;
+
+  BreathSessionDTO? _sessionDTO;
+
+  final _resetController = StreamController<ResetReason>.broadcast();
 
   BreathViewModel({
     required this.tickService,
@@ -34,29 +39,38 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   Future<void> initState() async {
     try {
       final dto = await service.getSession(sessionId);
-
-      _engine = BreathSessionEngine(
-        session: dto,
-        tickService: tickService,
-      );
-
-      _engineSubscription = _engine!.stateStream.listen(_onEngineState);
-
-      final timelineSteps = _buildTimelineSteps(dto);
-
-      state = state.copyWith(
-        loadState: SessionLoadState.ready,
-        timelineSteps: timelineSteps,
-        status: _engine!.currentState.status,
-        phase: _engine!.currentState.phase,
-        exerciseIndex: _engine!.currentState.exerciseIndex,
-        remainingTicks: _engine!.currentState.remainingTicks,
-        activeStepId: _engine!.currentState.activeStepId,
-        currentIntervalMs: _engine!.currentState.currentIntervalMs,
-      );
+      _sessionDTO = dto;
+      _setupEngine(dto);
     } catch (e) {
       state = state.copyWith(loadState: SessionLoadState.error);
     }
+  }
+
+  void _setupEngine(BreathSessionDTO dto) {
+    _engineSubscription?.cancel();
+    _resetProxySubscription?.cancel();
+    _engine?.dispose();
+
+    _engine = BreathSessionEngine(
+      session: dto,
+      tickService: tickService,
+    );
+
+    _resetProxySubscription = _engine!.resetStream.listen(_resetController.add);
+    _engineSubscription = _engine!.stateStream.listen(_onEngineState);
+
+    final timelineSteps = _buildTimelineSteps(dto);
+
+    state = state.copyWith(
+      loadState: SessionLoadState.ready,
+      timelineSteps: timelineSteps,
+      status: _engine!.currentState.status,
+      phase: _engine!.currentState.phase,
+      exerciseIndex: _engine!.currentState.exerciseIndex,
+      remainingTicks: _engine!.currentState.remainingTicks,
+      activeStepId: _engine!.currentState.activeStepId,
+      currentIntervalMs: _engine!.currentState.currentIntervalMs,
+    );
   }
 
   void _onEngineState(BreathEngineState engineState) {
@@ -155,10 +169,14 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   void complete() => _engine?.complete();
 
+  void restart() {
+    if (_sessionDTO == null) return;
+    _setupEngine(_sessionDTO!);
+  }
+
   // ===== Facade =====
 
-  Stream<ResetReason> get resetStream =>
-      _engine?.resetStream ?? const Stream.empty();
+  Stream<ResetReason> get resetStream => _resetController.stream;
 
   BreathExerciseDTO get currentExercise => _engine!.currentExercise;
 
@@ -181,7 +199,9 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   @override
   void dispose() {
     _engineSubscription?.cancel();
+    _resetProxySubscription?.cancel();
     _engine?.dispose();
+    _resetController.close();
     super.dispose();
   }
 }

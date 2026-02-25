@@ -180,8 +180,11 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
         width: 80,
         height: 80,
         child: ControlButton(
-          icon: Icons.check_circle_outline,
-          onPressed: () => Navigator.pop(context),
+          icon: Icons.replay,
+          onPressed: () {
+            _coordinator.reset();
+            viewModel.restart();
+          },
           iconSize: 40,
         ),
       );

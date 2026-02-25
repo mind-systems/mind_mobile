@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMotionEngine.dart';
@@ -144,6 +145,18 @@ class BreathAnimationCoordinator {
       motionEngine.setRemainingPhaseTicks(phaseInfo.remainingInPhase);
       _previousRemainingTicks = phaseInfo.remainingInPhase;
     }
+  }
+
+  /// Resets coordinator state caches after a session restart.
+  ///
+  /// Call this before [BreathViewModel.restart] so that the next
+  /// ready-state triggers a full phaseInfo re-initialisation.
+  void reset() {
+    debugPrint('[BreathAnimationCoordinator] reset() called — clearing state caches');
+    _previousRemainingTicks = null;
+    _previousExerciseIndex = null;
+    _resetStreamSubscribed = false;
+    motionEngine.setActive(false);
   }
 
   void dispose() {

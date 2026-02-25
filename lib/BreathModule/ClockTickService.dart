@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:mind/BreathModule/ITickService.dart';
 
 class ClockTickService implements ITickService {
-  final StreamController<TickData> _tickController = StreamController<TickData>();
+  final StreamController<TickData> _tickController = StreamController<TickData>.broadcast();
 
   @override
   Stream<TickData> get tickStream => _tickController.stream;
