@@ -1,0 +1,73 @@
+flowchart TD
+    classDef external fill:#fff3e0,stroke:#ff9800,stroke-width:2px,color:#e65100
+    classDef vm fill:#e3f2fd,stroke:#2196f3,stroke-width:2px,color:#0d47a1
+    classDef machine fill:#e8f5e9,stroke:#4caf50,stroke-width:2px,color:#1b5e20
+    classDef consumer fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px,color:#4a148c
+    classDef stream fill:#ffebee,stroke:#f44336,stroke-width:2px,color:#b71c1c
+
+    %% === Внешние зависимости ===
+    ITickService["<b>ITickService</b><br/>tickStream"]:::external
+    IBreathSessionService["<b>IBreathSessionService</b><br/>getSession(id): Future&lt;DTO&gt;"]:::external
+    Screen["<b>BreathSessionScreen</b><br/>вызывает: pause / resume<br/>restart / initState"]:::external
+
+    %% === BreathViewModel ===
+    subgraph VM["🎯 BreathViewModel (StateNotifier)"]
+        direction TB
+
+        initState["initState()<br/>───<br/>async: getSession() → DTO<br/>кэшируется в _sessionDTO<br/>→ _setupEngine(dto)"]:::vm
+
+        setupEngine["_setupEngine(dto)<br/>───<br/>dispose() старого StateMachine<br/>создаёт новый StateMachine<br/>переподписывает proxy<br/>эмитит Riverpod state (ready)"]:::vm
+
+        onEngineState["_onEngineState(state)<br/>───<br/>обновляет timelineSteps<br/>→ эмитит Riverpod state"]:::vm
+
+        restart["restart()<br/>───<br/>_setupEngine(_sessionDTO!)<br/>использует кэшированный DTO"]:::vm
+
+        facade["Facade методы<br/>───<br/>currentExercise<br/>getCurrentPhaseInfo()<br/>getCurrentPhaseMeta()<br/>getNextPhaseInfo()<br/>getNextExerciseWithShape()"]:::vm
+    end
+
+    %% === StateMachine (создаётся внутри VM) ===
+    subgraph SM["⚙️ BreathSessionStateMachine (создаётся в _setupEngine)"]
+        direction LR
+        SMState["stateStream<br/>Stream&lt;StateMachineState&gt;"]:::machine
+        SMReset["resetStream<br/>Stream&lt;ResetReason&gt;"]:::machine
+    end
+
+    %% === Proxy-стримы ViewModel ===
+    ResetController["_resetController<br/>───<br/>StreamController.broadcast()<br/>Живёт весь lifecycle VM<br/>Стабилен при restart()"]:::stream
+    RiverpodState["Riverpod State<br/>───<br/>BreathSessionState<br/>loadState / status / phase<br/>remainingTicks / timelineSteps"]:::stream
+
+    %% === Потребители ===
+    Coordinator["<b>BreathAnimationCoordinator</b><br/>Слушает Riverpod state<br/>Слушает viewModel.resetStream"]:::consumer
+
+    %% === Потоки данных ===
+
+    %% Загрузка
+    IBreathSessionService -->|"async getSession()"| initState
+    ITickService -->|"tickStream"| SM
+
+    %% Инициализация
+    Screen -->|"initState()"| initState
+    initState -->|"загрузил DTO"| setupEngine
+    setupEngine -->|"создаёт"| SM
+
+    %% Proxy pattern: SM → VM → наружу
+    SMState -->|"_engineSubscription.listen()"| onEngineState
+    onEngineState -->|"state.copyWith()"| RiverpodState
+    SMReset -->|"_resetProxySubscription.listen()"| ResetController
+
+    %% Публичные стримы VM
+    ResetController -->|"viewModel.resetStream"| Coordinator
+    RiverpodState -->|"Riverpod listener"| Coordinator
+
+    %% Управление
+    Screen -->|"pause() / resume() / complete()"| SM
+    Screen -->|"restart()"| restart
+    restart -->|"_setupEngine(cached DTO)"| setupEngine
+
+    %% Facade делегирует в SM
+    facade -.->|"делегирует"| SM
+
+    %% === Аннотация: зачем proxy ===
+    ProxyNote["<b>Зачем _resetProxySubscription?</b><br/>─────────────────────<br/>При restart() StateMachine пересоздаётся.<br/>Его resetStream закрывается, новый — открывается.<br/>_resetController остаётся тем же объектом.<br/>Coordinator подписан один раз — подписка не рвётся.<br/>_resetProxySubscription переподключается в _setupEngine()."]
+
+    style ProxyNote fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#3e2723,text-align:left

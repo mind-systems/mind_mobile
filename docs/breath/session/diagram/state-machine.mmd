@@ -1,0 +1,88 @@
+flowchart TD
+    classDef lifecycle fill:#e8f5e9,stroke:#4caf50,stroke-width:2px,color:#1b5e20
+    classDef tick fill:#fff3e0,stroke:#ff9800,stroke-width:2px,color:#e65100
+    classDef transition fill:#e3f2fd,stroke:#2196f3,stroke-width:2px,color:#0d47a1
+    classDef helper fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px,color:#4a148c
+    classDef external fill:#fce4ec,stroke:#e91e63,stroke-width:2px,color:#880e4f
+
+    %% Внешние триггеры
+    TickService["ITickService<br/>(внешний метроном)"]:::external
+    VM["BreathViewModel<br/>(pause/resume/complete)"]:::external
+
+    %% Lifecycle
+    smInit["BreathSessionStateMachine()<br/>───<br/>Принимает session + tickService<br/>Подписывается на tickStream<br/>Устанавливает начальное состояние"]:::lifecycle
+    fnPause["pause()<br/>───<br/>status → pause"]:::lifecycle
+    fnResume["resume()<br/>───<br/>pause → breath или rest<br/>в зависимости от текущей фазы"]:::lifecycle
+    fnComplete["complete()<br/>───<br/>status → complete<br/>отменяет tickSubscription<br/>закрывает resetStream"]:::lifecycle
+
+    %% Tick обработчики
+    onTick["_onTick(TickData)<br/>───<br/>Обновляет currentIntervalMs<br/>Главный диспетчер по статусу"]:::tick
+    onBreathTick["_onBreathTick()<br/>───<br/>Обрабатывает дыхательную фазу<br/>_cycleTick++"]:::tick
+    onRestTick["_onRestTick()<br/>───<br/>Обрабатывает отдых<br/>_cycleTick++"]:::tick
+
+    %% Transition методы
+    startRest["_startRest()<br/>───<br/>_cycleTick = 0<br/>resetStream.add(rest)<br/>status → rest"]:::transition
+    startNewCycle["_startNewCycle()<br/>───<br/>resetStream.add(newCycle)<br/>status → breath, _cycleTick = 0"]:::transition
+    advanceExercise["_advanceExercise()<br/>───<br/>_exerciseIndex++<br/>_cycleTick = 0, _repeatCounter = 0<br/>resetStream.add(exerciseChange)"]:::transition
+
+    %% Helper методы
+    getCurrentStepData["_getCurrentStepData(tick)<br/>───<br/>Определяет текущий шаг<br/>по _cycleTick<br/>Возвращает phase + remainingTicks + stepIndex"]:::helper
+
+    %% Публичные facade-методы
+    getCurrentPhaseInfo["getCurrentPhaseInfo()<br/>───<br/>Текущая фаза + оставшиеся тики<br/>Используется Coordinator"]:::helper
+    getCurrentPhaseMeta["getCurrentPhaseMeta()<br/>───<br/>totalPhases + currentPhaseIndex<br/>Используется Coordinator"]:::helper
+    getNextPhaseInfo["getNextPhaseInfo()<br/>───<br/>Прогноз следующей фазы<br/>Используется UI"]:::helper
+
+    %% Основной поток
+    TickService -->|"tick every ~1s"| onTick
+    VM -->|"user action"| fnPause
+    VM -->|"user action"| fnResume
+    VM -->|"session end"| fnComplete
+
+    smInit -->|"определяет начальную фазу"| getCurrentStepData
+
+    onTick -->|"if status == breath"| onBreathTick
+    onTick -->|"if status == rest"| onRestTick
+    onTick -->|"if status == pause/complete"| IgnoreTick["игнорирует тик"]
+
+    %% Логика дыхательного тика
+    onBreathTick -->|"_cycleTick >= cycleDuration?"| CheckCycleEnd{"Цикл завершён?"}
+    CheckCycleEnd -->|"да: _repeatCounter++"| CheckRepeatEnd{"Все повторы?"}
+    CheckRepeatEnd -->|"да: _exerciseIndex++"| advanceExercise
+    CheckRepeatEnd -->|"нет: restDuration > 0?"| CheckRestNeeded{"Нужен отдых?"}
+    CheckRestNeeded -->|"да"| startRest
+    CheckRestNeeded -->|"нет"| startNewCycle
+
+    CheckCycleEnd -->|"нет: продолжаем"| getCurrentStepData
+    getCurrentStepData -->|"обновляем stateStream"| EmitState["stateStream.add(state)"]
+
+    %% Логика тика отдыха
+    onRestTick -->|"_cycleTick >= restDuration?"| CheckRestEnd{"Отдых завершён?"}
+    CheckRestEnd -->|"да: steps.isEmpty?"| CheckRestType{"Тип отдыха?"}
+    CheckRestType -->|"отдельное упражнение"| advanceExercise
+    CheckRestType -->|"между циклами"| startNewCycle
+    CheckRestEnd -->|"нет: продолжаем"| EmitState
+
+    %% Переходы
+    advanceExercise -->|"_exerciseIndex >= length?"| CheckSessionEnd{"Сессия завершена?"}
+    CheckSessionEnd -->|"да"| fnComplete
+    CheckSessionEnd -->|"нет: isRestOnly?"| CheckNextType{"Следующее = отдых?"}
+    CheckNextType -->|"да"| startRest
+    CheckNextType -->|"нет"| startNewCycle
+
+    startRest -->|"emit reset signal + state"| EmitState
+    startNewCycle -->|"emit reset signal"| getCurrentStepData
+
+    %% UI facade запросы
+    VM -.->|"getCurrentPhaseInfo()"| getCurrentPhaseInfo
+    VM -.->|"getCurrentPhaseMeta()"| getCurrentPhaseMeta
+    VM -.->|"getNextPhaseInfo()"| getNextPhaseInfo
+
+    %% Ключевые переменные
+    Variables["<b>Внутренние счётчики:</b><br/>_exerciseIndex: какое упражнение<br/>_repeatCounter: какой повтор<br/>_cycleTick: позиция внутри цикла<br/><br/><b>Стримы:</b><br/>stateStream → ViewModel<br/>resetStream → ViewModel (proxy)"]
+
+    style Variables fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#3e2723,text-align:left
+
+    Variables -.->|"используются в"| onBreathTick
+    Variables -.->|"используются в"| onRestTick
+    Variables -.->|"используются в"| getCurrentStepData
