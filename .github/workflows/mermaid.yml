@@ -48,7 +48,7 @@ jobs:
           find . -name "*.mmd" -type f | while read -r file; do
             output="${file%.mmd}.svg"
             echo "Converting $file -> $output"
-            npx -y @mermaid-js/mermaid-cli mmdc -i "$file" -o "$output" -t default -b transparent --configFile mermaid-config.json --puppeteerConfigFile .github/workflows/.puppeteer.json
+            npx -y @mermaid-js/mermaid-cli -i "$file" -o "$output" -t default -b transparent --configFile mermaid-config.json --puppeteerConfigFile .github/workflows/.puppeteer.json
           done
 
       - name: Commit SVG files
