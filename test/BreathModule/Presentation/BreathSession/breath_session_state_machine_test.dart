@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/BreathModule/ITickService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionEngine.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionStateMachine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
@@ -56,7 +56,7 @@ BreathSessionDTO makeSession(List<BreathExerciseDTO> exercises) {
 // (inhale + exhale) * repeatCount + restDuration * (repeatCount - 1) ticks
 void driveExercise(
   FakeTickService ticks,
-  BreathSessionEngine engine,
+  BreathSessionStateMachine engine,
   BreathExerciseDTO exercise,
 ) {
   final cycleDuration = exercise.cycleDuration;
@@ -82,12 +82,12 @@ void driveExercise(
 // ---------------------------------------------------------------------------
 
 void main() {
-  group('BreathSessionEngine', () {
+  group('BreathSessionStateMachine', () {
     late FakeTickService ticks;
-    late BreathSessionEngine engine;
+    late BreathSessionStateMachine stateMachine;
 
     tearDown(() {
-      engine.dispose();
+      stateMachine.dispose();
       ticks.dispose();
     });
 
@@ -102,18 +102,21 @@ void main() {
         final session = makeSession([exercise]);
 
         ticks = FakeTickService();
-        engine = BreathSessionEngine(session: session, tickService: ticks);
+        stateMachine = BreathSessionStateMachine(
+          session: session,
+          tickService: ticks,
+        );
 
         // Collect all emitted states
-        final states = <BreathEngineState>[];
-        final sub = engine.stateStream.listen(states.add);
+        final states = <BreathSessionStateMachineState>[];
+        final sub = stateMachine.stateStream.listen(states.add);
 
-        engine.resume();
+        stateMachine.resume();
 
         // Drive all ticks (inhale=2, exhale=2 → 4 ticks advance the cycle)
-        // After cycleDuration ticks the engine calls _advanceExercise which
+        // After cycleDuration ticks the stateMachine calls _advanceExercise which
         // triggers complete() because there is only one exercise.
-        driveExercise(ticks, engine, exercise);
+        driveExercise(ticks, stateMachine, exercise);
 
         // Allow microtasks / async delivery to flush
         await Future<void>.delayed(Duration.zero);
@@ -122,20 +125,20 @@ void main() {
 
         // Engine must be in complete state
         expect(
-          engine.currentState.status,
+          stateMachine.currentState.status,
           BreathSessionStatus.complete,
           reason: 'Engine should reach complete status',
         );
 
         // currentExercise must not throw — this is the regression guard
         expect(
-          () => engine.currentExercise,
+          () => stateMachine.currentExercise,
           returnsNormally,
           reason: 'currentExercise must not throw after completion',
         );
 
         // The last valid exercise must be returned (index 0, only exercise)
-        expect(engine.currentExercise, same(exercise));
+        expect(stateMachine.currentExercise, same(exercise));
       },
     );
 
@@ -151,19 +154,26 @@ void main() {
         final session = makeSession([ex1, ex2]);
 
         ticks = FakeTickService();
-        engine = BreathSessionEngine(session: session, tickService: ticks);
+        stateMachine = BreathSessionStateMachine(
+          session: session,
+          tickService: ticks,
+        );
 
-        engine.resume();
+        stateMachine.resume();
 
-        driveExercise(ticks, engine, ex1); // completes ex1, engine moves to ex2
-        driveExercise(ticks, engine, ex2); // completes ex2, engine calls complete()
+        driveExercise(ticks, stateMachine, ex1); // completes ex1, stateMachine moves to ex2
+        driveExercise(
+          ticks,
+          stateMachine,
+          ex2,
+        ); // completes ex2, stateMachine calls complete()
 
         await Future<void>.delayed(Duration.zero);
 
-        expect(engine.currentState.status, BreathSessionStatus.complete);
-        expect(() => engine.currentExercise, returnsNormally);
+        expect(stateMachine.currentState.status, BreathSessionStatus.complete);
+        expect(() => stateMachine.currentExercise, returnsNormally);
         // Last valid exercise is ex2 (index 1)
-        expect(engine.currentExercise, same(ex2));
+        expect(stateMachine.currentExercise, same(ex2));
       },
     );
 
@@ -174,52 +184,52 @@ void main() {
     test('starts in pause state', () {
       final session = makeSession([makeExercise()]);
       ticks = FakeTickService();
-      engine = BreathSessionEngine(session: session, tickService: ticks);
+      stateMachine = BreathSessionStateMachine(session: session, tickService: ticks);
 
-      expect(engine.currentState.status, BreathSessionStatus.pause);
+      expect(stateMachine.currentState.status, BreathSessionStatus.pause);
     });
 
     test('resume transitions to breath status', () async {
       final session = makeSession([makeExercise()]);
       ticks = FakeTickService();
-      engine = BreathSessionEngine(session: session, tickService: ticks);
+      stateMachine = BreathSessionStateMachine(session: session, tickService: ticks);
 
-      engine.resume();
+      stateMachine.resume();
       ticks.tick();
       await Future<void>.delayed(Duration.zero);
 
-      expect(engine.currentState.status, BreathSessionStatus.breath);
+      expect(stateMachine.currentState.status, BreathSessionStatus.breath);
     });
 
     test('pause stops tick processing', () async {
       final session = makeSession([makeExercise(inhale: 5, exhale: 5)]);
       ticks = FakeTickService();
-      engine = BreathSessionEngine(session: session, tickService: ticks);
+      stateMachine = BreathSessionStateMachine(session: session, tickService: ticks);
 
-      engine.resume();
+      stateMachine.resume();
       ticks.tick();
       await Future<void>.delayed(Duration.zero);
 
-      engine.pause();
-      final stateAfterPause = engine.currentState;
+      stateMachine.pause();
+      final stateAfterPause = stateMachine.currentState;
 
       ticks.tick();
       ticks.tick();
       await Future<void>.delayed(Duration.zero);
 
       // Phase progress should not change while paused
-      expect(engine.currentState.phase, stateAfterPause.phase);
-      expect(engine.currentState.status, BreathSessionStatus.pause);
+      expect(stateMachine.currentState.phase, stateAfterPause.phase);
+      expect(stateMachine.currentState.status, BreathSessionStatus.pause);
     });
 
     test('complete() immediately sets status to complete', () {
       final session = makeSession([makeExercise()]);
       ticks = FakeTickService();
-      engine = BreathSessionEngine(session: session, tickService: ticks);
+      stateMachine = BreathSessionStateMachine(session: session, tickService: ticks);
 
-      engine.complete();
+      stateMachine.complete();
 
-      expect(engine.currentState.status, BreathSessionStatus.complete);
+      expect(stateMachine.currentState.status, BreathSessionStatus.complete);
     });
 
     // -----------------------------------------------------------------------
@@ -229,21 +239,21 @@ void main() {
     test('inhale phase is active at start of cycle', () async {
       final session = makeSession([makeExercise(inhale: 3, exhale: 3)]);
       ticks = FakeTickService();
-      engine = BreathSessionEngine(session: session, tickService: ticks);
+      stateMachine = BreathSessionStateMachine(session: session, tickService: ticks);
 
-      engine.resume();
+      stateMachine.resume();
       ticks.tick();
       await Future<void>.delayed(Duration.zero);
 
-      expect(engine.currentState.phase, BreathPhase.inhale);
+      expect(stateMachine.currentState.phase, BreathPhase.inhale);
     });
 
     test('exhale phase follows inhale', () async {
       final session = makeSession([makeExercise(inhale: 2, exhale: 2)]);
       ticks = FakeTickService();
-      engine = BreathSessionEngine(session: session, tickService: ticks);
+      stateMachine = BreathSessionStateMachine(session: session, tickService: ticks);
 
-      engine.resume();
+      stateMachine.resume();
 
       // Drive through inhale phase (2 ticks)
       for (var i = 0; i < 2; i++) {
@@ -251,22 +261,22 @@ void main() {
       }
       await Future<void>.delayed(Duration.zero);
 
-      expect(engine.currentState.phase, BreathPhase.exhale);
+      expect(stateMachine.currentState.phase, BreathPhase.exhale);
     });
 
     test('remainingTicks decrements each tick', () async {
       final session = makeSession([makeExercise(inhale: 4, exhale: 4)]);
       ticks = FakeTickService();
-      engine = BreathSessionEngine(session: session, tickService: ticks);
+      stateMachine = BreathSessionStateMachine(session: session, tickService: ticks);
 
-      engine.resume();
+      stateMachine.resume();
       ticks.tick();
       await Future<void>.delayed(Duration.zero);
-      final r1 = engine.currentState.remainingTicks;
+      final r1 = stateMachine.currentState.remainingTicks;
 
       ticks.tick();
       await Future<void>.delayed(Duration.zero);
-      final r2 = engine.currentState.remainingTicks;
+      final r2 = stateMachine.currentState.remainingTicks;
 
       expect(r2, lessThan(r1));
     });

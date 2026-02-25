@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/ITickService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionEngine.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionStateMachine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
@@ -20,8 +20,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   final IBreathSessionService service;
   final String sessionId;
 
-  BreathSessionEngine? _engine;
-  StreamSubscription<BreathEngineState>? _engineSubscription;
+  BreathSessionStateMachine? _engine;
+  StreamSubscription<BreathSessionStateMachineState>? _engineSubscription;
   StreamSubscription<ResetReason>? _resetProxySubscription;
 
   BreathSessionDTO? _sessionDTO;
@@ -51,10 +51,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     _resetProxySubscription?.cancel();
     _engine?.dispose();
 
-    _engine = BreathSessionEngine(
-      session: dto,
-      tickService: tickService,
-    );
+    _engine = BreathSessionStateMachine(session: dto, tickService: tickService);
 
     _resetProxySubscription = _engine!.resetStream.listen(_resetController.add);
     _engineSubscription = _engine!.stateStream.listen(_onEngineState);
@@ -73,7 +70,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     );
   }
 
-  void _onEngineState(BreathEngineState engineState) {
+  void _onEngineState(BreathSessionStateMachineState engineState) {
     final previousActiveId = state.activeStepId;
     final newActiveId = engineState.activeStepId;
     final remaining = _engine!.getCurrentPhaseInfo().remainingInPhase;
@@ -185,8 +182,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       (phase: BreathPhase.rest, remainingInPhase: 0);
 
   ({int totalPhases, int currentPhaseIndex}) getCurrentPhaseMeta() =>
-      _engine?.getCurrentPhaseMeta() ??
-      (totalPhases: 0, currentPhaseIndex: 0);
+      _engine?.getCurrentPhaseMeta() ?? (totalPhases: 0, currentPhaseIndex: 0);
 
   BreathExerciseDTO? getNextExerciseWithShape() =>
       _engine?.getNextExerciseWithShape();

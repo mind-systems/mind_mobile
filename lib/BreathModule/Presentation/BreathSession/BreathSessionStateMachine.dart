@@ -9,7 +9,7 @@ import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep
 
 enum ResetReason { newCycle, rest, exerciseChange }
 
-class BreathEngineState {
+class BreathSessionStateMachineState {
   final BreathSessionStatus status;
   final BreathPhase phase;
   final int exerciseIndex;
@@ -17,7 +17,7 @@ class BreathEngineState {
   final String? activeStepId;
   final int currentIntervalMs;
 
-  const BreathEngineState({
+  const BreathSessionStateMachineState({
     required this.status,
     required this.phase,
     required this.exerciseIndex,
@@ -26,7 +26,7 @@ class BreathEngineState {
     required this.currentIntervalMs,
   });
 
-  BreathEngineState copyWith({
+  BreathSessionStateMachineState copyWith({
     BreathSessionStatus? status,
     BreathPhase? phase,
     int? exerciseIndex,
@@ -34,7 +34,7 @@ class BreathEngineState {
     String? activeStepId,
     int? currentIntervalMs,
   }) {
-    return BreathEngineState(
+    return BreathSessionStateMachineState(
       status: status ?? this.status,
       phase: phase ?? this.phase,
       exerciseIndex: exerciseIndex ?? this.exerciseIndex,
@@ -45,7 +45,7 @@ class BreathEngineState {
   }
 }
 
-class BreathSessionEngine {
+class BreathSessionStateMachine {
   final BreathSessionDTO session;
   final ITickService tickService;
 
@@ -56,21 +56,21 @@ class BreathSessionEngine {
 
   StreamSubscription<TickData>? _tickSubscription;
 
-  final _stateController = StreamController<BreathEngineState>.broadcast();
-  Stream<BreathEngineState> get stateStream => _stateController.stream;
+  final _stateController = StreamController<BreathSessionStateMachineState>.broadcast();
+  Stream<BreathSessionStateMachineState> get stateStream => _stateController.stream;
 
   final _resetController = StreamController<ResetReason>.broadcast();
   Stream<ResetReason> get resetStream => _resetController.stream;
 
-  late BreathEngineState _state;
-  BreathEngineState get currentState => _state;
+  late BreathSessionStateMachineState _state;
+  BreathSessionStateMachineState get currentState => _state;
 
   BreathExerciseDTO get currentExercise {
     final safeIndex = _exerciseIndex.clamp(0, session.exercises.length - 1);
     return session.exercises[safeIndex];
   }
 
-  BreathSessionEngine({
+  BreathSessionStateMachine({
     required this.session,
     required this.tickService,
   }) {
@@ -87,8 +87,8 @@ class BreathSessionEngine {
 
   // ===== Init =====
 
-  BreathEngineState _initialRestState() {
-    return BreathEngineState(
+  BreathSessionStateMachineState _initialRestState() {
+    return BreathSessionStateMachineState(
       status: BreathSessionStatus.pause,
       phase: BreathPhase.rest,
       exerciseIndex: _exerciseIndex,
@@ -103,9 +103,9 @@ class BreathSessionEngine {
     );
   }
 
-  BreathEngineState _initialBreathState() {
+  BreathSessionStateMachineState _initialBreathState() {
     final stepData = _getCurrentStepData(0);
-    return BreathEngineState(
+    return BreathSessionStateMachineState(
       status: BreathSessionStatus.pause,
       phase: stepData.phase,
       exerciseIndex: _exerciseIndex,
@@ -188,7 +188,7 @@ class BreathSessionEngine {
     }
 
     final stepData = _getCurrentStepData(_cycleTick);
-    _emit(BreathEngineState(
+    _emit(BreathSessionStateMachineState(
       status: BreathSessionStatus.breath,
       phase: stepData.phase,
       exerciseIndex: _exerciseIndex,
@@ -218,7 +218,7 @@ class BreathSessionEngine {
       return;
     }
 
-    _emit(BreathEngineState(
+    _emit(BreathSessionStateMachineState(
       status: BreathSessionStatus.rest,
       phase: BreathPhase.rest,
       exerciseIndex: _exerciseIndex,
@@ -239,7 +239,7 @@ class BreathSessionEngine {
     _cycleTick = 0;
     _resetController.add(ResetReason.rest);
 
-    _emit(BreathEngineState(
+    _emit(BreathSessionStateMachineState(
       status: BreathSessionStatus.rest,
       phase: BreathPhase.rest,
       exerciseIndex: _exerciseIndex,
@@ -258,7 +258,7 @@ class BreathSessionEngine {
     _resetController.add(ResetReason.newCycle);
     final stepData = _getCurrentStepData(0);
 
-    _emit(BreathEngineState(
+    _emit(BreathSessionStateMachineState(
       status: BreathSessionStatus.breath,
       phase: stepData.phase,
       exerciseIndex: _exerciseIndex,
@@ -431,7 +431,7 @@ class BreathSessionEngine {
 
   // ===== Internal =====
 
-  void _emit(BreathEngineState newState) {
+  void _emit(BreathSessionStateMachineState newState) {
     _state = newState;
     _stateController.add(_state);
   }
