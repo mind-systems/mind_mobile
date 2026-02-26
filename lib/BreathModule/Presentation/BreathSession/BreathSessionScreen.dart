@@ -8,6 +8,7 @@ import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewMo
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathShapeShifter.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathAnimationCoordinator.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Animation/OrbAnimationCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Views/BreathShapeWidget.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Views/BreathTimelineWidget.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Views/EclipseOrb.dart';
@@ -27,6 +28,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
   late final BreathMotionEngine _motionEngine;
   late final BreathShapeShifter _shapeShifter;
   late final BreathAnimationCoordinator _coordinator;
+  late final OrbAnimationCoordinator _orbCoordinator;
   late final ScrollController _scrollController;
 
   // GlobalKey для доступа к методам BreathTimelineWidget
@@ -52,12 +54,15 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
       viewModel: viewModel,
     );
 
+    _orbCoordinator = OrbAnimationCoordinator(viewModel: viewModel);
+
     _scrollController = ScrollController();
 
     // Инициализация coordinator после первого рендера
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final initialState = ref.read(breathViewModelProvider);
       _coordinator.initialize(initialState);
+      _orbCoordinator.initialize(initialState);
 
       // Запускаем загрузку сессии
       viewModel.initState();
@@ -76,6 +81,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
   @override
   void dispose() {
     _coordinator.dispose();
+    _orbCoordinator.dispose();
     _motionEngine.dispose();
     _shapeShifter.dispose();
     _scrollController.dispose();
@@ -145,11 +151,14 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
                             strokeWidth: 3.0,
                             pointRadius: 6.0,
                           ),
-                          EclipseOrb(
-                            size: shapeDimension / 2,
-                            glowColor: const Color(0xFF00C8E0),
-                            maskColor: const Color(0xFF0A0E27),
-                            pulseStream: viewModel.tickStream,
+                          ValueListenableBuilder<double>(
+                            valueListenable: _orbCoordinator.orbProgress,
+                            builder: (context, progress, _) => EclipseOrb(
+                              size: shapeDimension * progress,
+                              glowColor: const Color(0xFF00C8E0),
+                              maskColor: const Color(0xFF0A0E27),
+                              pulseStream: viewModel.tickStream,
+                            ),
                           ),
                         ],
                       ),
@@ -190,6 +199,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
           icon: Icons.replay,
           onPressed: () {
             _coordinator.reset();
+            _orbCoordinator.reset();
             viewModel.restart();
           },
           iconSize: 40,
