@@ -173,6 +173,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   // ===== Facade =====
 
+  Stream<void> get tickStream => tickService.tickStream.cast();
+
   Stream<ResetReason> get resetStream => _resetController.stream;
 
   BreathExerciseDTO get currentExercise => _engine!.currentExercise;

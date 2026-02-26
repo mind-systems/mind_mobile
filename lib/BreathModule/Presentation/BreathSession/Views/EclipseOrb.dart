@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -15,6 +16,7 @@ class EclipseOrb extends StatefulWidget {
     this.eMult = 0.17,
     this.maskPulseMult = 0.19,
     this.pulseScale = 0.2,
+    this.pulseStream,
   });
 
   final double size;
@@ -45,6 +47,9 @@ class EclipseOrb extends StatefulWidget {
   /// Общий множитель интенсивности пульса (масштабирует pulseExtra для всех эффектов)
   final double pulseScale;
 
+  /// Внешний stream событий пульса. Каждое событие запускает pulse().
+  final Stream<void>? pulseStream;
+
   @override
   State<EclipseOrb> createState() => _EclipseOrbState();
 }
@@ -54,6 +59,7 @@ class _EclipseOrbState extends State<EclipseOrb>
   late final Ticker _ticker;
   double _elapsedSeconds = 0.0;
   Duration _lastTickTime = Duration.zero;
+  StreamSubscription<void>? _pulseSub;
 
   // ── параметры орбов ──────────────────────────────────────────────
   // rFrac здесь — относительный коэффициент (умножается на widget.rFrac)
@@ -74,10 +80,12 @@ class _EclipseOrbState extends State<EclipseOrb>
       _lastTickTime = elapsed;
       setState(() => _elapsedSeconds += dt);
     })..start();
+    _pulseSub = widget.pulseStream?.listen((_) => pulse());
   }
 
   @override
   void dispose() {
+    _pulseSub?.cancel();
     _ticker.dispose();
     super.dispose();
   }

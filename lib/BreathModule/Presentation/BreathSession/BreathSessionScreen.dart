@@ -149,6 +149,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
                             size: shapeDimension / 2,
                             glowColor: const Color(0xFF00C8E0),
                             maskColor: const Color(0xFF0A0E27),
+                            pulseStream: viewModel.tickStream,
                           ),
                         ],
                       ),
