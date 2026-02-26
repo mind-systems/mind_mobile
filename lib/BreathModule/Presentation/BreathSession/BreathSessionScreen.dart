@@ -10,6 +10,7 @@ import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathSha
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathAnimationCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Views/BreathShapeWidget.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Views/BreathTimelineWidget.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Views/EclipseOrb.dart';
 
 /// Экран дыхательной сессии
 class BreathSessionScreen extends ConsumerStatefulWidget {
@@ -143,6 +144,11 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
                             pointColor: Colors.white,
                             strokeWidth: 3.0,
                             pointRadius: 6.0,
+                          ),
+                          EclipseOrb(
+                            size: shapeDimension / 2,
+                            glowColor: const Color(0xFF00C8E0),
+                            maskColor: const Color(0xFF0A0E27),
                           ),
                         ],
                       ),
