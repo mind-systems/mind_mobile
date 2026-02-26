@@ -20,8 +20,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   final IBreathSessionService service;
   final String sessionId;
 
-  BreathSessionStateMachine? _engine;
-  StreamSubscription<BreathSessionStateMachineState>? _engineSubscription;
+  BreathSessionStateMachine? _stateMachine;
+  StreamSubscription<BreathSessionStateMachineState>? _stateMachineSubscription;
   StreamSubscription<ResetReason>? _resetProxySubscription;
 
   BreathSessionDTO? _sessionDTO;
@@ -47,33 +47,33 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   }
 
   void _setupEngine(BreathSessionDTO dto) {
-    _engineSubscription?.cancel();
+    _stateMachineSubscription?.cancel();
     _resetProxySubscription?.cancel();
-    _engine?.dispose();
+    _stateMachine?.dispose();
 
-    _engine = BreathSessionStateMachine(session: dto, tickService: tickService);
+    _stateMachine = BreathSessionStateMachine(session: dto, tickService: tickService);
 
-    _resetProxySubscription = _engine!.resetStream.listen(_resetController.add);
-    _engineSubscription = _engine!.stateStream.listen(_onEngineState);
+    _resetProxySubscription = _stateMachine!.resetStream.listen(_resetController.add);
+    _stateMachineSubscription = _stateMachine!.stateStream.listen(_onEngineState);
 
     final timelineSteps = _buildTimelineSteps(dto);
 
     state = state.copyWith(
       loadState: SessionLoadState.ready,
       timelineSteps: timelineSteps,
-      status: _engine!.currentState.status,
-      phase: _engine!.currentState.phase,
-      exerciseIndex: _engine!.currentState.exerciseIndex,
-      remainingTicks: _engine!.currentState.remainingTicks,
-      activeStepId: _engine!.currentState.activeStepId,
-      currentIntervalMs: _engine!.currentState.currentIntervalMs,
+      status: _stateMachine!.currentState.status,
+      phase: _stateMachine!.currentState.phase,
+      exerciseIndex: _stateMachine!.currentState.exerciseIndex,
+      remainingTicks: _stateMachine!.currentState.remainingTicks,
+      activeStepId: _stateMachine!.currentState.activeStepId,
+      currentIntervalMs: _stateMachine!.currentState.currentIntervalMs,
     );
   }
 
   void _onEngineState(BreathSessionStateMachineState engineState) {
     final previousActiveId = state.activeStepId;
     final newActiveId = engineState.activeStepId;
-    final remaining = _engine!.getCurrentPhaseInfo().remainingInPhase;
+    final remaining = _stateMachine!.getCurrentPhaseInfo().remainingInPhase;
 
     List<TimelineStep> updatedSteps = state.timelineSteps;
 
@@ -160,11 +160,11 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   // ===== Public controls =====
 
-  void pause() => _engine?.pause();
+  void pause() => _stateMachine?.pause();
 
-  void resume() => _engine?.resume();
+  void resume() => _stateMachine?.resume();
 
-  void complete() => _engine?.complete();
+  void complete() => _stateMachine?.complete();
 
   void restart() {
     if (_sessionDTO == null) return;
@@ -177,28 +177,28 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   Stream<ResetReason> get resetStream => _resetController.stream;
 
-  BreathExerciseDTO get currentExercise => _engine!.currentExercise;
+  BreathExerciseDTO get currentExercise => _stateMachine!.currentExercise;
 
   ({BreathPhase phase, int remainingInPhase}) getCurrentPhaseInfo() =>
-      _engine?.getCurrentPhaseInfo() ??
+      _stateMachine?.getCurrentPhaseInfo() ??
       (phase: BreathPhase.rest, remainingInPhase: 0);
 
   ({int totalPhases, int currentPhaseIndex}) getCurrentPhaseMeta() =>
-      _engine?.getCurrentPhaseMeta() ?? (totalPhases: 0, currentPhaseIndex: 0);
+      _stateMachine?.getCurrentPhaseMeta() ?? (totalPhases: 0, currentPhaseIndex: 0);
 
   BreathExerciseDTO? getNextExerciseWithShape() =>
-      _engine?.getNextExerciseWithShape();
+      _stateMachine?.getNextExerciseWithShape();
 
   ({BreathPhase phase, int duration})? getNextPhaseInfo() =>
-      _engine?.getNextPhaseInfo();
+      _stateMachine?.getNextPhaseInfo();
 
   // ===== Dispose =====
 
   @override
   void dispose() {
-    _engineSubscription?.cancel();
+    _stateMachineSubscription?.cancel();
     _resetProxySubscription?.cancel();
-    _engine?.dispose();
+    _stateMachine?.dispose();
     _resetController.close();
     super.dispose();
   }
