@@ -54,7 +54,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
       viewModel: viewModel,
     );
 
-    _orbCoordinator = OrbAnimationCoordinator(viewModel: viewModel);
+    _orbCoordinator = OrbAnimationCoordinator(viewModel: viewModel, vsync: this);
 
     _scrollController = ScrollController();
 

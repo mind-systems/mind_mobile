@@ -11,7 +11,7 @@ class EclipseOrb extends StatefulWidget {
     this.glowColor = const Color(0xFF00C8E0),
     this.maskColor = Colors.black,
     this.rFrac = 1.0,
-    this.blurRMult = 0.74,
+    this.blurRMult = 0.8,
     this.deltaMult = 0.16,
     this.eMult = 0.17,
     this.maskPulseMult = 0.19,

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMotionEngine.dart';
@@ -130,11 +129,16 @@ class BreathAnimationCoordinator {
 
     motionEngine.resetPosition(0.0);
 
-    // Ресинк фазовой структуры сразу после сброса позиции.
-    // _onStateChanged уже отработал с position=1.0 до того как этот callback
-    // выполнился (Riverpod listener синхронный, Stream broadcast — асинхронный),
-    // поэтому пересчитываем скорость здесь с корректной position=0.0.
-    // todo костыль какой то! почему то после первого прохода фигуры дыхания, анимация замирала
+    // Re-sync phase structure immediately after position reset.
+    //
+    // Root cause (todo: fix properly): _onStateChanged fires synchronously via
+    // the Riverpod listener and processes stale remaining-ticks *before* this
+    // broadcast-stream callback arrives. By the time _onReset runs the ViewModel
+    // already holds the new cycle's state, so we re-sync the motion engine here
+    // with the correct position=0.0 and fresh remaining ticks.
+    //
+    // OrbAnimationCoordinator._onReset has the same workaround for the same
+    // reason — any fix here should be applied there too, and vice versa.
     if (viewModel.currentExercise.steps.isNotEmpty) {
       final phaseMeta = viewModel.getCurrentPhaseMeta();
       motionEngine.setPhaseInfo(
@@ -152,7 +156,6 @@ class BreathAnimationCoordinator {
   /// Call this before [BreathViewModel.restart] so that the next
   /// ready-state triggers a full phaseInfo re-initialisation.
   void reset() {
-    debugPrint('[BreathAnimationCoordinator] reset() called — clearing state caches');
     _previousRemainingTicks = null;
     _previousExerciseIndex = null;
     _resetStreamSubscribed = false;
