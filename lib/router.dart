@@ -13,10 +13,13 @@ import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionL
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListViewModel.dart';
 import 'package:mind/Core/App.dart';
 import 'package:mind/BreathModule/ClockTickService.dart';
+import 'package:mind/HomeModule/Presentation/HomeScreen/HomeCoordinator.dart';
+import 'package:mind/HomeModule/Presentation/HomeScreen/HomeScreen.dart';
 import 'package:mind/User/Presentation/Login/LoginScreen.dart';
 import 'package:mind/User/Presentation/Login/LoginService.dart';
 import 'package:mind/User/Presentation/Login/LoginViewModel.dart';
 import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
+import 'package:mind/Views/ComingSoonScreen.dart';
 
 final appRouter = GoRouter(
   onEnter: (context, currentState, nextState, router) {
@@ -29,8 +32,15 @@ final appRouter = GoRouter(
   },
   routes: [
     GoRoute(
-      path: "/",
-      name: "home",
+      path: HomeScreen.path,
+      name: HomeScreen.name,
+      builder: (context, state) {
+        return HomeScreen(coordinator: HomeCoordinator(context));
+      },
+    ),
+    GoRoute(
+      path: BreathSessionListScreen.path,
+      name: BreathSessionListScreen.name,
       builder: (context, state) {
         final app = App.shared;
         final service = BreathSessionListService(notifier: app.breathSessionNotifier, userNotifier: app.userNotifier);
@@ -45,6 +55,11 @@ final appRouter = GoRouter(
           child: const BreathSessionListScreen(),
         );
       },
+    ),
+    GoRoute(
+      path: ComingSoonScreen.path,
+      name: ComingSoonScreen.name,
+      builder: (_, _) => const ComingSoonScreen(),
     ),
     GoRoute(
       path: OnboardingScreen.path,

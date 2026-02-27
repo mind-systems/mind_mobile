@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/ExerciseEditCellModel.dart';
+import 'package:mind/Views/app_dimensions.dart';
 
 class ExerciseEditCell extends StatelessWidget {
   final ExerciseEditCellModel model;
@@ -36,7 +37,7 @@ class ExerciseEditCell extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(8), // Smaller corner radius for sharper corners
+        borderRadius: BorderRadius.circular(kCardCornerRadius),
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(

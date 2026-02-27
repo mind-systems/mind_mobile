@@ -2,10 +2,11 @@
 
 ## Overview
 
-A Flutter mindfulness/breathing exercise app for iOS and Android. Users can create, browse, and run guided breathing sessions with animated visual feedback (shape morphing + physics-based motion). The app supports Google Sign-In authentication and syncs sessions with a remote API.
+A Flutter mindfulness app for iOS and Android. Users create and run guided breathing sessions with animated visual feedback (shape morphing + physics-based motion). Supports Google Sign-In and syncs sessions with a remote API.
 
 ## Core Features
 
+- Home screen — module grid entry point; navigates to Breath and Coming Soon screens
 - Breathing session list — paginated, synced with remote API, locally persisted via Drift (SQLite)
 - Active session screen — guided breathing phases (inhale / hold / exhale / rest) with a 4-component animation system
 - Session constructor — create custom breathing exercises with configurable steps
@@ -25,6 +26,7 @@ A Flutter mindfulness/breathing exercise app for iOS and Android. Users can crea
 - **Navigation:** GoRouter 17.x with coordinator pattern for side-effects
 - **Authentication:** Firebase Auth 6.x + Google Sign-In 7.x
 - **DI:** Manual singleton via `App.shared` (`lib/Core/App.dart`)
+- **Theming:** `AppTheme` (`lib/Core/AppTheme.dart`) — `ThemeMode.system`, dark + light themes
 - **Animations:** Custom `AnimationController` + `CustomPainter` (path morphing, physics-based motion)
 
 ## Architecture
