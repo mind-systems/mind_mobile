@@ -80,7 +80,6 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
     final state = ref.watch(breathSessionListViewModelProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
       body: SafeArea(child: _buildBody(state)),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push(OnboardingScreen.path),
@@ -92,8 +91,8 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
   Widget _buildBody(BreathSessionListState state) {
     return RefreshIndicator(
       onRefresh: _onRefresh,
-      backgroundColor: const Color(0xFF1A2433),
-      color: const Color(0xFF00D9FF),
+      backgroundColor: Theme.of(context).cardColor,
+      color: Theme.of(context).colorScheme.primary,
       child: ListView.builder(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),

@@ -33,9 +33,9 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Session deleted'),
-          backgroundColor: Color(0xFF00D9FF),
+        SnackBar(
+          content: const Text('Session deleted'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
 
@@ -46,7 +46,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error deleting session: $e'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -55,34 +55,38 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
   Future<bool?> _showDeleteConfirmation(BuildContext context) async {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A2433),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Delete session?',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'This action cannot be undone.',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-            ),
+      builder: (context) {
+        final theme = Theme.of(context);
+        final onSurface = theme.colorScheme.onSurface;
+        return AlertDialog(
+          backgroundColor: theme.cardColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            'Delete session?',
+            style: TextStyle(color: onSurface),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Color(0xFFD90000)),
-            ),
+          content: Text(
+            'This action cannot be undone.',
+            style: TextStyle(color: onSurface.withValues(alpha: 0.7)),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: onSurface.withValues(alpha: 0.7)),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -92,9 +96,9 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     if (!vm.canSave) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please configure at least one valid exercise'),
-          backgroundColor: Colors.redAccent,
+        SnackBar(
+          content: const Text('Please configure at least one valid exercise'),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -106,9 +110,9 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Session saved'),
-          backgroundColor: Color(0xFF00D9FF),
+        SnackBar(
+          content: const Text('Session saved'),
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
 
@@ -119,7 +123,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error saving session: $e'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -134,7 +138,9 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     return '${secs}s';
   }
 
-  Widget _buildDescriptionField(WidgetRef ref, String description) {
+  Widget _buildDescriptionField(BuildContext context, WidgetRef ref, String description) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
     final controller = TextEditingController(text: description)
       ..selection = TextSelection.collapsed(offset: description.length);
 
@@ -144,10 +150,10 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
         height: 32,
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1A2433).withValues(alpha: 0.5),
+            color: theme.cardColor.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: onSurface.withValues(alpha: 0.2),
             ),
           ),
           alignment: Alignment.center,
@@ -156,8 +162,8 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
             onChanged: (value) => ref
                 .read(breathSessionConstructorProvider.notifier)
                 .updateDescription(value),
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: onSurface,
               fontSize: 16,
               height: 1.2,
             ),
@@ -172,24 +178,25 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAddButton(WidgetRef ref) {
+  Widget _buildAddButton(BuildContext context, WidgetRef ref) {
+    final primary = Theme.of(context).colorScheme.primary;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: OutlinedButton.icon(
         onPressed: () => _addExercise(ref),
-        icon: const Icon(Icons.add, color: Color(0xFF00D9FF)),
-        label: const Text(
+        icon: Icon(Icons.add, color: primary),
+        label: Text(
           'Add exercise',
           style: TextStyle(
-            color: Color(0xFF00D9FF),
+            color: primary,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14),
-          side: const BorderSide(
-            color: Color(0xFF00D9FF),
+          side: BorderSide(
+            color: primary,
             width: 2,
           ),
           shape: RoundedRectangleBorder(
@@ -219,7 +226,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
         itemCount: exercises.length + 2, // description + exercises + add button
         itemBuilder: (context, index) {
           if (index == 0) {
-            return _buildDescriptionField(ref, description);
+            return _buildDescriptionField(context, ref, description);
           }
 
           if (index <= exercises.length) {
@@ -234,19 +241,21 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
             );
           }
 
-          return _buildAddButton(ref);
+          return _buildAddButton(context, ref);
         },
       ),
     );
   }
 
   Widget _buildFooter(BuildContext context, WidgetRef ref, ConstructorMode mode, int totalDuration) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A2433).withValues(alpha: 0.5),
+        color: theme.cardColor.withValues(alpha: 0.5),
         border: Border(
           top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: onSurface.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
@@ -261,15 +270,15 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
               Text(
                 'Total',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: onSurface.withValues(alpha: 0.5),
                   fontSize: 12,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 _formatTotalDuration(totalDuration),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -316,7 +325,6 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     final mode = state.mode;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
       body: SafeArea(
         bottom: false,
         child: Column(

@@ -14,6 +14,7 @@ abstract class AppTheme {
         colorScheme: const ColorScheme.dark(
           primary: _kAccent,
           surface: _kBackground,
+          error: Color(0xFFD90000),
         ),
       );
 
@@ -24,6 +25,7 @@ abstract class AppTheme {
         colorScheme: const ColorScheme.light(
           primary: _kAccent,
           surface: _kBackgroundLight,
+          error: Color(0xFFD90000),
         ),
       );
 }

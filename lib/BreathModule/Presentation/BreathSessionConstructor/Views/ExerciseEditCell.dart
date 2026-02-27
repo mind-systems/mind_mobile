@@ -29,8 +29,10 @@ class ExerciseEditCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = Colors.white.withValues(alpha: 0.9);
-    final backgroundColor = const Color(0xFF1A2433).withValues(alpha: 0.8);
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final textColor = onSurface.withValues(alpha: 0.9);
+    final backgroundColor = theme.cardColor.withValues(alpha: 0.8);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
@@ -38,7 +40,7 @@ class ExerciseEditCell extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(kCardCornerRadius),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: onSurface.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
@@ -54,10 +56,10 @@ class ExerciseEditCell extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildPhaseField('Inhale', model.inhale, (v) => onChanged(model.copyWith(inhale: v))),
-              _buildPhaseField('Hold', model.hold1, (v) => onChanged(model.copyWith(hold1: v))),
-              _buildPhaseField('Exhale', model.exhale, (v) => onChanged(model.copyWith(exhale: v))),
-              _buildPhaseField('Hold', model.hold2, (v) => onChanged(model.copyWith(hold2: v))),
+              _buildPhaseField('Inhale', model.inhale, (v) => onChanged(model.copyWith(inhale: v)), onSurface),
+              _buildPhaseField('Hold', model.hold1, (v) => onChanged(model.copyWith(hold1: v)), onSurface),
+              _buildPhaseField('Exhale', model.exhale, (v) => onChanged(model.copyWith(exhale: v)), onSurface),
+              _buildPhaseField('Hold', model.hold2, (v) => onChanged(model.copyWith(hold2: v)), onSurface),
             ],
           ),
 
@@ -68,6 +70,7 @@ class ExerciseEditCell extends StatelessWidget {
             'Repeat',
             model.cycles,
             (v) => onChanged(model.copyWith(cycles: v)),
+            onSurface,
             height: _narrowControlRowHeight,
             useNoBorderInput: true,
           ),
@@ -77,7 +80,7 @@ class ExerciseEditCell extends StatelessWidget {
           // ===== SEPARATOR =====
           Container(
             height: 1,
-            color: Colors.white.withValues(alpha: 0.1),
+            color: onSurface.withValues(alpha: 0.1),
           ),
 
           // ===== REST =====
@@ -85,6 +88,7 @@ class ExerciseEditCell extends StatelessWidget {
             'Rest',
             model.rest,
             (v) => onChanged(model.copyWith(rest: v)),
+            onSurface,
             showIcon: true,
             height: _narrowControlRowHeight,
             useNoBorderInput: true,
@@ -93,7 +97,7 @@ class ExerciseEditCell extends StatelessWidget {
           // ===== SEPARATOR =====
           Container(
             height: 1,
-            color: Colors.white.withValues(alpha: 0.1),
+            color: onSurface.withValues(alpha: 0.1),
           ),
 
           const SizedBox(height: _spaceAfterSeparator),
@@ -113,12 +117,12 @@ class ExerciseEditCell extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                if (model.icon != null) _buildShapeIcon(model.icon!),
+                if (model.icon != null) _buildShapeIcon(model.icon!, onSurface),
                 const Spacer(),
                 IconButton(
                   icon: Icon(
                     Icons.delete_outline,
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: onSurface.withValues(alpha: 0.5),
                     size: 22,
                   ),
                   onPressed: onDelete,
@@ -135,18 +139,18 @@ class ExerciseEditCell extends StatelessWidget {
 
   // ===== PHASE FIELD =====
   Widget _buildPhaseField(
-      String label, int value, ValueChanged<int> onChanged) {
+      String label, int value, ValueChanged<int> onChanged, Color onSurface) {
     return Column(
       children: [
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.6),
+            color: onSurface.withValues(alpha: 0.6),
             fontSize: 12,
           ),
         ),
         const SizedBox(height: 4),
-        _buildNumericInput(value, onChanged),
+        _buildNumericInput(value, onChanged, onSurface),
       ],
     );
   }
@@ -155,7 +159,8 @@ class ExerciseEditCell extends StatelessWidget {
   Widget _buildHorizontalField(
       String label,
       int value,
-      ValueChanged<int> onChanged, {
+      ValueChanged<int> onChanged,
+      Color onSurface, {
         bool showIcon = false,
         double height = _controlRowHeight,
         useNoBorderInput = true,
@@ -171,7 +176,7 @@ class ExerciseEditCell extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: onSurface.withValues(alpha: 0.6),
                   fontSize: 14,
                 ),
               ),
@@ -181,7 +186,7 @@ class ExerciseEditCell extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _buildNumericInputRightAligned(value, onChanged),
+                _buildNumericInputRightAligned(value, onChanged, onSurface),
                 const SizedBox(width: 8),
                 SizedBox(
                   width: 16,
@@ -190,7 +195,7 @@ class ExerciseEditCell extends StatelessWidget {
                       ? Icon(
                     Icons.access_time,
                     size: 16,
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: onSurface.withValues(alpha: 0.5),
                   )
                       : const SizedBox.shrink(),
                 ),
@@ -205,6 +210,7 @@ class ExerciseEditCell extends StatelessWidget {
   Widget _buildNumericInputRightAligned(
       int value,
       ValueChanged<int> onChanged,
+      Color onSurface,
       ) {
     final controller = TextEditingController(text: value.toString())
       ..selection = TextSelection.fromPosition(
@@ -221,8 +227,8 @@ class ExerciseEditCell extends StatelessWidget {
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           textAlign: TextAlign.right,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: onSurface,
             fontSize: 16,
             height: 1.1,
             fontWeight: FontWeight.w500,
@@ -245,7 +251,7 @@ class ExerciseEditCell extends StatelessWidget {
     );
   }
 
-  Widget _buildNumericInput(int value, ValueChanged<int> onChanged) {
+  Widget _buildNumericInput(int value, ValueChanged<int> onChanged, Color onSurface) {
     final controller = TextEditingController(text: value.toString())
       ..selection = TextSelection.fromPosition(
         TextPosition(offset: value.toString().length),
@@ -258,7 +264,7 @@ class ExerciseEditCell extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: onSurface.withValues(alpha: 0.1),
           ),
         ),
         alignment: Alignment.center,
@@ -267,8 +273,8 @@ class ExerciseEditCell extends StatelessWidget {
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: onSurface,
             fontSize: 16,
             height: 1.1,
             fontWeight: FontWeight.w500,
@@ -291,7 +297,7 @@ class ExerciseEditCell extends StatelessWidget {
     );
   }
 
-  Widget _buildShapeIcon(ExerciseIcon icon) {
+  Widget _buildShapeIcon(ExerciseIcon icon, Color onSurface) {
     IconData iconData;
 
     switch (icon) {
@@ -313,7 +319,7 @@ class ExerciseEditCell extends StatelessWidget {
     return Icon(
       iconData,
       size: 20,
-      color: Colors.white.withValues(alpha: 0.6),
+      color: onSurface.withValues(alpha: 0.6),
     );
   }
 
