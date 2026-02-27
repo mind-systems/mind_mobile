@@ -52,6 +52,22 @@ class BreathTimelineWidgetState extends State<BreathTimelineWidget> {
     }
   }
 
+  /// Arithmetic content-space offset of an item from the top of the scroll
+  /// content. Computed from item index — no render objects needed, so it works
+  /// correctly regardless of the current scroll position.
+  double? getItemScrollOffsetById(String id) {
+    double offset = widget.itemHeight; // top padding of the ListView
+    for (final step in widget.steps) {
+      if (step.id == id) return offset;
+      if (step.type == TimelineStepType.separator) {
+        offset += 9.0; // 1px line + 4px top + 4px bottom padding
+      } else {
+        offset += widget.itemHeight;
+      }
+    }
+    return null; // id not found
+  }
+
   /// Получить Y-координату элемента по ID
   double? getItemOffsetById(String id) {
     final key = _itemKeys[id];

@@ -71,6 +71,19 @@ class BreathShapeShifter extends ChangeNotifier {
     _morphController?.forward(from: 0.0);
   }
 
+  /// Sets the shape instantly with no morph animation.
+  /// Use for the initial shape set on session load — the widget is hidden
+  /// via opacity at this point, so there's nothing to animate visually.
+  void morphToImmediate(SetShape newShape) {
+    _morphController?.stop();
+    _startShape = newShape;
+    _currentShape = newShape;
+    _morphProgress = 1.0;
+    _currentPoints = _generateShapePoints(newShape);
+    _cachedPath = null;
+    notifyListeners();
+  }
+
   void _onMorphTick() {
     _morphProgress = _morphController?.value ?? 1.0;
     final t = Curves.easeInOut.transform(_morphProgress);

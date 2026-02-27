@@ -91,17 +91,15 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
   void _scrollToActive(String? activeStepId) {
     if (activeStepId == null || !_scrollController.hasClients) return;
 
-    // Даём время на layout, потом получаем реальную координату
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final timelineState = _timelineKey.currentState;
       if (timelineState == null) return;
 
-      final itemOffset = timelineState.getItemOffsetById(activeStepId);
-      if (itemOffset == null) return;
+      final itemContentOffset = timelineState.getItemScrollOffsetById(activeStepId);
+      if (itemContentOffset == null) return;
 
       final viewportHeight = _scrollController.position.viewportDimension;
-
-      final targetScroll = _scrollController.offset + itemOffset - (viewportHeight / 3);
+      final targetScroll = itemContentOffset - (viewportHeight / 3);
 
       _scrollController.animateTo(
         targetScroll.clamp(
@@ -143,14 +141,6 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          BreathShapeWidget(
-                            motionController: _motionEngine,
-                            shapeController: _shapeShifter,
-                            shapeColor: const Color(0xFF00D9FF),
-                            pointColor: Colors.white,
-                            strokeWidth: 3.0,
-                            pointRadius: 6.0,
-                          ),
                           ValueListenableBuilder<double>(
                             valueListenable: _orbCoordinator.orbProgress,
                             builder: (context, progress, _) => EclipseOrb(
@@ -158,6 +148,19 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
                               glowColor: const Color(0xFF00C8E0),
                               maskColor: const Color(0xFF0A0E27),
                               pulseStream: viewModel.tickStream,
+                            ),
+                          ),
+                          AnimatedOpacity(
+                            opacity: state.loadState == SessionLoadState.ready ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeIn,
+                            child: BreathShapeWidget(
+                              motionController: _motionEngine,
+                              shapeController: _shapeShifter,
+                              shapeColor: const Color(0xFF00D9FF),
+                              pointColor: Colors.white,
+                              strokeWidth: 3.0,
+                              pointRadius: 6.0,
                             ),
                           ),
                         ],

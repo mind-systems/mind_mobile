@@ -64,6 +64,13 @@ class BreathAnimationCoordinator {
       _resetSubscription?.cancel();
       _resetSubscription = viewModel.resetStream.listen(_onReset);
       _resetStreamSubscribed = true;
+
+      final nextExercise = viewModel.getNextExerciseWithShape();
+      if (nextExercise?.shape != null) {
+        // Instant — shape widget is still hidden behind opacity fade-in,
+        // so no animation is needed here. Animated morphs happen via _onReset.
+        shapeShifter.morphToImmediate(nextExercise!.shape!);
+      }
     }
 
     // 1. Активность
