@@ -1,3 +1,4 @@
 #include "Release.xcconfig"
 
 REVERSED_CLIENT_ID=com.googleusercontent.apps.334027113385-usetn30jr4c5v5vv6u0gkthl2ji15i1j
+DISPLAY_NAME=Mind
