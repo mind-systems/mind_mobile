@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/IProfileCoordinator.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/IProfileService.dart';
+import 'package:mind/ProfileModule/Presentation/ProfileScreen/Models/ProfileDTOs.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/Models/ProfileState.dart';
 
 final profileViewModelProvider =

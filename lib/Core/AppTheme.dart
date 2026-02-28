@@ -6,6 +6,9 @@ const _kAccent = Color(0xFF00D9FF);
 const _kCardLight = Color(0xFFE8EDF5);
 const _kBackgroundLight = Color(0xFFF0F4FC);
 
+const _kButtonDark = Color(0xFF083752);
+const _kButtonLight = Color(0xFF3686D0);
+
 abstract class AppTheme {
   static ThemeData dark() => ThemeData(
         brightness: Brightness.dark,
@@ -13,6 +16,7 @@ abstract class AppTheme {
         cardColor: _kCardDark,
         colorScheme: const ColorScheme.dark(
           primary: _kAccent,
+          secondaryContainer: _kButtonDark,
           surface: _kBackground,
           error: Color(0xFFD90000),
         ),
@@ -24,6 +28,7 @@ abstract class AppTheme {
         cardColor: _kCardLight,
         colorScheme: const ColorScheme.light(
           primary: _kAccent,
+          secondaryContainer: _kButtonLight,
           surface: _kBackgroundLight,
           error: Color(0xFFD90000),
         ),

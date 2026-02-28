@@ -2,13 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-
-import 'package:mind/Views/CustomButton.dart';
-import 'package:mind/Views/CustomTextField.dart';
-import 'package:mind/Views/ScreenTitle.dart';
-import 'package:mind/Views/TopScreenImage.dart';
-import 'package:mind/Views/constants.dart';
-import 'package:mind/Views/ShowAlert.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 import 'LoginViewModel.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -29,22 +23,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final viewModel = ref.read(loginViewModelProvider.notifier);
 
       viewModel.onErrorEvent = (error) {
-        showAlert(
+        Alert(
           context: context,
-          onPressed: () {},
           title: 'Ошибка',
           desc: error,
-          btnText: 'OK',
+          buttons: [
+            DialogButton(
+              onPressed: () => Navigator.of(context).pop(),
+              width: 120,
+              child: const Text('OK', style: TextStyle(color: Colors.white, fontSize: 20)),
+            ),
+          ],
         ).show();
       };
 
       viewModel.onSuccessEvent = () {
-        showAlert(
+        Alert(
           context: context,
-          onPressed: () {},
           title: 'Check your email',
           desc: 'We sent you a one-time sign-in link. Please check your email.',
-          btnText: 'OK',
+          buttons: [
+            DialogButton(
+              onPressed: () => Navigator.of(context).pop(),
+              width: 120,
+              child: const Text('OK', style: TextStyle(color: Colors.white, fontSize: 20)),
+            ),
+          ],
         ).show();
       };
 
@@ -59,7 +63,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final loginState = ref.watch(loginViewModelProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: LoadingOverlay(
         isLoading: loginState.isLoading,
         child: SafeArea(
@@ -67,36 +70,72 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             padding: const EdgeInsets.all(20.0),
             child: Column(
               children: [
-                const TopScreenImage(screenImageName: 'welcome.png'),
+                Expanded(
+                  child: Image.asset('assets/images/welcome.png', fit: BoxFit.contain),
+                ),
                 Expanded(
                   flex: 2,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const ScreenTitle(title: 'Login'),
-                      CustomTextField(
-                        textField: TextField(
+                      Text(
+                        'Login',
+                        style: TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 30),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(40),
+                          border: Border.all(width: 2.5, color: Theme.of(context).colorScheme.secondaryContainer),
+                        ),
+                        child: TextField(
                           onChanged: (value) {
                             ref.read(loginViewModelProvider.notifier).updateEmail(value);
                           },
                           style: const TextStyle(fontSize: 20),
-                          decoration: kTextInputDecoration.copyWith(
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
                             hintText: 'Email',
                           ),
                         ),
                       ),
                       Hero(
                         tag: 'login_btn',
-                        child: CustomButton(
-                          buttonText: 'Login',
-                          width: 150,
-                          onPressed: () async {
+                        child: GestureDetector(
+                          onTap: () async {
                             FocusManager.instance.primaryFocus?.unfocus();
                             await ref
                                 .read(loginViewModelProvider.notifier)
                                 .sendPasswordlessSignInLink();
                           },
+                          child: Material(
+                            borderRadius: BorderRadius.circular(30),
+                            elevation: 4,
+                            child: Container(
+                              width: 150,
+                              padding: const EdgeInsets.all(13),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.secondaryContainer,
+                                border: Border.all(color: Theme.of(context).colorScheme.secondaryContainer, width: 2.5),
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],

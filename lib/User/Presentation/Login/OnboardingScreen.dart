@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mind/Views/CustomButton.dart';
-import 'package:mind/Views/ScreenTitle.dart';
-import 'package:mind/Views/ShowAlert.dart';
-import 'package:mind/Views/TopScreenImage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 import 'LoginScreen.dart';
 import 'LoginViewModel.dart';
 
@@ -26,12 +23,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       final viewModel = ref.read(loginViewModelProvider.notifier);
 
       viewModel.onErrorEvent = (error) {
-        showAlert(
+        Alert(
           context: context,
-          onPressed: () {},
           title: 'Ошибка',
           desc: error,
-          btnText: 'OK',
+          buttons: [
+            DialogButton(
+              onPressed: () => Navigator.of(context).pop(),
+              width: 120,
+              child: const Text('OK', style: TextStyle(color: Colors.white, fontSize: 20)),
+            ),
+          ],
         ).show();
       };
 
@@ -44,54 +46,76 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginViewModelProvider);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final accent = Theme.of(context).colorScheme.secondaryContainer;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(25),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const TopScreenImage(screenImageName: 'home.png'),
+              // 2/4 — картинка
+              Expanded(
+                flex: 2,
+                child: Image.asset('assets/images/home.png', fit: BoxFit.contain),
+              ),
+              // 1/4 — текст
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 15.0, left: 15, bottom: 15),
+                  padding: const EdgeInsets.symmetric(horizontal: 15),
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      const ScreenTitle(title: 'Hello'),
-                      const Text(
-                        'Welcome to your mind',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey, fontSize: 20),
-                      ),
-                      const SizedBox(height: 15),
-                      Hero(
-                        tag: 'login_btn',
-                        child: CustomButton(
-                          buttonText: 'Login',
-                          onPressed: () {
-                            context.push(LoginScreen.path, extra: loginState.returnPath,);
-                          },
+                      Text(
+                        'Hello',
+                        style: TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: onSurface,
                         ),
                       ),
-                      const SizedBox(height: 25),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              ref.read(loginViewModelProvider.notifier).loginWithGoogle();
-                            },
-                            icon: CircleAvatar(
-                              radius: 25,
-                              backgroundColor: Colors.transparent,
-                              child: Image.asset('assets/images/google.png'),
-                            ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Welcome to your mind',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: onSurface.withValues(alpha: 0.6),
+                          fontSize: 20,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // 1/4 — кнопки
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 15, right: 15, bottom: 15),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Hero(
+                        tag: 'login_btn',
+                        child: GestureDetector(
+                          onTap: () {
+                            context.push(LoginScreen.path, extra: loginState.returnPath);
+                          },
+                          child: ColorFiltered(
+                            colorFilter: ColorFilter.mode(accent, BlendMode.srcIn),
+                            child: Image.asset('assets/images/email.png', width: 50, height: 50),
                           ),
-                        ],
+                        ),
+                      ),
+                      const SizedBox(width: 48),
+                      GestureDetector(
+                        onTap: () {
+                          ref.read(loginViewModelProvider.notifier).loginWithGoogle();
+                        },
+                        child: Image.asset('assets/images/google.png', width: 50, height: 50),
                       ),
                     ],
                   ),
