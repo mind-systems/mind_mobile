@@ -27,7 +27,7 @@ class HomeScreen extends StatelessWidget {
       ModuleItem(
         title: 'Profile',
         iconPath: 'assets/images/modules/home/profile.png',
-        onTap: coordinator.openComingSoon,
+        onTap: coordinator.openProfile,
       ),
     ];
 

@@ -15,6 +15,10 @@ import 'package:mind/Core/App.dart';
 import 'package:mind/BreathModule/ClockTickService.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/HomeCoordinator.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/HomeScreen.dart';
+import 'package:mind/ProfileModule/ProfileCoordinator.dart';
+import 'package:mind/ProfileModule/ProfileService.dart';
+import 'package:mind/ProfileModule/Presentation/ProfileScreen/ProfileScreen.dart';
+import 'package:mind/ProfileModule/Presentation/ProfileScreen/ProfileViewModel.dart';
 import 'package:mind/User/Presentation/Login/LoginScreen.dart';
 import 'package:mind/User/Presentation/Login/LoginService.dart';
 import 'package:mind/User/Presentation/Login/LoginViewModel.dart';
@@ -135,6 +139,24 @@ final appRouter = GoRouter(
             ),
           ],
           child: const BreathSessionConstructorScreen(),
+        );
+      },
+    ),
+    GoRoute(
+      path: ProfileScreen.path,
+      name: ProfileScreen.name,
+      builder: (context, state) {
+        final app = App.shared;
+        final appVersion = state.extra as String? ?? '';
+        final service = ProfileService(userNotifier: app.userNotifier, appVersion: appVersion);
+        final coordinator = ProfileCoordinator(context);
+        return ProviderScope(
+          overrides: [
+            profileViewModelProvider.overrideWith(
+              (ref) => ProfileViewModel(service: service, coordinator: coordinator),
+            ),
+          ],
+          child: const ProfileScreen(),
         );
       },
     ),
