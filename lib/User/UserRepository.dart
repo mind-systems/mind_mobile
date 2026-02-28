@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/Core/Api/ApiService.dart';
@@ -51,6 +53,7 @@ class UserRepository {
   }
 
   Future<void> sendPasswordlessSignInLink(String email) async {
+    developer.log('[Auth] sendPasswordlessSignInLink: email=$email', name: 'UserRepository');
     final prefs = await SharedPreferences.getInstance();
 
     final actionCodeSettings = firebase_auth.ActionCodeSettings(
@@ -61,42 +64,63 @@ class UserRepository {
       androidPackageName: Environment.instance.androidPackageName,
       androidInstallApp: true,
     );
+    developer.log('[Auth] ActionCodeSettings: linkDomain=${Environment.instance.linkDomain}, url=${Environment.instance.deeplinkUrl}, iosBundleId=${Environment.instance.iosBundleId}', name: 'UserRepository');
 
-    await _firebaseAuth.sendSignInLinkToEmail(
-      email: email,
-      actionCodeSettings: actionCodeSettings,
-    );
+    try {
+      await _firebaseAuth.sendSignInLinkToEmail(
+        email: email,
+        actionCodeSettings: actionCodeSettings,
+      );
+      developer.log('[Auth] sendSignInLinkToEmail: success', name: 'UserRepository');
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      developer.log('[Auth] Firebase sendSignInLinkToEmail error: code=${e.code}, message=${e.message}', name: 'UserRepository', error: e);
+      rethrow;
+    }
 
     await prefs.setString(_emailForSignInKey, email);
     await prefs.reload();
   }
 
   Future<User> completePasswordlessSignIn(String emailLink) async {
+    developer.log('[Auth] completePasswordlessSignIn: link=$emailLink', name: 'UserRepository');
     final prefs = await SharedPreferences.getInstance();
     final email = prefs.getString(_emailForSignInKey);
+    developer.log('[Auth] stored email for sign-in: $email', name: 'UserRepository');
 
     if (email == null) {
       throw Exception('Email not found. Please try signing in again.');
     }
 
-    final userCredential = await _firebaseAuth.signInWithEmailLink(
-      email: email,
-      emailLink: emailLink,
-    );
+    final firebase_auth.UserCredential userCredential;
+    try {
+      userCredential = await _firebaseAuth.signInWithEmailLink(
+        email: email,
+        emailLink: emailLink,
+      );
+      developer.log('[Auth] signInWithEmailLink: success, uid=${userCredential.user?.uid}', name: 'UserRepository');
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      developer.log('[Auth] Firebase signInWithEmailLink error: code=${e.code}, message=${e.message}', name: 'UserRepository', error: e);
+      rethrow;
+    }
 
     final String? idToken = await userCredential.user?.getIdToken();
     if (idToken == null) {
+      developer.log('[Auth] completePasswordlessSignIn: idToken is null', name: 'UserRepository');
       throw Exception('Failed to get ID token');
     }
+    developer.log('[Auth] idToken obtained (length=${idToken.length})', name: 'UserRepository');
 
     final firebaseUser = userCredential.user;
     if (firebaseUser == null) {
+      developer.log('[Auth] completePasswordlessSignIn: firebaseUser is null', name: 'UserRepository');
       throw Exception('Failed to get Firebase user');
     }
 
     final user = User.fromFirebaseUser(firebaseUser);
     final authRequest = AuthRequest(token: idToken, user: user);
+    developer.log('[Auth] calling api.authenticate: uid=${user.id}, email=${user.email}', name: 'UserRepository');
     final authenticatedUser = await _api.authenticate(authRequest);
+    developer.log('[Auth] api.authenticate: success, userId=${authenticatedUser.id}', name: 'UserRepository');
 
     await _replaceGuestWithUser(authenticatedUser);
     await prefs.remove(_emailForSignInKey);
@@ -105,22 +129,60 @@ class UserRepository {
   }
 
   Future<User> loginWithGoogle() async {
-    final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
-    final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+    developer.log('[Auth] loginWithGoogle: calling _googleSignIn.authenticate()', name: 'UserRepository');
+    final GoogleSignInAccount googleUser;
+    try {
+      googleUser = await _googleSignIn.authenticate();
+      developer.log('[Auth] Google authenticate: success, email=${googleUser.email}, id=${googleUser.id}', name: 'UserRepository');
+    } catch (e) {
+      developer.log('[Auth] Google authenticate error: $e', name: 'UserRepository', error: e);
+      rethrow;
+    }
+
+    final GoogleSignInAuthentication googleAuth;
+    try {
+      googleAuth = googleUser.authentication;
+      developer.log('[Auth] Google auth tokens: idToken=${googleAuth.idToken != null ? "present (len=${googleAuth.idToken!.length})" : "NULL"}', name: 'UserRepository');
+    } catch (e) {
+      developer.log('[Auth] Google authentication tokens error: $e', name: 'UserRepository', error: e);
+      rethrow;
+    }
+
+    if (googleAuth.idToken == null) {
+      developer.log('[Auth] loginWithGoogle: idToken from Google is NULL — cannot proceed', name: 'UserRepository');
+      throw Exception('Google Sign-In did not return an idToken');
+    }
 
     final credential = firebase_auth.GoogleAuthProvider.credential(
       idToken: googleAuth.idToken,
     );
+    developer.log('[Auth] Firebase credential created, calling signInWithCredential', name: 'UserRepository');
 
-    final userCredential = await _firebaseAuth.signInWithCredential(credential);
+    final firebase_auth.UserCredential userCredential;
+    try {
+      userCredential = await _firebaseAuth.signInWithCredential(credential);
+      developer.log('[Auth] Firebase signInWithCredential: success, uid=${userCredential.user?.uid}, email=${userCredential.user?.email}', name: 'UserRepository');
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      developer.log('[Auth] Firebase signInWithCredential error: code=${e.code}, message=${e.message}, credential=${e.credential}', name: 'UserRepository', error: e);
+      rethrow;
+    }
 
     final user = User.fromFirebaseUser(userCredential.user);
     final idToken = await userCredential.user?.getIdToken();
     if (idToken == null) {
+      developer.log('[Auth] loginWithGoogle: Firebase idToken is null after signIn', name: 'UserRepository');
       throw Exception('Failed to get ID token');
     }
+    developer.log('[Auth] Firebase idToken obtained (length=${idToken.length}), calling api.authenticate', name: 'UserRepository');
 
-    final authenticatedUser = await _api.authenticate(AuthRequest(token: idToken, user: user));
+    final User authenticatedUser;
+    try {
+      authenticatedUser = await _api.authenticate(AuthRequest(token: idToken, user: user));
+      developer.log('[Auth] api.authenticate: success, userId=${authenticatedUser.id}', name: 'UserRepository');
+    } catch (e) {
+      developer.log('[Auth] api.authenticate error: $e', name: 'UserRepository', error: e);
+      rethrow;
+    }
 
     await _replaceGuestWithUser(authenticatedUser);
     return authenticatedUser;

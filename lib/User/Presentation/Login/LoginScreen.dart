@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-import 'package:rflutter_alert/rflutter_alert.dart';
+import 'package:mind/Views/AlertModule/AppAlert.dart';
 import 'LoginViewModel.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -23,33 +23,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final viewModel = ref.read(loginViewModelProvider.notifier);
 
       viewModel.onErrorEvent = (error) {
-        Alert(
-          context: context,
-          title: 'Ошибка',
-          desc: error,
-          buttons: [
-            DialogButton(
-              onPressed: () => Navigator.of(context).pop(),
-              width: 120,
-              child: const Text('OK', style: TextStyle(color: Colors.white, fontSize: 20)),
-            ),
-          ],
-        ).show();
+        AppAlert.show(context, title: 'Ошибка', description: error);
       };
 
       viewModel.onSuccessEvent = () {
-        Alert(
-          context: context,
+        AppAlert.show(
+          context,
           title: 'Check your email',
-          desc: 'We sent you a one-time sign-in link. Please check your email.',
-          buttons: [
-            DialogButton(
-              onPressed: () => Navigator.of(context).pop(),
-              width: 120,
-              child: const Text('OK', style: TextStyle(color: Colors.white, fontSize: 20)),
-            ),
-          ],
-        ).show();
+          description: 'We sent you a one-time sign-in link. Click the link on the same device.',
+        );
       };
 
       viewModel.onAuthenticatedEvent = () {

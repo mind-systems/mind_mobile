@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:rflutter_alert/rflutter_alert.dart';
+import 'package:mind/Views/AlertModule/AppAlert.dart';
 import 'LoginScreen.dart';
 import 'LoginViewModel.dart';
 
@@ -23,18 +23,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       final viewModel = ref.read(loginViewModelProvider.notifier);
 
       viewModel.onErrorEvent = (error) {
-        Alert(
-          context: context,
-          title: 'Ошибка',
-          desc: error,
-          buttons: [
-            DialogButton(
-              onPressed: () => Navigator.of(context).pop(),
-              width: 120,
-              child: const Text('OK', style: TextStyle(color: Colors.white, fontSize: 20)),
-            ),
-          ],
-        ).show();
+        AppAlert.show(context, title: 'Ошибка', description: error);
       };
 
       viewModel.onSuccessEvent = () {

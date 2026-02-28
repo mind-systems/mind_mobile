@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:rxdart/rxdart.dart';
 
@@ -34,17 +35,38 @@ class UserNotifier {
   User get currentUser => _subject.value.user;
 
   Future<void> sendPasswordlessSignInLink(String email) async {
-    await repository.sendPasswordlessSignInLink(email);
+    developer.log('[Auth] UserNotifier.sendPasswordlessSignInLink: email=$email', name: 'UserNotifier');
+    try {
+      await repository.sendPasswordlessSignInLink(email);
+      developer.log('[Auth] UserNotifier.sendPasswordlessSignInLink: success', name: 'UserNotifier');
+    } catch (e, st) {
+      developer.log('[Auth] UserNotifier.sendPasswordlessSignInLink: error=$e', name: 'UserNotifier', error: e, stackTrace: st);
+      rethrow;
+    }
   }
 
   Future<void> completePasswordlessSignIn(String emailLink) async {
-    final authenticatedUser = await repository.completePasswordlessSignIn(emailLink);
-    _subject.add(AuthenticatedState(authenticatedUser));
+    developer.log('[Auth] UserNotifier.completePasswordlessSignIn: start', name: 'UserNotifier');
+    try {
+      final authenticatedUser = await repository.completePasswordlessSignIn(emailLink);
+      developer.log('[Auth] UserNotifier.completePasswordlessSignIn: success, userId=${authenticatedUser.id}', name: 'UserNotifier');
+      _subject.add(AuthenticatedState(authenticatedUser));
+    } catch (e, st) {
+      developer.log('[Auth] UserNotifier.completePasswordlessSignIn: error=$e', name: 'UserNotifier', error: e, stackTrace: st);
+      rethrow;
+    }
   }
 
   Future<void> loginWithGoogle() async {
-    final authenticatedUser = await repository.loginWithGoogle();
-    _subject.add(AuthenticatedState(authenticatedUser));
+    developer.log('[Auth] UserNotifier.loginWithGoogle: start', name: 'UserNotifier');
+    try {
+      final authenticatedUser = await repository.loginWithGoogle();
+      developer.log('[Auth] UserNotifier.loginWithGoogle: success, userId=${authenticatedUser.id}', name: 'UserNotifier');
+      _subject.add(AuthenticatedState(authenticatedUser));
+    } catch (e, st) {
+      developer.log('[Auth] UserNotifier.loginWithGoogle: error=$e', name: 'UserNotifier', error: e, stackTrace: st);
+      rethrow;
+    }
   }
 
   Future<void> logout() async {

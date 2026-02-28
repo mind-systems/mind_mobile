@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/User/Models/AuthState.dart';
@@ -38,28 +39,34 @@ class LoginViewModel extends StateNotifier<LoginState> {
   }
 
   Future<void> sendPasswordlessSignInLink() async {
+    developer.log('[Auth] LoginViewModel.sendPasswordlessSignInLink: email=${state.email}', name: 'LoginViewModel');
     state = state.copyWith(isLoading: true);
 
     try {
       await service.sendPasswordlessSignInLink(state.email);
 
+      developer.log('[Auth] LoginViewModel.sendPasswordlessSignInLink: success', name: 'LoginViewModel');
       state = state.copyWith(isLoading: false);
       onSuccessEvent?.call();
-    } catch (e) {
+    } catch (e, st) {
+      developer.log('[Auth] LoginViewModel.sendPasswordlessSignInLink: error=${e.runtimeType}: $e', name: 'LoginViewModel', error: e, stackTrace: st);
       state = state.copyWith(isLoading: false);
       onErrorEvent?.call('Ошибка отправки ссылки: ${e.toString()}');
     }
   }
 
   Future<void> loginWithGoogle() async {
+    developer.log('[Auth] LoginViewModel.loginWithGoogle: start', name: 'LoginViewModel');
     state = state.copyWith(isLoading: true);
 
     try {
       await service.loginWithGoogle();
 
+      developer.log('[Auth] LoginViewModel.loginWithGoogle: success', name: 'LoginViewModel');
       state = state.copyWith(isLoading: false);
       onSuccessEvent?.call();
-    } catch (e) {
+    } catch (e, st) {
+      developer.log('[Auth] LoginViewModel.loginWithGoogle: error=${e.runtimeType}: $e', name: 'LoginViewModel', error: e, stackTrace: st);
       state = state.copyWith(isLoading: false);
       onErrorEvent?.call('Ошибка входа через Google: ${e.toString()}');
     }
