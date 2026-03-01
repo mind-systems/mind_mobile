@@ -20,6 +20,16 @@ class DeeplinkRouter {
     );
   }
 
+  /// Обработка ссылки вручную (для отладки на iOS без дип-линков)
+  // todo revert before release.
+  Future<void> handleLink(String link) async {
+    try {
+      await _firebaseHandler.handle(link);
+    } catch (e) {
+      return;
+    }
+  }
+
   /// Обработка входящей ссылки
   Future<void> _handleDeepLink(Uri uri) async {
     final uriString = uri.toString();
