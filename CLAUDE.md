@@ -110,6 +110,7 @@ Detailed docs and Mermaid architecture diagrams live in `docs/`:
 - `docs/core/jwt-authentication.md` — JWT token lifecycle
 - `docs/core/global-listeners.md` — Global event listener system
 - `docs/core/theming.md` — Theme tokens, color palette, usage rules
+- `docs/core/alerts-and-snackbars.md` — When to use AppAlert vs SnackBar
 - `docs/breath/session/view-model.md` — BreathSessionStateMachine and BreathViewModel behaviour
 - `docs/breath/session/session-lifecycle.md` — session completion, idle state, and restart flow
 - `docs/breath/session/orb-animation.md` — OrbAnimationCoordinator and orb scaling
