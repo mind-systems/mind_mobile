@@ -7,4 +7,6 @@ abstract class ILoginService {
   Future<void> sendPasswordlessSignInLink(String email);
 
   Future<void> loginWithGoogle();
+
+  Stream<bool> observeAuthInProgress();
 }

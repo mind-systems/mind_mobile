@@ -14,6 +14,7 @@ class UserNotifier {
   final LogoutNotifier logoutNotifier;
 
   final BehaviorSubject<AuthState> _subject;
+  final BehaviorSubject<bool> _authInProgressSubject = BehaviorSubject<bool>.seeded(false);
   StreamSubscription<void>? _logoutSubscription;
 
   UserNotifier({
@@ -29,6 +30,8 @@ class UserNotifier {
   }
 
   Stream<AuthState> get stream => _subject.stream;
+
+  Stream<bool> get authInProgressStream => _authInProgressSubject.stream;
 
   AuthState get currentState => _subject.value;
 
@@ -47,6 +50,8 @@ class UserNotifier {
 
   Future<void> completePasswordlessSignIn(String emailLink) async {
     developer.log('[Auth] UserNotifier.completePasswordlessSignIn: start', name: 'UserNotifier');
+    _authInProgressSubject.add(true);
+    developer.log('[Auth] UserNotifier: authInProgress → true (emailLink)', name: 'UserNotifier');
     try {
       final authenticatedUser = await repository.completePasswordlessSignIn(emailLink);
       developer.log('[Auth] UserNotifier.completePasswordlessSignIn: success, userId=${authenticatedUser.id}', name: 'UserNotifier');
@@ -54,11 +59,16 @@ class UserNotifier {
     } catch (e, st) {
       developer.log('[Auth] UserNotifier.completePasswordlessSignIn: error=$e', name: 'UserNotifier', error: e, stackTrace: st);
       rethrow;
+    } finally {
+      _authInProgressSubject.add(false);
+      developer.log('[Auth] UserNotifier: authInProgress → false (emailLink)', name: 'UserNotifier');
     }
   }
 
   Future<void> loginWithGoogle() async {
     developer.log('[Auth] UserNotifier.loginWithGoogle: start', name: 'UserNotifier');
+    _authInProgressSubject.add(true);
+    developer.log('[Auth] UserNotifier: authInProgress → true (google)', name: 'UserNotifier');
     try {
       final authenticatedUser = await repository.loginWithGoogle();
       developer.log('[Auth] UserNotifier.loginWithGoogle: success, userId=${authenticatedUser.id}', name: 'UserNotifier');
@@ -66,6 +76,9 @@ class UserNotifier {
     } catch (e, st) {
       developer.log('[Auth] UserNotifier.loginWithGoogle: error=$e', name: 'UserNotifier', error: e, stackTrace: st);
       rethrow;
+    } finally {
+      _authInProgressSubject.add(false);
+      developer.log('[Auth] UserNotifier: authInProgress → false (google)', name: 'UserNotifier');
     }
   }
 
@@ -87,6 +100,7 @@ class UserNotifier {
 
   void dispose() {
     _logoutSubscription?.cancel();
+    _authInProgressSubject.close();
     _subject.close();
   }
 }

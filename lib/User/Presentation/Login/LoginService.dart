@@ -19,4 +19,7 @@ class LoginService implements ILoginService {
   Future<void> loginWithGoogle() async {
     await userNotifier.loginWithGoogle();
   }
+
+  @override
+  Stream<bool> observeAuthInProgress() => userNotifier.authInProgressStream;
 }

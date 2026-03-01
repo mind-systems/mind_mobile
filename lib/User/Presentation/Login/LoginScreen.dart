@@ -46,7 +46,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       body: LoadingOverlay(
-        isLoading: loginState.isLoading,
+        isLoading: loginState.isLoading || loginState.isLoginInProgress,
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(20.0),

@@ -19,6 +19,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
   void Function()? onAuthenticatedEvent;
 
   StreamSubscription<AuthState>? _authSubscription;
+  StreamSubscription<bool>? _authInProgressSubscription;
 
   LoginViewModel({required this.service, required String returnPath})
       : super(LoginState(returnPath: returnPath)) {
@@ -27,11 +28,17 @@ class LoginViewModel extends StateNotifier<LoginState> {
         onAuthenticatedEvent?.call();
       }
     });
+
+    _authInProgressSubscription = service.observeAuthInProgress().listen((value) {
+      developer.log('[Auth] LoginViewModel: isLoginInProgress → $value', name: 'LoginViewModel');
+      state = state.copyWith(isLoginInProgress: value);
+    });
   }
 
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _authInProgressSubscription?.cancel();
     super.dispose();
   }
 
