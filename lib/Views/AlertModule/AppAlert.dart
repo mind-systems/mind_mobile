@@ -31,6 +31,42 @@ abstract class AppAlert {
     );
   }
 
+  static Future<bool> showConfirmation(
+    BuildContext context, {
+    required String title,
+    String? description,
+    required String confirmLabel,
+    required String cancelLabel,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return AlertDialog(
+          backgroundColor: theme.cardColor,
+          title: Text(title, style: TextStyle(color: theme.colorScheme.onSurface)),
+          content: description != null
+              ? Text(description, style: TextStyle(color: theme.colorScheme.onSurface))
+              : null,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(cancelLabel),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.error,
+              ),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(confirmLabel, style: const TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed ?? false;
+  }
+
   static Future<AlertResult> showWithInput(
     BuildContext context, {
     required String title,

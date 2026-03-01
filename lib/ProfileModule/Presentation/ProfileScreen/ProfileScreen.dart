@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/ProfileViewModel.dart';
+import 'package:mind/Views/AlertModule/AppAlert.dart';
 
 class ProfileScreen extends ConsumerWidget {
   static const String path = '/profile';
@@ -24,7 +25,15 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           ListTile(
             title: const Text('Log out'),
-            onTap: viewModel.onLogoutTap,
+            onTap: () async {
+              final confirmed = await AppAlert.showConfirmation(
+                context,
+                title: 'Are you sure?',
+                confirmLabel: 'Log out',
+                cancelLabel: 'Cancel',
+              );
+              if (confirmed) viewModel.onLogoutTap();
+            },
           ),
           const Spacer(),
           Center(
