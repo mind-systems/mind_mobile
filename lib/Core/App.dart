@@ -61,7 +61,7 @@ class App {
     final userNotifier = UserNotifier(repository: userRepository, logoutNotifier: logoutNotifier, initialUser: initialUser);
     final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository, userNotifier: userNotifier);
 
-    final firebaseHandler = FirebaseDeeplinkHandler(userRepository: userRepository);
+    final firebaseHandler = FirebaseDeeplinkHandler(userNotifier: userNotifier);
     final deeplinkRouter = DeeplinkRouter(firebaseHandler: firebaseHandler);
 
     shared = App._(
@@ -94,7 +94,11 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       routerConfig: appRouter,
       builder: (context, child) {
-        return GlobalListeners(logoutNotifier: App.shared.logoutNotifier, child: child!);
+        return GlobalListeners(
+          logoutNotifier: App.shared.logoutNotifier,
+          authErrorStream: App.shared.userNotifier.authErrorStream,
+          child: child!
+        );
       },
     );
   }

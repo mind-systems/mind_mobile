@@ -65,19 +65,16 @@ class LoginViewModel extends StateNotifier<LoginState> {
 
   Future<void> loginWithGoogle() async {
     developer.log('[Auth] LoginViewModel.loginWithGoogle: start', name: 'LoginViewModel');
-    state = state.copyWith(isLoading: true);
 
     try {
       await service.loginWithGoogle();
 
       developer.log('[Auth] LoginViewModel.loginWithGoogle: success', name: 'LoginViewModel');
-      state = state.copyWith(isLoading: false);
       onSuccessEvent?.call();
     } on GoogleSignInCanceledException {
-      state = state.copyWith(isLoading: false);
+      // User cancelled — no action needed, isLoginInProgress handles overlay
     } catch (e, st) {
       developer.log('[Auth] LoginViewModel.loginWithGoogle: error=${e.runtimeType}: $e', name: 'LoginViewModel', error: e, stackTrace: st);
-      state = state.copyWith(isLoading: false);
       onErrorEvent?.call('Ошибка входа через Google: ${e.toString()}');
     }
   }

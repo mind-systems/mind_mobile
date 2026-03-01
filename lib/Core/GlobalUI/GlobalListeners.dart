@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,10 +18,12 @@ import 'package:mind/Views/SnackBarModule/SnackBarBuilder.dart';
 /// Должен оборачивать корневой виджет приложения.
 class GlobalListeners extends ConsumerStatefulWidget {
   final LogoutNotifier logoutNotifier;
+  final Stream<String> authErrorStream;
   final Widget child;
 
   const GlobalListeners({
     required this.logoutNotifier,
+    required this.authErrorStream,
     required this.child,
     super.key,
   });
@@ -31,6 +34,7 @@ class GlobalListeners extends ConsumerStatefulWidget {
 
 class _GlobalListenersState extends ConsumerState<GlobalListeners> {
   StreamSubscription<void>? _logoutSubscription;
+  StreamSubscription<String>? _authErrorSubscription;
 
   @override
   void initState() {
@@ -38,11 +42,17 @@ class _GlobalListenersState extends ConsumerState<GlobalListeners> {
     _logoutSubscription = widget.logoutNotifier.stream.listen((_) {
       _showSnackBar(SnackBarEvent.error('Сессия истекла'));
     });
+
+    _authErrorSubscription = widget.authErrorStream.listen((error) {
+      developer.log('[Auth] GlobalListeners: received auth error, showing snackbar', name: 'GlobalListeners');
+      _showSnackBar(SnackBarEvent.error('Ошибка входа: $error'));
+    });
   }
 
   @override
   void dispose() {
     _logoutSubscription?.cancel();
+    _authErrorSubscription?.cancel();
     super.dispose();
   }
 

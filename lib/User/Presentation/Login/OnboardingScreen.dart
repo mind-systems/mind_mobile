@@ -30,6 +30,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       viewModel.onSuccessEvent = () {
         context.go(ref.read(loginViewModelProvider).returnPath);
       };
+
+      viewModel.onAuthenticatedEvent = () {
+        context.go(ref.read(loginViewModelProvider).returnPath);
+      };
     });
   }
 

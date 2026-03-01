@@ -15,6 +15,7 @@ class UserNotifier {
 
   final BehaviorSubject<AuthState> _subject;
   final BehaviorSubject<bool> _authInProgressSubject = BehaviorSubject<bool>.seeded(false);
+  final PublishSubject<String> _authErrorSubject = PublishSubject<String>();
   StreamSubscription<void>? _logoutSubscription;
 
   UserNotifier({
@@ -32,6 +33,8 @@ class UserNotifier {
   Stream<AuthState> get stream => _subject.stream;
 
   Stream<bool> get authInProgressStream => _authInProgressSubject.stream;
+
+  Stream<String> get authErrorStream => _authErrorSubject.stream;
 
   AuthState get currentState => _subject.value;
 
@@ -58,6 +61,8 @@ class UserNotifier {
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e, st) {
       developer.log('[Auth] UserNotifier.completePasswordlessSignIn: error=$e', name: 'UserNotifier', error: e, stackTrace: st);
+      developer.log('[Auth] UserNotifier: publishing auth error to stream', name: 'UserNotifier');
+      _authErrorSubject.add(e.toString());
       rethrow;
     } finally {
       _authInProgressSubject.add(false);
@@ -100,6 +105,7 @@ class UserNotifier {
 
   void dispose() {
     _logoutSubscription?.cancel();
+    _authErrorSubject.close();
     _authInProgressSubject.close();
     _subject.close();
   }
