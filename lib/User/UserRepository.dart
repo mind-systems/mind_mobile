@@ -6,6 +6,7 @@ import 'package:mind/Core/Api/ApiService.dart';
 import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/Core/Environment.dart';
 import 'package:mind/User/Models/AuthRequest.dart';
+import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Models/User.dart';
 
@@ -134,6 +135,12 @@ class UserRepository {
     try {
       googleUser = await _googleSignIn.authenticate();
       developer.log('[Auth] Google authenticate: success, email=${googleUser.email}, id=${googleUser.id}', name: 'UserRepository');
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        throw GoogleSignInCanceledException();
+      }
+      developer.log('[Auth] Google authenticate error: $e', name: 'UserRepository', error: e);
+      rethrow;
     } catch (e) {
       developer.log('[Auth] Google authenticate error: $e', name: 'UserRepository', error: e);
       rethrow;

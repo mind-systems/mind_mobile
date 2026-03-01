@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/User/Models/AuthState.dart';
+import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
 import 'package:mind/User/Presentation/Login/ILoginService.dart';
 import 'package:mind/User/Presentation/Login/LoginState.dart';
 
@@ -65,6 +66,8 @@ class LoginViewModel extends StateNotifier<LoginState> {
       developer.log('[Auth] LoginViewModel.loginWithGoogle: success', name: 'LoginViewModel');
       state = state.copyWith(isLoading: false);
       onSuccessEvent?.call();
+    } on GoogleSignInCanceledException {
+      state = state.copyWith(isLoading: false);
     } catch (e, st) {
       developer.log('[Auth] LoginViewModel.loginWithGoogle: error=${e.runtimeType}: $e', name: 'LoginViewModel', error: e, stackTrace: st);
       state = state.copyWith(isLoading: false);
