@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/Core/Api/ApiService.dart';
@@ -106,7 +108,7 @@ class UserRepository {
 
     final user = User.fromFirebaseUser(firebaseUser);
     final authRequest = AuthRequest(token: idToken, user: user);
-    final authenticatedUser = await _api.authenticate(authRequest);
+    final authenticatedUser = await _api.login(authRequest);
 
     await _replaceGuestWithUser(authenticatedUser);
     await prefs.remove(_emailForSignInKey);
@@ -114,17 +116,21 @@ class UserRepository {
     return authenticatedUser;
   }
 
-  Future<User> loginWithGoogle() async {
-    final GoogleSignInAccount googleUser;
+  /// Phase 1: Shows the native Google account picker dialog.
+  Future<GoogleSignInAccount> pickGoogleAccount() async {
+    log('[UserRepository] pickGoogleAccount: showing Google account picker');
     try {
-      googleUser = await _googleSignIn.authenticate();
+      return await _googleSignIn.authenticate();
     } on GoogleSignInException catch (e) {
       if (e.code == GoogleSignInExceptionCode.canceled) {
         throw GoogleSignInCanceledException();
       }
       rethrow;
     }
+  }
 
+  /// Phase 2: Firebase auth + API call. Call after the user has picked a Google account.
+  Future<User> authenticateWithGoogle(GoogleSignInAccount googleUser) async {
     final googleAuth = googleUser.authentication;
 
     if (googleAuth.idToken == null) {
@@ -148,14 +154,9 @@ class UserRepository {
       throw Exception('Failed to get ID token');
     }
 
-    final User authenticatedUser;
-    try {
-      authenticatedUser = await _api.authenticate(AuthRequest(token: idToken, user: user));
-    } catch (e) {
-      rethrow;
-    }
-
+    final authenticatedUser = await _api.login(AuthRequest(token: idToken, user: user));
     await _replaceGuestWithUser(authenticatedUser);
+    log('[UserRepository] authenticateWithGoogle: auth complete');
     return authenticatedUser;
   }
 

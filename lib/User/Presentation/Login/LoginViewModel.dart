@@ -60,9 +60,9 @@ class LoginViewModel extends StateNotifier<LoginState> {
   Future<void> loginWithGoogle() async {
     try {
       await service.loginWithGoogle();
-      onSuccessEvent?.call();
+      // Navigation happens via onAuthenticatedEvent when UserNotifier emits AuthenticatedState
     } on GoogleSignInCanceledException {
-      // User cancelled — no action needed, isLoginInProgress handles overlay
+      // Cancellation is handled in UserNotifier; catch here as a safety net
     } catch (e) {
       onErrorEvent?.call('Ошибка входа через Google: ${e.toString()}');
     }

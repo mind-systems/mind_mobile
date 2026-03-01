@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:rxdart/rxdart.dart';
 
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/Models/AuthState.dart';
+import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
 import 'package:mind/User/Models/User.dart';
 import 'package:mind/User/UserRepository.dart';
 
@@ -61,12 +63,22 @@ class UserNotifier {
   }
 
   Future<void> loginWithGoogle() async {
+    // Phase 1: show Google account picker — do not block UI yet
+    final GoogleSignInAccount googleUser;
+    try {
+      googleUser = await repository.pickGoogleAccount();
+    } on GoogleSignInCanceledException {
+      // User cancelled — nothing to do, don't touch the UI
+      return;
+    }
+
+    // Phase 2: user picked an account — now block UI for Firebase + API
     _authInProgressSubject.add(true);
     try {
-      final authenticatedUser = await repository.loginWithGoogle();
+      final authenticatedUser = await repository.authenticateWithGoogle(googleUser);
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e) {
-      rethrow;
+      _authErrorSubject.add(e.toString());
     } finally {
       _authInProgressSubject.add(false);
     }
