@@ -10,7 +10,6 @@ class ProfileCoordinator implements IProfileCoordinator {
 
   @override
   void logout() {
-    debugPrint('[ProfileCoordinator] logout triggered');
     App.shared.userNotifier.logout().then((_) {
       if (context.mounted) {
         context.pop();

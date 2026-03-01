@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,7 +43,6 @@ class _GlobalListenersState extends ConsumerState<GlobalListeners> {
     });
 
     _authErrorSubscription = widget.authErrorStream.listen((error) {
-      developer.log('[Auth] GlobalListeners: received auth error, showing snackbar', name: 'GlobalListeners');
       _showSnackBar(SnackBarEvent.error('Ошибка входа: $error'));
     });
   }

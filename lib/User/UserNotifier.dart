@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:rxdart/rxdart.dart';
 
@@ -41,49 +40,35 @@ class UserNotifier {
   User get currentUser => _subject.value.user;
 
   Future<void> sendPasswordlessSignInLink(String email) async {
-    developer.log('[Auth] UserNotifier.sendPasswordlessSignInLink: email=$email', name: 'UserNotifier');
     try {
       await repository.sendPasswordlessSignInLink(email);
-      developer.log('[Auth] UserNotifier.sendPasswordlessSignInLink: success', name: 'UserNotifier');
-    } catch (e, st) {
-      developer.log('[Auth] UserNotifier.sendPasswordlessSignInLink: error=$e', name: 'UserNotifier', error: e, stackTrace: st);
+    } catch (e) {
       rethrow;
     }
   }
 
   Future<void> completePasswordlessSignIn(String emailLink) async {
-    developer.log('[Auth] UserNotifier.completePasswordlessSignIn: start', name: 'UserNotifier');
     _authInProgressSubject.add(true);
-    developer.log('[Auth] UserNotifier: authInProgress → true (emailLink)', name: 'UserNotifier');
     try {
       final authenticatedUser = await repository.completePasswordlessSignIn(emailLink);
-      developer.log('[Auth] UserNotifier.completePasswordlessSignIn: success, userId=${authenticatedUser.id}', name: 'UserNotifier');
       _subject.add(AuthenticatedState(authenticatedUser));
-    } catch (e, st) {
-      developer.log('[Auth] UserNotifier.completePasswordlessSignIn: error=$e', name: 'UserNotifier', error: e, stackTrace: st);
-      developer.log('[Auth] UserNotifier: publishing auth error to stream', name: 'UserNotifier');
+    } catch (e) {
       _authErrorSubject.add(e.toString());
       rethrow;
     } finally {
       _authInProgressSubject.add(false);
-      developer.log('[Auth] UserNotifier: authInProgress → false (emailLink)', name: 'UserNotifier');
     }
   }
 
   Future<void> loginWithGoogle() async {
-    developer.log('[Auth] UserNotifier.loginWithGoogle: start', name: 'UserNotifier');
     _authInProgressSubject.add(true);
-    developer.log('[Auth] UserNotifier: authInProgress → true (google)', name: 'UserNotifier');
     try {
       final authenticatedUser = await repository.loginWithGoogle();
-      developer.log('[Auth] UserNotifier.loginWithGoogle: success, userId=${authenticatedUser.id}', name: 'UserNotifier');
       _subject.add(AuthenticatedState(authenticatedUser));
-    } catch (e, st) {
-      developer.log('[Auth] UserNotifier.loginWithGoogle: error=$e', name: 'UserNotifier', error: e, stackTrace: st);
+    } catch (e) {
       rethrow;
     } finally {
       _authInProgressSubject.add(false);
-      developer.log('[Auth] UserNotifier: authInProgress → false (google)', name: 'UserNotifier');
     }
   }
 

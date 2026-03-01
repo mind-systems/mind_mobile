@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
-import 'package:flutter/material.dart';
 import 'package:mind/Core/Handlers/FirebaseDeeplinkHandler.dart';
 
 class DeeplinkRouter {
@@ -15,31 +14,22 @@ class DeeplinkRouter {
   Future<void> init() async {
     _linkSubscription = _appLinks.uriLinkStream.listen(
       (Uri uri) async {
-        debugPrint('📲 Received deep link: $uri');
         await _handleDeepLink(uri);
       },
-      onError: (error) {
-        debugPrint('❌ Error in deep link stream: $error');
-      },
+      onError: (error) {},
     );
   }
 
   /// Обработка входящей ссылки
   Future<void> _handleDeepLink(Uri uri) async {
-    debugPrint('🔗 Processing deep link: $uri');
-
     final uriString = uri.toString();
 
     // Пытаемся обработать через Firebase handler
     try {
-      final handled = await _firebaseHandler.handle(uriString);
-      if (handled) return;
+      await _firebaseHandler.handle(uriString);
     } catch (e) {
-      debugPrint('❌ Handler error: $e');
       return;
     }
-
-    debugPrint('⚠️ Unknown deep link: $uri');
   }
 
   void dispose() {

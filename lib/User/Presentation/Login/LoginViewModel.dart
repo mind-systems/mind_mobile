@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/User/Models/AuthState.dart';
@@ -30,7 +29,6 @@ class LoginViewModel extends StateNotifier<LoginState> {
     });
 
     _authInProgressSubscription = service.observeAuthInProgress().listen((value) {
-      developer.log('[Auth] LoginViewModel: isLoginInProgress → $value', name: 'LoginViewModel');
       state = state.copyWith(isLoginInProgress: value);
     });
   }
@@ -47,34 +45,25 @@ class LoginViewModel extends StateNotifier<LoginState> {
   }
 
   Future<void> sendPasswordlessSignInLink() async {
-    developer.log('[Auth] LoginViewModel.sendPasswordlessSignInLink: email=${state.email}', name: 'LoginViewModel');
     state = state.copyWith(isLoading: true);
 
     try {
       await service.sendPasswordlessSignInLink(state.email);
-
-      developer.log('[Auth] LoginViewModel.sendPasswordlessSignInLink: success', name: 'LoginViewModel');
       state = state.copyWith(isLoading: false);
       onSuccessEvent?.call();
-    } catch (e, st) {
-      developer.log('[Auth] LoginViewModel.sendPasswordlessSignInLink: error=${e.runtimeType}: $e', name: 'LoginViewModel', error: e, stackTrace: st);
+    } catch (e) {
       state = state.copyWith(isLoading: false);
       onErrorEvent?.call('Ошибка отправки ссылки: ${e.toString()}');
     }
   }
 
   Future<void> loginWithGoogle() async {
-    developer.log('[Auth] LoginViewModel.loginWithGoogle: start', name: 'LoginViewModel');
-
     try {
       await service.loginWithGoogle();
-
-      developer.log('[Auth] LoginViewModel.loginWithGoogle: success', name: 'LoginViewModel');
       onSuccessEvent?.call();
     } on GoogleSignInCanceledException {
       // User cancelled — no action needed, isLoginInProgress handles overlay
-    } catch (e, st) {
-      developer.log('[Auth] LoginViewModel.loginWithGoogle: error=${e.runtimeType}: $e', name: 'LoginViewModel', error: e, stackTrace: st);
+    } catch (e) {
       onErrorEvent?.call('Ошибка входа через Google: ${e.toString()}');
     }
   }
