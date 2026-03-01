@@ -125,12 +125,7 @@ class UserRepository {
       rethrow;
     }
 
-    final GoogleSignInAuthentication googleAuth;
-    try {
-      googleAuth = googleUser.authentication;
-    } catch (e) {
-      rethrow;
-    }
+    final googleAuth = googleUser.authentication;
 
     if (googleAuth.idToken == null) {
       throw Exception('Google Sign-In did not return an idToken');
