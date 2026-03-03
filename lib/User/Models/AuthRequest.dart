@@ -13,7 +13,7 @@ class AuthRequest {
 
   Map<String, dynamic> toJson() => {
     'token': token,
-    'firebase_uid': firebaseUid,
+    'firebaseUid': firebaseUid,
     'name': name,
     'email': email,
   };

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
@@ -30,9 +32,9 @@ class ApiService {
 
   Future<void> updateUser(User user) async {}
 
-  Future<User> authenticate(AuthRequest authRequest) async {
+  Future<User> login(AuthRequest authRequest) async {
     try {
-      final path = '/auth/register';
+      final path = '/auth/login';
       final data = authRequest.toJson();
       final response = await _dio.post(path, data: data);
 
@@ -71,12 +73,16 @@ class ApiService {
           e.message ??
           'Unknown error';
 
+      log('[ApiService] HTTP ${e.response?.statusCode} ${e.requestOptions.method} ${e.requestOptions.path} — $message', name: 'ApiService', error: e);
+
       return ApiException(
         message: message,
         statusCode: e.response?.statusCode,
         data: e.response?.data,
       );
     } else {
+      log('[ApiService] ${e.type} ${e.requestOptions.method} ${e.requestOptions.path} — ${e.message}', name: 'ApiService', error: e);
+
       switch (e.type) {
         case DioExceptionType.connectionTimeout:
         case DioExceptionType.sendTimeout:
