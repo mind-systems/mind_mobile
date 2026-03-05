@@ -3,7 +3,6 @@ part of 'Database.dart';
 @DataClassName('Users')
 class UserRecord extends Table {
   TextColumn get id => text()();
-  TextColumn get firebaseUid => text().nullable()();
   TextColumn get email => text()();
   TextColumn get name => text()();
   BoolColumn get isGuest => boolean().withDefault(const Constant(true))();
@@ -36,7 +35,6 @@ class UserDao extends DatabaseAccessor<Database> with _$UserDaoMixin {
   User _mapRowToUser(Users row) {
     return User(
       id: row.id,
-      firebaseUid: row.firebaseUid,
       email: row.email,
       name: row.name,
       isGuest: row.isGuest,
@@ -46,7 +44,6 @@ class UserDao extends DatabaseAccessor<Database> with _$UserDaoMixin {
   UserRecordCompanion _mapUserToCompanion(User user) {
     return UserRecordCompanion(
       id: Value(user.id),
-      firebaseUid: Value(user.firebaseUid),
       email: Value(user.email),
       name: Value(user.name),
       isGuest: Value(user.isGuest),
