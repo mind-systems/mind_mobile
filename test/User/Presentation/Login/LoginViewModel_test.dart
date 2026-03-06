@@ -18,6 +18,7 @@ class FakeLoginService implements ILoginService {
 
   Completer<void>? _loginWithGoogleCompleter;
   Completer<void>? _sendLinkCompleter;
+  Completer<void>? _verifyCodeCompleter;
 
   @override
   Stream<AuthState> observeAuthState() => _authStateController.stream;
@@ -37,12 +38,21 @@ class FakeLoginService implements ILoginService {
     return _sendLinkCompleter!.future;
   }
 
+  @override
+  Future<void> completePasswordlessSignIn(String code) async {
+    _verifyCodeCompleter = Completer<void>();
+    return _verifyCodeCompleter!.future;
+  }
+
   void completeGoogleLogin() => _loginWithGoogleCompleter?.complete();
   void failGoogleLogin(Object error) =>
       _loginWithGoogleCompleter?.completeError(error);
   void completeSendLink() => _sendLinkCompleter?.complete();
   void failSendLink(Object error) =>
       _sendLinkCompleter?.completeError(error);
+  void completeVerifyCode() => _verifyCodeCompleter?.complete();
+  void failVerifyCode(Object error) =>
+      _verifyCodeCompleter?.completeError(error);
   void emitAuthInProgress(bool value) => _authInProgressController.add(value);
 
   void dispose() {
@@ -84,18 +94,7 @@ void main() {
           reason: 'isLoading should never become true during Google login');
     });
 
-    test('calls onSuccessEvent on success', () async {
-      var successCalled = false;
-      viewModel.onSuccessEvent = () => successCalled = true;
-
-      final future = viewModel.loginWithGoogle();
-      fakeService.completeGoogleLogin();
-      await future;
-
-      expect(successCalled, isTrue);
-    });
-
-    test('cancellation does not set error state', () async {
+    test('cancellation does not call onErrorEvent', () async {
       String? capturedError;
       viewModel.onErrorEvent = (error) => capturedError = error;
 
@@ -122,20 +121,66 @@ void main() {
 
   group('sendPasswordlessSignInLink', () {
     test('toggles isLoading correctly', () async {
-      final loadingStates = <bool>[];
-      viewModel.addListener((state) {
-        loadingStates.add(state.isLoading);
-      });
-
       viewModel.updateEmail('test@example.com');
       final future = viewModel.sendPasswordlessSignInLink();
-      // isLoading should be true at this point
+
       expect(viewModel.state.isLoading, isTrue);
 
       fakeService.completeSendLink();
       await future;
 
       expect(viewModel.state.isLoading, isFalse);
+    });
+
+    test('calls onSuccessEvent on success', () async {
+      var successCalled = false;
+      viewModel.onSuccessEvent = () => successCalled = true;
+
+      viewModel.updateEmail('test@example.com');
+      final future = viewModel.sendPasswordlessSignInLink();
+      fakeService.completeSendLink();
+      await future;
+
+      expect(successCalled, isTrue);
+    });
+
+    test('calls onErrorEvent and clears isLoading on failure', () async {
+      String? capturedError;
+      viewModel.onErrorEvent = (error) => capturedError = error;
+
+      viewModel.updateEmail('test@example.com');
+      final future = viewModel.sendPasswordlessSignInLink();
+      fakeService.failSendLink(Exception('network error'));
+      await future;
+
+      expect(viewModel.state.isLoading, isFalse);
+      expect(capturedError, isNotNull);
+    });
+  });
+
+  group('verifyCode', () {
+    test('toggles isLoading correctly', () async {
+      final future = viewModel.verifyCode('123456');
+
+      expect(viewModel.state.isLoading, isTrue);
+
+      fakeService.completeVerifyCode();
+      await future;
+
+      expect(viewModel.state.isLoading, isFalse);
+    });
+
+    test('calls onErrorEvent and clears isLoading on failure', () async {
+      String? capturedError;
+      viewModel.onErrorEvent = (error) => capturedError = error;
+
+      final future = viewModel.verifyCode('bad-code');
+      fakeService.failVerifyCode(Exception('invalid code'));
+      await future;
+
+      expect(viewModel.state.isLoading, isFalse);
+      expect(capturedError, isNotNull);
+      expect(capturedError, contains('invalid or expired'));
     });
   });
 

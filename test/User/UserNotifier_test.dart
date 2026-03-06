@@ -2,19 +2,28 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/User/LogoutNotifier.dart';
+import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Models/User.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
 
 // ---------------------------------------------------------------------------
-// Fake UserRepository — overrides only the methods UserNotifier calls
+// Fake UserRepository
 // ---------------------------------------------------------------------------
 
 class FakeUserRepository implements UserRepository {
   Completer<User>? _completeSignInCompleter;
+  String? lastSentEmail;
+  String? lastVerifiedCode;
 
   @override
-  Future<User> completePasswordlessSignIn(String emailLink) {
+  Future<void> sendPasswordlessSignInLink(String email) async {
+    lastSentEmail = email;
+  }
+
+  @override
+  Future<User> completePasswordlessSignIn(String code) {
+    lastVerifiedCode = code;
     _completeSignInCompleter = Completer<User>();
     return _completeSignInCompleter!.future;
   }
@@ -23,16 +32,8 @@ class FakeUserRepository implements UserRepository {
   void failSignIn(Object error) =>
       _completeSignInCompleter?.completeError(error);
 
-  // -- Stubs for other methods (not exercised in these tests) --
-
   @override
   Future<User> loadUser() async => _guestUser;
-
-  @override
-  Future<void> sendPasswordlessSignInLink(String email) async {}
-
-  @override
-  Future<User> loginWithGoogle() async => _authenticatedUser;
 
   @override
   Future<User> logout(User currentUser) async => _guestUser;
@@ -57,7 +58,6 @@ final _guestUser = User(
 
 final _authenticatedUser = User(
   id: 'user-id',
-  firebaseUid: 'firebase-uid',
   email: 'test@example.com',
   name: 'Test User',
   isGuest: false,
@@ -87,18 +87,77 @@ void main() {
     logoutNotifier.dispose();
   });
 
+  group('sendPasswordlessSignInLink', () {
+    test('delegates email to repository', () async {
+      await userNotifier.sendPasswordlessSignInLink('user@example.com');
+      expect(fakeRepo.lastSentEmail, 'user@example.com');
+    });
+  });
+
+  group('completePasswordlessSignIn', () {
+    test('passes code to repository', () async {
+      final future = userNotifier.completePasswordlessSignIn('123456');
+      fakeRepo.succeedSignIn(_authenticatedUser);
+      await future;
+
+      expect(fakeRepo.lastVerifiedCode, '123456');
+    });
+
+    test('emits AuthenticatedState on success', () async {
+      // BehaviorSubject replays current value — check via currentState after completion
+      final future = userNotifier.completePasswordlessSignIn('123456');
+      fakeRepo.succeedSignIn(_authenticatedUser);
+      await future;
+
+      expect(userNotifier.currentState, isA<AuthenticatedState>());
+      expect(userNotifier.currentState.user.email, 'test@example.com');
+    });
+
+    test('sets authInProgress=true while in flight, then false', () async {
+      // BehaviorSubject emits seed(false) on subscribe — skip it to capture
+      // only values produced by the operation itself
+      final values = <bool>[];
+      userNotifier.authInProgressStream.skip(1).listen(values.add);
+
+      final future = userNotifier.completePasswordlessSignIn('123456');
+      fakeRepo.succeedSignIn(_authenticatedUser);
+      await future;
+      await Future.delayed(Duration.zero);
+
+      expect(values, [true, false]);
+    });
+
+    test('sets authInProgress=false after failure', () async {
+      final values = <bool>[];
+      userNotifier.authInProgressStream.skip(1).listen(values.add);
+
+      final future = userNotifier.completePasswordlessSignIn('bad-code');
+      fakeRepo.failSignIn(Exception('invalid code'));
+      await expectLater(future, throwsA(isA<Exception>()));
+      await Future.delayed(Duration.zero);
+
+      expect(values, [true, false]);
+    });
+
+    test('state remains GuestState after failure', () async {
+      final future = userNotifier.completePasswordlessSignIn('bad-code');
+      fakeRepo.failSignIn(Exception('invalid code'));
+      await expectLater(future, throwsA(isA<Exception>()));
+
+      expect(userNotifier.currentState, isA<GuestState>());
+    });
+  });
+
   group('authErrorStream', () {
     test('emits error string when completePasswordlessSignIn fails', () async {
-      // Set up expectation on the stream BEFORE triggering the error
       final errorFuture = expectLater(
         userNotifier.authErrorStream,
-        emits(contains('invalid link')),
+        emits(contains('invalid code')),
       );
 
-      final future = userNotifier.completePasswordlessSignIn('https://example.com/link');
-      fakeRepo.failSignIn(Exception('invalid link'));
+      final future = userNotifier.completePasswordlessSignIn('bad-code');
+      fakeRepo.failSignIn(Exception('invalid code'));
 
-      // completePasswordlessSignIn rethrows, so we expect it to throw
       await expectLater(future, throwsA(isA<Exception>()));
       await errorFuture;
     });
@@ -107,27 +166,21 @@ void main() {
       final errors = <String>[];
       userNotifier.authErrorStream.listen(errors.add);
 
-      final future = userNotifier.completePasswordlessSignIn('https://example.com/link');
+      final future = userNotifier.completePasswordlessSignIn('123456');
       fakeRepo.succeedSignIn(_authenticatedUser);
       await future;
 
-      // Allow microtasks to settle
       await Future.delayed(Duration.zero);
-
       expect(errors, isEmpty);
     });
 
     test('does not replay old errors (PublishSubject behavior)', () async {
-      // Trigger an error before subscribing
-      final future = userNotifier.completePasswordlessSignIn('https://example.com/link');
+      final future = userNotifier.completePasswordlessSignIn('bad-code');
       fakeRepo.failSignIn(Exception('old error'));
       await expectLater(future, throwsA(isA<Exception>()));
 
-      // Now subscribe — should NOT receive the old error
       final errors = <String>[];
       userNotifier.authErrorStream.listen(errors.add);
-
-      // Allow microtasks to settle
       await Future.delayed(Duration.zero);
 
       expect(errors, isEmpty,
