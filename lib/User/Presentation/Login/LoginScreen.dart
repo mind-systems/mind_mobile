@@ -15,6 +15,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
+  bool _isAlertOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -27,12 +29,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       };
 
       viewModel.onSuccessEvent = () async {
+        _isAlertOpen = true;
         final result = await AppAlert.showWithInput(
           context,
           title: 'Check your email',
           description: 'We sent you a one-time sign-in link. Click the link on the same device.',
           inputHint: 'Or paste your code here',
         );
+        _isAlertOpen = false;
         if (result.confirmed && result.text != null && result.text!.isNotEmpty) {
           await viewModel.verifyCode(result.text!.trim());
         }
@@ -47,6 +51,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginViewModelProvider);
+
+    if (loginState.isLoginInProgress && _isAlertOpen) {
+      _isAlertOpen = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context, rootNavigator: true).pop();
+      });
+    }
 
     return Scaffold(
       body: LoadingOverlay(
