@@ -42,17 +42,13 @@ class UserNotifier {
   User get currentUser => _subject.value.user;
 
   Future<void> sendPasswordlessSignInLink(String email) async {
-    try {
-      await repository.sendPasswordlessSignInLink(email);
-    } catch (e) {
-      rethrow;
-    }
+    await repository.sendPasswordlessSignInLink(email);
   }
 
-  Future<void> completePasswordlessSignIn(String emailLink) async {
+  Future<void> completePasswordlessSignIn(String code) async {
     _authInProgressSubject.add(true);
     try {
-      final authenticatedUser = await repository.completePasswordlessSignIn(emailLink);
+      final authenticatedUser = await repository.completePasswordlessSignIn(code);
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e) {
       _authErrorSubject.add(e.toString());

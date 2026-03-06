@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
-import 'package:mind/Core/Handlers/FirebaseDeeplinkHandler.dart';
+import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
 
 class DeeplinkRouter {
   final AppLinks _appLinks = AppLinks();
-  final FirebaseDeeplinkHandler _firebaseHandler;
+  final AuthCodeDeeplinkHandler _authCodeHandler;
 
   StreamSubscription? _linkSubscription;
 
-  DeeplinkRouter({required FirebaseDeeplinkHandler firebaseHandler})
-    : _firebaseHandler = firebaseHandler;
+  DeeplinkRouter({required AuthCodeDeeplinkHandler authCodeHandler})
+    : _authCodeHandler = authCodeHandler;
 
   Future<void> init() async {
     _linkSubscription = _appLinks.uriLinkStream.listen(
@@ -20,23 +20,9 @@ class DeeplinkRouter {
     );
   }
 
-  /// Обработка ссылки вручную (для отладки на iOS без дип-линков)
-  // todo revert before release.
-  Future<void> handleLink(String link) async {
-    try {
-      await _firebaseHandler.handle(link);
-    } catch (e) {
-      return;
-    }
-  }
-
-  /// Обработка входящей ссылки
   Future<void> _handleDeepLink(Uri uri) async {
-    final uriString = uri.toString();
-
-    // Пытаемся обработать через Firebase handler
     try {
-      await _firebaseHandler.handle(uriString);
+      await _authCodeHandler.handle(uri);
     } catch (e) {
       return;
     }

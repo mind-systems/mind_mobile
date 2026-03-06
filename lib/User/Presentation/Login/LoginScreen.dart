@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-import 'package:mind/Core/App.dart';
 import 'package:mind/Views/AlertModule/AppAlert.dart';
 import 'LoginViewModel.dart';
 
@@ -32,11 +31,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           context,
           title: 'Check your email',
           description: 'We sent you a one-time sign-in link. Click the link on the same device.',
-          // todo revert before release. same in DeeplinkRouter
-          inputHint: 'Paste sign-in link (ios debug)',
+          inputHint: 'Or paste your code here',
         );
         if (result.confirmed && result.text != null && result.text!.isNotEmpty) {
-          await App.shared.deeplinkRouter.handleLink(result.text!);
+          await viewModel.verifyCode(result.text!.trim());
         }
       };
 

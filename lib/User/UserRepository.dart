@@ -1,21 +1,27 @@
 import 'dart:developer';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/Core/Api/ApiService.dart';
+import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
+import 'package:mind/Core/Api/Models/VerifyCodeRequest.dart';
 import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'Models/User.dart';
 
 class UserRepository {
   final Database _db;
   final ApiService _api;
+  final FlutterSecureStorage _storage;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
-  static const String _emailForSignInKey = 'emailForSignIn';
+  static const String _pendingSignInEmailKey = 'pendingSignInEmail';
 
-  UserRepository({required Database db, required ApiService api}): _api = api, _db = db;
+  UserRepository({required Database db, required ApiService api})
+      : _api = api,
+        _db = db,
+        _storage = const FlutterSecureStorage();
 
   Future<User?> _getUser() async {
     return await _db.userDao.getUser();
@@ -50,13 +56,21 @@ class UserRepository {
   }
 
   Future<void> sendPasswordlessSignInLink(String email) async {
-    log('[UserRepository] sendPasswordlessSignInLink: stubbed — no-op');
+    log('[UserRepository] sendPasswordlessSignInLink: email=$email');
+    await _api.sendCode(SendCodeRequest(email: email));
+    await _storage.write(key: _pendingSignInEmailKey, value: email);
   }
 
-  Future<User> completePasswordlessSignIn(String emailLink) async {
-    throw UnimplementedError(
-      'completePasswordlessSignIn is stubbed — Firebase auth removed',
-    );
+  Future<User> completePasswordlessSignIn(String code) async {
+    final email = await _storage.read(key: _pendingSignInEmailKey);
+    if (email == null || email.isEmpty) {
+      throw Exception('No pending email found');
+    }
+    log('[UserRepository] completePasswordlessSignIn: email=$email');
+    final user = await _api.verifyCode(VerifyCodeRequest(email: email, code: code));
+    await _replaceGuestWithUser(user);
+    await _storage.delete(key: _pendingSignInEmailKey);
+    return user;
   }
 
   /// Phase 1: Shows the native Google account picker dialog.

@@ -5,7 +5,8 @@ import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/Core/Api/Models/ApiExeption.dart';
-import 'package:mind/User/Models/AuthRequest.dart';
+import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
+import 'package:mind/Core/Api/Models/VerifyCodeRequest.dart';
 import '../Environment.dart';
 
 import 'package:mind/User/Models/User.dart';
@@ -32,11 +33,20 @@ class ApiService {
 
   Future<void> updateUser(User user) async {}
 
-  Future<User> login(AuthRequest authRequest) async {
+  Future<void> sendCode(SendCodeRequest request) async {
     try {
-      final path = '/auth/login';
-      final data = authRequest.toJson();
-      final response = await _dio.post(path, data: data);
+      await _dio.post('/auth/send-code', data: request.toJson());
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<User> verifyCode(VerifyCodeRequest request) async {
+    try {
+      final response = await _dio.post(
+        '/auth/verify-code',
+        data: request.toJson(),
+      );
 
       final authHeader = response.headers.value('Authorization');
       if (authHeader != null) {

@@ -16,6 +16,11 @@ class LoginService implements ILoginService {
   }
 
   @override
+  Future<void> completePasswordlessSignIn(String code) async {
+    await userNotifier.completePasswordlessSignIn(code);
+  }
+
+  @override
   Future<void> loginWithGoogle() async {
     await userNotifier.loginWithGoogle();
   }

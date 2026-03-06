@@ -13,7 +13,7 @@ import 'package:mind/Core/Api/ApiService.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/Core/DeeplinkRouter.dart';
-import 'package:mind/Core/Handlers/FirebaseDeeplinkHandler.dart';
+import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
 import 'package:mind/Core/GlobalUI/GlobalKeys.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
@@ -61,8 +61,8 @@ class App {
     final userNotifier = UserNotifier(repository: userRepository, logoutNotifier: logoutNotifier, initialUser: initialUser);
     final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository, userNotifier: userNotifier);
 
-    final firebaseHandler = FirebaseDeeplinkHandler(userNotifier: userNotifier);
-    final deeplinkRouter = DeeplinkRouter(firebaseHandler: firebaseHandler);
+    final authCodeHandler = AuthCodeDeeplinkHandler(userNotifier: userNotifier);
+    final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler);
 
     shared = App._(
       db: db,
