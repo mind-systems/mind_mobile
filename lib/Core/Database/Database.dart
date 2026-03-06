@@ -24,14 +24,16 @@ class Database extends _$Database {
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: (migrator, from, to) async {
-      if (from == 1) {
-        await migrator.addColumn(userRecord, userRecord.isGuest);
-      }
-      if (from == 2) {
-        await migrator.createTable(breathSessions);
-      }
-      if (from == 3) {
-        await migrator.alterTable(TableMigration(userRecord));
+      for (var step = from; step < to; step++) {
+        if (step == 1) {
+          await migrator.addColumn(userRecord, userRecord.isGuest);
+        }
+        if (step == 2) {
+          await migrator.createTable(breathSessions);
+        }
+        if (step == 3) {
+          await migrator.alterTable(TableMigration(userRecord));
+        }
       }
     },
   );
