@@ -3,10 +3,7 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
-    id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
-    id("kotlin-android")
+id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -127,28 +124,6 @@ android {
         }
     }
 
-    // Копируем нужный google-services.json перед сборкой
-    applicationVariants.all {
-        val variant = this
-        val flavorName = variant.flavorName
-
-        variant.preBuildProvider.configure {
-            doLast {
-                val sourceFile = file("google-services-${flavorName}.json")
-
-                if (sourceFile.exists()) {
-                    copy {
-                        from(sourceFile)
-                        into(project.projectDir) // Corrected line
-                        rename { "google-services.json" }
-                    }
-                    println("✅ Copied google-services-${flavorName}.json")
-                } else {
-                    println("⚠️  Warning: google-services-${flavorName}.json not found!")
-                }
-            }
-        }
-    }
 }
 
 flutter {

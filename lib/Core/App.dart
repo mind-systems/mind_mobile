@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -42,10 +41,9 @@ class App {
     required this.deeplinkRouter,
   });
 
-  static Future<void> initialize({required FirebaseOptions firebaseOptions}) async {
+  static Future<void> initialize() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    await Firebase.initializeApp(options: firebaseOptions);
     await GoogleSignIn.instance.initialize();
 
     final db = Database();
