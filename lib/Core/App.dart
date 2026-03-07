@@ -6,8 +6,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
-import 'package:mind/Core/Api/ApiService.dart';
+import 'package:mind/Core/Api/AuthApi.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
+import 'package:mind/Core/Api/BreathSessionApi.dart';
+import 'package:mind/Core/Api/HttpClient.dart';
 import 'package:mind/Core/AppTheme.dart';
 import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/Core/DeeplinkRouter.dart';
@@ -26,7 +28,7 @@ class App {
   static late App shared;
 
   final Database db;
-  final ApiService api;
+  final HttpClient httpClient;
   final LogoutNotifier logoutNotifier;
   final UserRepository userRepository;
   final BreathSessionRepository breathSessionRepository;
@@ -36,7 +38,7 @@ class App {
 
   App._({
     required this.db,
-    required this.api,
+    required this.httpClient,
     required this.logoutNotifier,
     required this.userRepository,
     required this.breathSessionRepository,
@@ -59,10 +61,12 @@ class App {
     final logoutNotifier = LogoutNotifier();
 
     final authInterceptor = AuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
-    final api = ApiService(authInterceptor: authInterceptor);
+    final httpClient = HttpClient(authInterceptor: authInterceptor);
+    final authApi = AuthApi(httpClient);
+    final breathSessionApi = BreathSessionApi(httpClient);
 
-    final userRepository = UserRepository(userDao: db.userDao, api: api, google: GoogleAuthProvider(), storage: SecureStorage());
-    final breathSessionRepository = BreathSessionRepository(db: db, api: api);
+    final userRepository = UserRepository(userDao: db.userDao, api: authApi, google: GoogleAuthProvider(), storage: SecureStorage());
+    final breathSessionRepository = BreathSessionRepository(db: db, api: breathSessionApi);
 
     final initialUser = await userRepository.loadUser();
     final userNotifier = UserNotifier(repository: userRepository, logoutNotifier: logoutNotifier, initialUser: initialUser);
@@ -73,7 +77,7 @@ class App {
 
     shared = App._(
       db: db,
-      api: api,
+      httpClient: httpClient,
       logoutNotifier: logoutNotifier,
       userRepository: userRepository,
       breathSessionRepository: breathSessionRepository,
