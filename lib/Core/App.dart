@@ -14,6 +14,8 @@ import 'package:mind/Core/DeeplinkRouter.dart';
 import 'package:mind/Core/Environment.dart';
 import 'package:mind/Core/GlobalUI/GlobalKeys.dart';
 import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
+import 'package:mind/User/Infrastructure/GoogleAuthProvider.dart';
+import 'package:mind/User/Infrastructure/SecureStorage.dart';
 import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
@@ -59,7 +61,7 @@ class App {
     final authInterceptor = AuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
     final api = ApiService(authInterceptor: authInterceptor);
 
-    final userRepository = UserRepository(db: db, api: api);
+    final userRepository = UserRepository(userDao: db.userDao, api: api, google: GoogleAuthProvider(), storage: SecureStorage());
     final breathSessionRepository = BreathSessionRepository(db: db, api: api);
 
     final initialUser = await userRepository.loadUser();

@@ -36,6 +36,12 @@ class FakeUserRepository implements UserRepository {
   Future<User> loadUser() async => _guestUser;
 
   @override
+  Future<void> pickGoogleAccount() async {}
+
+  @override
+  Future<User> authenticateWithGoogle() async => _guestUser;
+
+  @override
   Future<User> logout(User currentUser) async => _guestUser;
 
   @override

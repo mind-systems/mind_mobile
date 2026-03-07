@@ -3,7 +3,6 @@ import 'dart:developer';
 
 import 'package:rxdart/rxdart.dart';
 
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
@@ -61,9 +60,8 @@ class UserNotifier {
 
   Future<void> loginWithGoogle() async {
     // Phase 1: show Google account picker — do not block UI yet
-    final GoogleSignInAccount googleUser;
     try {
-      googleUser = await repository.pickGoogleAccount();
+      await repository.pickGoogleAccount();
     } on GoogleSignInCanceledException {
       // User cancelled — nothing to do, don't touch the UI
       return;
@@ -72,7 +70,7 @@ class UserNotifier {
     // Phase 2: user picked an account — now block UI for server auth
     _authInProgressSubject.add(true);
     try {
-      final authenticatedUser = await repository.authenticateWithGoogle(googleUser);
+      final authenticatedUser = await repository.authenticateWithGoogle();
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e) {
       log('[UserNotifier] loginWithGoogle error: $e');

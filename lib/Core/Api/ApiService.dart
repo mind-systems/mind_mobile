@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mind/Core/Api/IAuthApi.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
@@ -13,7 +14,7 @@ import '../Environment.dart';
 import 'package:mind/User/Models/User.dart';
 import 'package:dio/dio.dart';
 
-class ApiService {
+class ApiService implements IAuthApi {
   late final Dio _dio;
   final FlutterSecureStorage _storage;
 
@@ -34,6 +35,7 @@ class ApiService {
 
   Future<void> updateUser(User user) async {}
 
+  @override
   Future<void> sendCode(SendCodeRequest request) async {
     try {
       await _dio.post('/auth/send-code', data: request.toJson());
@@ -42,6 +44,7 @@ class ApiService {
     }
   }
 
+  @override
   Future<User> verifyCode(VerifyCodeRequest request) async {
     try {
       final response = await _dio.post(
@@ -61,6 +64,7 @@ class ApiService {
     }
   }
 
+  @override
   Future<User> googleAuth(GoogleAuthRequest request) async {
     try {
       final response = await _dio.post(
@@ -80,6 +84,7 @@ class ApiService {
     }
   }
 
+  @override
   Future<void> logout(User user) async {
     try {
       var path = '/auth/logout';
@@ -91,6 +96,7 @@ class ApiService {
     }
   }
 
+  @override
   Future<void> clearToken() async {
     await _storage.delete(key: _tokenKey);
   }

@@ -12,20 +12,23 @@ class UserRecord extends Table {
 }
 
 @DriftAccessor(tables: [UserRecord])
-class UserDao extends DatabaseAccessor<Database> with _$UserDaoMixin {
+class UserDao extends DatabaseAccessor<Database> with _$UserDaoMixin implements IUserDao {
   UserDao(super.db);
 
+  @override
   Future<User?> getUser() async {
     final row = await select(userRecord).getSingleOrNull();
     if (row == null) return null;
     return _mapRowToUser(row);
   }
 
+  @override
   Future<void> saveUser(User user) async {
     final companion = _mapUserToCompanion(user);
     await into(userRecord).insertOnConflictUpdate(companion);
   }
 
+  @override
   Future<void> deleteUser(String id) async {
     (delete(userRecord)..where((tbl) => tbl.id.equals(id))).go();
   }
