@@ -244,7 +244,7 @@ AskUserQuestion: Before we start:
 2. Any specific requirements or constraints?
 ```
 
-**Plan file:** Always `.ai-factory/PLAN.md` (no branch, no branch-named file).
+**Plan file:** `.ai-factory/plans/<slug>.md` — derive the slug from the description (lowercase, hyphens). Example: "add user search" → `add-user-search.md`. Never use the generic `PLAN.md` name — it gets overwritten and loses history.
 
 ---
 
@@ -318,12 +318,14 @@ Use `TaskUpdate` to set `blockedBy` relationships:
 ### Step 5: Save Plan to File
 
 **Determine plan file path:**
-- **Fast mode** → `.ai-factory/PLAN.md`
+- **Fast mode** → `.ai-factory/plans/<slug>.md` — derive slug from description (lowercase, hyphens). Example: "refactor breath session dao" → `refactor-breath-session-dao.md`
 - **Full mode** → `.ai-factory/plans/<branch-name>.md` (replace `/` with `-`)
+
+**NEVER use `.ai-factory/PLAN.md`** — it is a generic name that gets silently overwritten, destroying previous plans.
 
 **Before saving, ensure directory exists:**
 ```bash
-mkdir -p .ai-factory/plans  # only when saving to branch-named plan files
+mkdir -p .ai-factory/plans
 ```
 
 **Plan file must include:**
@@ -372,7 +374,7 @@ To view tasks:
 
 ```
 Plan created with [N] tasks.
-Plan file: .ai-factory/PLAN.md
+Plan file: .ai-factory/plans/<slug>.md
 
 To start implementation, run:
 /aif-implement
@@ -469,12 +471,15 @@ Use canonical examples in `references/TASK-FORMAT.md`:
 
 ## Plan File Handling
 
-**Fast mode (`.ai-factory/PLAN.md`)**
-- Temporary plan for quick work
-- `/aif-implement` may offer deletion after completion
+**Fast mode (`.ai-factory/plans/<slug>.md`)**
+- Named after the feature/task, not a generic filename
+- Survives alongside other plans without overwriting them
+- `/aif-implement` detects it by branch or explicit path
 
-**Full mode (`.ai-factory/plans/<branch>.md`)**
+**Full mode (`.ai-factory/plans/<branch-name>.md`)**
 - Branch-scoped, long-lived plan for feature delivery
 - Used to resume work from current branch context
+
+**NEVER write to `.ai-factory/PLAN.md`** — that generic name causes silent overwrites and lost plans.
 
 For concrete end-to-end flows (fast/full/full+parallel/interactive), read `references/EXAMPLES.md` (Flow Scenarios).

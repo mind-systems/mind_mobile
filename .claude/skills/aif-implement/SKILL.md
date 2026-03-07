@@ -86,15 +86,19 @@ Based on choice:
 **Check for plan files in this order:**
 
 ```
-1. .ai-factory/PLAN.md exists? → Use it (from /aif-plan fast)
-2. No .ai-factory/PLAN.md → Check current git branch:
+1. Check current git branch:
    git branch --show-current
    → Look for .ai-factory/plans/<branch-name>.md (e.g., .ai-factory/plans/feature-user-auth.md)
+2. No branch-named file → list all files in .ai-factory/plans/ and pick the most recently modified
+3. If .ai-factory/plans/ is empty → check legacy .ai-factory/PLAN.md as fallback
 ```
 
 **Priority:**
-1. `.ai-factory/PLAN.md` - always takes priority (from `/aif-plan fast`)
-2. Branch-named file - if no .ai-factory/PLAN.md (from `/aif-plan full`)
+1. Branch-named file — `.ai-factory/plans/<branch-name>.md` (most specific, always preferred)
+2. Most recently modified file in `.ai-factory/plans/` — when branch name doesn't match any file
+3. `.ai-factory/PLAN.md` — legacy fallback only (old plans created before this convention)
+
+**If multiple plan files exist and none matches the branch**, list them and ask the user which to use.
 
 **Read the plan file** to understand:
 - Context and settings (testing, logging preferences)
