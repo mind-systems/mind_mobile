@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:rxdart/rxdart.dart';
 
@@ -68,13 +69,14 @@ class UserNotifier {
       return;
     }
 
-    // Phase 2: user picked an account — now block UI for Firebase + API
+    // Phase 2: user picked an account — now block UI for server auth
     _authInProgressSubject.add(true);
     try {
       final authenticatedUser = await repository.authenticateWithGoogle(googleUser);
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e) {
-      _authErrorSubject.add(e.toString());
+      log('[UserNotifier] loginWithGoogle error: $e');
+      _authErrorSubject.add('Не удалось войти через Google');
     } finally {
       _authInProgressSubject.add(false);
     }

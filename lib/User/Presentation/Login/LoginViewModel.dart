@@ -76,7 +76,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
     } on GoogleSignInCanceledException {
       // Cancellation is handled in UserNotifier; catch here as a safety net
     } catch (e) {
-      onErrorEvent?.call('Ошибка входа через Google: ${e.toString()}');
+      onErrorEvent?.call('Не удалось войти через Google. Попробуйте ещё раз.');
     }
   }
 }

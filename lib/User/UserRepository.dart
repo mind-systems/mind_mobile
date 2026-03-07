@@ -76,7 +76,6 @@ class UserRepository {
 
   /// Phase 1: Shows the native Google account picker dialog.
   Future<GoogleSignInAccount> pickGoogleAccount() async {
-    log('[UserRepository] pickGoogleAccount: showing Google account picker');
     try {
       return await _googleSignIn.authenticate();
     } on GoogleSignInException catch (e) {
@@ -89,15 +88,13 @@ class UserRepository {
 
   /// Phase 2: Authenticate with the API using the Google account.
   Future<User> authenticateWithGoogle(GoogleSignInAccount googleUser) async {
-    log('[UserRepository] authenticateWithGoogle: requesting server auth code');
-    final serverAuth = await googleUser.authorizationClient.authorizeServer([]);
+    final serverAuth = await googleUser.authorizationClient.authorizeServer(['email']);
     if (serverAuth == null) {
       throw Exception(
         'Google Sign-In did not return a serverAuthCode. Try signing in again.',
       );
     }
 
-    log('[UserRepository] authenticateWithGoogle: exchanging serverAuthCode with API');
     final request = GoogleAuthRequest(serverAuthCode: serverAuth.serverAuthCode);
     final user = await _api.googleAuth(request);
     await _replaceGuestWithUser(user);
