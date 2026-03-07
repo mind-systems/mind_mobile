@@ -167,7 +167,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
 Manual DI in `App.shared`. Initialization order is fixed:
 
 ```
-Firebase → Drift DB → Dio ApiService → AuthInterceptor
+Google Sign-In → Drift DB → Dio ApiService → AuthInterceptor
 → Repositories → Domain Notifiers → DeeplinkRouter
 → runApp(ProviderScope(overrides: [...]))
 ```

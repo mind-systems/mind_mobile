@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Flutter mindfulness app for iOS and Android. Users create and run guided breathing sessions with animated visual feedback (shape morphing + physics-based motion). Supports Google Sign-In and syncs sessions with a remote API.
+A Flutter mindfulness app for iOS and Android. Users create and run guided breathing sessions with animated visual feedback (shape morphing + physics-based motion). Supports Google Sign-In and passwordless email login, syncs sessions with a remote API.
 
 ## Core Features
 
@@ -10,21 +10,21 @@ A Flutter mindfulness app for iOS and Android. Users create and run guided breat
 - Breathing session list — paginated, synced with remote API, locally persisted via Drift (SQLite)
 - Active session screen — guided breathing phases (inhale / hold / exhale / rest) with a 4-component animation system
 - Session constructor — create custom breathing exercises with configurable steps
-- Authentication — Google Sign-In via Firebase Auth, JWT tokens with auto-refresh via Dio interceptor
+- Authentication — Google Sign-In (server auth code flow) and passwordless email (one-time code), JWT tokens with auto-refresh via Dio interceptor
 - Onboarding — first-run flow for new users
-- Deep link support — Firebase dynamic links via `app_links`
+- Deep link support via `app_links`
 
 ## Tech Stack
 
 - **Language:** Dart 3.3+
 - **Framework:** Flutter 3+ (iOS + Android targets)
-- **Flavors:** `dev` (mind-mobile-dev Firebase project) and `prod` (mind-mobile Firebase project)
+- **Flavors:** `dev` and `prod`
 - **Local Database:** Drift 2.x (SQLite ORM with code generation)
 - **HTTP Client:** Dio 5.x with `AuthInterceptor` for JWT attach + 401 handling
 - **Presentation State:** Riverpod 2.x (`StateNotifier` + `ProviderScope`)
 - **Domain State:** RxDart 0.28 (`BehaviorSubject`, typed event streams)
 - **Navigation:** GoRouter 17.x with coordinator pattern for side-effects
-- **Authentication:** Firebase Auth 6.x + Google Sign-In 7.x
+- **Authentication:** Google Sign-In 7.x (server auth code → backend JWT exchange) + passwordless email OTP
 - **DI:** Manual singleton via `App.shared` (`lib/Core/App.dart`)
 - **Theming:** `AppTheme` (`lib/Core/AppTheme.dart`) — `ThemeMode.system`, dark + light themes
 - **Animations:** Custom `AnimationController` + `CustomPainter` (path morphing, physics-based motion)
@@ -59,7 +59,7 @@ Screen + Coordinator (UI + navigation/side-effects)
 
 | Path | Purpose |
 |------|---------|
-| `lib/Core/` | `App` singleton, Drift database, Dio API client, routing, Firebase, auth interceptor |
+| `lib/Core/` | `App` singleton, Drift database, Dio API client, routing, Google Sign-In init, auth interceptor |
 | `lib/User/` | Auth state, login/logout, `UserNotifier`, `UserRepository`, login/onboarding screens |
 | `lib/BreathModule/` | Full breathing feature — domain, repositories, notifiers, all presentation screens |
 | `lib/Views/` | Shared UI components (snackbar, buttons, text fields) |

@@ -23,9 +23,8 @@ flutter pub run build_runner build
 ```
 
 ### First-time setup
-1. `cp lib/Core/Environment.example.dart lib/Core/Environment.dart` and fill in values
-2. Configure Firebase projects (`mind-mobile-dev` for dev, `mind-mobile` for prod) via FlutterFire CLI
-3. Create Android keystores and configure `keystore.properties`
+1. `cp lib/Core/Environment.example.dart lib/Core/Environment.dart` and fill in values (API URLs, Google client IDs)
+2. Create Android keystores and configure `keystore.properties`
 
 ## Architecture
 
@@ -52,7 +51,7 @@ Screen + Coordinator (UI + navigation/side-effects)
 ### Dependency Injection
 
 DI is manual via `App.shared` singleton (`lib/Core/App.dart`). Initialization order matters:
-1. Firebase → Database (Drift) → API Service (Dio) → Auth Interceptor
+1. Google Sign-In → Database (Drift) → API Service (Dio) → Auth Interceptor
 2. Repositories → Domain Notifiers → Deeplink Router
 3. `runApp(ProviderScope(...))`
 
@@ -91,6 +90,7 @@ GoRouter is configured in `lib/router.dart`. Routes:
 
 ### Authentication flow
 
+- Two login methods: **Google Sign-In** (server auth code flow) and **passwordless email** (one-time code via deep link)
 - `AuthInterceptor` (`lib/Core/Api/AuthInterceptor.dart`) attaches JWT tokens and handles 401 responses
 - On 401, it publishes to `LogoutNotifier` stream, which `GlobalListeners` catches to trigger logout
 - `UserNotifier` manages `AuthenticatedState` / `GuestState`

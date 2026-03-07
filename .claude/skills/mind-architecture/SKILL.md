@@ -625,7 +625,7 @@ class App {
 Initialization order in `App.initialize()`:
 
 ```
-1. Firebase.initializeApp()
+1. GoogleSignIn.instance.initialize()
 2. Database()          — Drift
 3. AuthInterceptor()
 4. ApiService()        — Dio
