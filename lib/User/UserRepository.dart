@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/Core/Api/ApiService.dart';
+import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
 import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
 import 'package:mind/Core/Api/Models/VerifyCodeRequest.dart';
 import 'package:mind/Core/Database/Database.dart';
@@ -88,16 +89,19 @@ class UserRepository {
 
   /// Phase 2: Authenticate with the API using the Google account.
   Future<User> authenticateWithGoogle(GoogleSignInAccount googleUser) async {
-    final googleAuth = googleUser.authentication;
-
-    if (googleAuth.idToken == null) {
-      throw Exception('Google Sign-In did not return an idToken');
+    log('[UserRepository] authenticateWithGoogle: requesting server auth code');
+    final serverAuth = await googleUser.authorizationClient.authorizeServer([]);
+    if (serverAuth == null) {
+      throw Exception(
+        'Google Sign-In did not return a serverAuthCode. Try signing in again.',
+      );
     }
 
-    // TODO: replace Firebase credential flow with direct API auth using googleAuth.idToken
-    throw UnimplementedError(
-      'authenticateWithGoogle is stubbed — Firebase credential flow removed',
-    );
+    log('[UserRepository] authenticateWithGoogle: exchanging serverAuthCode with API');
+    final request = GoogleAuthRequest(serverAuthCode: serverAuth.serverAuthCode);
+    final user = await _api.googleAuth(request);
+    await _replaceGuestWithUser(user);
+    return user;
   }
 
   Future<User> logout(User currentUser) async {

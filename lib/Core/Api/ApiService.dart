@@ -5,6 +5,7 @@ import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/Core/Api/Models/ApiExeption.dart';
+import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
 import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
 import 'package:mind/Core/Api/Models/VerifyCodeRequest.dart';
 import '../Environment.dart';
@@ -45,6 +46,25 @@ class ApiService {
     try {
       final response = await _dio.post(
         '/auth/verify-code',
+        data: request.toJson(),
+      );
+
+      final authHeader = response.headers.value('Authorization');
+      if (authHeader != null) {
+        final token = authHeader.replaceFirst('Bearer ', '');
+        await _storage.write(key: _tokenKey, value: token);
+      }
+
+      return User.fromJson(response.data);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<User> googleAuth(GoogleAuthRequest request) async {
+    try {
+      final response = await _dio.post(
+        '/auth/google',
         data: request.toJson(),
       );
 

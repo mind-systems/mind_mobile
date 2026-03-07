@@ -1,22 +1,24 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
-import 'package:mind/Core/AppTheme.dart';
-import 'package:mind/User/LogoutNotifier.dart';
-import 'package:mind/router.dart';
-
 import 'package:mind/Core/Api/ApiService.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
+import 'package:mind/Core/AppTheme.dart';
 import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/Core/DeeplinkRouter.dart';
-import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
+import 'package:mind/Core/Environment.dart';
 import 'package:mind/Core/GlobalUI/GlobalKeys.dart';
+import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
+import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
 import 'package:mind/Core/GlobalUI/GlobalListeners.dart';
+import 'package:mind/router.dart';
 
 class App {
   static late App shared;
@@ -44,7 +46,12 @@ class App {
   static Future<void> initialize() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    await GoogleSignIn.instance.initialize();
+    await GoogleSignIn.instance.initialize(
+      clientId: Platform.isIOS
+          ? Environment.instance.googleIosClientId
+          : Environment.instance.googleAndroidClientId,
+      serverClientId: Environment.instance.googleServerClientId,
+    );
 
     final db = Database();
     final logoutNotifier = LogoutNotifier();
