@@ -54,18 +54,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: OnboardingScreen.path,
       name: OnboardingScreen.name,
-      builder: (context, state) {
-        final returnPath = state.extra as String? ?? '/';
-        return OnboardingModule.buildOnboarding(context, returnPath: returnPath);
-      },
+      builder: (context, state) => OnboardingModule.buildOnboarding(context),
     ),
     GoRoute(
       path: LoginScreen.path,
       name: LoginScreen.name,
-      builder: (context, state) {
-        final returnPath = state.extra as String? ?? '/';
-        return OnboardingModule.buildLogin(context, returnPath: returnPath);
-      },
+      builder: (context, state) => OnboardingModule.buildLogin(context),
     ),
     GoRoute(
       path: ProfileScreen.path,

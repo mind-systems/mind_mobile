@@ -1,11 +1,27 @@
-Логин в приложении возможен двумя способами: через Google Sign-In и через passwordless email. Оба пути проходят через единую точку доменного состояния — UserNotifier — и завершаются одинаково: эмитом AuthenticatedState в основной поток состояния пользователя.
+# Login Flow
 
-Google Sign-In инициируется прямо с экрана онбординга. Пользователь нажимает кнопку, LoginViewModel вызывает сервис, тот делегирует в UserNotifier, который устанавливает флаг authInProgress и запускает нативный Google Sign-In с последующим запросом к API. Пока операция выполняется, оба экрана — OnboardingScreen и LoginScreen — показывают оверлей через isLoginInProgress, который живёт в LoginState и синхронизируется с UserNotifier.authInProgressStream напрямую в конструкторе LoginViewModel. Никакого ручного управления isLoading для этого пути не нужно — домен сам знает, когда аутентификация начинается и заканчивается.
+Логин возможен двумя способами: Google Sign-In и passwordless email. Оба пути идут через `UserNotifier` и завершаются одинаково: `AuthenticatedState` эмитится в поток, `LoginViewModel` вызывает `onAuthenticatedEvent`, экран попает себя с `AuthResult.success`.
 
-Email работает иначе: пользователь вводит адрес на LoginScreen, нажимает кнопку, и LoginViewModel управляет isLoading вручную, пока выполняется sendPasswordlessSignInLink. Это не аутентификация — это просто отправка кода на почту, поэтому isLoginInProgress здесь не участвует. Сам логин происходит позже, когда пользователь переходит по ссылке из письма. Диплинк прилетает в DeeplinkRouter, передаётся в AuthCodeDeeplinkHandler, который извлекает код из параметров URI и вызывает UserNotifier.completePasswordlessSignIn. С этого момента флаг authInProgress поднимается и поведение становится идентичным Google-пути: оверлей на любом активном экране блокирует UI до завершения операции.
+## Google Sign-In
 
-После успешной аутентификации UserNotifier эмитит AuthenticatedState. LoginViewModel подписан на этот поток и при получении вызывает onAuthenticatedEvent — колбэк, который каждый экран устанавливает в initState. OnboardingScreen и LoginScreen оба реагируют на него навигацией по returnPath. Этот путь обрабатывает в том числе диплинк-логин: пока пользователь находится на любом из экранов входа и переходит по ссылке из письма, экран заблокируется оверлеем и после успеха автоматически перейдёт туда, куда нужно.
+Пользователь нажимает кнопку на `OnboardingScreen`. `UserNotifier` показывает нативный пикер аккаунта — `authInProgress` на этом этапе ещё не поднят. После выбора аккаунта флаг поднимается и начинается запрос к API. Оба экрана (`OnboardingScreen` и `LoginScreen`) показывают оверлей через `isLoginInProgress` из `LoginState`, который синхронизируется с `UserNotifier.authInProgressStream` в конструкторе `LoginViewModel`.
 
-Если аутентификация по диплинку завершается ошибкой, UserNotifier публикует сообщение об ошибке в authErrorStream до того, как пробросить исключение дальше. DeeplinkRouter поглощает исключение (чтобы не крашить стрим), а GlobalListeners, подписанный на authErrorStream, показывает снэкбар. Таким образом пользователь получает обратную связь даже в сценарии, где нет активного UI-обработчика ошибки — экран логина может быть не открыт вовсе.
+## Email (passwordless)
 
-Всё, что касается навигации после логина, живёт в returnPath — строке, которая передаётся при открытии OnboardingScreen или LoginScreen через GoRouter и хранится в LoginState. Роутер не содержит охранников авторизации: экраны входа всегда доступны, а редирект после логина — ответственность экрана, а не роутера.
+Пользователь вводит адрес на `LoginScreen`. `LoginViewModel` управляет `isLoading` вручную — это просто отправка запроса, не аутентификация. Сам логин происходит позже: пользователь переходит по ссылке из письма, диплинк прилетает в `DeeplinkRouter` → `AuthCodeDeeplinkHandler` → `UserNotifier.completePasswordlessSignIn`. С этого момента `authInProgress` поднимается и поведение идентично Google-пути.
+
+## Навигация после логина
+
+`OnboardingScreen` и `LoginScreen` — модальные экраны. Они не навигируют сами — попают себя с `AuthResult.success`. Координатор ждёт результат через `context.push<AuthResult>(...).then(...)` и пушит нужный экран. Подробнее — в [Auth-Gated Navigation](../core/auth-gated-navigation.md).
+
+При email-логине стек может быть `[..., Onboarding, Login]`. Оба экрана слушают один `AuthState` stream и попают себя независимо — стек разматывается корректно.
+
+## Ошибки
+
+Если аутентификация через диплинк падает, `UserNotifier` публикует сообщение в `authErrorStream`, `GlobalListeners` показывает снэкбар — даже если экран входа уже закрыт.
+
+## See Also
+
+- [Auth-Gated Navigation](../core/auth-gated-navigation.md) — паттерн `AuthResult` + `context.push(...).then(...)`
+- [JWT Authentication](jwt-authentication.md) — токены, AuthInterceptor, logout по 401
+- [Global Listeners](../core/global-listeners.md) — как `authErrorStream` доходит до UI

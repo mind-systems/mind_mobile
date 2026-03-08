@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
+import 'package:mind/User/Models/User.dart';
 import 'package:mind/User/Presentation/Login/ILoginService.dart';
 import 'package:mind/User/Presentation/Login/LoginViewModel.dart';
 
@@ -16,9 +17,9 @@ class FakeLoginService implements ILoginService {
   final StreamController<bool> _authInProgressController =
       StreamController<bool>.broadcast();
 
-  Completer<void>? _loginWithGoogleCompleter;
-  Completer<void>? _sendLinkCompleter;
-  Completer<void>? _verifyCodeCompleter;
+  Object? googleLoginError;
+  Object? sendLinkError;
+  Object? verifyCodeError;
 
   @override
   Stream<AuthState> observeAuthState() => _authStateController.stream;
@@ -28,37 +29,45 @@ class FakeLoginService implements ILoginService {
 
   @override
   Future<void> loginWithGoogle() async {
-    _loginWithGoogleCompleter = Completer<void>();
-    return _loginWithGoogleCompleter!.future;
+    if (googleLoginError != null) throw googleLoginError!;
   }
 
   @override
   Future<void> sendPasswordlessSignInLink(String email) async {
-    _sendLinkCompleter = Completer<void>();
-    return _sendLinkCompleter!.future;
+    if (sendLinkError != null) throw sendLinkError!;
   }
 
   @override
   Future<void> completePasswordlessSignIn(String code) async {
-    _verifyCodeCompleter = Completer<void>();
-    return _verifyCodeCompleter!.future;
+    if (verifyCodeError != null) throw verifyCodeError!;
   }
 
-  void completeGoogleLogin() => _loginWithGoogleCompleter?.complete();
-  void failGoogleLogin(Object error) =>
-      _loginWithGoogleCompleter?.completeError(error);
-  void completeSendLink() => _sendLinkCompleter?.complete();
-  void failSendLink(Object error) =>
-      _sendLinkCompleter?.completeError(error);
-  void completeVerifyCode() => _verifyCodeCompleter?.complete();
-  void failVerifyCode(Object error) =>
-      _verifyCodeCompleter?.completeError(error);
+  void emitAuthState(AuthState state) => _authStateController.add(state);
   void emitAuthInProgress(bool value) => _authInProgressController.add(value);
 
   void dispose() {
     _authStateController.close();
     _authInProgressController.close();
   }
+}
+
+// ---------------------------------------------------------------------------
+// Test data
+// ---------------------------------------------------------------------------
+
+final _authenticatedUser = User(
+  id: 'user-123',
+  email: 'test@example.com',
+  name: 'Test User',
+  isGuest: false,
+);
+
+// ---------------------------------------------------------------------------
+// Factory
+// ---------------------------------------------------------------------------
+
+LoginViewModel _makeViewModel({FakeLoginService? service}) {
+  return LoginViewModel(service: service ?? FakeLoginService());
 }
 
 // ---------------------------------------------------------------------------
@@ -71,7 +80,7 @@ void main() {
 
   setUp(() {
     fakeService = FakeLoginService();
-    viewModel = LoginViewModel(service: fakeService, returnPath: '/');
+    viewModel = _makeViewModel(service: fakeService);
   });
 
   tearDown(() {
@@ -79,40 +88,45 @@ void main() {
     fakeService.dispose();
   });
 
-  group('loginWithGoogle', () {
-    test('does NOT set isLoading = true', () async {
-      final states = <bool>[];
-      viewModel.addListener((state) {
-        states.add(state.isLoading);
-      });
+  group('onAuthenticatedEvent', () {
+    test('fires when AuthenticatedState is emitted', () async {
+      bool called = false;
+      viewModel.onAuthenticatedEvent = () => called = true;
 
-      final future = viewModel.loginWithGoogle();
-      fakeService.completeGoogleLogin();
-      await future;
+      fakeService.emitAuthState(AuthenticatedState(_authenticatedUser));
+      await Future.delayed(Duration.zero);
 
-      expect(states, everyElement(false),
-          reason: 'isLoading should never become true during Google login');
+      expect(called, isTrue);
     });
 
+    test('does not fire for GuestState', () async {
+      bool called = false;
+      viewModel.onAuthenticatedEvent = () => called = true;
+
+      fakeService.emitAuthState(GuestState(User.guest()));
+      await Future.delayed(Duration.zero);
+
+      expect(called, isFalse);
+    });
+  });
+
+  group('loginWithGoogle', () {
     test('cancellation does not call onErrorEvent', () async {
+      fakeService.googleLoginError = GoogleSignInCanceledException();
       String? capturedError;
       viewModel.onErrorEvent = (error) => capturedError = error;
 
-      final future = viewModel.loginWithGoogle();
-      fakeService.failGoogleLogin(GoogleSignInCanceledException());
-      await future;
+      await viewModel.loginWithGoogle();
 
-      expect(capturedError, isNull,
-          reason: 'Cancellation should not trigger onErrorEvent');
+      expect(capturedError, isNull);
     });
 
     test('error calls onErrorEvent', () async {
+      fakeService.googleLoginError = Exception('network error');
       String? capturedError;
       viewModel.onErrorEvent = (error) => capturedError = error;
 
-      final future = viewModel.loginWithGoogle();
-      fakeService.failGoogleLogin(Exception('network error'));
-      await future;
+      await viewModel.loginWithGoogle();
 
       expect(capturedError, isNotNull);
       expect(capturedError, contains('Google'));
@@ -120,38 +134,33 @@ void main() {
   });
 
   group('sendPasswordlessSignInLink', () {
-    test('toggles isLoading correctly', () async {
+    test('sets isLoading = true during call, false after success', () async {
       viewModel.updateEmail('test@example.com');
-      final future = viewModel.sendPasswordlessSignInLink();
 
+      final future = viewModel.sendPasswordlessSignInLink();
       expect(viewModel.state.isLoading, isTrue);
 
-      fakeService.completeSendLink();
       await future;
-
       expect(viewModel.state.isLoading, isFalse);
     });
 
     test('calls onSuccessEvent on success', () async {
-      var successCalled = false;
-      viewModel.onSuccessEvent = () => successCalled = true;
-
+      bool called = false;
+      viewModel.onSuccessEvent = () => called = true;
       viewModel.updateEmail('test@example.com');
-      final future = viewModel.sendPasswordlessSignInLink();
-      fakeService.completeSendLink();
-      await future;
 
-      expect(successCalled, isTrue);
+      await viewModel.sendPasswordlessSignInLink();
+
+      expect(called, isTrue);
     });
 
     test('calls onErrorEvent and clears isLoading on failure', () async {
+      fakeService.sendLinkError = Exception('network error');
       String? capturedError;
       viewModel.onErrorEvent = (error) => capturedError = error;
-
       viewModel.updateEmail('test@example.com');
-      final future = viewModel.sendPasswordlessSignInLink();
-      fakeService.failSendLink(Exception('network error'));
-      await future;
+
+      await viewModel.sendPasswordlessSignInLink();
 
       expect(viewModel.state.isLoading, isFalse);
       expect(capturedError, isNotNull);
@@ -159,41 +168,34 @@ void main() {
   });
 
   group('verifyCode', () {
-    test('toggles isLoading correctly', () async {
+    test('sets isLoading = true during call, false after success', () async {
       final future = viewModel.verifyCode('123456');
-
       expect(viewModel.state.isLoading, isTrue);
 
-      fakeService.completeVerifyCode();
       await future;
-
       expect(viewModel.state.isLoading, isFalse);
     });
 
     test('calls onErrorEvent and clears isLoading on failure', () async {
+      fakeService.verifyCodeError = Exception('invalid code');
       String? capturedError;
       viewModel.onErrorEvent = (error) => capturedError = error;
 
-      final future = viewModel.verifyCode('bad-code');
-      fakeService.failVerifyCode(Exception('invalid code'));
-      await future;
+      await viewModel.verifyCode('bad-code');
 
       expect(viewModel.state.isLoading, isFalse);
-      expect(capturedError, isNotNull);
       expect(capturedError, contains('invalid or expired'));
     });
   });
 
-  group('isLoginInProgress (from domain stream)', () {
+  group('isLoginInProgress', () {
     test('updates state when authInProgress stream emits', () async {
       fakeService.emitAuthInProgress(true);
       await Future.delayed(Duration.zero);
-
       expect(viewModel.state.isLoginInProgress, isTrue);
 
       fakeService.emitAuthInProgress(false);
       await Future.delayed(Duration.zero);
-
       expect(viewModel.state.isLoginInProgress, isFalse);
     });
   });

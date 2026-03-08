@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:mind/Views/AlertModule/AppAlert.dart';
+import 'Models/AuthResult.dart';
 import 'LoginScreen.dart';
 import 'LoginViewModel.dart';
 
@@ -27,12 +28,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         AppAlert.show(context, title: 'Ошибка', description: error);
       };
 
-      viewModel.onSuccessEvent = () {
-        context.go(ref.read(loginViewModelProvider).returnPath);
-      };
-
       viewModel.onAuthenticatedEvent = () {
-        context.go(ref.read(loginViewModelProvider).returnPath);
+        context.pop(AuthResult.success);
       };
     });
   }
@@ -98,7 +95,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           tag: 'login_btn',
                           child: GestureDetector(
                             onTap: () {
-                              context.push(LoginScreen.path, extra: loginState.returnPath);
+                              context.push(LoginScreen.path);
                             },
                             child: ColorFiltered(
                               colorFilter: ColorFilter.mode(accent, BlendMode.srcIn),

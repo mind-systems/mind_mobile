@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:mind/Views/AlertModule/AppAlert.dart';
+import 'Models/AuthResult.dart';
 import 'LoginViewModel.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -43,7 +44,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       };
 
       viewModel.onAuthenticatedEvent = () {
-        context.go(ref.read(loginViewModelProvider).returnPath);
+        context.pop(AuthResult.success);
       };
     });
   }

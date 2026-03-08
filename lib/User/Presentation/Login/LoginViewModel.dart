@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
 import 'package:mind/User/Presentation/Login/ILoginService.dart';
-import 'package:mind/User/Presentation/Login/LoginState.dart';
+import 'package:mind/User/Presentation/Login/Models/LoginState.dart';
 
 final loginViewModelProvider = StateNotifierProvider<LoginViewModel, LoginState>((ref) {
   throw UnimplementedError('LoginViewModel должен быть передан через override в LoginModule');
@@ -20,8 +20,8 @@ class LoginViewModel extends StateNotifier<LoginState> {
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<bool>? _authInProgressSubscription;
 
-  LoginViewModel({required this.service, required String returnPath})
-      : super(LoginState(returnPath: returnPath)) {
+  LoginViewModel({required this.service})
+      : super(const LoginState()) {
     _authSubscription = service.observeAuthState().listen((authState) {
       if (authState is AuthenticatedState) {
         onAuthenticatedEvent?.call();

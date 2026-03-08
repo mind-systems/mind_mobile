@@ -7,24 +7,24 @@ import 'package:mind/User/Presentation/Login/LoginViewModel.dart';
 import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
 
 class OnboardingModule {
-  static Widget buildOnboarding(BuildContext context, {required String returnPath}) {
+  static Widget buildOnboarding(BuildContext context) {
     final service = LoginService(userNotifier: App.shared.userNotifier);
     return ProviderScope(
       overrides: [
         loginViewModelProvider.overrideWith(
-          (ref) => LoginViewModel(service: service, returnPath: returnPath),
+          (ref) => LoginViewModel(service: service),
         ),
       ],
       child: const OnboardingScreen(),
     );
   }
 
-  static Widget buildLogin(BuildContext context, {required String returnPath}) {
+  static Widget buildLogin(BuildContext context) {
     final service = LoginService(userNotifier: App.shared.userNotifier);
     return ProviderScope(
       overrides: [
         loginViewModelProvider.overrideWith(
-          (ref) => LoginViewModel(service: service, returnPath: returnPath),
+          (ref) => LoginViewModel(service: service),
         ),
       ],
       child: const LoginScreen(),
