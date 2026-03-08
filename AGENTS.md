@@ -21,7 +21,7 @@ See `.ai-factory/ARCHITECTURE.md` for architecture decisions, folder structure, 
 
 | File | Purpose |
 |------|---------|
-| `lib/Core/App.dart` | DI init (Firebase → DB → API → Auth → Repositories → Notifiers → runApp) + theme wiring |
+| `lib/Core/App.dart` | DI init (Google Sign-In → DB → API → Auth → Repositories → Notifiers → runApp) + theme wiring |
 | `lib/Core/AppTheme.dart` | Canonical theme — `AppTheme.dark()` / `AppTheme.light()`, palette constants |
 | `lib/router.dart` | All GoRouter routes |
 | `lib/Core/Database/Database.dart` | Drift schema — run `flutter pub run build_runner build` after changes |

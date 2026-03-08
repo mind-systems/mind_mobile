@@ -1,163 +1,78 @@
-import 'dart:developer';
-
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:mind/Core/Api/ApiService.dart';
-import 'package:mind/Core/Database/Database.dart';
-import 'package:mind/Core/Environment.dart';
-import 'package:mind/User/Models/AuthRequest.dart';
-import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mind/User/IAuthApi.dart';
+import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
+import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
+import 'package:mind/Core/Api/Models/VerifyCodeRequest.dart';
+import 'package:mind/Core/Database/IUserDao.dart';
+import 'package:mind/User/Infrastructure/IGoogleAuthProvider.dart';
+import 'package:mind/User/Infrastructure/ISecureStorage.dart';
 import 'Models/User.dart';
 
 class UserRepository {
-  final Database _db;
-  final ApiService _api;
+  final IUserDao _userDao;
+  final IAuthApi _api;
+  final IGoogleAuthProvider _google;
+  final ISecureStorage _storage;
 
-  final firebase_auth.FirebaseAuth _firebaseAuth = firebase_auth.FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  static const String _pendingSignInEmailKey = 'pendingSignInEmail';
 
-  static const String _emailForSignInKey = 'emailForSignIn';
-
-  UserRepository({required Database db, required ApiService api}): _api = api, _db = db;
-
-  Future<User?> _getUser() async {
-    return await _db.userDao.getUser();
-  }
-
-  Future<void> _saveUser(User user) async {
-    await _db.userDao.saveUser(user);
-  }
-
-  Future<void> _deleteUser(String userId) async {
-    await _db.userDao.deleteUser(userId);
-  }
+  UserRepository({
+    required IUserDao userDao,
+    required IAuthApi api,
+    required IGoogleAuthProvider google,
+    required ISecureStorage storage,
+  })  : _userDao = userDao,
+        _api = api,
+        _google = google,
+        _storage = storage;
 
   Future<void> _replaceGuestWithUser(User user) async {
-    final existingUser = await _getUser();
+    final existingUser = await _userDao.getUser();
     if (existingUser != null && existingUser.isGuest) {
-      await _deleteUser(existingUser.id);
+      await _userDao.deleteUser(existingUser.id);
     }
-    await _saveUser(user);
+    await _userDao.saveUser(user);
   }
 
   Future<User> loadUser() async {
-    final existingUser = await _getUser();
+    final existingUser = await _userDao.getUser();
 
     if (existingUser != null) {
       return existingUser;
     }
 
     final guest = User.guest();
-    await _saveUser(guest);
+    await _userDao.saveUser(guest);
     return guest;
   }
 
   Future<void> sendPasswordlessSignInLink(String email) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final actionCodeSettings = firebase_auth.ActionCodeSettings(
-      linkDomain: Environment.instance.linkDomain,
-      url: Environment.instance.deeplinkUrl,
-      handleCodeInApp: true,
-      iOSBundleId: Environment.instance.iosBundleId,
-      androidPackageName: Environment.instance.androidPackageName,
-      androidInstallApp: true,
-    );
-
-    try {
-      await _firebaseAuth.sendSignInLinkToEmail(
-        email: email,
-        actionCodeSettings: actionCodeSettings,
-      );
-    } on firebase_auth.FirebaseAuthException {
-      rethrow;
-    }
-
-    await prefs.setString(_emailForSignInKey, email);
-    await prefs.reload();
+    await _api.sendCode(SendCodeRequest(email: email));
+    await _storage.write(_pendingSignInEmailKey, email);
   }
 
-  Future<User> completePasswordlessSignIn(String emailLink) async {
-    final prefs = await SharedPreferences.getInstance();
-    final email = prefs.getString(_emailForSignInKey);
-
-    if (email == null) {
-      throw Exception('Email not found. Please try signing in again.');
+  Future<User> completePasswordlessSignIn(String code) async {
+    final email = await _storage.read(_pendingSignInEmailKey);
+    if (email == null || email.isEmpty) {
+      throw Exception('No pending email found');
     }
-
-    final firebase_auth.UserCredential userCredential;
-    try {
-      userCredential = await _firebaseAuth.signInWithEmailLink(
-        email: email,
-        emailLink: emailLink,
-      );
-    } on firebase_auth.FirebaseAuthException {
-      rethrow;
-    }
-
-    final String? idToken = await userCredential.user?.getIdToken();
-    if (idToken == null) {
-      throw Exception('Failed to get ID token');
-    }
-
-    final firebaseUser = userCredential.user;
-    if (firebaseUser == null) {
-      throw Exception('Failed to get Firebase user');
-    }
-
-    final user = User.fromFirebaseUser(firebaseUser);
-    final authRequest = AuthRequest(token: idToken, user: user);
-    final authenticatedUser = await _api.login(authRequest);
-
-    await _replaceGuestWithUser(authenticatedUser);
-    await prefs.remove(_emailForSignInKey);
-
-    return authenticatedUser;
+    final user = await _api.verifyCode(VerifyCodeRequest(email: email, code: code));
+    await _replaceGuestWithUser(user);
+    await _storage.delete(_pendingSignInEmailKey);
+    return user;
   }
 
-  /// Phase 1: Shows the native Google account picker dialog.
-  Future<GoogleSignInAccount> pickGoogleAccount() async {
-    log('[UserRepository] pickGoogleAccount: showing Google account picker');
-    try {
-      return await _googleSignIn.authenticate();
-    } on GoogleSignInException catch (e) {
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        throw GoogleSignInCanceledException();
-      }
-      rethrow;
-    }
-  }
+  /// Phase 1: shows the native Google account picker. Throws
+  /// [GoogleSignInCanceledException] if the user dismisses the dialog.
+  Future<void> pickGoogleAccount() => _google.pickGoogleAccount();
 
-  /// Phase 2: Firebase auth + API call. Call after the user has picked a Google account.
-  Future<User> authenticateWithGoogle(GoogleSignInAccount googleUser) async {
-    final googleAuth = googleUser.authentication;
-
-    if (googleAuth.idToken == null) {
-      throw Exception('Google Sign-In did not return an idToken');
-    }
-
-    final credential = firebase_auth.GoogleAuthProvider.credential(
-      idToken: googleAuth.idToken,
-    );
-
-    final firebase_auth.UserCredential userCredential;
-    try {
-      userCredential = await _firebaseAuth.signInWithCredential(credential);
-    } on firebase_auth.FirebaseAuthException {
-      rethrow;
-    }
-
-    final user = User.fromFirebaseUser(userCredential.user);
-    final idToken = await userCredential.user?.getIdToken();
-    if (idToken == null) {
-      throw Exception('Failed to get ID token');
-    }
-
-    final authenticatedUser = await _api.login(AuthRequest(token: idToken, user: user));
-    await _replaceGuestWithUser(authenticatedUser);
-    log('[UserRepository] authenticateWithGoogle: auth complete');
-    return authenticatedUser;
+  /// Phase 2: exchanges the picked account for a server auth code and
+  /// authenticates with the backend.
+  Future<User> authenticateWithGoogle() async {
+    final serverAuthCode = await _google.getServerAuthCode();
+    final request = GoogleAuthRequest(serverAuthCode: serverAuthCode);
+    final user = await _api.googleAuth(request);
+    await _replaceGuestWithUser(user);
+    return user;
   }
 
   Future<User> logout(User currentUser) async {
@@ -166,14 +81,13 @@ class UserRepository {
   }
 
   Future<User> clearSession(User currentUser) async {
-    await _firebaseAuth.signOut();
-    await _googleSignIn.signOut();
+    await _google.signOut();
     await _api.clearToken();
 
-    await _deleteUser(currentUser.id);
+    await _userDao.deleteUser(currentUser.id);
 
     final newGuest = User.guest();
-    await _saveUser(newGuest);
+    await _userDao.saveUser(newGuest);
 
     return newGuest;
   }

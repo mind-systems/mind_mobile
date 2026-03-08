@@ -5,11 +5,17 @@ class Environment {
   final String name;
   final String apiBaseUrl;
   final bool isProduction;
+  final String googleIosClientId;
+  final String googleAndroidClientId;
+  final String googleServerClientId;
 
   Environment._({
     required this.name,
     required this.apiBaseUrl,
     required this.isProduction,
+    required this.googleIosClientId,
+    required this.googleAndroidClientId,
+    required this.googleServerClientId,
   });
 
   static late Environment _instance;
@@ -21,6 +27,9 @@ class Environment {
       name: 'Development',
       apiBaseUrl: 'http://localhost:3000', // Замените на ваш devepopment URL
       isProduction: false,
+      googleIosClientId: 'YOUR_DEV_IOS_CLIENT_ID',
+      googleAndroidClientId: 'YOUR_DEV_ANDROID_CLIENT_ID',
+      googleServerClientId: 'YOUR_DEV_SERVER_CLIENT_ID',
     );
   }
 
@@ -30,6 +39,9 @@ class Environment {
       apiBaseUrl:
           'https://your-api.com', // Замените на ваш production URL
       isProduction: true,
+      googleIosClientId: 'YOUR_PROD_IOS_CLIENT_ID',
+      googleAndroidClientId: 'YOUR_PROD_ANDROID_CLIENT_ID',
+      googleServerClientId: 'YOUR_PROD_SERVER_CLIENT_ID',
     );
   }
 }

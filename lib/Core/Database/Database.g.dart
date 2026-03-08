@@ -18,17 +18,6 @@ class $UserRecordTable extends UserRecord
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _firebaseUidMeta = const VerificationMeta(
-    'firebaseUid',
-  );
-  @override
-  late final GeneratedColumn<String> firebaseUid = GeneratedColumn<String>(
-    'firebase_uid',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _emailMeta = const VerificationMeta('email');
   @override
   late final GeneratedColumn<String> email = GeneratedColumn<String>(
@@ -63,7 +52,7 @@ class $UserRecordTable extends UserRecord
     defaultValue: const Constant(true),
   );
   @override
-  List<GeneratedColumn> get $columns => [id, firebaseUid, email, name, isGuest];
+  List<GeneratedColumn> get $columns => [id, email, name, isGuest];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -80,15 +69,6 @@ class $UserRecordTable extends UserRecord
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
       context.missing(_idMeta);
-    }
-    if (data.containsKey('firebase_uid')) {
-      context.handle(
-        _firebaseUidMeta,
-        firebaseUid.isAcceptableOrUnknown(
-          data['firebase_uid']!,
-          _firebaseUidMeta,
-        ),
-      );
     }
     if (data.containsKey('email')) {
       context.handle(
@@ -125,10 +105,6 @@ class $UserRecordTable extends UserRecord
         DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
-      firebaseUid: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}firebase_uid'],
-      ),
       email: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}email'],
@@ -152,13 +128,11 @@ class $UserRecordTable extends UserRecord
 
 class Users extends DataClass implements Insertable<Users> {
   final String id;
-  final String? firebaseUid;
   final String email;
   final String name;
   final bool isGuest;
   const Users({
     required this.id,
-    this.firebaseUid,
     required this.email,
     required this.name,
     required this.isGuest,
@@ -167,9 +141,6 @@ class Users extends DataClass implements Insertable<Users> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
-    if (!nullToAbsent || firebaseUid != null) {
-      map['firebase_uid'] = Variable<String>(firebaseUid);
-    }
     map['email'] = Variable<String>(email);
     map['name'] = Variable<String>(name);
     map['is_guest'] = Variable<bool>(isGuest);
@@ -179,9 +150,6 @@ class Users extends DataClass implements Insertable<Users> {
   UserRecordCompanion toCompanion(bool nullToAbsent) {
     return UserRecordCompanion(
       id: Value(id),
-      firebaseUid: firebaseUid == null && nullToAbsent
-          ? const Value.absent()
-          : Value(firebaseUid),
       email: Value(email),
       name: Value(name),
       isGuest: Value(isGuest),
@@ -195,7 +163,6 @@ class Users extends DataClass implements Insertable<Users> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Users(
       id: serializer.fromJson<String>(json['id']),
-      firebaseUid: serializer.fromJson<String?>(json['firebaseUid']),
       email: serializer.fromJson<String>(json['email']),
       name: serializer.fromJson<String>(json['name']),
       isGuest: serializer.fromJson<bool>(json['isGuest']),
@@ -206,32 +173,22 @@ class Users extends DataClass implements Insertable<Users> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'firebaseUid': serializer.toJson<String?>(firebaseUid),
       'email': serializer.toJson<String>(email),
       'name': serializer.toJson<String>(name),
       'isGuest': serializer.toJson<bool>(isGuest),
     };
   }
 
-  Users copyWith({
-    String? id,
-    Value<String?> firebaseUid = const Value.absent(),
-    String? email,
-    String? name,
-    bool? isGuest,
-  }) => Users(
-    id: id ?? this.id,
-    firebaseUid: firebaseUid.present ? firebaseUid.value : this.firebaseUid,
-    email: email ?? this.email,
-    name: name ?? this.name,
-    isGuest: isGuest ?? this.isGuest,
-  );
+  Users copyWith({String? id, String? email, String? name, bool? isGuest}) =>
+      Users(
+        id: id ?? this.id,
+        email: email ?? this.email,
+        name: name ?? this.name,
+        isGuest: isGuest ?? this.isGuest,
+      );
   Users copyWithCompanion(UserRecordCompanion data) {
     return Users(
       id: data.id.present ? data.id.value : this.id,
-      firebaseUid: data.firebaseUid.present
-          ? data.firebaseUid.value
-          : this.firebaseUid,
       email: data.email.present ? data.email.value : this.email,
       name: data.name.present ? data.name.value : this.name,
       isGuest: data.isGuest.present ? data.isGuest.value : this.isGuest,
@@ -242,7 +199,6 @@ class Users extends DataClass implements Insertable<Users> {
   String toString() {
     return (StringBuffer('Users(')
           ..write('id: $id, ')
-          ..write('firebaseUid: $firebaseUid, ')
           ..write('email: $email, ')
           ..write('name: $name, ')
           ..write('isGuest: $isGuest')
@@ -251,13 +207,12 @@ class Users extends DataClass implements Insertable<Users> {
   }
 
   @override
-  int get hashCode => Object.hash(id, firebaseUid, email, name, isGuest);
+  int get hashCode => Object.hash(id, email, name, isGuest);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Users &&
           other.id == this.id &&
-          other.firebaseUid == this.firebaseUid &&
           other.email == this.email &&
           other.name == this.name &&
           other.isGuest == this.isGuest);
@@ -265,14 +220,12 @@ class Users extends DataClass implements Insertable<Users> {
 
 class UserRecordCompanion extends UpdateCompanion<Users> {
   final Value<String> id;
-  final Value<String?> firebaseUid;
   final Value<String> email;
   final Value<String> name;
   final Value<bool> isGuest;
   final Value<int> rowid;
   const UserRecordCompanion({
     this.id = const Value.absent(),
-    this.firebaseUid = const Value.absent(),
     this.email = const Value.absent(),
     this.name = const Value.absent(),
     this.isGuest = const Value.absent(),
@@ -280,7 +233,6 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
   });
   UserRecordCompanion.insert({
     required String id,
-    this.firebaseUid = const Value.absent(),
     required String email,
     required String name,
     this.isGuest = const Value.absent(),
@@ -290,7 +242,6 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
        name = Value(name);
   static Insertable<Users> custom({
     Expression<String>? id,
-    Expression<String>? firebaseUid,
     Expression<String>? email,
     Expression<String>? name,
     Expression<bool>? isGuest,
@@ -298,7 +249,6 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (firebaseUid != null) 'firebase_uid': firebaseUid,
       if (email != null) 'email': email,
       if (name != null) 'name': name,
       if (isGuest != null) 'is_guest': isGuest,
@@ -308,7 +258,6 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
 
   UserRecordCompanion copyWith({
     Value<String>? id,
-    Value<String?>? firebaseUid,
     Value<String>? email,
     Value<String>? name,
     Value<bool>? isGuest,
@@ -316,7 +265,6 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
   }) {
     return UserRecordCompanion(
       id: id ?? this.id,
-      firebaseUid: firebaseUid ?? this.firebaseUid,
       email: email ?? this.email,
       name: name ?? this.name,
       isGuest: isGuest ?? this.isGuest,
@@ -329,9 +277,6 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
-    }
-    if (firebaseUid.present) {
-      map['firebase_uid'] = Variable<String>(firebaseUid.value);
     }
     if (email.present) {
       map['email'] = Variable<String>(email.value);
@@ -352,7 +297,6 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
   String toString() {
     return (StringBuffer('UserRecordCompanion(')
           ..write('id: $id, ')
-          ..write('firebaseUid: $firebaseUid, ')
           ..write('email: $email, ')
           ..write('name: $name, ')
           ..write('isGuest: $isGuest, ')
@@ -752,7 +696,6 @@ abstract class _$Database extends GeneratedDatabase {
 typedef $$UserRecordTableCreateCompanionBuilder =
     UserRecordCompanion Function({
       required String id,
-      Value<String?> firebaseUid,
       required String email,
       required String name,
       Value<bool> isGuest,
@@ -761,7 +704,6 @@ typedef $$UserRecordTableCreateCompanionBuilder =
 typedef $$UserRecordTableUpdateCompanionBuilder =
     UserRecordCompanion Function({
       Value<String> id,
-      Value<String?> firebaseUid,
       Value<String> email,
       Value<String> name,
       Value<bool> isGuest,
@@ -779,11 +721,6 @@ class $$UserRecordTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get firebaseUid => $composableBuilder(
-    column: $table.firebaseUid,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -817,11 +754,6 @@ class $$UserRecordTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get firebaseUid => $composableBuilder(
-    column: $table.firebaseUid,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get email => $composableBuilder(
     column: $table.email,
     builder: (column) => ColumnOrderings(column),
@@ -849,11 +781,6 @@ class $$UserRecordTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get firebaseUid => $composableBuilder(
-    column: $table.firebaseUid,
-    builder: (column) => column,
-  );
 
   GeneratedColumn<String> get email =>
       $composableBuilder(column: $table.email, builder: (column) => column);
@@ -894,14 +821,12 @@ class $$UserRecordTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
-                Value<String?> firebaseUid = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<bool> isGuest = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserRecordCompanion(
                 id: id,
-                firebaseUid: firebaseUid,
                 email: email,
                 name: name,
                 isGuest: isGuest,
@@ -910,14 +835,12 @@ class $$UserRecordTableTableManager
           createCompanionCallback:
               ({
                 required String id,
-                Value<String?> firebaseUid = const Value.absent(),
                 required String email,
                 required String name,
                 Value<bool> isGuest = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserRecordCompanion.insert(
                 id: id,
-                firebaseUid: firebaseUid,
                 email: email,
                 name: name,
                 isGuest: isGuest,

@@ -1,8 +1,8 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:rxdart/rxdart.dart';
 
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
@@ -42,17 +42,13 @@ class UserNotifier {
   User get currentUser => _subject.value.user;
 
   Future<void> sendPasswordlessSignInLink(String email) async {
-    try {
-      await repository.sendPasswordlessSignInLink(email);
-    } catch (e) {
-      rethrow;
-    }
+    await repository.sendPasswordlessSignInLink(email);
   }
 
-  Future<void> completePasswordlessSignIn(String emailLink) async {
+  Future<void> completePasswordlessSignIn(String code) async {
     _authInProgressSubject.add(true);
     try {
-      final authenticatedUser = await repository.completePasswordlessSignIn(emailLink);
+      final authenticatedUser = await repository.completePasswordlessSignIn(code);
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e) {
       _authErrorSubject.add(e.toString());
@@ -64,21 +60,21 @@ class UserNotifier {
 
   Future<void> loginWithGoogle() async {
     // Phase 1: show Google account picker — do not block UI yet
-    final GoogleSignInAccount googleUser;
     try {
-      googleUser = await repository.pickGoogleAccount();
+      await repository.pickGoogleAccount();
     } on GoogleSignInCanceledException {
       // User cancelled — nothing to do, don't touch the UI
       return;
     }
 
-    // Phase 2: user picked an account — now block UI for Firebase + API
+    // Phase 2: user picked an account — now block UI for server auth
     _authInProgressSubject.add(true);
     try {
-      final authenticatedUser = await repository.authenticateWithGoogle(googleUser);
+      final authenticatedUser = await repository.authenticateWithGoogle();
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e) {
-      _authErrorSubject.add(e.toString());
+      log('[UserNotifier] loginWithGoogle error: $e');
+      _authErrorSubject.add('Не удалось войти через Google');
     } finally {
       _authInProgressSubject.add(false);
     }

@@ -53,7 +53,19 @@ class LoginViewModel extends StateNotifier<LoginState> {
       onSuccessEvent?.call();
     } catch (e) {
       state = state.copyWith(isLoading: false);
-      onErrorEvent?.call('Ошибка отправки ссылки: ${e.toString()}');
+      onErrorEvent?.call('Ошибка отправки кода: ${e.toString()}');
+    }
+  }
+
+  Future<void> verifyCode(String code) async {
+    state = state.copyWith(isLoading: true);
+
+    try {
+      await service.completePasswordlessSignIn(code);
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false);
+      onErrorEvent?.call('Code is invalid or expired');
     }
   }
 
@@ -64,7 +76,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
     } on GoogleSignInCanceledException {
       // Cancellation is handled in UserNotifier; catch here as a safety net
     } catch (e) {
-      onErrorEvent?.call('Ошибка входа через Google: ${e.toString()}');
+      onErrorEvent?.call('Не удалось войти через Google. Попробуйте ещё раз.');
     }
   }
 }

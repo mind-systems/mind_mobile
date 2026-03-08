@@ -68,7 +68,7 @@ Screen         → ViewModel, Coordinator interface
 ViewModel      → Service interface, Coordinator interface (no domain types)
 Service (impl) → Notifier, domain models (converts to DTOs)
 Notifier       → Repository (pure Dart only)
-Repository     → Drift DAOs, Dio ApiService
+Repository     → local DB (DAO), remote API (HTTP client)
 ```
 
 - ✅ ViewModel depends on Service **interface** (declared in the module)
@@ -167,14 +167,14 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
 Manual DI in `App.shared`. Initialization order is fixed:
 
 ```
-Firebase → Drift DB → Dio ApiService → AuthInterceptor
+Google Sign-In → Database → HTTP client → Auth Interceptor
 → Repositories → Domain Notifiers → DeeplinkRouter
 → runApp(ProviderScope(overrides: [...]))
 ```
 
 The Riverpod provider is declared with `throw UnimplementedError` and overridden at the `ProviderScope` level:
 
-```dart
+```text
 final breathSessionListViewModelProvider =
     StateNotifierProvider<BreathSessionListViewModel, BreathSessionListState>(
       (ref) => throw UnimplementedError('Must be overridden at ProviderScope'),
@@ -237,3 +237,4 @@ When adding a new feature `FooModule`:
 - ❌ Declaring the Service interface in the domain layer (it belongs in the module)
 - ❌ Adding Riverpod `ref` or Flutter imports to a Notifier or Repository
 - ❌ Skipping the DTO conversion and passing domain models directly to the ViewModel
+- ❌ Passing inline maps/primitives as API request bodies — always use a DTO class in `lib/Core/Api/Models/` with `toJson()` (see `SendCodeRequest`, `VerifyCodeRequest`, `GoogleAuthRequest`).

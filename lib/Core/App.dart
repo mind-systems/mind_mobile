@@ -1,29 +1,34 @@
-import 'package:firebase_core/firebase_core.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
-import 'package:mind/Core/AppTheme.dart';
-import 'package:mind/User/LogoutNotifier.dart';
-import 'package:mind/router.dart';
-
-import 'package:mind/Core/Api/ApiService.dart';
+import 'package:mind/Core/Api/AuthApi.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
+import 'package:mind/Core/Api/BreathSessionApi.dart';
+import 'package:mind/Core/Api/HttpClient.dart';
+import 'package:mind/Core/AppTheme.dart';
 import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/Core/DeeplinkRouter.dart';
-import 'package:mind/Core/Handlers/FirebaseDeeplinkHandler.dart';
+import 'package:mind/Core/Environment.dart';
 import 'package:mind/Core/GlobalUI/GlobalKeys.dart';
+import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
+import 'package:mind/User/Infrastructure/GoogleAuthProvider.dart';
+import 'package:mind/User/Infrastructure/SecureStorage.dart';
+import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
 import 'package:mind/Core/GlobalUI/GlobalListeners.dart';
+import 'package:mind/router.dart';
 
 class App {
   static late App shared;
 
   final Database db;
-  final ApiService api;
+  final HttpClient httpClient;
   final LogoutNotifier logoutNotifier;
   final UserRepository userRepository;
   final BreathSessionRepository breathSessionRepository;
@@ -33,7 +38,7 @@ class App {
 
   App._({
     required this.db,
-    required this.api,
+    required this.httpClient,
     required this.logoutNotifier,
     required this.userRepository,
     required this.breathSessionRepository,
@@ -42,31 +47,37 @@ class App {
     required this.deeplinkRouter,
   });
 
-  static Future<void> initialize({required FirebaseOptions firebaseOptions}) async {
+  static Future<void> initialize() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    await Firebase.initializeApp(options: firebaseOptions);
-    await GoogleSignIn.instance.initialize();
+    await GoogleSignIn.instance.initialize(
+      clientId: Platform.isIOS
+          ? Environment.instance.googleIosClientId
+          : Environment.instance.googleAndroidClientId,
+      serverClientId: Environment.instance.googleServerClientId,
+    );
 
     final db = Database();
     final logoutNotifier = LogoutNotifier();
 
     final authInterceptor = AuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
-    final api = ApiService(authInterceptor: authInterceptor);
+    final httpClient = HttpClient(authInterceptor: authInterceptor);
+    final authApi = AuthApi(httpClient);
+    final breathSessionApi = BreathSessionApi(httpClient);
 
-    final userRepository = UserRepository(db: db, api: api);
-    final breathSessionRepository = BreathSessionRepository(db: db, api: api);
+    final userRepository = UserRepository(userDao: db.userDao, api: authApi, google: GoogleAuthProvider(), storage: SecureStorage());
+    final breathSessionRepository = BreathSessionRepository(dao: db.breathSessionDao, api: breathSessionApi);
 
     final initialUser = await userRepository.loadUser();
     final userNotifier = UserNotifier(repository: userRepository, logoutNotifier: logoutNotifier, initialUser: initialUser);
     final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository, userNotifier: userNotifier);
 
-    final firebaseHandler = FirebaseDeeplinkHandler(userNotifier: userNotifier);
-    final deeplinkRouter = DeeplinkRouter(firebaseHandler: firebaseHandler);
+    final authCodeHandler = AuthCodeDeeplinkHandler(userNotifier: userNotifier);
+    final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler);
 
     shared = App._(
       db: db,
-      api: api,
+      httpClient: httpClient,
       logoutNotifier: logoutNotifier,
       userRepository: userRepository,
       breathSessionRepository: breathSessionRepository,

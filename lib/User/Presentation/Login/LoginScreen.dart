@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-import 'package:mind/Core/App.dart';
 import 'package:mind/Views/AlertModule/AppAlert.dart';
 import 'LoginViewModel.dart';
 
@@ -16,6 +15,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
+  bool _isAlertOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -28,15 +29,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       };
 
       viewModel.onSuccessEvent = () async {
+        _isAlertOpen = true;
         final result = await AppAlert.showWithInput(
           context,
           title: 'Check your email',
           description: 'We sent you a one-time sign-in link. Click the link on the same device.',
-          // todo revert before release. same in DeeplinkRouter
-          inputHint: 'Paste sign-in link (ios debug)',
+          inputHint: 'Or paste your code here',
         );
+        _isAlertOpen = false;
         if (result.confirmed && result.text != null && result.text!.isNotEmpty) {
-          await App.shared.deeplinkRouter.handleLink(result.text!);
+          await viewModel.verifyCode(result.text!.trim());
         }
       };
 
@@ -49,6 +51,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginViewModelProvider);
+
+    if (loginState.isLoginInProgress && _isAlertOpen) {
+      _isAlertOpen = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context, rootNavigator: true).pop();
+      });
+    }
 
     return Scaffold(
       body: LoadingOverlay(
