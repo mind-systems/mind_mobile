@@ -1,7 +1,7 @@
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
-import 'package:mind/Core/Api/IBreathSessionApi.dart';
+import 'package:mind/BreathModule/Core/IBreathSessionApi.dart';
 
 class BreathSessionApi implements IBreathSessionApi {
   final HttpClient _http;

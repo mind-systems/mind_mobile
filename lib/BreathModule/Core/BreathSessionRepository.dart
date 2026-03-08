@@ -1,4 +1,4 @@
-import 'package:mind/Core/Api/IBreathSessionApi.dart';
+import 'package:mind/BreathModule/Core/IBreathSessionApi.dart';
 import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 

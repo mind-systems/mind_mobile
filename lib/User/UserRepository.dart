@@ -1,4 +1,4 @@
-import 'package:mind/Core/Api/IAuthApi.dart';
+import 'package:mind/User/IAuthApi.dart';
 import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
 import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
 import 'package:mind/Core/Api/Models/VerifyCodeRequest.dart';
