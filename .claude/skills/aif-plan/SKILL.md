@@ -34,31 +34,18 @@ Use this context when:
 - Planning file structure (follow project conventions)
 - **Follow architecture guidelines from `.ai-factory/ARCHITECTURE.md` when planning file structure and task organization**
 
-### Step 0.1: Ensure Git Repository
-
-```bash
-git rev-parse --is-inside-work-tree 2>/dev/null || git init
-```
-
-### Step 0.2: Parse Arguments & Select Mode
+### Step 0.1: Parse Arguments & Select Mode
 
 Extract flags and mode from `$ARGUMENTS`:
 
 ```
---parallel  → Enable parallel worktree mode (full mode only)
---list      → Show all active worktrees, then STOP
---cleanup <branch> → Remove worktree and optionally delete branch, then STOP
-fast        → Fast mode (first word)
-full        → Full mode (first word)
+fast → Fast mode (first word)
+full → Full mode (first word)
 ```
 
 **Parsing rules:**
-- Strip `--parallel`, `--list`, `--cleanup <branch>`, `fast`, `full` from `$ARGUMENTS`
+- Strip `fast`, `full` from `$ARGUMENTS`
 - Remaining text becomes the description
-- `--list` and `--cleanup` execute immediately and **STOP** (do NOT continue to Step 1+)
-
-**If `--list` is present**, jump to [--list Subcommand](#--list-subcommand).
-**If `--cleanup` is present**, jump to [--cleanup Subcommand](#--cleanup-subcommand).
 
 **Mode selection:**
 - `fast` keyword → fast mode
@@ -149,82 +136,6 @@ AskUserQuestion: Before we start, a few questions:
 - Missing logs during development wastes debugging time
 
 Store all preferences — they will be used in the plan file and passed to `/aif-implement`.
-
-### Step 1.4: Create Branch or Worktree
-
-**If `--parallel` flag is set → create worktree:**
-
-#### Worktree Creation
-
-```bash
-DIRNAME=$(basename "$(pwd)")
-git branch <branch-name> main
-git worktree add ../${DIRNAME}-<branch-name-with-hyphens> <branch-name>
-```
-
-Convert branch name for directory: replace `/` with `-`.
-
-**Example:**
-```
-Project dir: my-project
-Branch: feature/user-auth
-Worktree: ../my-project-feature-user-auth
-```
-
-Copy context files so the worktree has full AI context:
-
-```bash
-WORKTREE="../${DIRNAME}-<branch-name-with-hyphens>"
-
-# Project context
-cp .ai-factory/DESCRIPTION.md "${WORKTREE}/.ai-factory/DESCRIPTION.md" 2>/dev/null
-cp .ai-factory/ARCHITECTURE.md "${WORKTREE}/.ai-factory/ARCHITECTURE.md" 2>/dev/null
-
-# Past lessons / patches
-cp -r .ai-factory/patches/ "${WORKTREE}/.ai-factory/patches/" 2>/dev/null
-
-# Claude Code skills + settings
-cp -r .claude/ "${WORKTREE}/.claude/" 2>/dev/null
-
-# CLAUDE.md only if untracked
-if [ -f CLAUDE.md ] && ! git ls-files --error-unmatch CLAUDE.md &>/dev/null; then
-  cp CLAUDE.md "${WORKTREE}/CLAUDE.md"
-fi
-```
-
-Create changes directory and switch:
-
-```bash
-mkdir -p "${WORKTREE}/.ai-factory/plans"
-cd "${WORKTREE}"
-```
-
-Display confirmation:
-
-```
-Parallel worktree created!
-
-  Branch:    <branch-name>
-  Directory: <worktree-path>
-
-To manage worktrees later:
-  /aif-plan --list
-  /aif-plan --cleanup <branch-name>
-```
-
-Continue to Step 2.
-
-**If no `--parallel` → create branch normally:**
-
-```bash
-git checkout main
-git pull origin main
-git checkout -b <branch-name>
-```
-
-If branch already exists, ask user:
-- Switch to existing branch?
-- Create with different name?
 
 ---
 
@@ -343,19 +254,7 @@ Use the canonical template in `references/TASK-FORMAT.md` (Plan File Template).
 
 ### Step 6: Next Steps
 
-**Full mode + parallel (`--parallel`):** Automatically invoke `/aif-implement` — the whole point of parallel is autonomous end-to-end execution in an isolated worktree.
-
-```
-/aif-implement
-
-CONTEXT FROM /aif-plan:
-- Plan file: .ai-factory/plans/<branch-name>.md
-- Testing: yes/no
-- Logging: verbose/standard/minimal
-- Docs: yes/no
-```
-
-**Full mode normal:** STOP after planning. The user reviews the plan and decides when to implement.
+**Full mode:** STOP after planning. The user reviews the plan and decides when to implement.
 
 ```
 Plan created with [N] tasks.
@@ -393,52 +292,6 @@ Options:
 2. /compact — Compress history
 3. Continue as is
 ```
-
----
-
-## --list Subcommand
-
-When `--list` is passed, show all active worktrees and their feature status. Then **STOP**.
-
-```bash
-git worktree list
-```
-
-For each worktree path:
-1. Check if `<worktree>/.ai-factory/plans/` contains any plan files
-2. Show name and whether it looks complete (has tasks) or is still in progress
-
-**Output format:**
-```
-Active worktrees:
-
-  /path/to/my-project          (main)        <- you are here
-  /path/to/my-project-feature-user-auth  (feature/user-auth)  -> Plan: feature-user-auth.md
-  /path/to/my-project-fix-cart-bug       (fix/cart-bug)        -> No plan yet
-```
-
-## --cleanup Subcommand
-
-When `--cleanup <branch>` is passed, remove the worktree and optionally delete the branch. Then **STOP**.
-
-```bash
-DIRNAME=$(basename "$(pwd)")
-BRANCH_DIR=$(echo "<branch>" | tr '/' '-')
-WORKTREE="../${DIRNAME}-${BRANCH_DIR}"
-
-git worktree remove "${WORKTREE}"
-git branch -d <branch>  # -d (not -D) will fail if unmerged, which is safe
-```
-
-If `git branch -d` fails because the branch is unmerged:
-
-```
-Branch <branch> has unmerged changes.
-To force-delete: git branch -D <branch>
-To merge first: git checkout main && git merge <branch>
-```
-
-If the worktree path doesn't exist, check `git worktree list` and suggest the correct path.
 
 ---
 

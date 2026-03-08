@@ -278,9 +278,6 @@ git filter-branch --force --index-filter \
 bfg --delete-files .env
 bfg --replace-text passwords.txt
 
-# Force push (coordinate with team!)
-git push origin --force --all
-
 # Rotate ALL exposed secrets immediately!
 ```
 

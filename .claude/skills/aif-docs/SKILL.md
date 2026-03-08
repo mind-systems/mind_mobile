@@ -446,7 +446,7 @@ These originals are no longer needed. Delete them?
 **When deleting:**
 1. Verify one more time that the target docs/ file contains all content from the original
 2. Delete the root file
-3. Run `git status` to show what was deleted — user can restore with `git checkout` if needed
+3. Run `git status` to show what was deleted
 
 **Do NOT auto-delete.** Always ask. The user may want to keep originals temporarily for reference or diff comparison.
 
