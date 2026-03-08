@@ -42,6 +42,40 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
     // TODO: persist name change via service
   }
 
+  void onThemeChanged(String theme) {
+    // TODO: persist theme change via service
+  }
+
+  void onLanguageChanged(String language) {
+    // TODO: persist language change via service
+  }
+
+  void onThemeTap() {
+    // todo load from somewhere
+    final options = ['System', 'Dark', 'Light'];
+    final currentIndex = options.indexOf(state.themeLabel).clamp(0, options.length - 1);
+    coordinator.showPicker(
+      title: 'Theme',
+      options: options,
+      selectedIndex: currentIndex,
+      onSelect: (index) {
+        state = state.copyWith(themeLabel: options[index]);
+      },
+    );
+  }
+
+  void onLanguageTap() {
+    coordinator.showPicker(
+      title: 'Language',
+      // todo load from somewhere
+      options: ['English', 'Русский'],
+      selectedIndex: 0,
+      onSelect: (index) {
+        state = state.copyWith(languageLabel: 'English');
+      },
+    );
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();

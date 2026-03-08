@@ -4,6 +4,7 @@ import 'package:mind/ProfileModule/Presentation/ProfileScreen/ProfileViewModel.d
 import 'package:mind/Views/AlertModule/AppAlert.dart';
 import 'package:mind/Views/SettingsCells/SettingsCell.dart';
 import 'package:mind/Views/SettingsCells/SettingsEditableCell.dart';
+import 'package:mind/Views/SettingsCells/SettingsDropdownCell.dart';
 import 'package:mind/Views/SettingsCells/SettingsSection.dart';
 import 'package:mind/Views/SettingsCells/SettingsSectionHeader.dart';
 
@@ -33,6 +34,21 @@ class ProfileScreen extends ConsumerWidget {
                   title: 'Name',
                   value: state.userName,
                   onSave: viewModel.onNameChanged,
+                ),
+              ],
+            ),
+            const SettingsSectionHeader(title: 'Appearance'),
+            SettingsSection(
+              children: [
+                SettingsDropdownCell(
+                  title: 'Language',
+                  value: state.languageLabel,
+                  onTap: viewModel.onLanguageTap,
+                ),
+                SettingsDropdownCell(
+                  title: 'Theme',
+                  value: state.themeLabel,
+                  onTap: viewModel.onThemeTap,
                 ),
               ],
             ),
