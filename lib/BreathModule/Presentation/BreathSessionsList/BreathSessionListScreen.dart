@@ -66,7 +66,7 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
   }
 
   Future<void> _onRefresh() async {
-    await ref.read(breathSessionListViewModelProvider.notifier).sync();
+    await ref.read(breathSessionListViewModelProvider.notifier).refresh();
   }
 
   void _onSessionTap(String sessionId) {

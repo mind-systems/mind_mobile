@@ -19,14 +19,18 @@ class BreathSessionRepository {
   }
 
   Future<List<BreathSession>> fetch(int page, int pageSize) async {
-    // from repo if empty api
-    final sessions = await _dao.getSessions();
-    if (sessions.isEmpty) {
-      final sessions = await _api.fetchAll(page, pageSize);
-      await _dao.saveSessions(sessions);
-      return sessions;
+    final offset = page * pageSize;
+    final daoPage = await _dao.getSessions(limit: pageSize, offset: offset);
+
+    if (daoPage.length == pageSize) {
+      return daoPage;
     }
-    return sessions;
+
+    // DAO вернул меньше чем pageSize — идём в API
+    // API использует 1-based нумерацию страниц
+    final apiSessions = await _api.fetchAll(page + 1, pageSize);
+    await _dao.saveSessions(apiSessions);
+    return apiSessions;
   }
 
   Future<void> save(BreathSession session) async {

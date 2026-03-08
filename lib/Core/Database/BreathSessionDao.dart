@@ -74,9 +74,10 @@ class BreathSessionDao extends DatabaseAccessor<Database>
   BreathSessionDao(super.db);
 
   @override
-  Future<List<BreathSession>> getSessions() async {
-    final rows = await select(breathSessions).get();
-
+  Future<List<BreathSession>> getSessions({int? limit, int? offset}) async {
+    final query = select(breathSessions);
+    if (limit != null) query.limit(limit, offset: offset);
+    final rows = await query.get();
     return rows.map(_mapRowToDomain).toList();
   }
 
