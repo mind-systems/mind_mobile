@@ -69,21 +69,25 @@ class BreathSessions extends Table {
 
 @DriftAccessor(tables: [BreathSessions])
 class BreathSessionDao extends DatabaseAccessor<Database>
-    with _$BreathSessionDaoMixin {
+    with _$BreathSessionDaoMixin
+    implements IBreathSessionDao {
   BreathSessionDao(super.db);
 
+  @override
   Future<List<BreathSession>> getSessions() async {
     final rows = await select(breathSessions).get();
 
     return rows.map(_mapRowToDomain).toList();
   }
 
+  @override
   Future<void> saveSession(BreathSession session) async {
     await into(breathSessions).insertOnConflictUpdate(
       _mapDomainToCompanion(session),
     );
   }
 
+  @override
   Future<void> saveSessions(List<BreathSession> sessions) async {
     for (final session in sessions) {
       await into(breathSessions).insertOnConflictUpdate(
@@ -92,14 +96,17 @@ class BreathSessionDao extends DatabaseAccessor<Database>
     }
   }
 
+  @override
   Future<void> deleteSession(String id) async {
     await (delete(breathSessions)..where((tbl) => tbl.id.equals(id))).go();
   }
 
+  @override
   Future<void> deleteAllSessions() async {
     await delete(breathSessions).go();
   }
 
+  @override
   Future<BreathSession?> getSessionById(String id) async {
     final row = await (select(breathSessions)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
     if (row == null) {

@@ -66,7 +66,7 @@ class App {
     final breathSessionApi = BreathSessionApi(httpClient);
 
     final userRepository = UserRepository(userDao: db.userDao, api: authApi, google: GoogleAuthProvider(), storage: SecureStorage());
-    final breathSessionRepository = BreathSessionRepository(db: db, api: breathSessionApi);
+    final breathSessionRepository = BreathSessionRepository(dao: db.breathSessionDao, api: breathSessionApi);
 
     final initialUser = await userRepository.loadUser();
     final userNotifier = UserNotifier(repository: userRepository, logoutNotifier: logoutNotifier, initialUser: initialUser);

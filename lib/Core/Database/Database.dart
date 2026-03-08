@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 
 import 'package:mind/Core/Database/IUserDao.dart';
+import 'package:mind/Core/Database/IBreathSessionDao.dart';
 import 'package:mind/User/Models/User.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';

@@ -1,13 +1,51 @@
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Core/IBreathSessionApi.dart';
-import 'package:mind/Core/Database/Database.dart';
+import 'package:mind/Core/Database/IBreathSessionDao.dart';
 
 // ---------------------------------------------------------------------------
-// Fake
+// Fakes
 // ---------------------------------------------------------------------------
+
+class FakeBreathSessionDao implements IBreathSessionDao {
+  final List<BreathSession> _sessions = [];
+
+  @override
+  Future<List<BreathSession>> getSessions() async => List.unmodifiable(_sessions);
+
+  @override
+  Future<BreathSession?> getSessionById(String id) async {
+    try {
+      return _sessions.firstWhere((s) => s.id == id);
+    } on StateError {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> saveSession(BreathSession session) async {
+    _sessions.removeWhere((s) => s.id == session.id);
+    _sessions.add(session);
+  }
+
+  @override
+  Future<void> saveSessions(List<BreathSession> sessions) async {
+    for (final session in sessions) {
+      await saveSession(session);
+    }
+  }
+
+  @override
+  Future<void> deleteSession(String id) async {
+    _sessions.removeWhere((s) => s.id == id);
+  }
+
+  @override
+  Future<void> deleteAllSessions() async {
+    _sessions.clear();
+  }
+}
 
 class FakeBreathSessionApi implements IBreathSessionApi {
   final List<BreathSession> _sessions;
@@ -36,8 +74,6 @@ class FakeBreathSessionApi implements IBreathSessionApi {
 
   @override
   Future<BreathSession> fetchById(String id) async {
-    // firstWhere throws StateError if not found — real impl would throw ApiException.
-    // Tests always seed the session before calling fetchById, so this is safe.
     return _sessions.firstWhere((s) => s.id == id);
   }
 
@@ -63,13 +99,14 @@ BreathSession _makeSession(String id) => BreathSession(
 // Helpers
 // ---------------------------------------------------------------------------
 
-Database _inMemoryDb() => Database(NativeDatabase.memory());
-
 BreathSessionRepository _makeRepo({
-  required Database db,
+  FakeBreathSessionDao? dao,
   FakeBreathSessionApi? api,
 }) {
-  return BreathSessionRepository(db: db, api: api ?? FakeBreathSessionApi());
+  return BreathSessionRepository(
+    dao: dao ?? FakeBreathSessionDao(),
+    api: api ?? FakeBreathSessionApi(),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -79,12 +116,12 @@ BreathSessionRepository _makeRepo({
 void main() {
   group('fetchById', () {
     test('returns cached DB session without calling API', () async {
-      final db = _inMemoryDb();
+      final dao = FakeBreathSessionDao();
       final session = _makeSession('s1');
-      await db.breathSessionDao.saveSession(session);
+      await dao.saveSession(session);
 
       final api = FakeBreathSessionApi();
-      final repo = _makeRepo(db: db, api: api);
+      final repo = _makeRepo(dao: dao, api: api);
 
       final result = await repo.fetchById('s1');
 
@@ -92,10 +129,9 @@ void main() {
     });
 
     test('falls back to API when session not in DB', () async {
-      final db = _inMemoryDb();
       final session = _makeSession('s2');
       final api = FakeBreathSessionApi(sessions: [session]);
-      final repo = _makeRepo(db: db, api: api);
+      final repo = _makeRepo(api: api);
 
       final result = await repo.fetchById('s2');
 
@@ -105,12 +141,12 @@ void main() {
 
   group('fetch', () {
     test('returns DB sessions when non-empty', () async {
-      final db = _inMemoryDb();
+      final dao = FakeBreathSessionDao();
       final session = _makeSession('s3');
-      await db.breathSessionDao.saveSession(session);
+      await dao.saveSession(session);
 
       final api = FakeBreathSessionApi();
-      final repo = _makeRepo(db: db, api: api);
+      final repo = _makeRepo(dao: dao, api: api);
 
       final results = await repo.fetch(1, 10);
 
@@ -119,28 +155,28 @@ void main() {
     });
 
     test('fetches from API and caches when DB empty', () async {
-      final db = _inMemoryDb();
+      final dao = FakeBreathSessionDao();
       final session = _makeSession('s4');
       final api = FakeBreathSessionApi(sessions: [session]);
-      final repo = _makeRepo(db: db, api: api);
+      final repo = _makeRepo(dao: dao, api: api);
 
       final results = await repo.fetch(1, 10);
 
       expect(results.length, 1);
       expect(results.first.id, 's4');
 
-      // Verify cached in DB
-      final cached = await db.breathSessionDao.getSessions();
+      // Verify cached in DAO
+      final cached = await dao.getSessions();
       expect(cached.length, 1);
       expect(cached.first.id, 's4');
     });
   });
 
   group('save', () {
-    test('calls api.save and persists to DB', () async {
-      final db = _inMemoryDb();
+    test('calls api.save and persists to DAO', () async {
+      final dao = FakeBreathSessionDao();
       final api = FakeBreathSessionApi();
-      final repo = _makeRepo(db: db, api: api);
+      final repo = _makeRepo(dao: dao, api: api);
       final session = _makeSession('s5');
 
       await repo.save(session);
@@ -148,26 +184,26 @@ void main() {
       expect(api.saveCalled, true);
       expect(api.lastSavedId, 's5');
 
-      final stored = await db.breathSessionDao.getSessionById('s5');
+      final stored = await dao.getSessionById('s5');
       expect(stored, isNotNull);
       expect(stored!.id, 's5');
     });
   });
 
   group('delete', () {
-    test('calls api.delete and removes from DB', () async {
-      final db = _inMemoryDb();
+    test('calls api.delete and removes from DAO', () async {
+      final dao = FakeBreathSessionDao();
       final session = _makeSession('s6');
-      await db.breathSessionDao.saveSession(session);
+      await dao.saveSession(session);
       final api = FakeBreathSessionApi(sessions: [session]);
-      final repo = _makeRepo(db: db, api: api);
+      final repo = _makeRepo(dao: dao, api: api);
 
       await repo.delete('s6');
 
       expect(api.deleteCalled, true);
       expect(api.lastDeletedId, 's6');
 
-      final stored = await db.breathSessionDao.getSessionById('s6');
+      final stored = await dao.getSessionById('s6');
       expect(stored, isNull);
     });
   });
