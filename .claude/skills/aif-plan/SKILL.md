@@ -9,7 +9,7 @@ disable-model-invocation: false
 # Plan - Implementation Planning
 
 Create an implementation plan for a feature or task. Two modes:
-- **Fast** — quick plan, no git branch, saves to `.ai-factory/PLAN.md`
+- **Fast** — quick plan, no git branch, saves to `.ai-factory/plans/<descriptive-name>.md`
 - **Full** — creates git branch, asks preferences, saves to `.ai-factory/plans/<branch>.md`
 
 ## Workflow
