@@ -10,7 +10,7 @@ import 'package:mind/ProfileModule/Presentation/ProfileScreen/ProfileScreen.dart
 import 'package:mind/ProfileModule/ProfileModule.dart';
 import 'package:mind/User/Presentation/Login/LoginScreen.dart';
 import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
-import 'package:mind/User/UserModule.dart';
+import 'package:mind/User/Presentation/Login/OnboardingModule.dart';
 import 'package:mind/Views/ComingSoonScreen.dart';
 
 final appRouter = GoRouter(
@@ -56,7 +56,7 @@ final appRouter = GoRouter(
       name: OnboardingScreen.name,
       builder: (context, state) {
         final returnPath = state.extra as String? ?? '/';
-        return UserModule.buildOnboarding(context, returnPath: returnPath);
+        return OnboardingModule.buildOnboarding(context, returnPath: returnPath);
       },
     ),
     GoRoute(
@@ -64,15 +64,14 @@ final appRouter = GoRouter(
       name: LoginScreen.name,
       builder: (context, state) {
         final returnPath = state.extra as String? ?? '/';
-        return UserModule.buildLogin(context, returnPath: returnPath);
+        return OnboardingModule.buildLogin(context, returnPath: returnPath);
       },
     ),
     GoRoute(
       path: ProfileScreen.path,
       name: ProfileScreen.name,
       builder: (context, state) {
-        final appVersion = state.extra as String? ?? '';
-        return ProfileModule.buildProfileScreen(context, appVersion: appVersion);
+        return ProfileModule.buildProfileScreen(context);
       },
     ),
     GoRoute(

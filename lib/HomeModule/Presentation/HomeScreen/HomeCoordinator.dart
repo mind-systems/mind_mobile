@@ -6,7 +6,6 @@ import 'package:mind/ProfileModule/Presentation/ProfileScreen/ProfileScreen.dart
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
 import 'package:mind/Views/ComingSoonScreen.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'IHomeCoordinator.dart';
 
 class HomeCoordinator implements IHomeCoordinator {
@@ -20,15 +19,12 @@ class HomeCoordinator implements IHomeCoordinator {
   void openComingSoon() => context.push(ComingSoonScreen.path);
 
   @override
-  void openProfile() async {
+  void openProfile() {
     final authState = App.shared.userNotifier.currentState;
     if (authState is GuestState) {
       context.push(OnboardingScreen.path, extra: ProfileScreen.path);
     } else {
-      final info = await PackageInfo.fromPlatform();
-      if (context.mounted) {
-        context.push(ProfileScreen.path, extra: info.version);
-      }
+      context.push(ProfileScreen.path);
     }
   }
 }

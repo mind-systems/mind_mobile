@@ -20,14 +20,17 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   StreamSubscription<ProfileEvent>? _subscription;
 
   ProfileViewModel({required this.service, required this.coordinator})
-      : super(ProfileState(appVersion: service.appVersion)) {
+      : super(ProfileState.initial()) {
     _subscription = service.observeProfile().listen(_onEvent);
+    service.appVersion.then((version) {
+      state = state.copyWith(appVersion: version);
+    });
   }
 
   void _onEvent(ProfileEvent event) {
     switch (event) {
       case ProfileLoaded e:
-        state = ProfileState(userName: e.user.name, appVersion: state.appVersion);
+        state = state.copyWith(userName: e.user.name);
     }
   }
 
