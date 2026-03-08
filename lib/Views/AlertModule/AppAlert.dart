@@ -31,47 +31,13 @@ abstract class AppAlert {
     );
   }
 
-  static Future<bool> showConfirmation(
-    BuildContext context, {
-    required String title,
-    String? description,
-    required String confirmLabel,
-    required String cancelLabel,
-  }) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return AlertDialog(
-          backgroundColor: theme.cardColor,
-          title: Text(title, style: TextStyle(color: theme.colorScheme.onSurface)),
-          content: description != null
-              ? Text(description, style: TextStyle(color: theme.colorScheme.onSurface))
-              : null,
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text(cancelLabel),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: theme.colorScheme.error,
-              ),
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(confirmLabel, style: const TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
-    );
-    return confirmed ?? false;
-  }
-
   static Future<AlertResult> showWithInput(
     BuildContext context, {
-    required String title,
+    String? title,
     String? description,
     String? inputHint,
+    String confirmLabel = 'Confirm',
+    String cancelLabel = 'Cancel',
   }) async {
     String inputText = '';
 
@@ -81,30 +47,36 @@ abstract class AppAlert {
         final theme = Theme.of(ctx);
         return AlertDialog(
           backgroundColor: theme.cardColor,
-          title: Text(title, style: TextStyle(color: theme.colorScheme.onSurface)),
+          title: title != null
+              ? Text(title, style: TextStyle(color: theme.colorScheme.onSurface))
+              : null,
+          contentPadding: title == null
+              ? const EdgeInsets.fromLTRB(24, 24, 24, 24)
+              : const EdgeInsets.fromLTRB(24, 20, 24, 24),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (description != null)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: EdgeInsets.only(bottom: inputHint != null ? 16 : 0),
                   child: Text(
                     description,
                     style: TextStyle(color: theme.colorScheme.onSurface),
                   ),
                 ),
-              TextField(
-                onChanged: (value) => inputText = value,
-                decoration: InputDecoration(hintText: inputHint),
-                autofocus: true,
-              ),
+              if (inputHint != null)
+                TextField(
+                  onChanged: (value) => inputText = value,
+                  decoration: InputDecoration(hintText: inputHint),
+                  autofocus: true,
+                ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: Text(
-                'Cancel',
+                cancelLabel,
                 style: TextStyle(color: theme.colorScheme.onSurface),
               ),
             ),
@@ -113,7 +85,7 @@ abstract class AppAlert {
                 backgroundColor: theme.colorScheme.secondaryContainer,
               ),
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Confirm', style: TextStyle(color: Colors.white)),
+              child: Text(confirmLabel, style: const TextStyle(color: Colors.white)),
             ),
           ],
         );

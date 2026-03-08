@@ -13,13 +13,23 @@
 // Информационный диалог — пользователь читает и закрывает
 await AppAlert.show(context, title: 'Ошибка', description: error);
 
+// Диалог подтверждения — без поля ввода, возвращает AlertResult с confirmed
+final result = await AppAlert.showWithInput(
+  context,
+  description: 'Come back again soon.',
+  confirmLabel: 'Log out',
+  cancelLabel: 'Cancel',
+);
+if (result.confirmed) { ... }
+
 // Диалог с вводом — возвращает AlertResult с confirmed + text
 final result = await AppAlert.showWithInput(
   context,
-  title: 'Введите название',
-  inputHint: 'Моя сессия',
+  title: 'Check your email',
+  description: 'We sent you a one-time sign-in link.',
+  inputHint: 'Or paste your code here',
 );
-if (result.confirmed) { ... }
+if (result.confirmed && result.text != null) { ... }
 ```
 
 ## Когда использовать SnackBarModule

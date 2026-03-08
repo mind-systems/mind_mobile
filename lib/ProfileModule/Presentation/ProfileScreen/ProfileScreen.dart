@@ -26,13 +26,13 @@ class ProfileScreen extends ConsumerWidget {
           ListTile(
             title: const Text('Log out'),
             onTap: () async {
-              final confirmed = await AppAlert.showConfirmation(
+              final result = await AppAlert.showWithInput(
                 context,
-                title: 'Are you sure?',
+                description: 'Come back again soon',
                 confirmLabel: 'Log out',
                 cancelLabel: 'Cancel',
               );
-              if (confirmed) viewModel.onLogoutTap();
+              if (result.confirmed) viewModel.onLogoutTap();
             },
           ),
           const Spacer(),
