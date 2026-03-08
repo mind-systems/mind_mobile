@@ -25,7 +25,29 @@ class HttpClient {
     _dio.interceptors.add(authInterceptor);
   }
 
-  Dio get dio => _dio;
+  Future<Response> get(String path) async {
+    try {
+      return await _dio.get(path);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Response> post(String path, {Object? data}) async {
+    try {
+      return await _dio.post(path, data: data);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  Future<Response> delete(String path) async {
+    try {
+      return await _dio.delete(path);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
 
   Future<void> saveToken(String token) async {
     await _storage.write(key: _tokenKey, value: token);
@@ -35,7 +57,7 @@ class HttpClient {
     await _storage.delete(key: _tokenKey);
   }
 
-  ApiException handleDioError(DioException e) {
+  ApiException _handleDioError(DioException e) {
     if (e.response != null) {
       final message =
           e.response?.data['message'] ??

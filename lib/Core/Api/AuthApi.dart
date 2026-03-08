@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
 import 'package:mind/Core/Api/IAuthApi.dart';
 import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
@@ -13,61 +12,39 @@ class AuthApi implements IAuthApi {
 
   @override
   Future<void> sendCode(SendCodeRequest request) async {
-    try {
-      await _http.dio.post('/auth/send-code', data: request.toJson());
-    } on DioException catch (e) {
-      throw _http.handleDioError(e);
-    }
+    await _http.post('/auth/send-code', data: request.toJson());
   }
 
   @override
   Future<User> verifyCode(VerifyCodeRequest request) async {
-    try {
-      final response = await _http.dio.post(
-        '/auth/verify-code',
-        data: request.toJson(),
-      );
+    final response = await _http.post('/auth/verify-code', data: request.toJson());
 
-      final authHeader = response.headers.value('Authorization');
-      if (authHeader != null) {
-        final token = authHeader.replaceFirst('Bearer ', '');
-        await _http.saveToken(token);
-      }
-
-      return User.fromJson(response.data);
-    } on DioException catch (e) {
-      throw _http.handleDioError(e);
+    final authHeader = response.headers.value('Authorization');
+    if (authHeader != null) {
+      final token = authHeader.replaceFirst('Bearer ', '');
+      await _http.saveToken(token);
     }
+
+    return User.fromJson(response.data);
   }
 
   @override
   Future<User> googleAuth(GoogleAuthRequest request) async {
-    try {
-      final response = await _http.dio.post(
-        '/auth/google',
-        data: request.toJson(),
-      );
+    final response = await _http.post('/auth/google', data: request.toJson());
 
-      final authHeader = response.headers.value('Authorization');
-      if (authHeader != null) {
-        final token = authHeader.replaceFirst('Bearer ', '');
-        await _http.saveToken(token);
-      }
-
-      return User.fromJson(response.data);
-    } on DioException catch (e) {
-      throw _http.handleDioError(e);
+    final authHeader = response.headers.value('Authorization');
+    if (authHeader != null) {
+      final token = authHeader.replaceFirst('Bearer ', '');
+      await _http.saveToken(token);
     }
+
+    return User.fromJson(response.data);
   }
 
   @override
   Future<void> logout(User user) async {
-    try {
-      await _http.dio.post('/auth/logout', data: {'id': user.id});
-      await _http.clearToken();
-    } on DioException catch (e) {
-      throw _http.handleDioError(e);
-    }
+    await _http.post('/auth/logout', data: {'id': user.id});
+    await _http.clearToken();
   }
 
   @override

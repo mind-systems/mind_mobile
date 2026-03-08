@@ -36,6 +36,8 @@ class FakeBreathSessionApi implements IBreathSessionApi {
 
   @override
   Future<BreathSession> fetchById(String id) async {
+    // firstWhere throws StateError if not found — real impl would throw ApiException.
+    // Tests always seed the session before calling fetchById, so this is safe.
     return _sessions.firstWhere((s) => s.id == id);
   }
 
