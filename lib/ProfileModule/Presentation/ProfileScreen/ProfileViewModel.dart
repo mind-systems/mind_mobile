@@ -38,6 +38,10 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
     coordinator.logout();
   }
 
+  void onNameChanged(String name) {
+    // TODO: persist name change via service
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();
