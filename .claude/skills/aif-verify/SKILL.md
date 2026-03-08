@@ -28,10 +28,11 @@ Verify that the completed implementation matches the plan, nothing was missed, a
 Same logic as `/aif-implement`:
 
 ```
-1. .ai-factory/PLAN.md exists? → Use it
-2. No PLAN.md → Check current git branch:
+1. Check current git branch:
    git branch --show-current
    → Look for .ai-factory/plans/<branch-name>.md
+
+2. No branch-named file → List .ai-factory/plans/*.md and pick the most recently modified one.
 ```
 
 If no plan file found:

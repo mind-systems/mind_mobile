@@ -55,7 +55,7 @@
 -> Asks about tests (No)
 -> Explores codebase
 -> Creates 4 tasks
--> Saves plan to .ai-factory/PLAN.md
+-> Saves plan to .ai-factory/plans/add-product-search-api.md
 -> STOP
 ```
 

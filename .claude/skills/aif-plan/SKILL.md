@@ -70,7 +70,7 @@ AskUserQuestion: Which planning mode?
 
 Options:
 1. Full (Recommended) — creates git branch, asks preferences, full plan
-2. Fast — quick plan, no branch, saves to PLAN.md
+2. Fast — quick plan, no branch, saves to `.ai-factory/plans/<descriptive-name>.md`
 ```
 
 For concrete parsing examples and expected behavior per command shape, read `references/EXAMPLES.md` (Argument Parsing).
@@ -244,7 +244,7 @@ AskUserQuestion: Before we start:
 2. Any specific requirements or constraints?
 ```
 
-**Plan file:** Always `.ai-factory/PLAN.md` (no branch, no branch-named file).
+**Plan file:** `.ai-factory/plans/<descriptive-name>.md` — derive a short name from the task description (e.g., `auth-result-navigation.md`, `fix-back-stack-loss.md`). No branch, no `PLAN.md`.
 
 ---
 
@@ -318,7 +318,7 @@ Use `TaskUpdate` to set `blockedBy` relationships:
 ### Step 5: Save Plan to File
 
 **Determine plan file path:**
-- **Fast mode** → `.ai-factory/PLAN.md`
+- **Fast mode** → `.ai-factory/plans/<descriptive-name>.md` (derive from description, e.g., `auth-result-navigation.md`)
 - **Full mode** → `.ai-factory/plans/<branch-name>.md` (replace `/` with `-`)
 
 **Before saving, ensure directory exists:**
@@ -372,7 +372,7 @@ To view tasks:
 
 ```
 Plan created with [N] tasks.
-Plan file: .ai-factory/PLAN.md
+Plan file: .ai-factory/plans/<descriptive-name>.md
 
 To start implementation, run:
 /aif-implement
@@ -465,12 +465,12 @@ Use canonical examples in `references/TASK-FORMAT.md`:
 5. **Dependencies matter** — Order tasks so they can be done sequentially
 6. **Include file paths** — Help implementer know where to work
 7. **Commit checkpoints for large plans** — 5+ tasks need commit plan with checkpoints every 3-5 tasks
-8. **Plan file location** — Fast mode: `.ai-factory/PLAN.md`. Full mode: `.ai-factory/plans/<branch-name>.md`
+8. **Plan file location** — Both modes save to `.ai-factory/plans/`. Fast mode: `<descriptive-name>.md`. Full mode: `<branch-name>.md`.
 
 ## Plan File Handling
 
-**Fast mode (`.ai-factory/PLAN.md`)**
-- Temporary plan for quick work
+**Fast mode (`.ai-factory/plans/<descriptive-name>.md`)**
+- Named by task content, not by a fixed filename
 - `/aif-implement` may offer deletion after completion
 
 **Full mode (`.ai-factory/plans/<branch>.md`)**

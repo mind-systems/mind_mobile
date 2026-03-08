@@ -18,7 +18,7 @@ Execute tasks from the plan, track progress, and enable session continuation.
 
 ```
 1. Check for uncommitted changes (git status)
-2. Check for plan files (.ai-factory/PLAN.md or branch-named)
+2. Check for plan files in .ai-factory/plans/
 3. Check current branch
 ```
 
@@ -34,7 +34,7 @@ You have uncommitted changes. Commit them first?
 
 ```
 No active plan found.
-Checked: .ai-factory/plans/<branch>.md, .ai-factory/plans/*.md, .ai-factory/PLAN.md
+Checked: .ai-factory/plans/<branch>.md, .ai-factory/plans/*.md
 
 Current branch: feature/user-auth
 
@@ -93,14 +93,11 @@ Based on choice:
      (replace / with - in branch name, e.g. feature/user-auth → feature-user-auth.md)
 
 2. No branch-named file → List .ai-factory/plans/*.md and pick the most recently modified one.
-
-3. No files in .ai-factory/plans/ → Check legacy .ai-factory/PLAN.md (old fast-mode fallback)
 ```
 
 **Priority:**
 1. Branch-named file in `.ai-factory/plans/` — canonical location for both fast and full mode
 2. Most recently modified file in `.ai-factory/plans/` — if branch name doesn't match
-3. `.ai-factory/PLAN.md` — legacy fallback only (no longer created by `/aif-plan`)
 
 **Read the plan file** to understand:
 - Context and settings (testing, logging preferences)
@@ -315,14 +312,7 @@ If documentation preference is "yes":
 
 **Handle plan file after completion:**
 
-- **If `.ai-factory/PLAN.md`** (from `/aif-plan fast`):
-  ```
-  Would you like to delete .ai-factory/PLAN.md? (It's no longer needed)
-  - [ ] Yes, delete it
-  - [ ] No, keep it
-  ```
-
-- **If branch-named file** (e.g., `.ai-factory/plans/feature-user-auth.md`):
+- **If plan file in `.ai-factory/plans/`**:
   - Keep it - documents what was done
   - User can delete before merging if desired
 
