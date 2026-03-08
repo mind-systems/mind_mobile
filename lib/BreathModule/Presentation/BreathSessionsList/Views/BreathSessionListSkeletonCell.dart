@@ -9,8 +9,6 @@ class BreathSessionListSkeletonCell extends StatelessWidget {
     this.animated = true,
   });
 
-  static const _highlightColor = Color(0xFF2A3A50); // shimmer only
-
   Widget _block(double width, double height, Color baseColor) => Container(
         width: width,
         height: height,
@@ -22,38 +20,50 @@ class BreathSessionListSkeletonCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = Theme.of(context).cardColor;
+    final theme = Theme.of(context);
+    final baseColor = theme.cardColor;
+    final pixel = 1 / MediaQuery.of(context).devicePixelRatio;
 
-    final content = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title placeholder (2 lines)
-          _block(200, 16, baseColor),
-          const SizedBox(height: 6),
-          _block(150, 16, baseColor),
-          const SizedBox(height: 8),
-          // Subtitle placeholder
-          _block(180, 14, baseColor),
-          const SizedBox(height: 12),
-          // Divider
-          _block(double.infinity, 1, baseColor),
-          const SizedBox(height: 8),
-          // Duration placeholder
-          Align(
-            alignment: Alignment.centerRight,
-            child: _block(50, 12, baseColor),
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 14),
+              // Title placeholder (2 lines)
+              _block(200, 14, baseColor),
+              const SizedBox(height: 5),
+              _block(140, 14, baseColor),
+              const SizedBox(height: 10),
+              // Duration + subtitle row
+              Row(
+                children: [
+                  _block(44, 13, baseColor),
+                  const SizedBox(width: 8),
+                  _block(160, 13, baseColor),
+                ],
+              ),
+              const SizedBox(height: 14),
+            ],
           ),
-        ],
-      ),
+        ),
+        // Hairline divider
+        Container(
+          height: pixel,
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          color: baseColor,
+        ),
+      ],
     );
 
     if (!animated) return content;
 
     return Shimmer.fromColors(
       baseColor: baseColor,
-      highlightColor: _highlightColor,
+      highlightColor: theme.highlightColor,
       child: content,
     );
   }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItem.dart';
@@ -8,7 +7,6 @@ import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathS
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListCell.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListSectionHeader.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListSkeletonCell.dart';
-import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
 import 'package:mind/Views/SnackBarModule/GlobalSnackBarNotifier.dart';
 import 'package:mind/Views/SnackBarModule/Models/SnackBarEvent.dart';
 
@@ -81,10 +79,6 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
 
     return Scaffold(
       body: SafeArea(child: _buildBody(state)),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push(OnboardingScreen.path),
-        child: const Text('+'),
-      ),
     );
   }
 

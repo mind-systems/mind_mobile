@@ -13,6 +13,12 @@ const _kBackgroundLight = Color(0xFFF0F4FC); // cool ice-white
 const _kCardDark  = Color(0xFF1A2433); // dark slate-blue
 const _kCardLight = Color(0xFFE8EDF5); // pale lavender-grey
 
+// ── Shimmer highlight ────────────────────────────────────────
+// Shimmer sweep colour — slightly lighter/darker than the card surface.
+// Access via: theme.highlightColor
+const _kShimmerHighlightDark  = Color(0xFF2A3A50); // lighter than card dark
+const _kShimmerHighlightLight = Color(0xFFD0D8E8); // darker than card light
+
 // ── Button ──────────────────────────────────────────────────
 // Filled buttons and bordered interactive containers (login, onboarding).
 // Access via: theme.colorScheme.secondaryContainer
@@ -34,6 +40,7 @@ abstract class AppTheme {
         brightness: Brightness.dark,
         scaffoldBackgroundColor: _kBackgroundDark,
         cardColor: _kCardDark,
+        highlightColor: _kShimmerHighlightDark,
         colorScheme: const ColorScheme.dark(
           primary: _kAccent,
           secondaryContainer: _kButtonDark,
@@ -46,6 +53,7 @@ abstract class AppTheme {
         brightness: Brightness.light,
         scaffoldBackgroundColor: _kBackgroundLight,
         cardColor: _kCardLight,
+        highlightColor: _kShimmerHighlightLight,
         colorScheme: const ColorScheme.light(
           primary: _kAccent,
           secondaryContainer: _kButtonLight,
