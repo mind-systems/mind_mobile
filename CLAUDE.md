@@ -50,17 +50,14 @@ Screen + Coordinator (UI + navigation/side-effects)
 
 ### Dependency Injection
 
-DI is manual via `App.shared` singleton (`lib/Core/App.dart`). Initialization order matters:
-1. Google Sign-In → Database (Drift) → API Service (Dio) → Auth Interceptor
-2. Repositories → Domain Notifiers → Deeplink Router
-3. `runApp(ProviderScope(...))`
+DI is manual via `App.shared` singleton (`lib/Core/App.dart`). See `.ai-factory/ARCHITECTURE.md` (DI Wiring section) for initialization order and wiring details.
 
 ### Module structure
 
 | Path | Purpose |
 |------|---------|
-| `lib/Core/` | App singleton, Database (Drift ORM), API client (Dio), routing, environment config |
-| `lib/User/` | Auth state, login/logout, UserNotifier, UserRepository |
+| `lib/Core/` | App singleton, Database (Drift ORM + DAO interfaces), HttpClient (Dio), routing, environment config |
+| `lib/User/` | Auth state, login/logout, UserNotifier, UserRepository, IAuthApi |
 | `lib/BreathModule/` | Breathing session domain — models, repositories, notifiers, all presentation screens |
 | `lib/Views/` | Shared UI components (snackbar, buttons, text fields) |
 
