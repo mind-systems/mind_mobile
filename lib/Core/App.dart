@@ -11,7 +11,9 @@ import 'package:mind/Core/Api/AuthApi.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/Core/Api/BreathSessionApi.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
+import 'package:mind/Core/AppSettings/AppSettingsNotifier.dart';
 import 'package:mind/Core/AppSettings/AppSettingsRepository.dart';
+import 'package:mind/Core/AppSettings/AppSettingsState.dart';
 import 'package:mind/Core/AppSettings/SharedPreferencesStorage.dart';
 import 'package:mind/Core/AppTheme.dart';
 import 'package:mind/Core/Database/Database.dart';
@@ -28,9 +30,6 @@ import 'package:mind/Core/GlobalUI/GlobalListeners.dart';
 import 'package:mind/router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
-final localeProvider = StateProvider<Locale?>((ref) => null);
-
 class App {
   static late App shared;
 
@@ -42,7 +41,7 @@ class App {
   final UserNotifier userNotifier;
   final BreathSessionNotifier breathSessionNotifier;
   final DeeplinkRouter deeplinkRouter;
-  final AppSettingsRepository appSettingsRepository;
+  final AppSettingsNotifier appSettingsNotifier;
 
   App._({
     required this.db,
@@ -53,7 +52,7 @@ class App {
     required this.userNotifier,
     required this.breathSessionNotifier,
     required this.deeplinkRouter,
-    required this.appSettingsRepository,
+    required this.appSettingsNotifier,
   });
 
   static Future<void> initialize() async {
@@ -89,6 +88,7 @@ class App {
     await appSettingsRepository.init();
     final initialTheme = await appSettingsRepository.getTheme();
     final initialLanguage = await appSettingsRepository.getLanguage();
+    final appSettingsNotifier = AppSettingsNotifier(repository: appSettingsRepository, initialState: AppSettingsState(theme: initialTheme, locale: Locale(initialLanguage)));
 
     shared = App._(
       db: db,
@@ -99,15 +99,14 @@ class App {
       userNotifier: userNotifier,
       breathSessionNotifier: breathSessionNotifier,
       deeplinkRouter: deeplinkRouter,
-      appSettingsRepository: appSettingsRepository,
+      appSettingsNotifier: appSettingsNotifier,
     );
 
     await shared.deeplinkRouter.init();
 
     runApp(ProviderScope(
       overrides: [
-        themeModeProvider.overrideWith((ref) => initialTheme),
-        localeProvider.overrideWith((ref) => Locale(initialLanguage)),
+        appSettingsProvider.overrideWith((ref) => appSettingsNotifier),
       ],
       child: const MyApp(),
     ));
@@ -119,16 +118,15 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
-    final locale = ref.watch(localeProvider);
+    final settings = ref.watch(appSettingsProvider);
 
     return MaterialApp.router(
       scaffoldMessengerKey: rootScaffoldMessengerKey,
       title: 'Mind',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: themeMode,
-      locale: locale,
+      themeMode: settings.theme,
+      locale: settings.locale,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

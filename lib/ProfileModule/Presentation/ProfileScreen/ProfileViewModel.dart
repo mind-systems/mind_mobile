@@ -20,7 +20,10 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   StreamSubscription<ProfileEvent>? _subscription;
 
   ProfileViewModel({required this.service, required this.coordinator})
-      : super(ProfileState.initial()) {
+      : super(ProfileState(
+          themeLabel: service.currentThemeLabel,
+          languageLabel: service.currentLanguageLabel,
+        )) {
     _subscription = service.observeProfile().listen(_onEvent);
     service.appVersion.then((version) {
       state = state.copyWith(appVersion: version);
@@ -42,38 +45,36 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
     // TODO: persist name change via service
   }
 
-  void onThemeChanged(String theme) {
-    // TODO: persist theme change via service
-  }
-
-  void onLanguageChanged(String language) {
-    // TODO: persist language change via service
-  }
-
   void onThemeTap() {
-    // todo load from somewhere
-    final options = ['System', 'Dark', 'Light'];
+    final options = service.themeOptions;
     final currentIndex = options.indexOf(state.themeLabel).clamp(0, options.length - 1);
     coordinator.showPicker(
       title: 'Theme',
       options: options,
       selectedIndex: currentIndex,
-      onSelect: (index) {
-        state = state.copyWith(themeLabel: options[index]);
-      },
+      onSelect: (index) => onThemeChanged(options[index]),
     );
   }
 
   void onLanguageTap() {
+    final options = service.languageOptions;
+    final currentIndex = options.indexOf(state.languageLabel).clamp(0, options.length - 1);
     coordinator.showPicker(
       title: 'Language',
-      // todo load from somewhere
-      options: ['English', 'Русский'],
-      selectedIndex: 0,
-      onSelect: (index) {
-        state = state.copyWith(languageLabel: 'English');
-      },
+      options: options,
+      selectedIndex: currentIndex,
+      onSelect: (index) => onLanguageChanged(options[index]),
     );
+  }
+
+  Future<void> onThemeChanged(String label) async {
+    await service.updateTheme(label);
+    state = state.copyWith(themeLabel: label);
+  }
+
+  Future<void> onLanguageChanged(String label) async {
+    await service.updateLanguage(label);
+    state = state.copyWith(languageLabel: label);
   }
 
   @override

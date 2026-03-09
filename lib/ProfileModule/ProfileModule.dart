@@ -8,7 +8,10 @@ import 'package:mind/ProfileModule/ProfileService.dart';
 
 class ProfileModule {
   static Widget buildProfileScreen(BuildContext context) {
-    final service = ProfileService(userNotifier: App.shared.userNotifier);
+    final service = ProfileService(
+      userNotifier: App.shared.userNotifier,
+      appSettingsNotifier: App.shared.appSettingsNotifier,
+    );
     final coordinator = ProfileCoordinator(context);
     return ProviderScope(
       overrides: [
