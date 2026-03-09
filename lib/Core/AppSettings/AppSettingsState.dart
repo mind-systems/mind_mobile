@@ -1,15 +1,13 @@
-import 'package:flutter/material.dart';
-
 class AppSettingsState {
-  final ThemeMode theme;
-  final Locale locale;
+  final String theme;
+  final String language;
 
-  const AppSettingsState({required this.theme, required this.locale});
+  const AppSettingsState({required this.theme, required this.language});
 
-  AppSettingsState copyWith({ThemeMode? theme, Locale? locale}) {
+  AppSettingsState copyWith({String? theme, String? language}) {
     return AppSettingsState(
       theme: theme ?? this.theme,
-      locale: locale ?? this.locale,
+      language: language ?? this.language,
     );
   }
 }

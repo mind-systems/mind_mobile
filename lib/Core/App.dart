@@ -88,7 +88,7 @@ class App {
     await appSettingsRepository.init();
     final initialTheme = await appSettingsRepository.getTheme();
     final initialLanguage = await appSettingsRepository.getLanguage();
-    final appSettingsNotifier = AppSettingsNotifier(repository: appSettingsRepository, initialState: AppSettingsState(theme: initialTheme, locale: Locale(initialLanguage)));
+    final appSettingsNotifier = AppSettingsNotifier(repository: appSettingsRepository, initialState: AppSettingsState(theme: initialTheme, language: initialLanguage));
 
     shared = App._(
       db: db,
@@ -113,6 +113,14 @@ class App {
   }
 }
 
+ThemeMode _themeModeFromKey(String key) {
+  switch (key) {
+    case 'dark': return ThemeMode.dark;
+    case 'light': return ThemeMode.light;
+    default: return ThemeMode.system;
+  }
+}
+
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
@@ -125,8 +133,8 @@ class MyApp extends ConsumerWidget {
       title: 'Mind',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: settings.theme,
-      locale: settings.locale,
+      themeMode: _themeModeFromKey(settings.theme),
+      locale: Locale(settings.language),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/Core/AppSettings/AppSettingsRepository.dart';
 import 'package:mind/Core/AppSettings/AppSettingsState.dart';
@@ -21,13 +20,13 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
 
   AppSettingsState get currentState => state;
 
-  Future<void> setTheme(ThemeMode mode) async {
-    await _repository.setTheme(mode);
-    state = state.copyWith(theme: mode);
+  Future<void> setTheme(String key) async {
+    await _repository.setTheme(key);
+    state = state.copyWith(theme: key);
   }
 
   Future<void> setLanguage(String languageCode) async {
     await _repository.setLanguage(languageCode);
-    state = state.copyWith(locale: Locale(languageCode));
+    state = state.copyWith(language: languageCode);
   }
 }

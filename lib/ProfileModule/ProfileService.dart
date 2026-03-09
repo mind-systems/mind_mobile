@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:mind/Core/AppSettings/AppSettingsNotifier.dart';
+import 'package:mind/Core/AppSettings/AppSettingsRepository.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/IProfileService.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/Models/ProfileDTOs.dart';
 import 'package:mind/User/UserNotifier.dart';
@@ -28,64 +28,24 @@ class ProfileService implements IProfileService {
   }
 
   @override
-  List<String> get themeOptions => ['System', 'Dark', 'Light'];
+  List<String> get themeOptions => AppSettingsRepository.supportedThemes;
 
   @override
-  List<String> get languageOptions => ['English', 'Русский'];
+  List<String> get languageOptions => AppSettingsRepository.supportedLocales;
 
   @override
-  String get currentThemeLabel => _themeLabelFromMode(appSettingsNotifier.currentState.theme);
+  String get currentTheme => appSettingsNotifier.currentState.theme;
 
   @override
-  String get currentLanguageLabel => _languageLabelFromLocale(appSettingsNotifier.currentState.locale);
+  String get currentLanguage => appSettingsNotifier.currentState.language;
 
   @override
-  Future<void> updateTheme(String label) async {
-    await appSettingsNotifier.setTheme(_themeModeFromLabel(label));
+  Future<void> updateTheme(String key) async {
+    await appSettingsNotifier.setTheme(key);
   }
 
   @override
-  Future<void> updateLanguage(String label) async {
-    await appSettingsNotifier.setLanguage(_languageCodeFromLabel(label));
-  }
-
-  ThemeMode _themeModeFromLabel(String label) {
-    switch (label) {
-      case 'Dark':
-        return ThemeMode.dark;
-      case 'Light':
-        return ThemeMode.light;
-      default:
-        return ThemeMode.system;
-    }
-  }
-
-  String _languageCodeFromLabel(String label) {
-    switch (label) {
-      case 'Русский':
-        return 'ru';
-      default:
-        return 'en';
-    }
-  }
-
-  String _themeLabelFromMode(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.dark:
-        return 'Dark';
-      case ThemeMode.light:
-        return 'Light';
-      case ThemeMode.system:
-        return 'System';
-    }
-  }
-
-  String _languageLabelFromLocale(Locale locale) {
-    switch (locale.languageCode) {
-      case 'ru':
-        return 'Русский';
-      default:
-        return 'English';
-    }
+  Future<void> updateLanguage(String key) async {
+    await appSettingsNotifier.setLanguage(key);
   }
 }

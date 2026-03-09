@@ -1,14 +1,14 @@
 class ProfileState {
   final String? userName;
   final String? appVersion;
-  final String themeLabel;
-  final String languageLabel;
+  final String theme;
+  final String language;
 
   const ProfileState({
     this.userName,
     this.appVersion,
-    this.themeLabel = 'System',
-    this.languageLabel = 'English',
+    this.theme = 'system',
+    this.language = 'en',
   });
 
   factory ProfileState.initial() => const ProfileState();
@@ -16,14 +16,14 @@ class ProfileState {
   ProfileState copyWith({
     String? userName,
     String? appVersion,
-    String? themeLabel,
-    String? languageLabel,
+    String? theme,
+    String? language,
   }) {
     return ProfileState(
       userName: userName ?? this.userName,
       appVersion: appVersion ?? this.appVersion,
-      themeLabel: themeLabel ?? this.themeLabel,
-      languageLabel: languageLabel ?? this.languageLabel,
+      theme: theme ?? this.theme,
+      language: language ?? this.language,
     );
   }
 }

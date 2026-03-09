@@ -6,8 +6,8 @@ abstract class IProfileService {
 
   List<String> get themeOptions;
   List<String> get languageOptions;
-  String get currentThemeLabel;
-  String get currentLanguageLabel;
-  Future<void> updateTheme(String label);
-  Future<void> updateLanguage(String label);
+  String get currentTheme;
+  String get currentLanguage;
+  Future<void> updateTheme(String key);
+  Future<void> updateLanguage(String key);
 }

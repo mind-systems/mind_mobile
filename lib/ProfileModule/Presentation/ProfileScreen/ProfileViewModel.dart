@@ -21,8 +21,8 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
 
   ProfileViewModel({required this.service, required this.coordinator})
       : super(ProfileState(
-          themeLabel: service.currentThemeLabel,
-          languageLabel: service.currentLanguageLabel,
+          theme: service.currentTheme,
+          language: service.currentLanguage,
         )) {
     _subscription = service.observeProfile().listen(_onEvent);
     service.appVersion.then((version) {
@@ -46,35 +46,51 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   }
 
   void onThemeTap() {
-    final options = service.themeOptions;
-    final currentIndex = options.indexOf(state.themeLabel).clamp(0, options.length - 1);
+    final keys = service.themeOptions;
+    final currentIndex = keys.indexOf(state.theme).clamp(0, keys.length - 1);
     coordinator.showPicker(
       title: 'Theme',
-      options: options,
+      options: keys.map(_displayTheme).toList(),
       selectedIndex: currentIndex,
-      onSelect: (index) => onThemeChanged(options[index]),
+      onSelect: (index) => onThemeChanged(keys[index]),
     );
   }
 
   void onLanguageTap() {
-    final options = service.languageOptions;
-    final currentIndex = options.indexOf(state.languageLabel).clamp(0, options.length - 1);
+    final keys = service.languageOptions;
+    final currentIndex = keys.indexOf(state.language).clamp(0, keys.length - 1);
     coordinator.showPicker(
       title: 'Language',
-      options: options,
+      options: keys.map(_displayLanguage).toList(),
       selectedIndex: currentIndex,
-      onSelect: (index) => onLanguageChanged(options[index]),
+      onSelect: (index) => onLanguageChanged(keys[index]),
     );
   }
 
-  Future<void> onThemeChanged(String label) async {
-    await service.updateTheme(label);
-    state = state.copyWith(themeLabel: label);
+  Future<void> onThemeChanged(String key) async {
+    await service.updateTheme(key);
+    state = state.copyWith(theme: key);
   }
 
-  Future<void> onLanguageChanged(String label) async {
-    await service.updateLanguage(label);
-    state = state.copyWith(languageLabel: label);
+  Future<void> onLanguageChanged(String key) async {
+    await service.updateLanguage(key);
+    state = state.copyWith(language: key);
+  }
+
+  // Display helpers — temporary until localization; replaced by l10n.themeLabel(key)
+  static String _displayTheme(String key) {
+    switch (key) {
+      case 'dark': return 'Dark';
+      case 'light': return 'Light';
+      default: return 'System';
+    }
+  }
+
+  static String _displayLanguage(String key) {
+    switch (key) {
+      case 'ru': return 'Русский';
+      default: return 'English';
+    }
   }
 
   @override

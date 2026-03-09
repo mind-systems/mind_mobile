@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:mind/Core/AppSettings/IAppSettingsStorage.dart';
 
 class AppSettingsRepository {
   static const List<String> supportedLocales = ['en', 'ru'];
+  static const List<String> supportedThemes = ['system', 'dark', 'light'];
 
   static const String _themeKey = 'app_theme';
   static const String _languageKey = 'app_language';
@@ -24,20 +24,18 @@ class AppSettingsRepository {
 
   // --------------- Theme ---------------
 
-  Future<ThemeMode> getTheme() async {
-    final value = await _storage.getString(_themeKey);
-    return _themeModeFromString(value);
+  Future<String> getTheme() async {
+    return await _storage.getString(_themeKey) ?? 'system';
   }
 
-  Future<void> setTheme(ThemeMode mode) async {
-    await _storage.setString(_themeKey, _themeModeToString(mode));
+  Future<void> setTheme(String key) async {
+    await _storage.setString(_themeKey, key);
   }
 
   // --------------- Language ---------------
 
   Future<String> getLanguage() async {
-    final value = await _storage.getString(_languageKey);
-    return value ?? 'en';
+    return await _storage.getString(_languageKey) ?? 'en';
   }
 
   Future<void> setLanguage(String languageCode) async {
@@ -62,27 +60,5 @@ class AppSettingsRepository {
     }
 
     return 'en';
-  }
-
-  ThemeMode _themeModeFromString(String? value) {
-    switch (value) {
-      case 'dark':
-        return ThemeMode.dark;
-      case 'light':
-        return ThemeMode.light;
-      default:
-        return ThemeMode.system;
-    }
-  }
-
-  String _themeModeToString(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.dark:
-        return 'dark';
-      case ThemeMode.light:
-        return 'light';
-      case ThemeMode.system:
-        return 'system';
-    }
   }
 }

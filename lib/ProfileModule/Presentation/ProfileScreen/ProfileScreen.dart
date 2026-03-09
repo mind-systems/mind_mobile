@@ -8,6 +8,22 @@ import 'package:mind/Views/SettingsCells/SettingsDropdownCell.dart';
 import 'package:mind/Views/SettingsCells/SettingsSection.dart';
 import 'package:mind/Views/SettingsCells/SettingsSectionHeader.dart';
 
+// Temporary display helpers — replaced by l10n when localization is added
+String _displayTheme(String key) {
+  switch (key) {
+    case 'dark': return 'Dark';
+    case 'light': return 'Light';
+    default: return 'System';
+  }
+}
+
+String _displayLanguage(String key) {
+  switch (key) {
+    case 'ru': return 'Русский';
+    default: return 'English';
+  }
+}
+
 class ProfileScreen extends ConsumerWidget {
   static const String path = '/profile';
   static const String name = 'profile';
@@ -42,12 +58,12 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 SettingsDropdownCell(
                   title: 'Language',
-                  value: state.languageLabel,
+                  value: _displayLanguage(state.language),
                   onTap: viewModel.onLanguageTap,
                 ),
                 SettingsDropdownCell(
                   title: 'Theme',
-                  value: state.themeLabel,
+                  value: _displayTheme(state.theme),
                   onTap: viewModel.onThemeTap,
                 ),
               ],
