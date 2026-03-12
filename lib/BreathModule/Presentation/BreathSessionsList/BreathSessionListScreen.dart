@@ -67,13 +67,6 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
     }
   }
 
-  String _resolveSectionHeaderTitle(BuildContext context, SectionHeaderType type) {
-    final l10n = AppLocalizations.of(context)!;
-    return switch (type) {
-      SectionHeaderType.sharedSessions => l10n.breathSessionListSharedSessions,
-    };
-  }
-
   Future<void> _onRefresh() async {
     await ref.read(breathSessionListViewModelProvider.notifier).refresh();
   }
@@ -109,7 +102,10 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
               child: BreathSessionListCell(model: cell),
             ),
             SectionHeaderModel header => BreathSessionListSectionHeader(
-              title: _resolveSectionHeaderTitle(context, header.type),
+              title: switch (header.type) {
+                SectionHeaderType.sharedSessions =>
+                  AppLocalizations.of(context)!.breathSessionListSharedSessions,
+              },
             ),
             SkeletonCellModel skeleton => BreathSessionListSkeletonCell(
               animated: skeleton.animated,

@@ -111,10 +111,10 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
       await vm.save();
 
       if (!context.mounted) return;
-
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.breathConstructorSavedSuccess),
+          content: Text(l10n.breathConstructorSavedSuccess),
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
@@ -122,10 +122,10 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
       Navigator.pop(context);
     } catch (e) {
       if (!context.mounted) return;
-
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.breathConstructorSaveError(e.toString())),
+          content: Text(l10n.breathConstructorSaveError(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
