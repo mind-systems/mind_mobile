@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -11,8 +12,10 @@ import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
 import 'package:mind/Core/Api/AuthApi.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/Core/Api/BreathSessionApi.dart';
+import 'package:mind/Core/Api/DeviceApi.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
 import 'package:mind/Core/Api/UserApi.dart';
+import 'package:mind/Device/DeviceRepository.dart';
 import 'package:mind/Core/AppSettings/AppSettingsNotifier.dart';
 import 'package:mind/Core/AppSettings/AppSettingsRepository.dart';
 import 'package:mind/Core/AppSettings/AppSettingsState.dart';
@@ -75,6 +78,9 @@ class App {
     final authApi = AuthApi(httpClient);
     final userApi = UserApi(httpClient);
     final breathSessionApi = BreathSessionApi(httpClient);
+
+    final deviceApi = DeviceApi(httpClient);
+    unawaited(DeviceRepository(api: deviceApi, storage: SecureStorage()).ping());
 
     final userRepository = UserRepository(userDao: db.userDao, api: authApi, userApi: userApi, google: GoogleAuthProvider(), storage: SecureStorage());
     final breathSessionRepository = BreathSessionRepository(dao: db.breathSessionDao, api: breathSessionApi);
