@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:mind/Views/AlertModule/AppAlert.dart';
+import 'package:mind/l10n/app_localizations.dart';
+import 'Models/LoginState.dart';
 import 'Models/AuthResult.dart';
 import 'LoginScreen.dart';
 import 'LoginViewModel.dart';
@@ -25,7 +27,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       final viewModel = ref.read(loginViewModelProvider.notifier);
 
       viewModel.onErrorEvent = (error) {
-        AppAlert.show(context, title: 'Ошибка', description: error);
+        final l10n = AppLocalizations.of(context)!;
+        final message = switch (error) {
+          LoginError.sendCodeFailed => l10n.loginSendCodeError,
+          LoginError.codeInvalidOrExpired => l10n.loginCodeInvalidError,
+        };
+        AppAlert.show(context, title: 'Ошибка', description: message);
       };
 
       viewModel.onAuthenticatedEvent = () {

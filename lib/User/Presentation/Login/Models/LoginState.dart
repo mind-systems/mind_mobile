@@ -1,3 +1,8 @@
+enum LoginError {
+  sendCodeFailed,
+  codeInvalidOrExpired,
+}
+
 class LoginState {
   final String email;
   final bool isLoading;

@@ -238,7 +238,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
       // При переходе на shared вставляем хедер
       if (cell.ownership == SessionOwnership.shared &&
           lastOwnership != SessionOwnership.shared) {
-        result.add(SectionHeaderModel('Shared Sessions'));
+        result.add(SectionHeaderModel(SectionHeaderType.sharedSessions));
       }
 
       result.add(cell);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mind/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListViewModel.dart';
@@ -65,6 +66,13 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
     }
   }
 
+  String _resolveSectionHeaderTitle(BuildContext context, SectionHeaderType type) {
+    final l10n = AppLocalizations.of(context)!;
+    return switch (type) {
+      SectionHeaderType.sharedSessions => l10n.breathSessionListSharedSessions,
+    };
+  }
+
   Future<void> _onRefresh() async {
     await ref.read(breathSessionListViewModelProvider.notifier).refresh();
   }
@@ -100,7 +108,7 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
               child: BreathSessionListCell(model: cell),
             ),
             SectionHeaderModel header => BreathSessionListSectionHeader(
-              title: header.title,
+              title: _resolveSectionHeaderTitle(context, header.type),
             ),
             SkeletonCellModel skeleton => BreathSessionListSkeletonCell(
               animated: skeleton.animated,

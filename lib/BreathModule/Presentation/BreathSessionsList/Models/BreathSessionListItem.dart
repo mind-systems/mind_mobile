@@ -21,10 +21,15 @@ class BreathSessionListCellModel extends BreathSessionListItem {
   });
 }
 
+/// Тип заголовка секции
+enum SectionHeaderType {
+  sharedSessions,
+}
+
 /// Заголовок секции (разделитель групп)
 class SectionHeaderModel extends BreathSessionListItem {
-  final String title;
-  SectionHeaderModel(this.title);
+  final SectionHeaderType type;
+  SectionHeaderModel(this.type);
 }
 
 /// Skeleton-ячейка (для initial/empty/paging)

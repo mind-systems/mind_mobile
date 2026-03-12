@@ -13,7 +13,7 @@ final loginViewModelProvider = StateNotifierProvider<LoginViewModel, LoginState>
 class LoginViewModel extends StateNotifier<LoginState> {
   final ILoginService service;
 
-  void Function(String error)? onErrorEvent;
+  void Function(LoginError error)? onErrorEvent;
   void Function()? onSuccessEvent;
   void Function()? onAuthenticatedEvent;
 
@@ -53,7 +53,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
       onSuccessEvent?.call();
     } catch (e) {
       state = state.copyWith(isLoading: false);
-      onErrorEvent?.call('Ошибка отправки кода: ${e.toString()}');
+      onErrorEvent?.call(LoginError.sendCodeFailed);
     }
   }
 
@@ -65,7 +65,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false);
-      onErrorEvent?.call('Code is invalid or expired');
+      onErrorEvent?.call(LoginError.codeInvalidOrExpired);
     }
   }
 
