@@ -367,11 +367,3 @@ For progress display format, blocker handling, session continuity examples, and 
 5. **ALWAYS update checkbox in plan file** - `- [ ]` → `- [x]` immediately after task completion
 6. **PRESERVE progress** - tasks survive session boundaries
 7. **ONE task at a time** - focus on current task only
-
-## CRITICAL: Logging Requirements
-
-**ALWAYS add verbose logging when implementing code.** For logging guidelines, patterns, and management requirements → read `references/LOGGING-GUIDE.md`
-
-Key rules: log function entry/exit, state changes, external calls, error context. Use structured logging, configurable log levels (LOG_LEVEL env var).
-
-**DO NOT skip logging to "keep code clean" - verbose logging is REQUIRED during implementation, but MUST be configurable.**
