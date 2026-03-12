@@ -6,6 +6,8 @@ class BreathSessionsListResponse {
   final int page;
   final int pageSize;
 
+  bool get hasMore => page * pageSize < total;
+
   BreathSessionsListResponse({
     required this.data,
     required this.total,

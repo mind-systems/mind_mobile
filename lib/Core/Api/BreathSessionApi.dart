@@ -33,9 +33,9 @@ class BreathSessionApi implements IBreathSessionApi {
   }
 
   @override
-  Future<List<BreathSession>> fetchAll(int page, int pageSize) async {
+  Future<BreathSessionsListResponse> fetchAll(int page, int pageSize) async {
     final response = await _http.get('/breath_sessions/list?page=$page&pageSize=$pageSize');
     final Map<String, dynamic> data = response.data as Map<String, dynamic>;
-    return BreathSessionsListResponse.fromJson(data).data;
+    return BreathSessionsListResponse.fromJson(data);
   }
 }

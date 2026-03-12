@@ -63,8 +63,9 @@ class BreathSessionNotifier {
     _isLoading = true;
 
     try {
-      final sessions = await repository.fetch(page, pageSize);
-      final hasMore = sessions.length >= pageSize;
+      final result = await repository.fetch(page, pageSize);
+      final sessions = result.sessions;
+      final hasMore = result.hasMore;
 
       final Map<String, BreathSession> updatedById;
       final List<String> updatedOrder;
@@ -111,8 +112,9 @@ class BreathSessionNotifier {
     _isLoading = true;
 
     try {
-      final sessions = await repository.fetch(0, pageSize);
-      final hasMore = sessions.length >= pageSize;
+      final result = await repository.fetch(0, pageSize);
+      final sessions = result.sessions;
+      final hasMore = result.hasMore;
 
       _subject.add(BreathSessionsState(
         byId: {for (final s in sessions) s.id: s},

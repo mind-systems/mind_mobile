@@ -19,19 +19,20 @@ class BreathSessionRepository {
     return await _api.fetchById(id);
   }
 
-  Future<List<BreathSession>> fetch(int page, int pageSize) async {
+  Future<({List<BreathSession> sessions, bool hasMore})> fetch(int page, int pageSize) async {
     final offset = page * pageSize;
     final daoPage = await _dao.getSessions(limit: pageSize, offset: offset);
 
     if (daoPage.length == pageSize) {
-      return daoPage;
+      // DAO returned a full page — assume there may be more; API will confirm on next scroll
+      return (sessions: daoPage, hasMore: true);
     }
 
-    // DAO вернул меньше чем pageSize — идём в API
-    // API использует 1-based нумерацию страниц
-    final apiSessions = await _api.fetchAll(page + 1, pageSize);
-    await _dao.saveSessions(apiSessions);
-    return apiSessions;
+    // DAO returned fewer than pageSize — fetch from API
+    // API uses 1-based page numbering
+    final response = await _api.fetchAll(page + 1, pageSize);
+    await _dao.saveSessions(response.data);
+    return (sessions: response.data, hasMore: response.hasMore);
   }
 
   Future<BreathSession> create(BreathSession session) async {
