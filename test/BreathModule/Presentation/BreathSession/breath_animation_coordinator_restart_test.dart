@@ -9,6 +9,7 @@ import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathAni
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathShapeShifter.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
@@ -40,6 +41,11 @@ class _FakeTickService implements ITickService {
 // ---------------------------------------------------------------------------
 // Fake IBreathSessionService — returns a hard-coded DTO
 // ---------------------------------------------------------------------------
+
+class _FakeBreathSessionCoordinator implements IBreathSessionCoordinator {
+  @override
+  void openConstructor(String sessionId) {}
+}
 
 class _FakeSessionService implements IBreathSessionService {
   final BreathSessionDTO dto;
@@ -98,6 +104,7 @@ void main() {
           (ref) => BreathViewModel(
             tickService: tickService,
             service: _FakeSessionService(_makeSession()),
+            coordinator: _FakeBreathSessionCoordinator(),
             sessionId: 'test',
           ),
         ),

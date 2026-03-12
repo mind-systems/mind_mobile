@@ -1,8 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
+import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 import 'package:mind/BreathModule/Core/IBreathSessionApi.dart';
+import 'package:mind/Core/Api/Models/SaveBreathSessionRequest.dart';
+import 'package:mind/Core/Api/Models/StarSessionRequest.dart';
 import 'package:mind/Core/Database/IBreathSessionDao.dart';
+
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -56,9 +60,10 @@ class FakeBreathSessionDao implements IBreathSessionDao {
 class FakeBreathSessionApi implements IBreathSessionApi {
   final List<BreathSession> _sessions;
 
-  bool saveCalled = false;
-  String? lastSavedId;
+  bool createCalled = false;
+  bool updateCalled = false;
   bool deleteCalled = false;
+  bool starCalled = false;
   String? lastDeletedId;
   int? lastFetchPage;
   int? lastFetchPageSize;
@@ -67,10 +72,32 @@ class FakeBreathSessionApi implements IBreathSessionApi {
       : _sessions = sessions ?? [];
 
   @override
-  Future<void> save(BreathSession session) async {
-    saveCalled = true;
-    lastSavedId = session.id;
+  Future<BreathSession> create(SaveBreathSessionRequest request) async {
+    createCalled = true;
+    final session = BreathSession(
+      id: 'created-id',
+      userId: 'user-1',
+      description: request.description,
+      shared: request.shared,
+      exercises: request.exercises,
+    );
     _sessions.add(session);
+    return session;
+  }
+
+  @override
+  Future<BreathSession> update(String id, SaveBreathSessionRequest request) async {
+    updateCalled = true;
+    final session = BreathSession(
+      id: id,
+      userId: 'user-1',
+      description: request.description,
+      shared: request.shared,
+      exercises: request.exercises,
+    );
+    _sessions.removeWhere((s) => s.id == id);
+    _sessions.add(session);
+    return session;
   }
 
   @override
@@ -86,14 +113,31 @@ class FakeBreathSessionApi implements IBreathSessionApi {
   }
 
   @override
-  Future<List<BreathSession>> fetchAll(int page, int pageSize) async {
+  Future<BreathSessionsListResponse> fetchAll(int page, int pageSize) async {
     lastFetchPage = page;
     lastFetchPageSize = pageSize;
     // 1-based pagination matching server contract
     final offset = (page - 1) * pageSize;
-    if (offset >= _sessions.length) return [];
+    if (offset >= _sessions.length) {
+      return BreathSessionsListResponse(
+        data: [],
+        total: _sessions.length,
+        page: page,
+        pageSize: pageSize,
+      );
+    }
     final end = (offset + pageSize).clamp(0, _sessions.length);
-    return _sessions.sublist(offset, end);
+    return BreathSessionsListResponse(
+      data: _sessions.sublist(offset, end),
+      total: _sessions.length,
+      page: page,
+      pageSize: pageSize,
+    );
+  }
+
+  @override
+  Future<void> starSession(StarSessionRequest request) async {
+    starCalled = true;
   }
 }
 
@@ -167,7 +211,7 @@ void main() {
 
       final results = await repo.fetch(0, 10);
 
-      expect(results.length, 10);
+      expect(results.sessions.length, 10);
       expect(api.lastFetchPage, isNull); // API not called
     });
 
@@ -181,10 +225,10 @@ void main() {
       final page0 = await repo.fetch(0, 50);
       final page1 = await repo.fetch(1, 50);
 
-      expect(page0.length, 50);
-      expect(page1.length, 50);
-      expect(page0.first.id, 's1');
-      expect(page1.first.id, 's51');
+      expect(page0.sessions.length, 50);
+      expect(page1.sessions.length, 50);
+      expect(page0.sessions.first.id, 's1');
+      expect(page1.sessions.first.id, 's51');
       expect(api.lastFetchPage, isNull); // API not called
     });
 
@@ -200,7 +244,7 @@ void main() {
       final results = await repo.fetch(0, 50);
 
       expect(api.lastFetchPage, 1); // API was called with 1-based page
-      expect(results.length, 30);
+      expect(results.sessions.length, 30);
     });
   });
 
@@ -213,7 +257,7 @@ void main() {
 
       final results = await repo.fetch(0, 50);
 
-      expect(results.length, 50);
+      expect(results.sessions.length, 50);
       // Should pass page=1 to API (0-based → 1-based conversion)
       expect(api.lastFetchPage, 1);
 
@@ -249,25 +293,23 @@ void main() {
       final results = await repo.fetch(1, 50);
 
       expect(api.lastFetchPage, 2);
-      expect(results.length, lessThanOrEqualTo(50));
+      expect(results.sessions.length, lessThanOrEqualTo(50));
     });
   });
 
-  group('save', () {
-    test('calls api.save and persists to DAO', () async {
+  group('create', () {
+    test('calls api.create and persists to DAO', () async {
       final dao = FakeBreathSessionDao();
       final api = FakeBreathSessionApi();
       final repo = _makeRepo(dao: dao, api: api);
       final session = _makeSession('s5');
 
-      await repo.save(session);
+      await repo.create(session);
 
-      expect(api.saveCalled, true);
-      expect(api.lastSavedId, 's5');
+      expect(api.createCalled, true);
 
-      final stored = await dao.getSessionById('s5');
+      final stored = await dao.getSessionById('created-id');
       expect(stored, isNotNull);
-      expect(stored!.id, 's5');
     });
   });
 
