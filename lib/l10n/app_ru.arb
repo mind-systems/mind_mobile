@@ -1,0 +1,54 @@
+{
+  "@@locale": "ru",
+
+  "ok": "ОК",
+  "confirm": "Подтвердить",
+  "cancel": "Отмена",
+  "delete": "Удалить",
+  "comingSoon": "Скоро",
+
+  "account": "Аккаунт",
+  "appearance": "Внешний вид",
+  "session": "Сессия",
+  "name": "Имя",
+  "language": "Язык",
+  "theme": "Тема",
+  "profile": "Профиль",
+  "email": "Email",
+  "login": "Войти",
+  "logOut": "Выйти",
+
+  "themeDark": "Тёмная",
+  "themeLight": "Светлая",
+  "themeSystem": "Системная",
+
+  "onboardingHello": "Привет",
+  "onboardingWelcome": "Добро пожаловать в Mind",
+
+  "loginCheckEmailTitle": "Проверьте почту",
+  "loginCheckEmailDescription": "Мы отправили вам одноразовую ссылку для входа. Откройте её на этом устройстве.",
+  "loginCodeHint": "Или вставьте код здесь",
+  "loginSendCodeError": "Не удалось отправить код",
+  "loginCodeInvalidError": "Код недействителен или истёк",
+  "logOutDescription": "Возвращайтесь скорее",
+
+  "breathPhaseInhale": "Вдох",
+  "breathPhaseHold": "Задержка",
+  "breathPhaseExhale": "Выдох",
+  "breathPhaseRest": "Отдых",
+
+  "breathSessionListLoadFailed": "Не удалось загрузить сессии",
+  "breathSessionListPagingFailed": "Не удалось загрузить ещё",
+  "breathSessionListSyncFailed": "Не удалось синхронизировать сессии",
+  "breathSessionListSharedSessions": "Общие сессии",
+
+  "breathConstructorDeletedSuccess": "Сессия удалена",
+  "breathConstructorDeleteError": "Ошибка удаления: {error}",
+  "breathConstructorValidationError": "Добавьте хотя бы одно упражнение",
+  "breathConstructorSavedSuccess": "Сессия сохранена",
+  "breathConstructorSaveError": "Ошибка сохранения: {error}",
+  "breathConstructorDeleteConfirmTitle": "Удалить сессию",
+
+  "homeTabBreath": "Дыхание",
+  "homeTabMind": "Mind"
+}

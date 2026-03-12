@@ -1,0 +1,60 @@
+{
+  "@@locale": "en",
+
+  "ok": "OK",
+  "confirm": "Confirm",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "comingSoon": "Coming soon",
+
+  "account": "Account",
+  "appearance": "Appearance",
+  "session": "Session",
+  "name": "Name",
+  "language": "Language",
+  "theme": "Theme",
+  "profile": "Profile",
+  "email": "Email",
+  "login": "Login",
+  "logOut": "Log out",
+
+  "themeDark": "Dark",
+  "themeLight": "Light",
+  "themeSystem": "System",
+
+  "onboardingHello": "Hello",
+  "onboardingWelcome": "Welcome to your mind",
+
+  "loginCheckEmailTitle": "Check your email",
+  "loginCheckEmailDescription": "We sent you a one-time sign-in link. Click the link on the same device.",
+  "loginCodeHint": "Or paste your code here",
+  "loginSendCodeError": "Failed to send code",
+  "loginCodeInvalidError": "Code is invalid or expired",
+  "logOutDescription": "Come back again soon",
+
+  "breathPhaseInhale": "Inhale",
+  "breathPhaseHold": "Hold",
+  "breathPhaseExhale": "Exhale",
+  "breathPhaseRest": "Rest",
+
+  "breathSessionListLoadFailed": "Failed to load sessions",
+  "breathSessionListPagingFailed": "Failed to load more sessions",
+  "breathSessionListSyncFailed": "Failed to sync sessions",
+  "breathSessionListSharedSessions": "Shared Sessions",
+
+  "breathConstructorDeletedSuccess": "Session deleted",
+  "breathConstructorDeleteError": "Error deleting session: {error}",
+  "@breathConstructorDeleteError": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "breathConstructorValidationError": "Please configure at least one valid exercise",
+  "breathConstructorSavedSuccess": "Session saved",
+  "breathConstructorSaveError": "Error saving session: {error}",
+  "@breathConstructorSaveError": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "breathConstructorDeleteConfirmTitle": "Delete Session",
+
+  "homeTabBreath": "Breath",
+  "homeTabMind": "Mind"
+}

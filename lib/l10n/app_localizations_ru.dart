@@ -1,0 +1,143 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Russian (`ru`).
+class AppLocalizationsRu extends AppLocalizations {
+  AppLocalizationsRu([String locale = 'ru']) : super(locale);
+
+  @override
+  String get ok => 'ОК';
+
+  @override
+  String get confirm => 'Подтвердить';
+
+  @override
+  String get cancel => 'Отмена';
+
+  @override
+  String get delete => 'Удалить';
+
+  @override
+  String get comingSoon => 'Скоро';
+
+  @override
+  String get account => 'Аккаунт';
+
+  @override
+  String get appearance => 'Внешний вид';
+
+  @override
+  String get session => 'Сессия';
+
+  @override
+  String get name => 'Имя';
+
+  @override
+  String get language => 'Язык';
+
+  @override
+  String get theme => 'Тема';
+
+  @override
+  String get profile => 'Профиль';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get login => 'Войти';
+
+  @override
+  String get logOut => 'Выйти';
+
+  @override
+  String get themeDark => 'Тёмная';
+
+  @override
+  String get themeLight => 'Светлая';
+
+  @override
+  String get themeSystem => 'Системная';
+
+  @override
+  String get onboardingHello => 'Привет';
+
+  @override
+  String get onboardingWelcome => 'Добро пожаловать в Mind';
+
+  @override
+  String get loginCheckEmailTitle => 'Проверьте почту';
+
+  @override
+  String get loginCheckEmailDescription =>
+      'Мы отправили вам одноразовую ссылку для входа. Откройте её на этом устройстве.';
+
+  @override
+  String get loginCodeHint => 'Или вставьте код здесь';
+
+  @override
+  String get loginSendCodeError => 'Не удалось отправить код';
+
+  @override
+  String get loginCodeInvalidError => 'Код недействителен или истёк';
+
+  @override
+  String get logOutDescription => 'Возвращайтесь скорее';
+
+  @override
+  String get breathPhaseInhale => 'Вдох';
+
+  @override
+  String get breathPhaseHold => 'Задержка';
+
+  @override
+  String get breathPhaseExhale => 'Выдох';
+
+  @override
+  String get breathPhaseRest => 'Отдых';
+
+  @override
+  String get breathSessionListLoadFailed => 'Не удалось загрузить сессии';
+
+  @override
+  String get breathSessionListPagingFailed => 'Не удалось загрузить ещё';
+
+  @override
+  String get breathSessionListSyncFailed =>
+      'Не удалось синхронизировать сессии';
+
+  @override
+  String get breathSessionListSharedSessions => 'Общие сессии';
+
+  @override
+  String get breathConstructorDeletedSuccess => 'Сессия удалена';
+
+  @override
+  String breathConstructorDeleteError(String error) {
+    return 'Ошибка удаления: $error';
+  }
+
+  @override
+  String get breathConstructorValidationError =>
+      'Добавьте хотя бы одно упражнение';
+
+  @override
+  String get breathConstructorSavedSuccess => 'Сессия сохранена';
+
+  @override
+  String breathConstructorSaveError(String error) {
+    return 'Ошибка сохранения: $error';
+  }
+
+  @override
+  String get breathConstructorDeleteConfirmTitle => 'Удалить сессию';
+
+  @override
+  String get homeTabBreath => 'Дыхание';
+
+  @override
+  String get homeTabMind => 'Mind';
+}

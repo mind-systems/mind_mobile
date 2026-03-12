@@ -20,7 +20,12 @@ flutter test
 
 # Regenerate Drift ORM code (after modifying database schema)
 flutter pub run build_runner build
+
+# Add a package dependency
+flutter pub add <package_name>
 ```
+
+> **Always use `flutter pub add` to add packages — never edit `pubspec.yaml` manually.**
 
 ### First-time setup
 1. `cp lib/Core/Environment.example.dart lib/Core/Environment.dart` and fill in values (API URLs, Google client IDs)
