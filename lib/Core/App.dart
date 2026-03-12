@@ -87,6 +87,10 @@ class App {
     await appSettingsRepository.init();
     final initialTheme = await appSettingsRepository.getTheme();
     final initialLanguage = await appSettingsRepository.getLanguage();
+    // authStateStream: server language wins on login — AppSettingsNotifier
+    // listens for AuthenticatedState and overwrites the local language with
+    // the value returned by the server. This ensures the language set during
+    // registration propagates back to the device on first sign-in.
     final appSettingsNotifier = AppSettingsNotifier(
       repository: appSettingsRepository,
       initialState: AppSettingsState(theme: initialTheme, language: initialLanguage),
@@ -119,16 +123,16 @@ class App {
   }
 }
 
-ThemeMode _themeModeFromKey(String key) {
-  switch (key) {
-    case 'dark': return ThemeMode.dark;
-    case 'light': return ThemeMode.light;
-    default: return ThemeMode.system;
-  }
-}
-
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
+
+  static ThemeMode _themeModeFromKey(String key) {
+    switch (key) {
+      case 'dark': return ThemeMode.dark;
+      case 'light': return ThemeMode.light;
+      default: return ThemeMode.system;
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

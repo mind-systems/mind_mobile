@@ -46,8 +46,14 @@ class ProfileService implements IProfileService {
 
   @override
   Future<void> updateLanguage(String key) async {
+    final previous = appSettingsNotifier.currentState.language;
     await appSettingsNotifier.setLanguage(key);
-    await userNotifier.updateLanguage(key);
+    try {
+      await userNotifier.updateLanguage(key);
+    } catch (_) {
+      await appSettingsNotifier.setLanguage(previous);
+      rethrow;
+    }
   }
 
   @override

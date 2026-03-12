@@ -75,8 +75,8 @@ class LoginViewModel extends StateNotifier<LoginState> {
       // Navigation happens via onAuthenticatedEvent when UserNotifier emits AuthenticatedState
     } on GoogleSignInCanceledException {
       // Cancellation is handled in UserNotifier; catch here as a safety net
-    } catch (e) {
-      onErrorEvent?.call('Не удалось войти через Google. Попробуйте ещё раз.');
+    } catch (_) {
+      // Error is already published to authErrorStream by UserNotifier
     }
   }
 }

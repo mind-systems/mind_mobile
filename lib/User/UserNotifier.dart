@@ -74,7 +74,8 @@ class UserNotifier {
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e) {
       log('[UserNotifier] loginWithGoogle error: $e');
-      _authErrorSubject.add('Не удалось войти через Google');
+      _authErrorSubject.add('Failed to sign in with Google');
+      rethrow;
     } finally {
       _authInProgressSubject.add(false);
     }
