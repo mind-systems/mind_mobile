@@ -175,6 +175,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   }
 
   void openEditor() {
+    if (_sessionDTO == null) return;
     pause();
     coordinator.openConstructor(sessionId);
   }

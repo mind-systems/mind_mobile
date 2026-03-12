@@ -49,6 +49,7 @@ class BreathModule {
     final session = sessionId != null
         ? app.breathSessionNotifier.currentState.byId[sessionId]
         : null;
+    assert(sessionId == null || session != null, 'Session $sessionId not found in cache — was it deleted before navigation?');
     final service = BreathSessionConstructorService(userId: userId, existingSession: session, provider: app.breathSessionNotifier);
     return ProviderScope(
       overrides: [

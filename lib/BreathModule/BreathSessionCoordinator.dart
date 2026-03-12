@@ -10,6 +10,7 @@ class BreathSessionCoordinator implements IBreathSessionCoordinator {
 
   @override
   void openConstructor(String sessionId) {
+    if (!context.mounted) return;
     context.push(BreathSessionConstructorScreen.path, extra: sessionId);
   }
 }
