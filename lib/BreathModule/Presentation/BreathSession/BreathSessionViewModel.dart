@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/ITickService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionStateMachine.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
@@ -18,6 +19,7 @@ final breathViewModelProvider =
 class BreathViewModel extends StateNotifier<BreathSessionState> {
   final ITickService tickService;
   final IBreathSessionService service;
+  final IBreathSessionCoordinator coordinator;
   final String sessionId;
 
   BreathSessionStateMachine? _stateMachine;
@@ -31,6 +33,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   BreathViewModel({
     required this.tickService,
     required this.service,
+    required this.coordinator,
     required this.sessionId,
   }) : super(BreathSessionState.initial());
 
@@ -169,6 +172,11 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   void restart() {
     if (_sessionDTO == null) return;
     _setupEngine(_sessionDTO!);
+  }
+
+  void openEditor() {
+    pause();
+    coordinator.openConstructor(sessionId);
   }
 
   // ===== Facade =====

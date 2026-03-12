@@ -199,7 +199,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
                       icon: const Icon(Icons.edit_outlined),
                       color: const Color(0xFF00D9FF),
                       iconSize: 28,
-                      onPressed: () {},
+                      onPressed: () => viewModel.openEditor(),
                     ),
                   ],
                 ),

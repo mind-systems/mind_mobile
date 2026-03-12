@@ -2,10 +2,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/BreathSessionConstructorService.dart';
 import 'package:mind/BreathModule/BreathSessionListCoordinator.dart';
+import 'package:mind/BreathModule/BreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/BreathSessionListService.dart';
 import 'package:mind/BreathModule/BreathSessionService.dart';
 import 'package:mind/BreathModule/ClockTickService.dart';
-import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorScreen.dart';
@@ -32,19 +32,23 @@ class BreathModule {
   static Widget buildSession(BuildContext context, {required String sessionId}) {
     final tickService = ClockTickService()..simulateTick();
     final service = BreathSessionService(notifier: App.shared.breathSessionNotifier);
+    final coordinator = BreathSessionCoordinator(context);
     return ProviderScope(
       overrides: [
         breathViewModelProvider.overrideWith(
-          (ref) => BreathViewModel(tickService: tickService, service: service, sessionId: sessionId),
+          (ref) => BreathViewModel(tickService: tickService, service: service, coordinator: coordinator, sessionId: sessionId),
         ),
       ],
       child: const BreathSessionScreen(),
     );
   }
 
-  static Widget buildConstructor(BuildContext context, {required BreathSession session}) {
+  static Widget buildConstructor(BuildContext context, {String? sessionId}) {
     final app = App.shared;
     final userId = app.userNotifier.currentState.user.id;
+    final session = sessionId != null
+        ? app.breathSessionNotifier.currentState.byId[sessionId]
+        : null;
     final service = BreathSessionConstructorService(userId: userId, existingSession: session, provider: app.breathSessionNotifier);
     return ProviderScope(
       overrides: [

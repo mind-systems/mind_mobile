@@ -1,6 +1,5 @@
 import 'package:go_router/go_router.dart';
 import 'package:mind/BreathModule/BreathModule.dart';
-import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListScreen.dart';
@@ -45,10 +44,8 @@ final appRouter = GoRouter(
       path: BreathSessionConstructorScreen.path,
       name: BreathSessionConstructorScreen.name,
       builder: (context, state) {
-        final session = state.extra is BreathSession
-            ? state.extra as BreathSession
-            : BreathSession.defaultSession();
-        return BreathModule.buildConstructor(context, session: session);
+        final sessionId = state.extra as String?;
+        return BreathModule.buildConstructor(context, sessionId: sessionId);
       },
     ),
     GoRoute(
