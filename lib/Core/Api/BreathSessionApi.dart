@@ -2,6 +2,7 @@ import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
 import 'package:mind/Core/Api/Models/SaveBreathSessionRequest.dart';
+import 'package:mind/Core/Api/Models/StarSessionRequest.dart';
 import 'package:mind/BreathModule/Core/IBreathSessionApi.dart';
 
 class BreathSessionApi implements IBreathSessionApi {
@@ -37,5 +38,10 @@ class BreathSessionApi implements IBreathSessionApi {
     final response = await _http.get('/breath_sessions/list?page=$page&pageSize=$pageSize');
     final Map<String, dynamic> data = response.data as Map<String, dynamic>;
     return BreathSessionsListResponse.fromJson(data);
+  }
+
+  @override
+  Future<void> starSession(StarSessionRequest request) async {
+    await _http.patch('/breath_sessions/${request.id}/settings', data: request.toJson());
   }
 }

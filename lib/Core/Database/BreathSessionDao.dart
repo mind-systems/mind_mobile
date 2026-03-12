@@ -59,6 +59,8 @@ class BreathSessions extends Table {
   TextColumn get exercises =>
       text().map(const ExerciseSetListConverter())();
 
+  BoolColumn get isStarred => boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -126,6 +128,7 @@ class BreathSessionDao extends DatabaseAccessor<Database>
       userId: row.userId,
       description: row.description,
       shared: row.shared,
+      isStarred: row.isStarred,
       exercises: row.exercises,
     );
   }
@@ -136,6 +139,7 @@ class BreathSessionDao extends DatabaseAccessor<Database>
       userId: Value(session.userId),
       description: Value(session.description),
       shared: Value(session.shared),
+      isStarred: Value(session.isStarred),
       exercises: Value(session.exercises),
     );
   }

@@ -43,3 +43,9 @@ class SessionDeleted extends BreathSessionNotifierEvent {
 }
 
 class SessionsInvalidated extends BreathSessionNotifierEvent {}
+
+class SessionStarred extends BreathSessionNotifierEvent {
+  final BreathSession session;
+
+  SessionStarred(this.session);
+}

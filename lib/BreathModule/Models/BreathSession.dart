@@ -7,6 +7,7 @@ class BreathSession {
   final String userId;
   final String description;
   final bool shared;
+  final bool isStarred;
 
   final List<ExerciseSet> exercises;
 
@@ -16,6 +17,7 @@ class BreathSession {
     required this.description,
     required this.shared,
     required this.exercises,
+    this.isStarred = false,
   });
 
   BreathSession copyWith({
@@ -23,6 +25,7 @@ class BreathSession {
     String? userId,
     String? description,
     bool? shared,
+    bool? isStarred,
     List<ExerciseSet>? exercises,
   }) {
     return BreathSession(
@@ -30,6 +33,7 @@ class BreathSession {
       userId: userId ?? this.userId,
       description: description ?? this.description,
       shared: shared ?? this.shared,
+      isStarred: isStarred ?? this.isStarred,
       exercises: exercises ?? this.exercises,
     );
   }
@@ -55,6 +59,7 @@ class BreathSession {
       'userId': userId,
       'description': description,
       'shared': shared,
+      'isStarred': isStarred,
       'exercises': exercises.map((exercise) => exercise.toJson()).toList(),
     };
   }
@@ -65,6 +70,7 @@ class BreathSession {
       userId: json['userId'] as String,
       description: json['description'] as String,
       shared: json['shared'] as bool,
+      isStarred: json['isStarred'] as bool? ?? false,
       exercises: (json['exercises'] as List).map((exercise) => ExerciseSet.fromJson(exercise as Map<String, dynamic>)).toList(),
     );
   }

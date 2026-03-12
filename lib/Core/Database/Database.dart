@@ -21,7 +21,7 @@ class Database extends _$Database {
   Database([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -38,6 +38,9 @@ class Database extends _$Database {
         }
         if (step == 4) {
           await migrator.addColumn(userRecord, userRecord.language);
+        }
+        if (step == 5) {
+          await migrator.addColumn(breathSessions, breathSessions.isStarred);
         }
       }
     },

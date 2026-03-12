@@ -410,6 +410,21 @@ class $BreathSessionsTable extends BreathSessions
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   ).withConverter<List<ExerciseSet>>($BreathSessionsTable.$converterexercises);
+  static const VerificationMeta _isStarredMeta = const VerificationMeta(
+    'isStarred',
+  );
+  @override
+  late final GeneratedColumn<bool> isStarred = GeneratedColumn<bool>(
+    'is_starred',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_starred" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -417,6 +432,7 @@ class $BreathSessionsTable extends BreathSessions
     description,
     shared,
     exercises,
+    isStarred,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -462,6 +478,12 @@ class $BreathSessionsTable extends BreathSessions
     } else if (isInserting) {
       context.missing(_sharedMeta);
     }
+    if (data.containsKey('is_starred')) {
+      context.handle(
+        _isStarredMeta,
+        isStarred.isAcceptableOrUnknown(data['is_starred']!, _isStarredMeta),
+      );
+    }
     return context;
   }
 
@@ -493,6 +515,10 @@ class $BreathSessionsTable extends BreathSessions
           data['${effectivePrefix}exercises'],
         )!,
       ),
+      isStarred: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_starred'],
+      )!,
     );
   }
 
@@ -512,12 +538,14 @@ class BreathSessionRow extends DataClass
   final String description;
   final bool shared;
   final List<ExerciseSet> exercises;
+  final bool isStarred;
   const BreathSessionRow({
     required this.id,
     required this.userId,
     required this.description,
     required this.shared,
     required this.exercises,
+    required this.isStarred,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -531,6 +559,7 @@ class BreathSessionRow extends DataClass
         $BreathSessionsTable.$converterexercises.toSql(exercises),
       );
     }
+    map['is_starred'] = Variable<bool>(isStarred);
     return map;
   }
 
@@ -541,6 +570,7 @@ class BreathSessionRow extends DataClass
       description: Value(description),
       shared: Value(shared),
       exercises: Value(exercises),
+      isStarred: Value(isStarred),
     );
   }
 
@@ -555,6 +585,7 @@ class BreathSessionRow extends DataClass
       description: serializer.fromJson<String>(json['description']),
       shared: serializer.fromJson<bool>(json['shared']),
       exercises: serializer.fromJson<List<ExerciseSet>>(json['exercises']),
+      isStarred: serializer.fromJson<bool>(json['isStarred']),
     );
   }
   @override
@@ -566,6 +597,7 @@ class BreathSessionRow extends DataClass
       'description': serializer.toJson<String>(description),
       'shared': serializer.toJson<bool>(shared),
       'exercises': serializer.toJson<List<ExerciseSet>>(exercises),
+      'isStarred': serializer.toJson<bool>(isStarred),
     };
   }
 
@@ -575,12 +607,14 @@ class BreathSessionRow extends DataClass
     String? description,
     bool? shared,
     List<ExerciseSet>? exercises,
+    bool? isStarred,
   }) => BreathSessionRow(
     id: id ?? this.id,
     userId: userId ?? this.userId,
     description: description ?? this.description,
     shared: shared ?? this.shared,
     exercises: exercises ?? this.exercises,
+    isStarred: isStarred ?? this.isStarred,
   );
   BreathSessionRow copyWithCompanion(BreathSessionsCompanion data) {
     return BreathSessionRow(
@@ -591,6 +625,7 @@ class BreathSessionRow extends DataClass
           : this.description,
       shared: data.shared.present ? data.shared.value : this.shared,
       exercises: data.exercises.present ? data.exercises.value : this.exercises,
+      isStarred: data.isStarred.present ? data.isStarred.value : this.isStarred,
     );
   }
 
@@ -601,13 +636,15 @@ class BreathSessionRow extends DataClass
           ..write('userId: $userId, ')
           ..write('description: $description, ')
           ..write('shared: $shared, ')
-          ..write('exercises: $exercises')
+          ..write('exercises: $exercises, ')
+          ..write('isStarred: $isStarred')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, userId, description, shared, exercises);
+  int get hashCode =>
+      Object.hash(id, userId, description, shared, exercises, isStarred);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -616,7 +653,8 @@ class BreathSessionRow extends DataClass
           other.userId == this.userId &&
           other.description == this.description &&
           other.shared == this.shared &&
-          other.exercises == this.exercises);
+          other.exercises == this.exercises &&
+          other.isStarred == this.isStarred);
 }
 
 class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
@@ -625,6 +663,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
   final Value<String> description;
   final Value<bool> shared;
   final Value<List<ExerciseSet>> exercises;
+  final Value<bool> isStarred;
   final Value<int> rowid;
   const BreathSessionsCompanion({
     this.id = const Value.absent(),
@@ -632,6 +671,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     this.description = const Value.absent(),
     this.shared = const Value.absent(),
     this.exercises = const Value.absent(),
+    this.isStarred = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BreathSessionsCompanion.insert({
@@ -640,6 +680,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     required String description,
     required bool shared,
     required List<ExerciseSet> exercises,
+    this.isStarred = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        userId = Value(userId),
@@ -652,6 +693,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     Expression<String>? description,
     Expression<bool>? shared,
     Expression<String>? exercises,
+    Expression<bool>? isStarred,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -660,6 +702,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
       if (description != null) 'description': description,
       if (shared != null) 'shared': shared,
       if (exercises != null) 'exercises': exercises,
+      if (isStarred != null) 'is_starred': isStarred,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -670,6 +713,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     Value<String>? description,
     Value<bool>? shared,
     Value<List<ExerciseSet>>? exercises,
+    Value<bool>? isStarred,
     Value<int>? rowid,
   }) {
     return BreathSessionsCompanion(
@@ -678,6 +722,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
       description: description ?? this.description,
       shared: shared ?? this.shared,
       exercises: exercises ?? this.exercises,
+      isStarred: isStarred ?? this.isStarred,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -702,6 +747,9 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
         $BreathSessionsTable.$converterexercises.toSql(exercises.value),
       );
     }
+    if (isStarred.present) {
+      map['is_starred'] = Variable<bool>(isStarred.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -716,6 +764,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
           ..write('description: $description, ')
           ..write('shared: $shared, ')
           ..write('exercises: $exercises, ')
+          ..write('isStarred: $isStarred, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -942,6 +991,7 @@ typedef $$BreathSessionsTableCreateCompanionBuilder =
       required String description,
       required bool shared,
       required List<ExerciseSet> exercises,
+      Value<bool> isStarred,
       Value<int> rowid,
     });
 typedef $$BreathSessionsTableUpdateCompanionBuilder =
@@ -951,6 +1001,7 @@ typedef $$BreathSessionsTableUpdateCompanionBuilder =
       Value<String> description,
       Value<bool> shared,
       Value<List<ExerciseSet>> exercises,
+      Value<bool> isStarred,
       Value<int> rowid,
     });
 
@@ -988,6 +1039,11 @@ class $$BreathSessionsTableFilterComposer
     column: $table.exercises,
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
+
+  ColumnFilters<bool> get isStarred => $composableBuilder(
+    column: $table.isStarred,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$BreathSessionsTableOrderingComposer
@@ -1023,6 +1079,11 @@ class $$BreathSessionsTableOrderingComposer
     column: $table.exercises,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isStarred => $composableBuilder(
+    column: $table.isStarred,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BreathSessionsTableAnnotationComposer
@@ -1050,6 +1111,9 @@ class $$BreathSessionsTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<List<ExerciseSet>, String> get exercises =>
       $composableBuilder(column: $table.exercises, builder: (column) => column);
+
+  GeneratedColumn<bool> get isStarred =>
+      $composableBuilder(column: $table.isStarred, builder: (column) => column);
 }
 
 class $$BreathSessionsTableTableManager
@@ -1088,6 +1152,7 @@ class $$BreathSessionsTableTableManager
                 Value<String> description = const Value.absent(),
                 Value<bool> shared = const Value.absent(),
                 Value<List<ExerciseSet>> exercises = const Value.absent(),
+                Value<bool> isStarred = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BreathSessionsCompanion(
                 id: id,
@@ -1095,6 +1160,7 @@ class $$BreathSessionsTableTableManager
                 description: description,
                 shared: shared,
                 exercises: exercises,
+                isStarred: isStarred,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1104,6 +1170,7 @@ class $$BreathSessionsTableTableManager
                 required String description,
                 required bool shared,
                 required List<ExerciseSet> exercises,
+                Value<bool> isStarred = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BreathSessionsCompanion.insert(
                 id: id,
@@ -1111,6 +1178,7 @@ class $$BreathSessionsTableTableManager
                 description: description,
                 shared: shared,
                 exercises: exercises,
+                isStarred: isStarred,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

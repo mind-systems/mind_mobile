@@ -237,4 +237,4 @@ When adding a new feature `FooModule`:
 - ❌ Declaring the Service interface in the domain layer (it belongs in the module)
 - ❌ Adding Riverpod `ref` or Flutter imports to a Notifier or Repository
 - ❌ Skipping the DTO conversion and passing domain models directly to the ViewModel
-- ❌ Passing inline maps/primitives as API request bodies — always use a DTO class in `lib/Core/Api/Models/` with `toJson()` (see `SendCodeRequest`, `VerifyCodeRequest`, `GoogleAuthRequest`).
+- ❌ Passing inline maps/primitives as API request bodies — always use a typed DTO from `lib/Core/Api/Models/` with `toJson()`; the API method receives the DTO, the Repository constructs it (see `SendCodeRequest`, `VerifyCodeRequest`, `GoogleAuthRequest`, `StarSessionRequest`).

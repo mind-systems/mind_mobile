@@ -112,7 +112,7 @@ class BreathSessionNotifier {
     _isLoading = true;
 
     try {
-      final result = await repository.fetch(0, pageSize);
+      final result = await repository.refresh(pageSize);
       final sessions = result.sessions;
       final hasMore = result.hasMore;
 
@@ -146,6 +146,16 @@ class BreathSessionNotifier {
     final updatedById = Map<String, BreathSession>.from(state.byId)..[saved.id] = saved;
     _subject.add(BreathSessionsState(byId: updatedById, order: state.order, lastEvent: SessionUpdated(saved)));
     return saved;
+  }
+
+  Future<void> starSession(String id, {required bool starred}) async {
+    await repository.starSession(id, starred: starred);
+    final state = _subject.value;
+    final session = state.byId[id];
+    if (session == null) return;
+    final updated = session.copyWith(isStarred: starred);
+    final updatedById = Map<String, BreathSession>.from(state.byId)..[id] = updated;
+    _subject.add(BreathSessionsState(byId: updatedById, order: state.order, lastEvent: SessionStarred(updated)));
   }
 
   Future<void> delete(String id) async {

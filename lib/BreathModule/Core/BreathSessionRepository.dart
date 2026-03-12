@@ -1,5 +1,6 @@
 import 'package:mind/BreathModule/Core/IBreathSessionApi.dart';
 import 'package:mind/Core/Api/Models/SaveBreathSessionRequest.dart';
+import 'package:mind/Core/Api/Models/StarSessionRequest.dart';
 import 'package:mind/Core/Database/IBreathSessionDao.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 
@@ -17,6 +18,13 @@ class BreathSessionRepository {
       return session;
     }
     return await _api.fetchById(id);
+  }
+
+  Future<({List<BreathSession> sessions, bool hasMore})> refresh(int pageSize) async {
+    final response = await _api.fetchAll(1, pageSize);
+    await _dao.deleteAllSessions();
+    await _dao.saveSessions(response.data);
+    return (sessions: response.data, hasMore: response.hasMore);
   }
 
   Future<({List<BreathSession> sessions, bool hasMore})> fetch(int page, int pageSize) async {
@@ -60,6 +68,14 @@ class BreathSessionRepository {
   Future<void> delete(String id) async {
     await _api.delete(id);
     await _dao.deleteSession(id);
+  }
+
+  Future<void> starSession(String id, {required bool starred}) async {
+    await _api.starSession(StarSessionRequest(id: id, starred: starred));
+    final session = await _dao.getSessionById(id);
+    if (session != null) {
+      await _dao.saveSession(session.copyWith(isStarred: starred));
+    }
   }
 
   Future<void> deleteAll() async {
