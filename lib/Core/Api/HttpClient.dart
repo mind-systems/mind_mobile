@@ -49,6 +49,14 @@ class HttpClient {
     }
   }
 
+  Future<Response> put(String path, {Object? data}) async {
+    try {
+      return await _dio.put(path, data: data);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   Future<Response> delete(String path) async {
     try {
       return await _dio.delete(path);

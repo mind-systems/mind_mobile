@@ -17,7 +17,7 @@ class BreathSessionApi implements IBreathSessionApi {
 
   @override
   Future<BreathSession> update(String id, SaveBreathSessionRequest request) async {
-    final response = await _http.patch('/breath_sessions/$id', data: request.toJson());
+    final response = await _http.put('/breath_sessions/$id', data: request.toJson());
     return BreathSession.fromJson(response.data as Map<String, dynamic>);
   }
 
