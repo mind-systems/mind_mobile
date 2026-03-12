@@ -12,6 +12,7 @@ import 'package:mind/BreathModule/Presentation/BreathSession/Animation/OrbAnimat
 import 'package:mind/BreathModule/Presentation/BreathSession/Views/BreathShapeWidget.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Views/BreathTimelineWidget.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Views/EclipseOrb.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Views/SessionBottomBar.dart';
 
 /// Экран дыхательной сессии
 class BreathSessionScreen extends ConsumerStatefulWidget {
@@ -127,65 +128,82 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
         return Scaffold(
           backgroundColor: const Color(0xFF0A0E27),
           body: SafeArea(
-            child: Align(
-              alignment: Alignment.center,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Основная область с дыхательной фигурой
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    child: SizedBox(
-                      width: shapeDimension,
-                      height: shapeDimension,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          ValueListenableBuilder<double>(
-                            valueListenable: _orbCoordinator.orbProgress,
-                            builder: (context, progress, _) => EclipseOrb(
-                              size: shapeDimension * progress,
-                              glowColor: const Color(0xFF00C8E0),
-                              maskColor: const Color(0xFF0A0E27),
-                              pulseStream: viewModel.tickStream,
-                            ),
+            bottom: false,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Основной контент по центру
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Основная область с дыхательной фигурой
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: SizedBox(
+                          width: shapeDimension,
+                          height: shapeDimension,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              ValueListenableBuilder<double>(
+                                valueListenable: _orbCoordinator.orbProgress,
+                                builder: (context, progress, _) => EclipseOrb(
+                                  size: shapeDimension * progress,
+                                  glowColor: const Color(0xFF00C8E0),
+                                  maskColor: const Color(0xFF0A0E27),
+                                  pulseStream: viewModel.tickStream,
+                                ),
+                              ),
+                              AnimatedOpacity(
+                                opacity: state.loadState == SessionLoadState.ready ? 1.0 : 0.0,
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeIn,
+                                child: BreathShapeWidget(
+                                  motionController: _motionEngine,
+                                  shapeController: _shapeShifter,
+                                  shapeColor: const Color(0xFF00D9FF),
+                                  pointColor: Colors.white,
+                                  strokeWidth: 3.0,
+                                  pointRadius: 6.0,
+                                ),
+                              ),
+                            ],
                           ),
-                          AnimatedOpacity(
-                            opacity: state.loadState == SessionLoadState.ready ? 1.0 : 0.0,
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeIn,
-                            child: BreathShapeWidget(
-                              motionController: _motionEngine,
-                              shapeController: _shapeShifter,
-                              shapeColor: const Color(0xFF00D9FF),
-                              pointColor: Colors.white,
-                              strokeWidth: 3.0,
-                              pointRadius: 6.0,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
 
-                  SizedBox(
-                    height: timelineHeight,
-                    child: BreathTimelineWidget(
-                      key: _timelineKey,
-                      steps: state.timelineSteps,
-                      activeStepId: state.activeStepId,
-                      scrollController: _scrollController,
-                      status: state.status,
-                      itemHeight: itemHeight,
-                    ),
-                  ),
+                      SizedBox(
+                        height: timelineHeight,
+                        child: BreathTimelineWidget(
+                          key: _timelineKey,
+                          steps: state.timelineSteps,
+                          activeStepId: state.activeStepId,
+                          scrollController: _scrollController,
+                          status: state.status,
+                          itemHeight: itemHeight,
+                        ),
+                      ),
 
-                  Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: _buildControlButton(state, viewModel),
+                      Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: _buildControlButton(state, viewModel),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                // Bottom bar прибит к низу
+                SessionBottomBar(
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      color: const Color(0xFF00D9FF),
+                      iconSize: 28,
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         );
