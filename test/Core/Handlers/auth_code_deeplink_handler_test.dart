@@ -26,7 +26,7 @@ class FakeUserRepository implements UserRepository {
   }
 
   @override
-  Future<void> sendPasswordlessSignInLink(String email) async {}
+  Future<void> sendPasswordlessSignInLink(String email, {String language = 'en'}) async {}
 
   @override
   Future<User> loadUser() async => User(

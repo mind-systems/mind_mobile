@@ -14,7 +14,7 @@ class LoginService implements ILoginService {
 
   @override
   Future<void> sendPasswordlessSignInLink(String email) async {
-    await userNotifier.sendPasswordlessSignInLink(email);
+    await userNotifier.sendPasswordlessSignInLink(email, language: appSettingsNotifier.currentState.language);
   }
 
   @override

@@ -50,8 +50,8 @@ class UserRepository {
     return guest;
   }
 
-  Future<void> sendPasswordlessSignInLink(String email) async {
-    await _api.sendCode(SendCodeRequest(email: email));
+  Future<void> sendPasswordlessSignInLink(String email, {String language = 'en'}) async {
+    await _api.sendCode(SendCodeRequest(email: email, language: language));
     await _storage.write(_pendingSignInEmailKey, email);
   }
 

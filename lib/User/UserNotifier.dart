@@ -41,8 +41,8 @@ class UserNotifier {
 
   User get currentUser => _subject.value.user;
 
-  Future<void> sendPasswordlessSignInLink(String email) async {
-    await repository.sendPasswordlessSignInLink(email);
+  Future<void> sendPasswordlessSignInLink(String email, {String language = 'en'}) async {
+    await repository.sendPasswordlessSignInLink(email, language: language);
   }
 
   Future<void> completePasswordlessSignIn(String code, {String? language}) async {
