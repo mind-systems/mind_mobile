@@ -6,6 +6,7 @@ import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
 import 'package:mind/User/Models/User.dart';
 import 'package:mind/User/Presentation/Login/ILoginService.dart';
 import 'package:mind/User/Presentation/Login/LoginViewModel.dart';
+import 'package:mind/User/Presentation/Login/Models/LoginState.dart';
 
 // ---------------------------------------------------------------------------
 // Fake ILoginService
@@ -114,7 +115,7 @@ void main() {
   group('loginWithGoogle', () {
     test('cancellation does not call onErrorEvent', () async {
       fakeService.googleLoginError = GoogleSignInCanceledException();
-      String? capturedError;
+      LoginError? capturedError;
       viewModel.onErrorEvent = (error) => capturedError = error;
 
       await viewModel.loginWithGoogle();
@@ -124,13 +125,13 @@ void main() {
 
     test('error calls onErrorEvent', () async {
       fakeService.googleLoginError = Exception('network error');
-      String? capturedError;
+      LoginError? capturedError;
       viewModel.onErrorEvent = (error) => capturedError = error;
 
       await viewModel.loginWithGoogle();
 
       expect(capturedError, isNotNull);
-      expect(capturedError, contains('Google'));
+      expect(capturedError, LoginError.sendCodeFailed);
     });
   });
 
@@ -157,7 +158,7 @@ void main() {
 
     test('calls onErrorEvent and clears isLoading on failure', () async {
       fakeService.sendLinkError = Exception('network error');
-      String? capturedError;
+      LoginError? capturedError;
       viewModel.onErrorEvent = (error) => capturedError = error;
       viewModel.updateEmail('test@example.com');
 
@@ -179,13 +180,13 @@ void main() {
 
     test('calls onErrorEvent and clears isLoading on failure', () async {
       fakeService.verifyCodeError = Exception('invalid code');
-      String? capturedError;
+      LoginError? capturedError;
       viewModel.onErrorEvent = (error) => capturedError = error;
 
       await viewModel.verifyCode('bad-code');
 
       expect(viewModel.state.isLoading, isFalse);
-      expect(capturedError, contains('invalid or expired'));
+      expect(capturedError, LoginError.codeInvalidOrExpired);
     });
   });
 

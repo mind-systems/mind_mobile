@@ -48,9 +48,8 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   void onThemeTap() {
     final keys = service.themeOptions;
     final currentIndex = keys.indexOf(state.theme).clamp(0, keys.length - 1);
-    coordinator.showPicker(
-      title: 'Theme',
-      options: keys.map(_displayTheme).toList(),
+    coordinator.showThemePicker(
+      keys: keys,
       selectedIndex: currentIndex,
       onSelect: (index) => onThemeChanged(keys[index]),
     );
@@ -59,9 +58,8 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   void onLanguageTap() {
     final keys = service.languageOptions;
     final currentIndex = keys.indexOf(state.language).clamp(0, keys.length - 1);
-    coordinator.showPicker(
-      title: 'Language',
-      options: keys.map(_displayLanguage).toList(),
+    coordinator.showLanguagePicker(
+      keys: keys,
       selectedIndex: currentIndex,
       onSelect: (index) => onLanguageChanged(keys[index]),
     );
@@ -75,22 +73,6 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   Future<void> onLanguageChanged(String key) async {
     await service.updateLanguage(key);
     state = state.copyWith(language: key);
-  }
-
-  // Display helpers — temporary until localization; replaced by l10n.themeLabel(key)
-  static String _displayTheme(String key) {
-    switch (key) {
-      case 'dark': return 'Dark';
-      case 'light': return 'Light';
-      default: return 'System';
-    }
-  }
-
-  static String _displayLanguage(String key) {
-    switch (key) {
-      case 'ru': return 'Русский';
-      default: return 'English';
-    }
   }
 
   @override

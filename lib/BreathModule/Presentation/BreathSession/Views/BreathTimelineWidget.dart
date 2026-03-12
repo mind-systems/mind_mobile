@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
+import 'package:mind/l10n/app_localizations.dart';
 
 class BreathTimelineWidget extends StatefulWidget {
   final List<TimelineStep> steps;
@@ -203,7 +204,7 @@ class _TimelineItem extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(_phaseName(step.type), style: textStyle),
+              Text(_phaseName(context, step.type), style: textStyle),
               const SizedBox(width: 6),
               Text('${step.duration ?? 0}', style: textStyle),
             ],
@@ -213,12 +214,13 @@ class _TimelineItem extends StatelessWidget {
     );
   }
 
-  String _phaseName(TimelineStepType type) {
+  String _phaseName(BuildContext context, TimelineStepType type) {
+    final l10n = AppLocalizations.of(context)!;
     switch (type) {
-      case TimelineStepType.inhale: return 'Inhale';
-      case TimelineStepType.hold: return 'Hold';
-      case TimelineStepType.exhale: return 'Exhale';
-      case TimelineStepType.rest: return 'Rest';
+      case TimelineStepType.inhale: return l10n.breathPhaseInhale;
+      case TimelineStepType.hold: return l10n.breathPhaseHold;
+      case TimelineStepType.exhale: return l10n.breathPhaseExhale;
+      case TimelineStepType.rest: return l10n.breathPhaseRest;
       case TimelineStepType.separator: return '';
     }
   }

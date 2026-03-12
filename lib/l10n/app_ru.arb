@@ -5,6 +5,7 @@
   "confirm": "Подтвердить",
   "cancel": "Отмена",
   "delete": "Удалить",
+  "error": "Ошибка",
   "comingSoon": "Скоро",
 
   "account": "Аккаунт",
@@ -48,6 +49,10 @@
   "breathConstructorSavedSuccess": "Сессия сохранена",
   "breathConstructorSaveError": "Ошибка сохранения: {error}",
   "breathConstructorDeleteConfirmTitle": "Удалить сессию",
+  "breathConstructorDeleteConfirmDescription": "Это действие нельзя отменить.",
+  "breathConstructorAddExercise": "Добавить упражнение",
+  "breathConstructorTotal": "Итого",
+  "breathConstructorRepeat": "Повтор",
 
   "homeTabBreath": "Дыхание",
   "homeTabMind": "Mind"

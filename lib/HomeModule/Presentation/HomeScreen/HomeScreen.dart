@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/IHomeCoordinator.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Models/ModuleItem.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/HomeScreenCell.dart';
+import 'package:mind/l10n/app_localizations.dart';
 
 class HomeScreen extends StatelessWidget {
   static const String path = '/';
@@ -13,19 +14,20 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final modules = [
       ModuleItem(
-        title: 'Breath',
+        title: l10n.homeTabBreath,
         iconPath: 'assets/images/modules/home/breath.png',
         onTap: coordinator.openBreath,
       ),
       ModuleItem(
-        title: 'Mind',
+        title: l10n.homeTabMind,
         iconPath: 'assets/images/modules/home/bci.png',
         onTap: coordinator.openComingSoon,
       ),
       ModuleItem(
-        title: 'Profile',
+        title: l10n.profile,
         iconPath: 'assets/images/modules/home/profile.png',
         onTap: coordinator.openProfile,
       ),

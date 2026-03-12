@@ -7,22 +7,7 @@ import 'package:mind/Views/SettingsCells/SettingsEditableCell.dart';
 import 'package:mind/Views/SettingsCells/SettingsDropdownCell.dart';
 import 'package:mind/Views/SettingsCells/SettingsSection.dart';
 import 'package:mind/Views/SettingsCells/SettingsSectionHeader.dart';
-
-// Temporary display helpers — replaced by l10n when localization is added
-String _displayTheme(String key) {
-  switch (key) {
-    case 'dark': return 'Dark';
-    case 'light': return 'Light';
-    default: return 'System';
-  }
-}
-
-String _displayLanguage(String key) {
-  switch (key) {
-    case 'ru': return 'Русский';
-    default: return 'English';
-  }
-}
+import 'package:mind/l10n/app_localizations.dart';
 
 class ProfileScreen extends ConsumerWidget {
   static const String path = '/profile';
@@ -34,6 +19,17 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(profileViewModelProvider);
     final viewModel = ref.read(profileViewModelProvider.notifier);
+    final l10n = AppLocalizations.of(context)!;
+
+    final themeDisplay = switch (state.theme) {
+      'dark' => l10n.themeDark,
+      'light' => l10n.themeLight,
+      _ => l10n.themeSystem,
+    };
+    final languageDisplay = switch (state.language) {
+      'ru' => 'Русский',
+      _ => 'English',
+    };
 
     return Scaffold(
       body: SafeArea(
@@ -43,42 +39,41 @@ class ProfileScreen extends ConsumerWidget {
           ),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
-            const SettingsSectionHeader(title: 'Account'),
+            SettingsSectionHeader(title: l10n.account),
             SettingsSection(
               children: [
                 SettingsEditableCell(
-                  title: 'Name',
+                  title: l10n.name,
                   value: state.userName,
                   onSave: viewModel.onNameChanged,
                 ),
               ],
             ),
-            const SettingsSectionHeader(title: 'Appearance'),
+            SettingsSectionHeader(title: l10n.appearance),
             SettingsSection(
               children: [
                 SettingsDropdownCell(
-                  title: 'Language',
-                  value: _displayLanguage(state.language),
+                  title: l10n.language,
+                  value: languageDisplay,
                   onTap: viewModel.onLanguageTap,
                 ),
                 SettingsDropdownCell(
-                  title: 'Theme',
-                  value: _displayTheme(state.theme),
+                  title: l10n.theme,
+                  value: themeDisplay,
                   onTap: viewModel.onThemeTap,
                 ),
               ],
             ),
-            const SettingsSectionHeader(title: 'Session'),
+            SettingsSectionHeader(title: l10n.session),
             SettingsSection(
               children: [
                 SettingsCell(
-                  title: const Text('Log out'),
+                  title: Text(l10n.logOut),
                   onTap: () async {
                     final result = await AppAlert.showWithInput(
                       context,
-                      description: 'Come back again soon',
-                      confirmLabel: 'Log out',
-                      cancelLabel: 'Cancel',
+                      description: l10n.logOutDescription,
+                      confirmLabel: l10n.logOut,
                     );
                     if (result.confirmed) viewModel.onLogoutTap();
                   },

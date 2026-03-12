@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mind/l10n/app_localizations.dart';
 
 import 'package:mind/Views/ControlButton.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorViewModel.dart';
@@ -34,7 +35,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Session deleted'),
+          content: Text(AppLocalizations.of(context)!.breathConstructorDeletedSuccess),
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
@@ -45,7 +46,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error deleting session: $e'),
+          content: Text(AppLocalizations.of(context)!.breathConstructorDeleteError(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -55,32 +56,33 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
   Future<bool?> _showDeleteConfirmation(BuildContext context) async {
     return showDialog<bool>(
       context: context,
-      builder: (context) {
-        final theme = Theme.of(context);
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final l10n = AppLocalizations.of(ctx)!;
         final onSurface = theme.colorScheme.onSurface;
         return AlertDialog(
           backgroundColor: theme.cardColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
-            'Delete session?',
+            l10n.breathConstructorDeleteConfirmTitle,
             style: TextStyle(color: onSurface),
           ),
           content: Text(
-            'This action cannot be undone.',
+            l10n.breathConstructorDeleteConfirmDescription,
             style: TextStyle(color: onSurface.withValues(alpha: 0.7)),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(ctx, false),
               child: Text(
-                'Cancel',
+                l10n.cancel,
                 style: TextStyle(color: onSurface.withValues(alpha: 0.7)),
               ),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(ctx, true),
               child: Text(
-                'Delete',
+                l10n.delete,
                 style: TextStyle(color: theme.colorScheme.error),
               ),
             ),
@@ -95,9 +97,10 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
 
     if (!vm.canSave) {
       if (!context.mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please configure at least one valid exercise'),
+          content: Text(l10n.breathConstructorValidationError),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -111,7 +114,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Session saved'),
+          content: Text(AppLocalizations.of(context)!.breathConstructorSavedSuccess),
           backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
@@ -122,7 +125,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error saving session: $e'),
+          content: Text(AppLocalizations.of(context)!.breathConstructorSaveError(e.toString())),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -186,7 +189,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
         onPressed: () => _addExercise(ref),
         icon: Icon(Icons.add, color: primary),
         label: Text(
-          'Add exercise',
+          AppLocalizations.of(context)!.breathConstructorAddExercise,
           style: TextStyle(
             color: primary,
             fontSize: 16,
@@ -268,7 +271,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Total',
+                AppLocalizations.of(context)!.breathConstructorTotal,
                 style: TextStyle(
                   color: onSurface.withValues(alpha: 0.5),
                   fontSize: 12,

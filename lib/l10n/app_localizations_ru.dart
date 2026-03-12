@@ -21,6 +21,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get delete => 'Удалить';
 
   @override
+  String get error => 'Ошибка';
+
+  @override
   String get comingSoon => 'Скоро';
 
   @override
@@ -134,6 +137,19 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get breathConstructorDeleteConfirmTitle => 'Удалить сессию';
+
+  @override
+  String get breathConstructorDeleteConfirmDescription =>
+      'Это действие нельзя отменить.';
+
+  @override
+  String get breathConstructorAddExercise => 'Добавить упражнение';
+
+  @override
+  String get breathConstructorTotal => 'Итого';
+
+  @override
+  String get breathConstructorRepeat => 'Повтор';
 
   @override
   String get homeTabBreath => 'Дыхание';

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mind/Views/AlertModule/Models/AlertResult.dart';
+import 'package:mind/l10n/app_localizations.dart';
 
 abstract class AppAlert {
   static Future<void> show(
@@ -23,7 +24,7 @@ abstract class AppAlert {
                 backgroundColor: theme.colorScheme.secondaryContainer,
               ),
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK', style: TextStyle(color: Colors.white)),
+              child: Text(AppLocalizations.of(ctx)!.ok, style: const TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -36,8 +37,8 @@ abstract class AppAlert {
     String? title,
     String? description,
     String? inputHint,
-    String confirmLabel = 'Confirm',
-    String cancelLabel = 'Cancel',
+    String? confirmLabel,
+    String? cancelLabel,
   }) async {
     String inputText = '';
 
@@ -45,6 +46,7 @@ abstract class AppAlert {
       context: context,
       builder: (ctx) {
         final theme = Theme.of(ctx);
+        final l10n = AppLocalizations.of(ctx)!;
         return AlertDialog(
           backgroundColor: theme.cardColor,
           title: title != null
@@ -76,7 +78,7 @@ abstract class AppAlert {
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
               child: Text(
-                cancelLabel,
+                cancelLabel ?? l10n.cancel,
                 style: TextStyle(color: theme.colorScheme.onSurface),
               ),
             ),
@@ -85,7 +87,7 @@ abstract class AppAlert {
                 backgroundColor: theme.colorScheme.secondaryContainer,
               ),
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(confirmLabel, style: const TextStyle(color: Colors.white)),
+              child: Text(confirmLabel ?? l10n.confirm, style: const TextStyle(color: Colors.white)),
             ),
           ],
         );

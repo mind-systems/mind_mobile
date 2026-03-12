@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mind/l10n/app_localizations.dart';
 
 class ComingSoonScreen extends StatelessWidget {
   static const String path = '/coming-soon';
@@ -15,10 +16,10 @@ class ComingSoonScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: const Center(
+      body: Center(
         child: Text(
-          'Coming soon',
-          style: TextStyle(
+          AppLocalizations.of(context)!.comingSoon,
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.w500,

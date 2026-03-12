@@ -32,7 +32,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           LoginError.sendCodeFailed => l10n.loginSendCodeError,
           LoginError.codeInvalidOrExpired => l10n.loginCodeInvalidError,
         };
-        AppAlert.show(context, title: 'Ошибка', description: message);
+        AppAlert.show(context, title: l10n.error, description: message);
       };
 
       viewModel.onAuthenticatedEvent = () {
@@ -70,7 +70,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          'Hello',
+                          AppLocalizations.of(context)!.onboardingHello,
                           style: TextStyle(
                             fontSize: 40,
                             fontWeight: FontWeight.bold,
@@ -79,7 +79,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Welcome to your mind',
+                          AppLocalizations.of(context)!.onboardingWelcome,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: onSurface.withValues(alpha: 0.6),

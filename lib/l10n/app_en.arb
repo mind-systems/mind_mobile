@@ -5,6 +5,7 @@
   "confirm": "Confirm",
   "cancel": "Cancel",
   "delete": "Delete",
+  "error": "Error",
   "comingSoon": "Coming soon",
 
   "account": "Account",
@@ -54,6 +55,10 @@
     "placeholders": { "error": { "type": "String" } }
   },
   "breathConstructorDeleteConfirmTitle": "Delete Session",
+  "breathConstructorDeleteConfirmDescription": "This action cannot be undone.",
+  "breathConstructorAddExercise": "Add exercise",
+  "breathConstructorTotal": "Total",
+  "breathConstructorRepeat": "Repeat",
 
   "homeTabBreath": "Breath",
   "homeTabMind": "Mind"

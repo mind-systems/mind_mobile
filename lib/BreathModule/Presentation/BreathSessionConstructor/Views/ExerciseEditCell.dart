@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/ExerciseEditCellModel.dart';
 import 'package:mind/Views/app_dimensions.dart';
+import 'package:mind/l10n/app_localizations.dart';
 
 class ExerciseEditCell extends StatelessWidget {
   final ExerciseEditCellModel model;
@@ -33,6 +34,7 @@ class ExerciseEditCell extends StatelessWidget {
     final onSurface = theme.colorScheme.onSurface;
     final textColor = onSurface.withValues(alpha: 0.9);
     final backgroundColor = theme.cardColor.withValues(alpha: 0.8);
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
@@ -56,10 +58,10 @@ class ExerciseEditCell extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildPhaseField('Inhale', model.inhale, (v) => onChanged(model.copyWith(inhale: v)), onSurface),
-              _buildPhaseField('Hold', model.hold1, (v) => onChanged(model.copyWith(hold1: v)), onSurface),
-              _buildPhaseField('Exhale', model.exhale, (v) => onChanged(model.copyWith(exhale: v)), onSurface),
-              _buildPhaseField('Hold', model.hold2, (v) => onChanged(model.copyWith(hold2: v)), onSurface),
+              _buildPhaseField(l10n.breathPhaseInhale, model.inhale, (v) => onChanged(model.copyWith(inhale: v)), onSurface),
+              _buildPhaseField(l10n.breathPhaseHold, model.hold1, (v) => onChanged(model.copyWith(hold1: v)), onSurface),
+              _buildPhaseField(l10n.breathPhaseExhale, model.exhale, (v) => onChanged(model.copyWith(exhale: v)), onSurface),
+              _buildPhaseField(l10n.breathPhaseHold, model.hold2, (v) => onChanged(model.copyWith(hold2: v)), onSurface),
             ],
           ),
 
@@ -67,7 +69,7 @@ class ExerciseEditCell extends StatelessWidget {
 
           // ===== CYCLES =====
           _buildHorizontalField(
-            'Repeat',
+            l10n.breathConstructorRepeat,
             model.cycles,
             (v) => onChanged(model.copyWith(cycles: v)),
             onSurface,
@@ -85,7 +87,7 @@ class ExerciseEditCell extends StatelessWidget {
 
           // ===== REST =====
           _buildHorizontalField(
-            'Rest',
+            l10n.breathPhaseRest,
             model.rest,
             (v) => onChanged(model.copyWith(rest: v)),
             onSurface,

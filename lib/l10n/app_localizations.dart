@@ -122,6 +122,12 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get delete;
 
+  /// No description provided for @error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get error;
+
   /// No description provided for @comingSoon.
   ///
   /// In en, this message translates to:
@@ -337,6 +343,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete Session'**
   String get breathConstructorDeleteConfirmTitle;
+
+  /// No description provided for @breathConstructorDeleteConfirmDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone.'**
+  String get breathConstructorDeleteConfirmDescription;
+
+  /// No description provided for @breathConstructorAddExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Add exercise'**
+  String get breathConstructorAddExercise;
+
+  /// No description provided for @breathConstructorTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get breathConstructorTotal;
+
+  /// No description provided for @breathConstructorRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get breathConstructorRepeat;
 
   /// No description provided for @homeTabBreath.
   ///

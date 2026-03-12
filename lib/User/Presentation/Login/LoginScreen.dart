@@ -33,16 +33,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           LoginError.sendCodeFailed => l10n.loginSendCodeError,
           LoginError.codeInvalidOrExpired => l10n.loginCodeInvalidError,
         };
-        AppAlert.show(context, title: 'Ошибка', description: message);
+        AppAlert.show(context, title: l10n.error, description: message);
       };
 
       viewModel.onSuccessEvent = () async {
+        final l10n = AppLocalizations.of(context)!;
         _isAlertOpen = true;
         final result = await AppAlert.showWithInput(
           context,
-          title: 'Check your email',
-          description: 'We sent you a one-time sign-in link. Click the link on the same device.',
-          inputHint: 'Or paste your code here',
+          title: l10n.loginCheckEmailTitle,
+          description: l10n.loginCheckEmailDescription,
+          inputHint: l10n.loginCodeHint,
         );
         _isAlertOpen = false;
         if (result.confirmed && result.text != null && result.text!.isNotEmpty) {
@@ -59,6 +60,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginViewModelProvider);
+    final l10n = AppLocalizations.of(context)!; // used in build tree below
 
     if (loginState.isLoginInProgress && _isAlertOpen) {
       _isAlertOpen = false;
@@ -85,7 +87,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        'Login',
+                        l10n.login,
                         style: TextStyle(
                           fontSize: 40,
                           fontWeight: FontWeight.bold,
@@ -103,9 +105,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ref.read(loginViewModelProvider.notifier).updateEmail(value);
                           },
                           style: const TextStyle(fontSize: 20),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: InputBorder.none,
-                            hintText: 'Email',
+                            hintText: l10n.email,
                           ),
                         ),
                       ),
@@ -129,10 +131,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 border: Border.all(color: Theme.of(context).colorScheme.secondaryContainer, width: 2.5),
                                 borderRadius: BorderRadius.circular(30),
                               ),
-                              child: const Center(
+                              child: Center(
                                 child: Text(
-                                  'Login',
-                                  style: TextStyle(
+                                  l10n.login,
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 20,
                                     color: Colors.white,

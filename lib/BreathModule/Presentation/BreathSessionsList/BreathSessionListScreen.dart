@@ -44,10 +44,11 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
   void _setupErrorListener() {
     final viewModel = ref.read(breathSessionListViewModelProvider.notifier);
     viewModel.onErrorEvent = (error) {
+      final l10n = AppLocalizations.of(context)!;
       final message = switch (error) {
-        SessionListError.loadFailed => 'Failed to load sessions',
-        SessionListError.pagingFailed => 'Failed to load more sessions',
-        SessionListError.syncFailed => 'Failed to sync sessions',
+        SessionListError.loadFailed => l10n.breathSessionListLoadFailed,
+        SessionListError.pagingFailed => l10n.breathSessionListPagingFailed,
+        SessionListError.syncFailed => l10n.breathSessionListSyncFailed,
       };
 
       ref.read(globalSnackBarNotifierProvider.notifier).show(

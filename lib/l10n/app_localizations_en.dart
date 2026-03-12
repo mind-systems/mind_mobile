@@ -21,6 +21,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delete => 'Delete';
 
   @override
+  String get error => 'Error';
+
+  @override
   String get comingSoon => 'Coming soon';
 
   @override
@@ -133,6 +136,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get breathConstructorDeleteConfirmTitle => 'Delete Session';
+
+  @override
+  String get breathConstructorDeleteConfirmDescription =>
+      'This action cannot be undone.';
+
+  @override
+  String get breathConstructorAddExercise => 'Add exercise';
+
+  @override
+  String get breathConstructorTotal => 'Total';
+
+  @override
+  String get breathConstructorRepeat => 'Repeat';
 
   @override
   String get homeTabBreath => 'Breath';
