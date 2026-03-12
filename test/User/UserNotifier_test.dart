@@ -15,6 +15,10 @@ class FakeUserRepository implements UserRepository {
   Completer<User>? _completeSignInCompleter;
   String? lastSentEmail;
   String? lastVerifiedCode;
+  String? lastVerifiedLanguage;
+  String? lastGoogleLanguage;
+  String? lastUpdatedLanguage;
+  String? lastUpdatedName;
 
   @override
   Future<void> sendPasswordlessSignInLink(String email) async {
@@ -22,8 +26,9 @@ class FakeUserRepository implements UserRepository {
   }
 
   @override
-  Future<User> completePasswordlessSignIn(String code) {
+  Future<User> completePasswordlessSignIn(String code, {String? language}) {
     lastVerifiedCode = code;
+    lastVerifiedLanguage = language;
     _completeSignInCompleter = Completer<User>();
     return _completeSignInCompleter!.future;
   }
@@ -39,7 +44,20 @@ class FakeUserRepository implements UserRepository {
   Future<void> pickGoogleAccount() async {}
 
   @override
-  Future<User> authenticateWithGoogle() async => _guestUser;
+  Future<User> authenticateWithGoogle({String? language}) async {
+    lastGoogleLanguage = language;
+    return _guestUser;
+  }
+
+  @override
+  Future<void> updateLanguage(String language) async {
+    lastUpdatedLanguage = language;
+  }
+
+  @override
+  Future<void> updateName(String name) async {
+    lastUpdatedName = name;
+  }
 
   @override
   Future<User> logout(User currentUser) async => _guestUser;
@@ -59,6 +77,7 @@ final _guestUser = User(
   id: 'guest-id',
   email: '',
   name: 'Guest',
+  language: '',
   isGuest: true,
 );
 
@@ -66,6 +85,7 @@ final _authenticatedUser = User(
   id: 'user-id',
   email: 'test@example.com',
   name: 'Test User',
+  language: 'ru',
   isGuest: false,
 );
 
@@ -109,8 +129,23 @@ void main() {
       expect(fakeRepo.lastVerifiedCode, '123456');
     });
 
+    test('passes language to repository', () async {
+      final future = userNotifier.completePasswordlessSignIn('123456', language: 'en');
+      fakeRepo.succeedSignIn(_authenticatedUser);
+      await future;
+
+      expect(fakeRepo.lastVerifiedLanguage, 'en');
+    });
+
+    test('language defaults to null when not provided', () async {
+      final future = userNotifier.completePasswordlessSignIn('123456');
+      fakeRepo.succeedSignIn(_authenticatedUser);
+      await future;
+
+      expect(fakeRepo.lastVerifiedLanguage, isNull);
+    });
+
     test('emits AuthenticatedState on success', () async {
-      // BehaviorSubject replays current value — check via currentState after completion
       final future = userNotifier.completePasswordlessSignIn('123456');
       fakeRepo.succeedSignIn(_authenticatedUser);
       await future;
@@ -120,8 +155,6 @@ void main() {
     });
 
     test('sets authInProgress=true while in flight, then false', () async {
-      // BehaviorSubject emits seed(false) on subscribe — skip it to capture
-      // only values produced by the operation itself
       final values = <bool>[];
       userNotifier.authInProgressStream.skip(1).listen(values.add);
 
@@ -191,6 +224,62 @@ void main() {
 
       expect(errors, isEmpty,
           reason: 'PublishSubject should not replay past events');
+    });
+  });
+
+  group('updateLanguage', () {
+    test('does nothing when guest', () async {
+      await userNotifier.updateLanguage('ru');
+      expect(fakeRepo.lastUpdatedLanguage, isNull);
+    });
+
+    test('delegates to repository when authenticated', () async {
+      final future = userNotifier.completePasswordlessSignIn('123456');
+      fakeRepo.succeedSignIn(_authenticatedUser);
+      await future;
+
+      await userNotifier.updateLanguage('ru');
+      expect(fakeRepo.lastUpdatedLanguage, 'ru');
+    });
+  });
+
+  group('updateName', () {
+    test('does nothing when guest', () async {
+      await userNotifier.updateName('New Name');
+      expect(fakeRepo.lastUpdatedName, isNull);
+    });
+
+    test('delegates to repository when authenticated', () async {
+      final future = userNotifier.completePasswordlessSignIn('123456');
+      fakeRepo.succeedSignIn(_authenticatedUser);
+      await future;
+
+      await userNotifier.updateName('New Name');
+      expect(fakeRepo.lastUpdatedName, 'New Name');
+    });
+
+    test('emits new AuthenticatedState with updated name', () async {
+      final future = userNotifier.completePasswordlessSignIn('123456');
+      fakeRepo.succeedSignIn(_authenticatedUser);
+      await future;
+
+      await userNotifier.updateName('New Name');
+
+      expect(userNotifier.currentState, isA<AuthenticatedState>());
+      expect(userNotifier.currentState.user.name, 'New Name');
+    });
+
+    test('preserves other user fields when updating name', () async {
+      final future = userNotifier.completePasswordlessSignIn('123456');
+      fakeRepo.succeedSignIn(_authenticatedUser);
+      await future;
+
+      await userNotifier.updateName('New Name');
+
+      final user = userNotifier.currentState.user;
+      expect(user.email, _authenticatedUser.email);
+      expect(user.language, _authenticatedUser.language);
+      expect(user.id, _authenticatedUser.id);
     });
   });
 }

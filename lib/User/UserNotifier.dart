@@ -45,10 +45,10 @@ class UserNotifier {
     await repository.sendPasswordlessSignInLink(email);
   }
 
-  Future<void> completePasswordlessSignIn(String code) async {
+  Future<void> completePasswordlessSignIn(String code, {String? language}) async {
     _authInProgressSubject.add(true);
     try {
-      final authenticatedUser = await repository.completePasswordlessSignIn(code);
+      final authenticatedUser = await repository.completePasswordlessSignIn(code, language: language);
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e) {
       _authErrorSubject.add(e.toString());
@@ -58,7 +58,7 @@ class UserNotifier {
     }
   }
 
-  Future<void> loginWithGoogle() async {
+  Future<void> loginWithGoogle({String? language}) async {
     // Phase 1: show Google account picker — do not block UI yet
     try {
       await repository.pickGoogleAccount();
@@ -70,7 +70,7 @@ class UserNotifier {
     // Phase 2: user picked an account — now block UI for server auth
     _authInProgressSubject.add(true);
     try {
-      final authenticatedUser = await repository.authenticateWithGoogle();
+      final authenticatedUser = await repository.authenticateWithGoogle(language: language);
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e) {
       log('[UserNotifier] loginWithGoogle error: $e');
@@ -78,6 +78,18 @@ class UserNotifier {
     } finally {
       _authInProgressSubject.add(false);
     }
+  }
+
+  Future<void> updateLanguage(String language) async {
+    if (_subject.value is! AuthenticatedState) return;
+    await repository.updateLanguage(language);
+  }
+
+  Future<void> updateName(String name) async {
+    if (_subject.value is! AuthenticatedState) return;
+    await repository.updateName(name);
+    final updated = _subject.value.user.copyWith(name: name);
+    _subject.add(AuthenticatedState(updated));
   }
 
   Future<void> logout() async {

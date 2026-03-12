@@ -8,7 +8,10 @@ import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
 
 class OnboardingModule {
   static Widget buildOnboarding(BuildContext context) {
-    final service = LoginService(userNotifier: App.shared.userNotifier);
+    final service = LoginService(
+      userNotifier: App.shared.userNotifier,
+      appSettingsNotifier: App.shared.appSettingsNotifier,
+    );
     return ProviderScope(
       overrides: [
         loginViewModelProvider.overrideWith(
@@ -20,7 +23,10 @@ class OnboardingModule {
   }
 
   static Widget buildLogin(BuildContext context) {
-    final service = LoginService(userNotifier: App.shared.userNotifier);
+    final service = LoginService(
+      userNotifier: App.shared.userNotifier,
+      appSettingsNotifier: App.shared.appSettingsNotifier,
+    );
     return ProviderScope(
       overrides: [
         loginViewModelProvider.overrideWith(

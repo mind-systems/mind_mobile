@@ -1,11 +1,13 @@
+import 'package:mind/Core/AppSettings/AppSettingsNotifier.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/Presentation/Login/ILoginService.dart';
 
 class LoginService implements ILoginService {
   final UserNotifier userNotifier;
+  final AppSettingsNotifier appSettingsNotifier;
 
-  LoginService({required this.userNotifier});
+  LoginService({required this.userNotifier, required this.appSettingsNotifier});
 
   @override
   Stream<AuthState> observeAuthState() => userNotifier.stream;
@@ -17,12 +19,12 @@ class LoginService implements ILoginService {
 
   @override
   Future<void> completePasswordlessSignIn(String code) async {
-    await userNotifier.completePasswordlessSignIn(code);
+    await userNotifier.completePasswordlessSignIn(code, language: appSettingsNotifier.currentState.language);
   }
 
   @override
   Future<void> loginWithGoogle() async {
-    await userNotifier.loginWithGoogle();
+    await userNotifier.loginWithGoogle(language: appSettingsNotifier.currentState.language);
   }
 
   @override

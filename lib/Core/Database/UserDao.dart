@@ -5,6 +5,7 @@ class UserRecord extends Table {
   TextColumn get id => text()();
   TextColumn get email => text()();
   TextColumn get name => text()();
+  TextColumn get language => text().withDefault(const Constant(''))();
   BoolColumn get isGuest => boolean().withDefault(const Constant(true))();
 
   @override
@@ -40,6 +41,7 @@ class UserDao extends DatabaseAccessor<Database> with _$UserDaoMixin implements 
       id: row.id,
       email: row.email,
       name: row.name,
+      language: row.language,
       isGuest: row.isGuest,
     );
   }
@@ -49,6 +51,7 @@ class UserDao extends DatabaseAccessor<Database> with _$UserDaoMixin implements 
       id: Value(user.id),
       email: Value(user.email),
       name: Value(user.name),
+      language: Value(user.language),
       isGuest: Value(user.isGuest),
     );
   }

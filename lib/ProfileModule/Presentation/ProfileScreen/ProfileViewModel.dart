@@ -41,8 +41,8 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
     coordinator.logout();
   }
 
-  void onNameChanged(String name) {
-    // TODO: persist name change via service
+  Future<void> onNameChanged(String name) async {
+    await service.updateName(name);
   }
 
   void onThemeTap() {

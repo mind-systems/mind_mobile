@@ -14,12 +14,13 @@ class FakeUserRepository implements UserRepository {
   String? lastVerifiedCode;
 
   @override
-  Future<User> completePasswordlessSignIn(String code) async {
+  Future<User> completePasswordlessSignIn(String code, {String? language}) async {
     lastVerifiedCode = code;
     return User(
       id: 'user-id',
       email: 'test@example.com',
       name: 'Test User',
+      language: '',
       isGuest: false,
     );
   }
@@ -32,6 +33,7 @@ class FakeUserRepository implements UserRepository {
         id: 'guest-id',
         email: '',
         name: 'Guest',
+        language: '',
         isGuest: true,
       );
 
@@ -69,6 +71,7 @@ void main() {
         id: 'guest-id',
         email: '',
         name: 'Guest',
+        language: '',
         isGuest: true,
       ),
     );

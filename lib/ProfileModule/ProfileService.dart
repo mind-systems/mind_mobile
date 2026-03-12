@@ -47,5 +47,11 @@ class ProfileService implements IProfileService {
   @override
   Future<void> updateLanguage(String key) async {
     await appSettingsNotifier.setLanguage(key);
+    await userNotifier.updateLanguage(key);
+  }
+
+  @override
+  Future<void> updateName(String name) async {
+    await userNotifier.updateName(name);
   }
 }

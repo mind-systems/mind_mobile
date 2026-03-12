@@ -36,6 +36,18 @@ class $UserRecordTable extends UserRecord
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _languageMeta = const VerificationMeta(
+    'language',
+  );
+  @override
+  late final GeneratedColumn<String> language = GeneratedColumn<String>(
+    'language',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _isGuestMeta = const VerificationMeta(
     'isGuest',
   );
@@ -52,7 +64,7 @@ class $UserRecordTable extends UserRecord
     defaultValue: const Constant(true),
   );
   @override
-  List<GeneratedColumn> get $columns => [id, email, name, isGuest];
+  List<GeneratedColumn> get $columns => [id, email, name, language, isGuest];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -86,6 +98,12 @@ class $UserRecordTable extends UserRecord
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('language')) {
+      context.handle(
+        _languageMeta,
+        language.isAcceptableOrUnknown(data['language']!, _languageMeta),
+      );
+    }
     if (data.containsKey('is_guest')) {
       context.handle(
         _isGuestMeta,
@@ -113,6 +131,10 @@ class $UserRecordTable extends UserRecord
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      language: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}language'],
+      )!,
       isGuest: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_guest'],
@@ -130,11 +152,13 @@ class Users extends DataClass implements Insertable<Users> {
   final String id;
   final String email;
   final String name;
+  final String language;
   final bool isGuest;
   const Users({
     required this.id,
     required this.email,
     required this.name,
+    required this.language,
     required this.isGuest,
   });
   @override
@@ -143,6 +167,7 @@ class Users extends DataClass implements Insertable<Users> {
     map['id'] = Variable<String>(id);
     map['email'] = Variable<String>(email);
     map['name'] = Variable<String>(name);
+    map['language'] = Variable<String>(language);
     map['is_guest'] = Variable<bool>(isGuest);
     return map;
   }
@@ -152,6 +177,7 @@ class Users extends DataClass implements Insertable<Users> {
       id: Value(id),
       email: Value(email),
       name: Value(name),
+      language: Value(language),
       isGuest: Value(isGuest),
     );
   }
@@ -165,6 +191,7 @@ class Users extends DataClass implements Insertable<Users> {
       id: serializer.fromJson<String>(json['id']),
       email: serializer.fromJson<String>(json['email']),
       name: serializer.fromJson<String>(json['name']),
+      language: serializer.fromJson<String>(json['language']),
       isGuest: serializer.fromJson<bool>(json['isGuest']),
     );
   }
@@ -175,22 +202,30 @@ class Users extends DataClass implements Insertable<Users> {
       'id': serializer.toJson<String>(id),
       'email': serializer.toJson<String>(email),
       'name': serializer.toJson<String>(name),
+      'language': serializer.toJson<String>(language),
       'isGuest': serializer.toJson<bool>(isGuest),
     };
   }
 
-  Users copyWith({String? id, String? email, String? name, bool? isGuest}) =>
-      Users(
-        id: id ?? this.id,
-        email: email ?? this.email,
-        name: name ?? this.name,
-        isGuest: isGuest ?? this.isGuest,
-      );
+  Users copyWith({
+    String? id,
+    String? email,
+    String? name,
+    String? language,
+    bool? isGuest,
+  }) => Users(
+    id: id ?? this.id,
+    email: email ?? this.email,
+    name: name ?? this.name,
+    language: language ?? this.language,
+    isGuest: isGuest ?? this.isGuest,
+  );
   Users copyWithCompanion(UserRecordCompanion data) {
     return Users(
       id: data.id.present ? data.id.value : this.id,
       email: data.email.present ? data.email.value : this.email,
       name: data.name.present ? data.name.value : this.name,
+      language: data.language.present ? data.language.value : this.language,
       isGuest: data.isGuest.present ? data.isGuest.value : this.isGuest,
     );
   }
@@ -201,13 +236,14 @@ class Users extends DataClass implements Insertable<Users> {
           ..write('id: $id, ')
           ..write('email: $email, ')
           ..write('name: $name, ')
+          ..write('language: $language, ')
           ..write('isGuest: $isGuest')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, email, name, isGuest);
+  int get hashCode => Object.hash(id, email, name, language, isGuest);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -215,6 +251,7 @@ class Users extends DataClass implements Insertable<Users> {
           other.id == this.id &&
           other.email == this.email &&
           other.name == this.name &&
+          other.language == this.language &&
           other.isGuest == this.isGuest);
 }
 
@@ -222,12 +259,14 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
   final Value<String> id;
   final Value<String> email;
   final Value<String> name;
+  final Value<String> language;
   final Value<bool> isGuest;
   final Value<int> rowid;
   const UserRecordCompanion({
     this.id = const Value.absent(),
     this.email = const Value.absent(),
     this.name = const Value.absent(),
+    this.language = const Value.absent(),
     this.isGuest = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -235,6 +274,7 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
     required String id,
     required String email,
     required String name,
+    this.language = const Value.absent(),
     this.isGuest = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -244,6 +284,7 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
     Expression<String>? id,
     Expression<String>? email,
     Expression<String>? name,
+    Expression<String>? language,
     Expression<bool>? isGuest,
     Expression<int>? rowid,
   }) {
@@ -251,6 +292,7 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
       if (id != null) 'id': id,
       if (email != null) 'email': email,
       if (name != null) 'name': name,
+      if (language != null) 'language': language,
       if (isGuest != null) 'is_guest': isGuest,
       if (rowid != null) 'rowid': rowid,
     });
@@ -260,6 +302,7 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
     Value<String>? id,
     Value<String>? email,
     Value<String>? name,
+    Value<String>? language,
     Value<bool>? isGuest,
     Value<int>? rowid,
   }) {
@@ -267,6 +310,7 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
       id: id ?? this.id,
       email: email ?? this.email,
       name: name ?? this.name,
+      language: language ?? this.language,
       isGuest: isGuest ?? this.isGuest,
       rowid: rowid ?? this.rowid,
     );
@@ -284,6 +328,9 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (language.present) {
+      map['language'] = Variable<String>(language.value);
+    }
     if (isGuest.present) {
       map['is_guest'] = Variable<bool>(isGuest.value);
     }
@@ -299,6 +346,7 @@ class UserRecordCompanion extends UpdateCompanion<Users> {
           ..write('id: $id, ')
           ..write('email: $email, ')
           ..write('name: $name, ')
+          ..write('language: $language, ')
           ..write('isGuest: $isGuest, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -698,6 +746,7 @@ typedef $$UserRecordTableCreateCompanionBuilder =
       required String id,
       required String email,
       required String name,
+      Value<String> language,
       Value<bool> isGuest,
       Value<int> rowid,
     });
@@ -706,6 +755,7 @@ typedef $$UserRecordTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> email,
       Value<String> name,
+      Value<String> language,
       Value<bool> isGuest,
       Value<int> rowid,
     });
@@ -731,6 +781,11 @@ class $$UserRecordTableFilterComposer
 
   ColumnFilters<String> get name => $composableBuilder(
     column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get language => $composableBuilder(
+    column: $table.language,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -764,6 +819,11 @@ class $$UserRecordTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get language => $composableBuilder(
+    column: $table.language,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isGuest => $composableBuilder(
     column: $table.isGuest,
     builder: (column) => ColumnOrderings(column),
@@ -787,6 +847,9 @@ class $$UserRecordTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get language =>
+      $composableBuilder(column: $table.language, builder: (column) => column);
 
   GeneratedColumn<bool> get isGuest =>
       $composableBuilder(column: $table.isGuest, builder: (column) => column);
@@ -823,12 +886,14 @@ class $$UserRecordTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String> language = const Value.absent(),
                 Value<bool> isGuest = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserRecordCompanion(
                 id: id,
                 email: email,
                 name: name,
+                language: language,
                 isGuest: isGuest,
                 rowid: rowid,
               ),
@@ -837,12 +902,14 @@ class $$UserRecordTableTableManager
                 required String id,
                 required String email,
                 required String name,
+                Value<String> language = const Value.absent(),
                 Value<bool> isGuest = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserRecordCompanion.insert(
                 id: id,
                 email: email,
                 name: name,
+                language: language,
                 isGuest: isGuest,
                 rowid: rowid,
               ),

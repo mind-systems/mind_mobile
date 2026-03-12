@@ -10,4 +10,5 @@ abstract class IProfileService {
   String get currentLanguage;
   Future<void> updateTheme(String key);
   Future<void> updateLanguage(String key);
+  Future<void> updateName(String name);
 }

@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/User/IAuthApi.dart';
+import 'package:mind/User/IUserApi.dart';
 import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
 import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
+import 'package:mind/Core/Api/Models/UpdateUserRequest.dart';
 import 'package:mind/Core/Api/Models/VerifyCodeRequest.dart';
 import 'package:mind/Core/Database/IUserDao.dart';
 import 'package:mind/User/Infrastructure/IGoogleAuthProvider.dart';
@@ -9,6 +11,11 @@ import 'package:mind/User/Infrastructure/ISecureStorage.dart';
 import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
 import 'package:mind/User/Models/User.dart';
 import 'package:mind/User/UserRepository.dart';
+
+class FakeUserApi implements IUserApi {
+  @override
+  Future<void> updateUser(UpdateUserRequest request) async {}
+}
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -109,6 +116,7 @@ final _authenticatedUser = User(
   id: 'user-123',
   email: 'test@example.com',
   name: 'Test User',
+  language: '',
   isGuest: false,
 );
 
@@ -119,12 +127,14 @@ final _authenticatedUser = User(
 UserRepository _makeRepo({
   FakeUserDao? dao,
   FakeAuthApi? api,
+  FakeUserApi? userApi,
   FakeGoogleAuthProvider? google,
   FakeSecureStorage? storage,
 }) {
   return UserRepository(
     userDao: dao ?? FakeUserDao(),
     api: api ?? FakeAuthApi(),
+    userApi: userApi ?? FakeUserApi(),
     google: google ?? FakeGoogleAuthProvider(),
     storage: storage ?? FakeSecureStorage(),
   );

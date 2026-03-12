@@ -1,6 +1,8 @@
 import 'package:mind/User/IAuthApi.dart';
+import 'package:mind/User/IUserApi.dart';
 import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
 import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
+import 'package:mind/Core/Api/Models/UpdateUserRequest.dart';
 import 'package:mind/Core/Api/Models/VerifyCodeRequest.dart';
 import 'package:mind/Core/Database/IUserDao.dart';
 import 'package:mind/User/Infrastructure/IGoogleAuthProvider.dart';
@@ -10,6 +12,7 @@ import 'Models/User.dart';
 class UserRepository {
   final IUserDao _userDao;
   final IAuthApi _api;
+  final IUserApi _userApi;
   final IGoogleAuthProvider _google;
   final ISecureStorage _storage;
 
@@ -18,10 +21,12 @@ class UserRepository {
   UserRepository({
     required IUserDao userDao,
     required IAuthApi api,
+    required IUserApi userApi,
     required IGoogleAuthProvider google,
     required ISecureStorage storage,
   })  : _userDao = userDao,
         _api = api,
+        _userApi = userApi,
         _google = google,
         _storage = storage;
 
@@ -50,12 +55,12 @@ class UserRepository {
     await _storage.write(_pendingSignInEmailKey, email);
   }
 
-  Future<User> completePasswordlessSignIn(String code) async {
+  Future<User> completePasswordlessSignIn(String code, {String? language}) async {
     final email = await _storage.read(_pendingSignInEmailKey);
     if (email == null || email.isEmpty) {
       throw Exception('No pending email found');
     }
-    final user = await _api.verifyCode(VerifyCodeRequest(email: email, code: code));
+    final user = await _api.verifyCode(VerifyCodeRequest(email: email, code: code, language: language));
     await _replaceGuestWithUser(user);
     await _storage.delete(_pendingSignInEmailKey);
     return user;
@@ -67,12 +72,20 @@ class UserRepository {
 
   /// Phase 2: exchanges the picked account for a server auth code and
   /// authenticates with the backend.
-  Future<User> authenticateWithGoogle() async {
+  Future<User> authenticateWithGoogle({String? language}) async {
     final serverAuthCode = await _google.getServerAuthCode();
-    final request = GoogleAuthRequest(serverAuthCode: serverAuthCode);
+    final request = GoogleAuthRequest(serverAuthCode: serverAuthCode, language: language);
     final user = await _api.googleAuth(request);
     await _replaceGuestWithUser(user);
     return user;
+  }
+
+  Future<void> updateLanguage(String language) async {
+    await _userApi.updateUser(UpdateUserRequest(language: language));
+  }
+
+  Future<void> updateName(String name) async {
+    await _userApi.updateUser(UpdateUserRequest(name: name));
   }
 
   Future<User> logout(User currentUser) async {

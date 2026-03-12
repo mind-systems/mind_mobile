@@ -11,6 +11,7 @@ import 'package:mind/Core/Api/AuthApi.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/Core/Api/BreathSessionApi.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
+import 'package:mind/Core/Api/UserApi.dart';
 import 'package:mind/Core/AppSettings/AppSettingsNotifier.dart';
 import 'package:mind/Core/AppSettings/AppSettingsRepository.dart';
 import 'package:mind/Core/AppSettings/AppSettingsState.dart';
@@ -71,24 +72,29 @@ class App {
     final authInterceptor = AuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
     final httpClient = HttpClient(authInterceptor: authInterceptor);
     final authApi = AuthApi(httpClient);
+    final userApi = UserApi(httpClient);
     final breathSessionApi = BreathSessionApi(httpClient);
 
-    final userRepository = UserRepository(userDao: db.userDao, api: authApi, google: GoogleAuthProvider(), storage: SecureStorage());
+    final userRepository = UserRepository(userDao: db.userDao, api: authApi, userApi: userApi, google: GoogleAuthProvider(), storage: SecureStorage());
     final breathSessionRepository = BreathSessionRepository(dao: db.breathSessionDao, api: breathSessionApi);
 
     final initialUser = await userRepository.loadUser();
     final userNotifier = UserNotifier(repository: userRepository, logoutNotifier: logoutNotifier, initialUser: initialUser);
     final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository, userNotifier: userNotifier);
 
-    final authCodeHandler = AuthCodeDeeplinkHandler(userNotifier: userNotifier);
-    final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler);
-
     final prefs = await SharedPreferences.getInstance();
     final appSettingsRepository = AppSettingsRepository(SharedPreferencesStorage(prefs));
     await appSettingsRepository.init();
     final initialTheme = await appSettingsRepository.getTheme();
     final initialLanguage = await appSettingsRepository.getLanguage();
-    final appSettingsNotifier = AppSettingsNotifier(repository: appSettingsRepository, initialState: AppSettingsState(theme: initialTheme, language: initialLanguage));
+    final appSettingsNotifier = AppSettingsNotifier(
+      repository: appSettingsRepository,
+      initialState: AppSettingsState(theme: initialTheme, language: initialLanguage),
+      authStateStream: userNotifier.stream,
+    );
+
+    final authCodeHandler = AuthCodeDeeplinkHandler(userNotifier: userNotifier);
+    final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler);
 
     shared = App._(
       db: db,

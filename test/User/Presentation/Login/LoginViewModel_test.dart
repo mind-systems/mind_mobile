@@ -59,6 +59,7 @@ final _authenticatedUser = User(
   id: 'user-123',
   email: 'test@example.com',
   name: 'Test User',
+  language: '',
   isGuest: false,
 );
 

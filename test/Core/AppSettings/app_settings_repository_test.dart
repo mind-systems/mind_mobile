@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/Core/AppSettings/AppSettingsRepository.dart';
 import 'package:mind/Core/AppSettings/IAppSettingsStorage.dart';
@@ -58,46 +57,46 @@ void main() {
   });
 
   group('AppSettingsRepository.getTheme()', () {
-    test('defaults to ThemeMode.system when nothing stored', () async {
+    test('defaults to "system" when nothing stored', () async {
       final repo = _repo(FakeAppSettingsStorage());
-      expect(await repo.getTheme(), ThemeMode.system);
+      expect(await repo.getTheme(), 'system');
     });
 
-    test('returns ThemeMode.dark when "dark" stored', () async {
+    test('returns "dark" when "dark" stored', () async {
       final storage = FakeAppSettingsStorage();
       await storage.setString('app_theme', 'dark');
-      expect(await _repo(storage).getTheme(), ThemeMode.dark);
+      expect(await _repo(storage).getTheme(), 'dark');
     });
 
-    test('returns ThemeMode.light when "light" stored', () async {
+    test('returns "light" when "light" stored', () async {
       final storage = FakeAppSettingsStorage();
       await storage.setString('app_theme', 'light');
-      expect(await _repo(storage).getTheme(), ThemeMode.light);
+      expect(await _repo(storage).getTheme(), 'light');
     });
 
-    test('returns ThemeMode.system for unknown value', () async {
+    test('returns stored value for unknown key', () async {
       final storage = FakeAppSettingsStorage();
       await storage.setString('app_theme', 'unknown');
-      expect(await _repo(storage).getTheme(), ThemeMode.system);
+      expect(await _repo(storage).getTheme(), 'unknown');
     });
   });
 
   group('AppSettingsRepository.setTheme()', () {
     test('persists "light"', () async {
       final storage = FakeAppSettingsStorage();
-      await _repo(storage).setTheme(ThemeMode.light);
+      await _repo(storage).setTheme('light');
       expect(await storage.getString('app_theme'), 'light');
     });
 
     test('persists "dark"', () async {
       final storage = FakeAppSettingsStorage();
-      await _repo(storage).setTheme(ThemeMode.dark);
+      await _repo(storage).setTheme('dark');
       expect(await storage.getString('app_theme'), 'dark');
     });
 
     test('persists "system"', () async {
       final storage = FakeAppSettingsStorage();
-      await _repo(storage).setTheme(ThemeMode.system);
+      await _repo(storage).setTheme('system');
       expect(await storage.getString('app_theme'), 'system');
     });
   });
