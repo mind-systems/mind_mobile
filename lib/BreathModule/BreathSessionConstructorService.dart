@@ -50,22 +50,15 @@ class BreathSessionConstructorService
 
   @override
   Future<void> save(BreathSessionConstructorDTO dto) async {
-    // Конвертируем упражнения из DTO в доменную модель
-    final exercises = dto.exercises
-        .map((e) => _editModelToExerciseSet(e))
-        .toList();
+    final exercises = dto.exercises.map(_editModelToExerciseSet).toList();
 
-    // Создаём или обновляем сессию
-    final session = BreathSession(
-      id: existingSession?.id ?? const Uuid().v4(),
-      userId: userId,
-      description: dto.description,
-      shared: dto.shared,
-      exercises: exercises,
-    );
-
-    // Сохраняем в репозиторий
-    await provider.save(session);
+    if (existingSession != null && existingSession!.userId == userId) {
+      final session = BreathSession(id: existingSession!.id, userId: userId, description: dto.description, shared: dto.shared, exercises: exercises);
+      await provider.update(session);
+    } else {
+      final session = BreathSession(id: '', userId: userId, description: dto.description, shared: dto.shared, exercises: exercises);
+      await provider.create(session);
+    }
   }
 
   @override

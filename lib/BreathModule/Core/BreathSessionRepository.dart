@@ -1,4 +1,5 @@
 import 'package:mind/BreathModule/Core/IBreathSessionApi.dart';
+import 'package:mind/Core/Api/Models/SaveBreathSessionRequest.dart';
 import 'package:mind/Core/Database/IBreathSessionDao.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 
@@ -33,9 +34,26 @@ class BreathSessionRepository {
     return apiSessions;
   }
 
-  Future<void> save(BreathSession session) async {
-    await _api.save(session);
-    await _dao.saveSession(session);
+  Future<BreathSession> create(BreathSession session) async {
+    final request = SaveBreathSessionRequest(
+      description: session.description,
+      exercises: session.exercises,
+      shared: session.shared,
+    );
+    final saved = await _api.create(request);
+    await _dao.saveSession(saved);
+    return saved;
+  }
+
+  Future<BreathSession> update(BreathSession session) async {
+    final request = SaveBreathSessionRequest(
+      description: session.description,
+      exercises: session.exercises,
+      shared: session.shared,
+    );
+    final saved = await _api.update(session.id, request);
+    await _dao.saveSession(saved);
+    return saved;
   }
 
   Future<void> delete(String id) async {

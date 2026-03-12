@@ -129,25 +129,21 @@ class BreathSessionNotifier {
 
   /// ---------- CRUD ----------
 
-  Future<void> save(BreathSession session) async {
-    await repository.save(session);
-
+  Future<BreathSession> create(BreathSession session) async {
+    final saved = await repository.create(session);
     final state = _subject.value;
-    final isNew = !state.byId.containsKey(session.id);
+    final updatedById = Map<String, BreathSession>.from(state.byId)..[saved.id] = saved;
+    final updatedOrder = [saved.id, ...state.order];
+    _subject.add(BreathSessionsState(byId: updatedById, order: updatedOrder, lastEvent: SessionCreated(saved)));
+    return saved;
+  }
 
-    final updatedById = Map<String, BreathSession>.from(state.byId);
-    updatedById[session.id] = session;
-
-    final updatedOrder = List<String>.from(state.order);
-    if (isNew) {
-      updatedOrder.insert(0, session.id);
-    }
-
-    _subject.add(BreathSessionsState(
-      byId: updatedById,
-      order: updatedOrder,
-      lastEvent: isNew ? SessionCreated(session) : SessionUpdated(session),
-    ));
+  Future<BreathSession> update(BreathSession session) async {
+    final saved = await repository.update(session);
+    final state = _subject.value;
+    final updatedById = Map<String, BreathSession>.from(state.byId)..[saved.id] = saved;
+    _subject.add(BreathSessionsState(byId: updatedById, order: state.order, lastEvent: SessionUpdated(saved)));
+    return saved;
   }
 
   Future<void> delete(String id) async {
