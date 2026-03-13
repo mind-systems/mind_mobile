@@ -26,6 +26,7 @@ import 'package:mind/Core/DeeplinkRouter.dart';
 import 'package:mind/Core/Environment.dart';
 import 'package:mind/Core/GlobalUI/GlobalKeys.dart';
 import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
+import 'package:mind/Core/Handlers/BreathSessionDeeplinkHandler.dart';
 import 'package:mind/User/Infrastructure/GoogleAuthProvider.dart';
 import 'package:mind/User/Infrastructure/SecureStorage.dart';
 import 'package:mind/User/LogoutNotifier.dart';
@@ -105,7 +106,8 @@ class App {
     );
 
     final authCodeHandler = AuthCodeDeeplinkHandler(userNotifier: userNotifier);
-    final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler);
+    final sessionHandler = BreathSessionDeeplinkHandler(router: appRouter);
+    final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler, sessionHandler: sessionHandler);
 
     shared = App._(
       db: db,

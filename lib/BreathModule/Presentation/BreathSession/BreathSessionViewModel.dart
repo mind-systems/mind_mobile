@@ -186,6 +186,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     coordinator.openConstructor(sessionId);
   }
 
+  void shareSession() => coordinator.shareSession(sessionId);
+
   Future<void> toggleStar() async {
     final newStarred = !state.isStarred;
     state = state.copyWith(isStarred: newStarred);

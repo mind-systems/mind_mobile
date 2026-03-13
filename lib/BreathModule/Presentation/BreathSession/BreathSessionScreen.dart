@@ -203,6 +203,12 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
                 // Bottom bar прибит к низу
                 SessionBottomBar(
                   actions: [
+                    IconButton(
+                      icon: const Icon(Icons.share_outlined),
+                      color: const Color(0xFF00D9FF),
+                      iconSize: 28,
+                      onPressed: () => viewModel.shareSession(),
+                    ),
                     if (state.canStar)
                       IconButton(
                         icon: Icon(

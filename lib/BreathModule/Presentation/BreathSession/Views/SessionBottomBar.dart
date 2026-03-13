@@ -17,6 +17,7 @@ class SessionBottomBar extends StatelessWidget {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
+          spacing: 8,
           children: actions,
         ),
       ),

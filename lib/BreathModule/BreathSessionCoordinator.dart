@@ -2,16 +2,23 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorScreen.dart';
+import 'package:mind/Core/Handlers/BreathSessionDeeplinkHandler.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Presentation/Login/Models/AuthResult.dart';
 import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
 import 'package:mind/User/UserNotifier.dart';
+import 'package:share_plus/share_plus.dart';
 
 class BreathSessionCoordinator implements IBreathSessionCoordinator {
   final BuildContext context;
   final UserNotifier userNotifier;
 
   BreathSessionCoordinator(this.context, {required this.userNotifier});
+
+  @override
+  void shareSession(String sessionId) {
+    SharePlus.instance.share(ShareParams(text: BreathSessionDeeplinkHandler.buildSessionUrl(sessionId)));
+  }
 
   @override
   void openConstructor(String sessionId) {

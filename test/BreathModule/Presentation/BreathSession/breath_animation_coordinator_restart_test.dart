@@ -45,6 +45,8 @@ class _FakeTickService implements ITickService {
 class _FakeBreathSessionCoordinator implements IBreathSessionCoordinator {
   @override
   void openConstructor(String sessionId) {}
+  @override
+  void shareSession(String sessionId) {}
 }
 
 class _FakeSessionService implements IBreathSessionService {
