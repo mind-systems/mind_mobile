@@ -112,6 +112,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get breathSessionListSyncFailed => 'Failed to sync sessions';
 
   @override
+  String get breathSessionListMySessions => 'My Sessions';
+
+  @override
+  String get breathSessionListStarredSessions => '★ Starred';
+
+  @override
   String get breathSessionListSharedSessions => 'Shared Sessions';
 
   @override

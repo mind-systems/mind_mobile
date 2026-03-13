@@ -11,6 +11,8 @@ class BreathSessionListCellModel extends BreathSessionListItem {
   final String duration;
   /// Тип владения сессией (используется VM для группировки)
   final SessionOwnership ownership;
+  /// Отмечена ли сессия звёздочкой (используется VM для группировки)
+  final bool isStarred;
 
   BreathSessionListCellModel({
     required this.id,
@@ -18,11 +20,14 @@ class BreathSessionListCellModel extends BreathSessionListItem {
     required this.subtitle,
     required this.duration,
     required this.ownership,
+    required this.isStarred,
   });
 }
 
 /// Тип заголовка секции
 enum SectionHeaderType {
+  mySessions,
+  starredSessions,
   sharedSessions,
 }
 

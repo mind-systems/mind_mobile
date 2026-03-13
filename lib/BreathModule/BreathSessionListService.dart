@@ -84,6 +84,12 @@ class BreathSessionListService implements IBreathSessionListService {
       case SessionsInvalidated _:
         _controller.add(SessionsInvalidatedEvent());
         break;
+
+      case SessionStarred e:
+        _controller.add(
+          SessionUpdatedEvent(_mapSession(e.session)),
+        );
+        break;
     }
   }
 
@@ -106,6 +112,7 @@ class BreathSessionListService implements IBreathSessionListService {
       patterns: patterns,
       totalDurationSeconds: totalDuration,
       ownership: ownership,
+      isStarred: session.isStarred,
     );
   }
 

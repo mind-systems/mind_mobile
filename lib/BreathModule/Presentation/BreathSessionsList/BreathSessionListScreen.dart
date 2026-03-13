@@ -103,6 +103,10 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
             ),
             SectionHeaderModel header => BreathSessionListSectionHeader(
               title: switch (header.type) {
+                SectionHeaderType.mySessions =>
+                  AppLocalizations.of(context)!.breathSessionListMySessions,
+                SectionHeaderType.starredSessions =>
+                  AppLocalizations.of(context)!.breathSessionListStarredSessions,
                 SectionHeaderType.sharedSessions =>
                   AppLocalizations.of(context)!.breathSessionListSharedSessions,
               },

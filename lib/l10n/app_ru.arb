@@ -41,6 +41,8 @@
   "breathSessionListLoadFailed": "Не удалось загрузить сессии",
   "breathSessionListPagingFailed": "Не удалось загрузить ещё",
   "breathSessionListSyncFailed": "Не удалось синхронизировать сессии",
+  "breathSessionListMySessions": "Мои сессии",
+  "breathSessionListStarredSessions": "★ Избранное",
   "breathSessionListSharedSessions": "Общие сессии",
 
   "breathConstructorDeletedSuccess": "Сессия удалена",

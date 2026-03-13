@@ -226,23 +226,32 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
     return items.whereType<BreathSessionListCellModel>().toList();
   }
 
-  /// Строит финальный список items с секциями
-  /// mine (без хедера) → shared (с хедером "Shared Sessions")
+  /// Строит финальный список items с 3 секциями:
+  /// 1. mySessions — собственные сессии
+  /// 2. starredSessions — чужие отмеченные (если есть)
+  /// 3. sharedSessions — чужие неотмеченные (если есть)
   List<BreathSessionListItem> _buildItemsWithSections(
     List<BreathSessionListCellModel> cells,
   ) {
+    final mine = cells.where((c) => c.ownership == SessionOwnership.mine).toList();
+    final starred = cells.where((c) => c.ownership == SessionOwnership.shared && c.isStarred).toList();
+    final shared = cells.where((c) => c.ownership == SessionOwnership.shared && !c.isStarred).toList();
+
     final result = <BreathSessionListItem>[];
-    SessionOwnership? lastOwnership;
 
-    for (final cell in cells) {
-      // При переходе на shared вставляем хедер
-      if (cell.ownership == SessionOwnership.shared &&
-          lastOwnership != SessionOwnership.shared) {
-        result.add(SectionHeaderModel(SectionHeaderType.sharedSessions));
-      }
+    if (mine.isNotEmpty) {
+      result.add(SectionHeaderModel(SectionHeaderType.mySessions));
+      result.addAll(mine);
+    }
 
-      result.add(cell);
-      lastOwnership = cell.ownership;
+    if (starred.isNotEmpty) {
+      result.add(SectionHeaderModel(SectionHeaderType.starredSessions));
+      result.addAll(starred);
+    }
+
+    if (shared.isNotEmpty) {
+      result.add(SectionHeaderModel(SectionHeaderType.sharedSessions));
+      result.addAll(shared);
     }
 
     return result;
@@ -261,6 +270,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
       subtitle: _formatPatterns(dto.patterns),
       duration: _formatDuration(dto.totalDurationSeconds),
       ownership: dto.ownership,
+      isStarred: dto.isStarred,
     );
   }
 

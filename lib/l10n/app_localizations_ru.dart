@@ -113,6 +113,12 @@ class AppLocalizationsRu extends AppLocalizations {
       'Не удалось синхронизировать сессии';
 
   @override
+  String get breathSessionListMySessions => 'Мои сессии';
+
+  @override
+  String get breathSessionListStarredSessions => '★ Избранное';
+
+  @override
   String get breathSessionListSharedSessions => 'Общие сессии';
 
   @override

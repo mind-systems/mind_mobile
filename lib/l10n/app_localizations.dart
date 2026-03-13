@@ -302,6 +302,18 @@ abstract class AppLocalizations {
   /// **'Failed to sync sessions'**
   String get breathSessionListSyncFailed;
 
+  /// No description provided for @breathSessionListMySessions.
+  ///
+  /// In en, this message translates to:
+  /// **'My Sessions'**
+  String get breathSessionListMySessions;
+
+  /// No description provided for @breathSessionListStarredSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'★ Starred'**
+  String get breathSessionListStarredSessions;
+
   /// No description provided for @breathSessionListSharedSessions.
   ///
   /// In en, this message translates to:

@@ -6,6 +6,7 @@ class BreathSessionListItemDTO {
   final List<BreathPatternDTO> patterns;
   final int totalDurationSeconds;
   final SessionOwnership ownership;
+  final bool isStarred;
 
   const BreathSessionListItemDTO({
     required this.id,
@@ -13,6 +14,7 @@ class BreathSessionListItemDTO {
     required this.patterns,
     required this.totalDurationSeconds,
     required this.ownership,
+    required this.isStarred,
   });
 }
 
