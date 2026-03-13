@@ -63,6 +63,8 @@ class BreathSessions extends Table {
 
   DateTimeColumn get createdAt => dateTime().withDefault(Constant(DateTime.fromMillisecondsSinceEpoch(0)))();
 
+  RealColumn get complexity => real().withDefault(const Constant(0.0))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -136,6 +138,7 @@ class BreathSessionDao extends DatabaseAccessor<Database>
       description: row.description,
       shared: row.shared,
       isStarred: row.isStarred,
+      complexity: row.complexity,
       createdAt: row.createdAt,
       exercises: row.exercises,
     );
@@ -148,6 +151,7 @@ class BreathSessionDao extends DatabaseAccessor<Database>
       description: Value(session.description),
       shared: Value(session.shared),
       isStarred: Value(session.isStarred),
+      complexity: Value(session.complexity),
       createdAt: Value(session.createdAt),
       exercises: Value(session.exercises),
     );

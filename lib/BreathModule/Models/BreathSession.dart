@@ -9,6 +9,7 @@ class BreathSession {
   final bool shared;
   final bool isStarred;
   final DateTime createdAt;
+  final double complexity;
 
   final List<ExerciseSet> exercises;
 
@@ -19,6 +20,7 @@ class BreathSession {
     required this.shared,
     required this.exercises,
     this.isStarred = false,
+    this.complexity = 0.0,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
 
@@ -28,6 +30,7 @@ class BreathSession {
     String? description,
     bool? shared,
     bool? isStarred,
+    double? complexity,
     DateTime? createdAt,
     List<ExerciseSet>? exercises,
   }) {
@@ -37,6 +40,7 @@ class BreathSession {
       description: description ?? this.description,
       shared: shared ?? this.shared,
       isStarred: isStarred ?? this.isStarred,
+      complexity: complexity ?? this.complexity,
       createdAt: createdAt ?? this.createdAt,
       exercises: exercises ?? this.exercises,
     );
@@ -76,6 +80,7 @@ class BreathSession {
       description: json['description'] as String,
       shared: json['shared'] as bool,
       isStarred: json['isStarred'] as bool? ?? false,
+      complexity: (json['complexity'] as num?)?.toDouble() ?? 0.0,
       createdAt: DateTime.parse(json['createdAt'] as String),
       exercises: (json['exercises'] as List).map((exercise) => ExerciseSet.fromJson(exercise as Map<String, dynamic>)).toList(),
     );

@@ -21,7 +21,7 @@ class Database extends _$Database {
   Database([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -44,6 +44,12 @@ class Database extends _$Database {
         }
         if (step == 6) {
           await migrator.addColumn(breathSessions, breathSessions.createdAt);
+        }
+        if (step == 7) {
+          // complexity column requires NOT NULL with DEFAULT — simpler to
+          // drop cached sessions and let them re-sync from API on next launch
+          await customStatement('DELETE FROM breath_sessions');
+          await migrator.addColumn(breathSessions, breathSessions.complexity);
         }
       }
     },

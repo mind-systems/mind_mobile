@@ -437,6 +437,18 @@ class $BreathSessionsTable extends BreathSessions
     requiredDuringInsert: false,
     defaultValue: Constant(DateTime.fromMillisecondsSinceEpoch(0)),
   );
+  static const VerificationMeta _complexityMeta = const VerificationMeta(
+    'complexity',
+  );
+  @override
+  late final GeneratedColumn<double> complexity = GeneratedColumn<double>(
+    'complexity',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -446,6 +458,7 @@ class $BreathSessionsTable extends BreathSessions
     exercises,
     isStarred,
     createdAt,
+    complexity,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -503,6 +516,12 @@ class $BreathSessionsTable extends BreathSessions
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('complexity')) {
+      context.handle(
+        _complexityMeta,
+        complexity.isAcceptableOrUnknown(data['complexity']!, _complexityMeta),
+      );
+    }
     return context;
   }
 
@@ -542,6 +561,10 @@ class $BreathSessionsTable extends BreathSessions
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      complexity: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}complexity'],
+      )!,
     );
   }
 
@@ -563,6 +586,7 @@ class BreathSessionRow extends DataClass
   final List<ExerciseSet> exercises;
   final bool isStarred;
   final DateTime createdAt;
+  final double complexity;
   const BreathSessionRow({
     required this.id,
     required this.userId,
@@ -571,6 +595,7 @@ class BreathSessionRow extends DataClass
     required this.exercises,
     required this.isStarred,
     required this.createdAt,
+    required this.complexity,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -586,6 +611,7 @@ class BreathSessionRow extends DataClass
     }
     map['is_starred'] = Variable<bool>(isStarred);
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['complexity'] = Variable<double>(complexity);
     return map;
   }
 
@@ -598,6 +624,7 @@ class BreathSessionRow extends DataClass
       exercises: Value(exercises),
       isStarred: Value(isStarred),
       createdAt: Value(createdAt),
+      complexity: Value(complexity),
     );
   }
 
@@ -614,6 +641,7 @@ class BreathSessionRow extends DataClass
       exercises: serializer.fromJson<List<ExerciseSet>>(json['exercises']),
       isStarred: serializer.fromJson<bool>(json['isStarred']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      complexity: serializer.fromJson<double>(json['complexity']),
     );
   }
   @override
@@ -627,6 +655,7 @@ class BreathSessionRow extends DataClass
       'exercises': serializer.toJson<List<ExerciseSet>>(exercises),
       'isStarred': serializer.toJson<bool>(isStarred),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'complexity': serializer.toJson<double>(complexity),
     };
   }
 
@@ -638,6 +667,7 @@ class BreathSessionRow extends DataClass
     List<ExerciseSet>? exercises,
     bool? isStarred,
     DateTime? createdAt,
+    double? complexity,
   }) => BreathSessionRow(
     id: id ?? this.id,
     userId: userId ?? this.userId,
@@ -646,6 +676,7 @@ class BreathSessionRow extends DataClass
     exercises: exercises ?? this.exercises,
     isStarred: isStarred ?? this.isStarred,
     createdAt: createdAt ?? this.createdAt,
+    complexity: complexity ?? this.complexity,
   );
   BreathSessionRow copyWithCompanion(BreathSessionsCompanion data) {
     return BreathSessionRow(
@@ -658,6 +689,9 @@ class BreathSessionRow extends DataClass
       exercises: data.exercises.present ? data.exercises.value : this.exercises,
       isStarred: data.isStarred.present ? data.isStarred.value : this.isStarred,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      complexity: data.complexity.present
+          ? data.complexity.value
+          : this.complexity,
     );
   }
 
@@ -670,7 +704,8 @@ class BreathSessionRow extends DataClass
           ..write('shared: $shared, ')
           ..write('exercises: $exercises, ')
           ..write('isStarred: $isStarred, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('complexity: $complexity')
           ..write(')'))
         .toString();
   }
@@ -684,6 +719,7 @@ class BreathSessionRow extends DataClass
     exercises,
     isStarred,
     createdAt,
+    complexity,
   );
   @override
   bool operator ==(Object other) =>
@@ -695,7 +731,8 @@ class BreathSessionRow extends DataClass
           other.shared == this.shared &&
           other.exercises == this.exercises &&
           other.isStarred == this.isStarred &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.complexity == this.complexity);
 }
 
 class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
@@ -706,6 +743,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
   final Value<List<ExerciseSet>> exercises;
   final Value<bool> isStarred;
   final Value<DateTime> createdAt;
+  final Value<double> complexity;
   final Value<int> rowid;
   const BreathSessionsCompanion({
     this.id = const Value.absent(),
@@ -715,6 +753,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     this.exercises = const Value.absent(),
     this.isStarred = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.complexity = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BreathSessionsCompanion.insert({
@@ -725,6 +764,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     required List<ExerciseSet> exercises,
     this.isStarred = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.complexity = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        userId = Value(userId),
@@ -739,6 +779,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     Expression<String>? exercises,
     Expression<bool>? isStarred,
     Expression<DateTime>? createdAt,
+    Expression<double>? complexity,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -749,6 +790,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
       if (exercises != null) 'exercises': exercises,
       if (isStarred != null) 'is_starred': isStarred,
       if (createdAt != null) 'created_at': createdAt,
+      if (complexity != null) 'complexity': complexity,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -761,6 +803,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     Value<List<ExerciseSet>>? exercises,
     Value<bool>? isStarred,
     Value<DateTime>? createdAt,
+    Value<double>? complexity,
     Value<int>? rowid,
   }) {
     return BreathSessionsCompanion(
@@ -771,6 +814,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
       exercises: exercises ?? this.exercises,
       isStarred: isStarred ?? this.isStarred,
       createdAt: createdAt ?? this.createdAt,
+      complexity: complexity ?? this.complexity,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -801,6 +845,9 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (complexity.present) {
+      map['complexity'] = Variable<double>(complexity.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -817,6 +864,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
           ..write('exercises: $exercises, ')
           ..write('isStarred: $isStarred, ')
           ..write('createdAt: $createdAt, ')
+          ..write('complexity: $complexity, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1045,6 +1093,7 @@ typedef $$BreathSessionsTableCreateCompanionBuilder =
       required List<ExerciseSet> exercises,
       Value<bool> isStarred,
       Value<DateTime> createdAt,
+      Value<double> complexity,
       Value<int> rowid,
     });
 typedef $$BreathSessionsTableUpdateCompanionBuilder =
@@ -1056,6 +1105,7 @@ typedef $$BreathSessionsTableUpdateCompanionBuilder =
       Value<List<ExerciseSet>> exercises,
       Value<bool> isStarred,
       Value<DateTime> createdAt,
+      Value<double> complexity,
       Value<int> rowid,
     });
 
@@ -1103,6 +1153,11 @@ class $$BreathSessionsTableFilterComposer
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<double> get complexity => $composableBuilder(
+    column: $table.complexity,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$BreathSessionsTableOrderingComposer
@@ -1148,6 +1203,11 @@ class $$BreathSessionsTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get complexity => $composableBuilder(
+    column: $table.complexity,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BreathSessionsTableAnnotationComposer
@@ -1181,6 +1241,11 @@ class $$BreathSessionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<double> get complexity => $composableBuilder(
+    column: $table.complexity,
+    builder: (column) => column,
+  );
 }
 
 class $$BreathSessionsTableTableManager
@@ -1221,6 +1286,7 @@ class $$BreathSessionsTableTableManager
                 Value<List<ExerciseSet>> exercises = const Value.absent(),
                 Value<bool> isStarred = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<double> complexity = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BreathSessionsCompanion(
                 id: id,
@@ -1230,6 +1296,7 @@ class $$BreathSessionsTableTableManager
                 exercises: exercises,
                 isStarred: isStarred,
                 createdAt: createdAt,
+                complexity: complexity,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1241,6 +1308,7 @@ class $$BreathSessionsTableTableManager
                 required List<ExerciseSet> exercises,
                 Value<bool> isStarred = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<double> complexity = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BreathSessionsCompanion.insert(
                 id: id,
@@ -1250,6 +1318,7 @@ class $$BreathSessionsTableTableManager
                 exercises: exercises,
                 isStarred: isStarred,
                 createdAt: createdAt,
+                complexity: complexity,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
