@@ -70,6 +70,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       remainingTicks: _stateMachine!.currentState.remainingTicks,
       activeStepId: _stateMachine!.currentState.activeStepId,
       currentIntervalMs: _stateMachine!.currentState.currentIntervalMs,
+      isStarred: dto.isStarred,
+      canStar: dto.canStar,
     );
   }
 
@@ -178,6 +180,18 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     if (_sessionDTO == null) return;
     pause();
     coordinator.openConstructor(sessionId);
+  }
+
+  Future<void> toggleStar() async {
+    final newStarred = !state.isStarred;
+    state = state.copyWith(isStarred: newStarred);
+    try {
+      final dto = await service.starSession(sessionId, starred: newStarred);
+      _sessionDTO = dto;
+      state = state.copyWith(isStarred: dto.isStarred);
+    } catch (_) {
+      state = state.copyWith(isStarred: !newStarred);
+    }
   }
 
   // ===== Facade =====

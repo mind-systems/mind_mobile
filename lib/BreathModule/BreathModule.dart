@@ -31,7 +31,7 @@ class BreathModule {
 
   static Widget buildSession(BuildContext context, {required String sessionId}) {
     final tickService = ClockTickService()..simulateTick();
-    final service = BreathSessionService(notifier: App.shared.breathSessionNotifier);
+    final service = BreathSessionService(notifier: App.shared.breathSessionNotifier, userNotifier: App.shared.userNotifier);
     final coordinator = BreathSessionCoordinator(context, userNotifier: App.shared.userNotifier);
     return ProviderScope(
       overrides: [

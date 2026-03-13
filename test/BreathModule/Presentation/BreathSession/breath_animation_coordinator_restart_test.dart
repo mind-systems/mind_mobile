@@ -53,6 +53,9 @@ class _FakeSessionService implements IBreathSessionService {
 
   @override
   Future<BreathSessionDTO> getSession(String id) async => dto;
+
+  @override
+  Future<BreathSessionDTO> starSession(String id, {required bool starred}) async => dto;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,6 +66,8 @@ BreathSessionDTO _makeSession() {
   return BreathSessionDTO(
     id: 'test',
     description: 'Test',
+    isStarred: false,
+    canStar: false,
     exercises: [
       BreathExerciseDTO(
         steps: [

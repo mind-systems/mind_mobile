@@ -22,6 +22,9 @@ class BreathSessionState {
   final List<TimelineStep> timelineSteps;
   final String? activeStepId;
 
+  final bool isStarred;
+  final bool canStar;
+
   const BreathSessionState({
     required this.loadState,
     required this.status,
@@ -31,6 +34,8 @@ class BreathSessionState {
     required this.currentIntervalMs,
     this.timelineSteps = const [],
     this.activeStepId,
+    this.isStarred = false,
+    this.canStar = false,
   });
 
   factory BreathSessionState.initial() => const BreathSessionState(
@@ -53,6 +58,8 @@ class BreathSessionState {
     int? currentIntervalMs,
     List<TimelineStep>? timelineSteps,
     String? activeStepId,
+    bool? isStarred,
+    bool? canStar,
   }) {
     return BreathSessionState(
       loadState: loadState ?? this.loadState,
@@ -63,6 +70,8 @@ class BreathSessionState {
       currentIntervalMs: currentIntervalMs ?? this.currentIntervalMs,
       timelineSteps: timelineSteps ?? this.timelineSteps,
       activeStepId: activeStepId ?? this.activeStepId,
+      isStarred: isStarred ?? this.isStarred,
+      canStar: canStar ?? this.canStar,
     );
   }
 }

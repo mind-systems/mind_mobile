@@ -8,10 +8,12 @@ import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerci
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathStepDTO.dart';
 
 class BreathSessionDTOMapper {
-  static BreathSessionDTO map(BreathSession session) {
+  static BreathSessionDTO map(BreathSession session, {required String currentUserId}) {
     return BreathSessionDTO(
       id: session.id,
       description: session.description,
+      isStarred: session.isStarred,
+      canStar: session.userId != currentUserId,
       exercises: session.exercises.map(_mapExercise).toList(),
     );
   }

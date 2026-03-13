@@ -48,6 +48,8 @@ BreathSessionDTO makeSession(List<BreathExerciseDTO> exercises) {
   return BreathSessionDTO(
     id: 'test-session',
     description: 'Test',
+    isStarred: false,
+    canStar: false,
     exercises: exercises,
   );
 }

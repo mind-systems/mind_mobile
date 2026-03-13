@@ -30,6 +30,12 @@ const _kButtonLight = Color(0xFF3686D0); // medium blue
 // Access via: theme.colorScheme.primary
 const _kAccent = Color(0xFF00D9FF); // cyan — shared between both themes
 
+// ── Warm Accent ─────────────────────────────────────────────
+// Secondary accent color (gold): stars, highlights, badges.
+// Access via: theme.colorScheme.tertiary
+const _kWarmAccentDark  = Color(0xFFF4BA40); // warm gold
+const _kWarmAccentLight = Color(0xFFF1A139); // amber gold
+
 // ── Error ────────────────────────────────────────────────────
 // Destructive actions, error snackbars, validation messages.
 // Access via: theme.colorScheme.error
@@ -44,6 +50,7 @@ abstract class AppTheme {
         colorScheme: const ColorScheme.dark(
           primary: _kAccent,
           secondaryContainer: _kButtonDark,
+          tertiary: _kWarmAccentDark,
           surface: _kBackgroundDark,
           error: _kError,
         ),
@@ -57,6 +64,7 @@ abstract class AppTheme {
         colorScheme: const ColorScheme.light(
           primary: _kAccent,
           secondaryContainer: _kButtonLight,
+          tertiary: _kWarmAccentLight,
           surface: _kBackgroundLight,
           error: _kError,
         ),
