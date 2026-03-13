@@ -425,6 +425,18 @@ class $BreathSessionsTable extends BreathSessions
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: Constant(DateTime.fromMillisecondsSinceEpoch(0)),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -433,6 +445,7 @@ class $BreathSessionsTable extends BreathSessions
     shared,
     exercises,
     isStarred,
+    createdAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -484,6 +497,12 @@ class $BreathSessionsTable extends BreathSessions
         isStarred.isAcceptableOrUnknown(data['is_starred']!, _isStarredMeta),
       );
     }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
     return context;
   }
 
@@ -519,6 +538,10 @@ class $BreathSessionsTable extends BreathSessions
         DriftSqlType.bool,
         data['${effectivePrefix}is_starred'],
       )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
     );
   }
 
@@ -539,6 +562,7 @@ class BreathSessionRow extends DataClass
   final bool shared;
   final List<ExerciseSet> exercises;
   final bool isStarred;
+  final DateTime createdAt;
   const BreathSessionRow({
     required this.id,
     required this.userId,
@@ -546,6 +570,7 @@ class BreathSessionRow extends DataClass
     required this.shared,
     required this.exercises,
     required this.isStarred,
+    required this.createdAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -560,6 +585,7 @@ class BreathSessionRow extends DataClass
       );
     }
     map['is_starred'] = Variable<bool>(isStarred);
+    map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
 
@@ -571,6 +597,7 @@ class BreathSessionRow extends DataClass
       shared: Value(shared),
       exercises: Value(exercises),
       isStarred: Value(isStarred),
+      createdAt: Value(createdAt),
     );
   }
 
@@ -586,6 +613,7 @@ class BreathSessionRow extends DataClass
       shared: serializer.fromJson<bool>(json['shared']),
       exercises: serializer.fromJson<List<ExerciseSet>>(json['exercises']),
       isStarred: serializer.fromJson<bool>(json['isStarred']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
   @override
@@ -598,6 +626,7 @@ class BreathSessionRow extends DataClass
       'shared': serializer.toJson<bool>(shared),
       'exercises': serializer.toJson<List<ExerciseSet>>(exercises),
       'isStarred': serializer.toJson<bool>(isStarred),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
@@ -608,6 +637,7 @@ class BreathSessionRow extends DataClass
     bool? shared,
     List<ExerciseSet>? exercises,
     bool? isStarred,
+    DateTime? createdAt,
   }) => BreathSessionRow(
     id: id ?? this.id,
     userId: userId ?? this.userId,
@@ -615,6 +645,7 @@ class BreathSessionRow extends DataClass
     shared: shared ?? this.shared,
     exercises: exercises ?? this.exercises,
     isStarred: isStarred ?? this.isStarred,
+    createdAt: createdAt ?? this.createdAt,
   );
   BreathSessionRow copyWithCompanion(BreathSessionsCompanion data) {
     return BreathSessionRow(
@@ -626,6 +657,7 @@ class BreathSessionRow extends DataClass
       shared: data.shared.present ? data.shared.value : this.shared,
       exercises: data.exercises.present ? data.exercises.value : this.exercises,
       isStarred: data.isStarred.present ? data.isStarred.value : this.isStarred,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
 
@@ -637,14 +669,22 @@ class BreathSessionRow extends DataClass
           ..write('description: $description, ')
           ..write('shared: $shared, ')
           ..write('exercises: $exercises, ')
-          ..write('isStarred: $isStarred')
+          ..write('isStarred: $isStarred, ')
+          ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, userId, description, shared, exercises, isStarred);
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    description,
+    shared,
+    exercises,
+    isStarred,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -654,7 +694,8 @@ class BreathSessionRow extends DataClass
           other.description == this.description &&
           other.shared == this.shared &&
           other.exercises == this.exercises &&
-          other.isStarred == this.isStarred);
+          other.isStarred == this.isStarred &&
+          other.createdAt == this.createdAt);
 }
 
 class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
@@ -664,6 +705,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
   final Value<bool> shared;
   final Value<List<ExerciseSet>> exercises;
   final Value<bool> isStarred;
+  final Value<DateTime> createdAt;
   final Value<int> rowid;
   const BreathSessionsCompanion({
     this.id = const Value.absent(),
@@ -672,6 +714,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     this.shared = const Value.absent(),
     this.exercises = const Value.absent(),
     this.isStarred = const Value.absent(),
+    this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BreathSessionsCompanion.insert({
@@ -681,6 +724,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     required bool shared,
     required List<ExerciseSet> exercises,
     this.isStarred = const Value.absent(),
+    this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        userId = Value(userId),
@@ -694,6 +738,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     Expression<bool>? shared,
     Expression<String>? exercises,
     Expression<bool>? isStarred,
+    Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -703,6 +748,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
       if (shared != null) 'shared': shared,
       if (exercises != null) 'exercises': exercises,
       if (isStarred != null) 'is_starred': isStarred,
+      if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -714,6 +760,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     Value<bool>? shared,
     Value<List<ExerciseSet>>? exercises,
     Value<bool>? isStarred,
+    Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
     return BreathSessionsCompanion(
@@ -723,6 +770,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
       shared: shared ?? this.shared,
       exercises: exercises ?? this.exercises,
       isStarred: isStarred ?? this.isStarred,
+      createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -750,6 +798,9 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
     if (isStarred.present) {
       map['is_starred'] = Variable<bool>(isStarred.value);
     }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -765,6 +816,7 @@ class BreathSessionsCompanion extends UpdateCompanion<BreathSessionRow> {
           ..write('shared: $shared, ')
           ..write('exercises: $exercises, ')
           ..write('isStarred: $isStarred, ')
+          ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -992,6 +1044,7 @@ typedef $$BreathSessionsTableCreateCompanionBuilder =
       required bool shared,
       required List<ExerciseSet> exercises,
       Value<bool> isStarred,
+      Value<DateTime> createdAt,
       Value<int> rowid,
     });
 typedef $$BreathSessionsTableUpdateCompanionBuilder =
@@ -1002,6 +1055,7 @@ typedef $$BreathSessionsTableUpdateCompanionBuilder =
       Value<bool> shared,
       Value<List<ExerciseSet>> exercises,
       Value<bool> isStarred,
+      Value<DateTime> createdAt,
       Value<int> rowid,
     });
 
@@ -1044,6 +1098,11 @@ class $$BreathSessionsTableFilterComposer
     column: $table.isStarred,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
 class $$BreathSessionsTableOrderingComposer
@@ -1084,6 +1143,11 @@ class $$BreathSessionsTableOrderingComposer
     column: $table.isStarred,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BreathSessionsTableAnnotationComposer
@@ -1114,6 +1178,9 @@ class $$BreathSessionsTableAnnotationComposer
 
   GeneratedColumn<bool> get isStarred =>
       $composableBuilder(column: $table.isStarred, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
 
 class $$BreathSessionsTableTableManager
@@ -1153,6 +1220,7 @@ class $$BreathSessionsTableTableManager
                 Value<bool> shared = const Value.absent(),
                 Value<List<ExerciseSet>> exercises = const Value.absent(),
                 Value<bool> isStarred = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BreathSessionsCompanion(
                 id: id,
@@ -1161,6 +1229,7 @@ class $$BreathSessionsTableTableManager
                 shared: shared,
                 exercises: exercises,
                 isStarred: isStarred,
+                createdAt: createdAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1171,6 +1240,7 @@ class $$BreathSessionsTableTableManager
                 required bool shared,
                 required List<ExerciseSet> exercises,
                 Value<bool> isStarred = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BreathSessionsCompanion.insert(
                 id: id,
@@ -1179,6 +1249,7 @@ class $$BreathSessionsTableTableManager
                 shared: shared,
                 exercises: exercises,
                 isStarred: isStarred,
+                createdAt: createdAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -8,6 +8,7 @@ class BreathSession {
   final String description;
   final bool shared;
   final bool isStarred;
+  final DateTime createdAt;
 
   final List<ExerciseSet> exercises;
 
@@ -18,7 +19,8 @@ class BreathSession {
     required this.shared,
     required this.exercises,
     this.isStarred = false,
-  });
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   BreathSession copyWith({
     String? id,
@@ -26,6 +28,7 @@ class BreathSession {
     String? description,
     bool? shared,
     bool? isStarred,
+    DateTime? createdAt,
     List<ExerciseSet>? exercises,
   }) {
     return BreathSession(
@@ -34,6 +37,7 @@ class BreathSession {
       description: description ?? this.description,
       shared: shared ?? this.shared,
       isStarred: isStarred ?? this.isStarred,
+      createdAt: createdAt ?? this.createdAt,
       exercises: exercises ?? this.exercises,
     );
   }
@@ -60,6 +64,7 @@ class BreathSession {
       'description': description,
       'shared': shared,
       'isStarred': isStarred,
+      'createdAt': createdAt.toIso8601String(),
       'exercises': exercises.map((exercise) => exercise.toJson()).toList(),
     };
   }
@@ -71,6 +76,7 @@ class BreathSession {
       description: json['description'] as String,
       shared: json['shared'] as bool,
       isStarred: json['isStarred'] as bool? ?? false,
+      createdAt: DateTime.parse(json['createdAt'] as String),
       exercises: (json['exercises'] as List).map((exercise) => ExerciseSet.fromJson(exercise as Map<String, dynamic>)).toList(),
     );
   }

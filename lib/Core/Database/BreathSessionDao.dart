@@ -61,6 +61,8 @@ class BreathSessions extends Table {
 
   BoolColumn get isStarred => boolean().withDefault(const Constant(false))();
 
+  DateTimeColumn get createdAt => dateTime().withDefault(Constant(DateTime.fromMillisecondsSinceEpoch(0)))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -75,9 +77,14 @@ class BreathSessionDao extends DatabaseAccessor<Database>
     implements IBreathSessionDao {
   BreathSessionDao(super.db);
 
+  /// Returns sessions sorted by [createdAt] DESC so that the ViewModel
+  /// receives rows in the same newest-first order the server provides.
+  /// [..orderBy] mutates the same [SimpleSelectStatement] in place,
+  /// so the subsequent [query.limit] applies to the already-ordered query.
   @override
   Future<List<BreathSession>> getSessions({int? limit, int? offset}) async {
-    final query = select(breathSessions);
+    final query = select(breathSessions)
+      ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]);
     if (limit != null) query.limit(limit, offset: offset);
     final rows = await query.get();
     return rows.map(_mapRowToDomain).toList();
@@ -129,6 +136,7 @@ class BreathSessionDao extends DatabaseAccessor<Database>
       description: row.description,
       shared: row.shared,
       isStarred: row.isStarred,
+      createdAt: row.createdAt,
       exercises: row.exercises,
     );
   }
@@ -140,6 +148,7 @@ class BreathSessionDao extends DatabaseAccessor<Database>
       description: Value(session.description),
       shared: Value(session.shared),
       isStarred: Value(session.isStarred),
+      createdAt: Value(session.createdAt),
       exercises: Value(session.exercises),
     );
   }

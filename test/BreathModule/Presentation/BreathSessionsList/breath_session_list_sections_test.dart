@@ -205,4 +205,73 @@ void main() {
       expect(_extractHeaders(vm.state), [SectionHeaderType.sharedSessions]);
     });
   });
+
+  // Sort by createdAt lives at the DAO/server level. These tests verify
+  // that _buildItemsWithSections preserves the server-provided order
+  // within each partition (mine / starred / shared).
+  group('within-section ordering', () {
+    test('mine section preserves server-provided order', () async {
+      service.emit(PageLoadedEvent(
+        page: 0,
+        items: [
+          _makeDTO(id: 'm-new', ownership: SessionOwnership.mine),
+          _makeDTO(id: 'm-old', ownership: SessionOwnership.mine),
+        ],
+        hasMore: false,
+      ));
+      await Future.microtask(() {});
+
+      final ids = _extractCellIds(vm.state);
+      expect(ids, ['m-new', 'm-old']);
+    });
+
+    test('starred section preserves server-provided order', () async {
+      service.emit(PageLoadedEvent(
+        page: 0,
+        items: [
+          _makeDTO(id: 's-new', ownership: SessionOwnership.shared, isStarred: true),
+          _makeDTO(id: 's-old', ownership: SessionOwnership.shared, isStarred: true),
+        ],
+        hasMore: false,
+      ));
+      await Future.microtask(() {});
+
+      final ids = _extractCellIds(vm.state);
+      expect(ids, ['s-new', 's-old']);
+    });
+
+    test('shared section preserves server-provided order', () async {
+      service.emit(PageLoadedEvent(
+        page: 0,
+        items: [
+          _makeDTO(id: 'u-new', ownership: SessionOwnership.shared, isStarred: false),
+          _makeDTO(id: 'u-old', ownership: SessionOwnership.shared, isStarred: false),
+        ],
+        hasMore: false,
+      ));
+      await Future.microtask(() {});
+
+      final ids = _extractCellIds(vm.state);
+      expect(ids, ['u-new', 'u-old']);
+    });
+
+    test('mixed sections each preserve their own server-provided order', () async {
+      service.emit(PageLoadedEvent(
+        page: 0,
+        items: [
+          _makeDTO(id: 'm-new', ownership: SessionOwnership.mine),
+          _makeDTO(id: 'm-old', ownership: SessionOwnership.mine),
+          _makeDTO(id: 's-new', ownership: SessionOwnership.shared, isStarred: true),
+          _makeDTO(id: 's-old', ownership: SessionOwnership.shared, isStarred: true),
+          _makeDTO(id: 'u-new', ownership: SessionOwnership.shared, isStarred: false),
+          _makeDTO(id: 'u-old', ownership: SessionOwnership.shared, isStarred: false),
+        ],
+        hasMore: false,
+      ));
+      await Future.microtask(() {});
+
+      final ids = _extractCellIds(vm.state);
+      expect(ids, ['m-new', 'm-old', 's-new', 's-old', 'u-new', 'u-old']);
+    });
+  });
 }
