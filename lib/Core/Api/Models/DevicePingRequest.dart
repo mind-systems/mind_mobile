@@ -4,9 +4,8 @@ class DevicePingRequest {
   final String osVersion;
   final String locale;
   final String timezone;
-  final double screenWidth;
-  final double screenHeight;
-  final double pixelRatio;
+  final int screenWidth;
+  final int screenHeight;
   final String appVersion;
   final String buildNumber;
   final String model;
@@ -20,7 +19,6 @@ class DevicePingRequest {
     required this.timezone,
     required this.screenWidth,
     required this.screenHeight,
-    required this.pixelRatio,
     required this.appVersion,
     required this.buildNumber,
     required this.model,
@@ -28,16 +26,15 @@ class DevicePingRequest {
   });
 
   Map<String, dynamic> toJson() => {
-    'installation_id': installationId,
+    'installationId': installationId,
     'platform': platform,
-    'os_version': osVersion,
+    'osVersion': osVersion,
     'locale': locale,
     'timezone': timezone,
-    'screen_width': screenWidth,
-    'screen_height': screenHeight,
-    'pixel_ratio': pixelRatio,
-    'app_version': appVersion,
-    'build_number': buildNumber,
+    'screenWidth': screenWidth,
+    'screenHeight': screenHeight,
+    'appVersion': appVersion,
+    'buildNumber': buildNumber,
     'model': model,
     'manufacturer': manufacturer,
   };

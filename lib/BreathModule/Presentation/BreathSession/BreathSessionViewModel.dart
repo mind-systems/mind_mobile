@@ -9,6 +9,8 @@ import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessio
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep.dart';
 
+enum BreathSessionError { starFailed }
+
 final breathViewModelProvider =
     StateNotifierProvider<BreathViewModel, BreathSessionState>((ref) {
   throw UnimplementedError(
@@ -25,6 +27,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   BreathSessionStateMachine? _stateMachine;
   StreamSubscription<BreathSessionStateMachineState>? _stateMachineSubscription;
   StreamSubscription<ResetReason>? _resetProxySubscription;
+
+  void Function(BreathSessionError error)? onErrorEvent;
 
   BreathSessionDTO? _sessionDTO;
 
@@ -191,6 +195,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       state = state.copyWith(isStarred: dto.isStarred);
     } catch (_) {
       state = state.copyWith(isStarred: !newStarred);
+      onErrorEvent?.call(BreathSessionError.starFailed);
     }
   }
 

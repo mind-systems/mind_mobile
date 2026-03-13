@@ -43,13 +43,6 @@ class ExerciseEditCell extends StatelessWidget {
         color: backgroundColor,
         borderRadius: BorderRadius.circular(kCardCornerRadius),
         border: Border.all(color: onSurface.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

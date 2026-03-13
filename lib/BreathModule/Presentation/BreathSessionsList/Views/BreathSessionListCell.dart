@@ -3,10 +3,12 @@ import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathS
 
 class BreathSessionListCell extends StatelessWidget {
   final BreathSessionListCellModel model;
+  final bool showDivider;
 
   const BreathSessionListCell({
     super.key,
     required this.model,
+    this.showDivider = true,
   });
 
   @override
@@ -60,11 +62,12 @@ class BreathSessionListCell extends StatelessWidget {
         ),
 
         // Hairline divider (1 physical pixel)
-        Container(
-          height: pixel,
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          color: theme.dividerColor,
-        ),
+        if (showDivider)
+          Container(
+            height: pixel,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            color: theme.dividerColor,
+          ),
       ],
     );
   }

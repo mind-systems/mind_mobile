@@ -12,12 +12,15 @@ class BreathSessionListSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Text(
-        title,
-        style: theme.textTheme.labelLarge?.copyWith(
-          color: theme.textTheme.bodySmall?.color,
+    return ColoredBox(
+      color: theme.cardColor.withValues(alpha: 0.3),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Text(
+          title,
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.textTheme.bodySmall?.color,
+          ),
         ),
       ),
     );

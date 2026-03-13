@@ -95,11 +95,16 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
         itemCount: state.items.length,
         itemBuilder: (context, index) {
           final item = state.items[index];
+          final isLastInSection = index == state.items.length - 1 ||
+              state.items[index + 1] is! BreathSessionListCellModel;
 
           return switch (item) {
             BreathSessionListCellModel cell => GestureDetector(
               onTap: () => _onSessionTap(cell.id),
-              child: BreathSessionListCell(model: cell),
+              child: BreathSessionListCell(
+                model: cell,
+                showDivider: !isLastInSection,
+              ),
             ),
             SectionHeaderModel header => BreathSessionListSectionHeader(
               title: switch (header.type) {

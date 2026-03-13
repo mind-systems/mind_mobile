@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:mind/l10n/app_localizations.dart';
 import 'package:mind/Views/ControlButton.dart';
+import 'package:mind/Views/SnackBarModule/GlobalSnackBarNotifier.dart';
+import 'package:mind/Views/SnackBarModule/Models/SnackBarEvent.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
@@ -77,6 +79,12 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
         }
       },
     );
+
+    viewModel.onErrorEvent = (_) {
+      ref.read(globalSnackBarNotifierProvider.notifier).show(
+        SnackBarEvent.error(AppLocalizations.of(context)!.error),
+      );
+    };
   }
 
   @override
@@ -200,7 +208,9 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
                         icon: Icon(
                           state.isStarred ? Icons.star : Icons.star_border,
                         ),
-                        color: Theme.of(context).colorScheme.tertiary,
+                        color: state.isStarred
+                            ? Theme.of(context).colorScheme.tertiary
+                            : Theme.of(context).colorScheme.primary,
                         iconSize: 28,
                         onPressed: () => viewModel.toggleStar(),
                       ),
