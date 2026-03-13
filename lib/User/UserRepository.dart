@@ -66,14 +66,12 @@ class UserRepository {
     return user;
   }
 
-  /// Phase 1: shows the native Google account picker. Throws
-  /// [GoogleSignInCanceledException] if the user dismisses the dialog.
-  Future<void> pickGoogleAccount() => _google.pickGoogleAccount();
+  /// Phase 1: Google OAuth — picker + consent → server auth code.
+  /// Throws [GoogleSignInCanceledException] if the user dismisses the dialog.
+  Future<String> getGoogleServerAuthCode() => _google.getServerAuthCode();
 
-  /// Phase 2: exchanges the picked account for a server auth code and
-  /// authenticates with the backend.
-  Future<User> authenticateWithGoogle({String? language}) async {
-    final serverAuthCode = await _google.getServerAuthCode();
+  /// Phase 2: sends auth code to our backend → returns User.
+  Future<User> authenticateWithGoogle({required String serverAuthCode, String? language}) async {
     final request = GoogleAuthRequest(serverAuthCode: serverAuthCode, language: language);
     final user = await _api.googleAuth(request);
     await _replaceGuestWithUser(user);

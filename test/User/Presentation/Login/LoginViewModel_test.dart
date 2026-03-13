@@ -123,15 +123,14 @@ void main() {
       expect(capturedError, isNull);
     });
 
-    test('error calls onErrorEvent', () async {
+    test('error does not call onErrorEvent (handled via authErrorStream)', () async {
       fakeService.googleLoginError = Exception('network error');
       LoginError? capturedError;
       viewModel.onErrorEvent = (error) => capturedError = error;
 
       await viewModel.loginWithGoogle();
 
-      expect(capturedError, isNotNull);
-      expect(capturedError, LoginError.sendCodeFailed);
+      expect(capturedError, isNull);
     });
   });
 

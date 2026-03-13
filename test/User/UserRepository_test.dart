@@ -78,16 +78,14 @@ class FakeAuthApi implements IAuthApi {
 
 class FakeGoogleAuthProvider implements IGoogleAuthProvider {
   String serverAuthCodeToReturn = 'fake-server-auth-code';
-  bool cancelOnPick = false;
+  bool cancelOnGetCode = false;
   bool signedOut = false;
 
   @override
-  Future<void> pickGoogleAccount() async {
-    if (cancelOnPick) throw GoogleSignInCanceledException();
+  Future<String> getServerAuthCode() async {
+    if (cancelOnGetCode) throw GoogleSignInCanceledException();
+    return serverAuthCodeToReturn;
   }
-
-  @override
-  Future<String> getServerAuthCode() async => serverAuthCodeToReturn;
 
   @override
   Future<void> signOut() async {
@@ -238,13 +236,11 @@ void main() {
   });
 
   group('authenticateWithGoogle', () {
-    test('calls google.getServerAuthCode and passes it to api.googleAuth', () async {
+    test('passes serverAuthCode to api.googleAuth', () async {
       final api = FakeAuthApi();
-      final google = FakeGoogleAuthProvider();
-      google.serverAuthCodeToReturn = 'my-auth-code';
-      final repo = _makeRepo(api: api, google: google);
+      final repo = _makeRepo(api: api);
 
-      await repo.authenticateWithGoogle();
+      await repo.authenticateWithGoogle(serverAuthCode: 'my-auth-code');
 
       expect(api.lastGoogleServerAuthCode, 'my-auth-code');
     });
@@ -255,20 +251,32 @@ void main() {
       await dao.saveUser(guest);
       final repo = _makeRepo(dao: dao);
 
-      final result = await repo.authenticateWithGoogle();
+      final result = await repo.authenticateWithGoogle(serverAuthCode: 'code');
 
       expect(result.isGuest, false);
       final stored = await dao.getUser();
       expect(stored?.id, _authenticatedUser.id);
     });
+  });
 
-    test('pickGoogleAccount propagates GoogleSignInCanceledException', () async {
+  group('getGoogleServerAuthCode', () {
+    test('returns server auth code from google provider', () async {
       final google = FakeGoogleAuthProvider();
-      google.cancelOnPick = true;
+      google.serverAuthCodeToReturn = 'my-auth-code';
+      final repo = _makeRepo(google: google);
+
+      final code = await repo.getGoogleServerAuthCode();
+
+      expect(code, 'my-auth-code');
+    });
+
+    test('propagates GoogleSignInCanceledException', () async {
+      final google = FakeGoogleAuthProvider();
+      google.cancelOnGetCode = true;
       final repo = _makeRepo(google: google);
 
       expect(
-        repo.pickGoogleAccount(),
+        repo.getGoogleServerAuthCode(),
         throwsA(isA<GoogleSignInCanceledException>()),
       );
     });

@@ -4,32 +4,22 @@ import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
 
 class GoogleAuthProvider implements IGoogleAuthProvider {
   final GoogleSignIn _google = GoogleSignIn.instance;
-  GoogleSignInAccount? _pickedAccount;
 
   @override
-  Future<void> pickGoogleAccount() async {
+  Future<String> getServerAuthCode() async {
     try {
-      _pickedAccount = await _google.authenticate();
+      final serverAuth =
+          await _google.authorizationClient.authorizeServer(['email']);
+      if (serverAuth == null) {
+        throw Exception('Google Sign-In did not return a serverAuthCode.');
+      }
+      return serverAuth.serverAuthCode;
     } on GoogleSignInException catch (e) {
       if (e.code == GoogleSignInExceptionCode.canceled) {
         throw GoogleSignInCanceledException();
       }
       rethrow;
     }
-  }
-
-  @override
-  Future<String> getServerAuthCode() async {
-    final account = _pickedAccount;
-    _pickedAccount = null;
-    if (account == null) {
-      throw StateError('pickGoogleAccount() must be called before getServerAuthCode()');
-    }
-    final serverAuth = await account.authorizationClient.authorizeServer(['email']);
-    if (serverAuth == null) {
-      throw Exception('Google Sign-In did not return a serverAuthCode.');
-    }
-    return serverAuth.serverAuthCode;
   }
 
   @override

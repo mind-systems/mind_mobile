@@ -53,6 +53,7 @@ BreathSessionListItemDTO _makeDTO({
     description: 'Session $id',
     patterns: const [],
     totalDurationSeconds: 60,
+    complexity: 0,
     ownership: ownership,
     isStarred: isStarred,
   );
