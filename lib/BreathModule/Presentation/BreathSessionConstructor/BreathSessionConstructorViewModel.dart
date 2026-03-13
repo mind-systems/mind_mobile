@@ -28,32 +28,40 @@ class BreathSessionConstructorViewModel
   ) {
     final dto = service.getInitialState();
     final mode = service.getInitialConstructorMode();
+    final exercises = dto.exercises;
 
     return BreathSessionConstructorState.initial(
       mode: mode,
       description: dto.description,
       shared: dto.shared,
-      initialExercises: dto.exercises,
+      initialExercises: exercises,
+      complexity: service.computeComplexity(exercises),
     );
   }
 
   // ===== CRUD упражнений =====
 
   void addExercise() {
+    final newExercises = [...state.exercises, ExerciseEditCellModel.create()];
     state = state.copyWith(
-      exercises: [...state.exercises, ExerciseEditCellModel.create()],
+      exercises: newExercises,
+      complexity: service.computeComplexity(newExercises),
     );
   }
 
   void removeExercise(String id) {
+    final newExercises = state.exercises.where((e) => e.id != id).toList();
     state = state.copyWith(
-      exercises: state.exercises.where((e) => e.id != id).toList(),
+      exercises: newExercises,
+      complexity: service.computeComplexity(newExercises),
     );
   }
 
   void updateExercise(String id, ExerciseEditCellModel updated) {
+    final newExercises = state.exercises.map((e) => e.id == id ? updated : e).toList();
     state = state.copyWith(
-      exercises: state.exercises.map((e) => e.id == id ? updated : e).toList(),
+      exercises: newExercises,
+      complexity: service.computeComplexity(newExercises),
     );
   }
 
@@ -74,6 +82,8 @@ class BreathSessionConstructorViewModel
   // ===== Вычисляемые значения =====
 
   int get totalSessionDuration => state.totalDuration;
+
+  double get complexity => state.complexity;
 
   // ===== Работа с сервисом =====
 

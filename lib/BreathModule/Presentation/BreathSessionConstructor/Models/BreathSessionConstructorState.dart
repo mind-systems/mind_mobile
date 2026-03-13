@@ -8,12 +8,14 @@ class BreathSessionConstructorState {
   final String description;
   final bool shared;
   final List<ExerciseEditCellModel> exercises;
+  final double complexity;
 
   const BreathSessionConstructorState({
     required this.mode,
     required this.description,
     required this.shared,
     required this.exercises,
+    this.complexity = 0.0,
   });
 
   factory BreathSessionConstructorState.initial({
@@ -21,12 +23,14 @@ class BreathSessionConstructorState {
     String? description,
     bool? shared,
     List<ExerciseEditCellModel>? initialExercises,
+    double complexity = 0.0,
   }) {
     return BreathSessionConstructorState(
       mode: mode,
       description: description ?? '',
       shared: shared ?? false,
       exercises: initialExercises ?? [],
+      complexity: complexity,
     );
   }
 
@@ -35,12 +39,14 @@ class BreathSessionConstructorState {
     String? description,
     bool? shared,
     List<ExerciseEditCellModel>? exercises,
+    double? complexity,
   }) {
     return BreathSessionConstructorState(
       mode: mode ?? this.mode,
       description: description ?? this.description,
       shared: shared ?? this.shared,
       exercises: exercises ?? this.exercises,
+      complexity: complexity ?? this.complexity,
     );
   }
 

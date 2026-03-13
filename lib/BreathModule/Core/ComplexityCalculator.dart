@@ -1,18 +1,27 @@
-import 'package:mind/BreathModule/Models/ExerciseSet.dart';
+class ExerciseComplexityInput {
+  final int cycleDuration;
+  final int restDuration;
+  final int repeatCount;
 
-double calculateComplexity(List<ExerciseSet> exercises) {
+  const ExerciseComplexityInput({
+    required this.cycleDuration,
+    required this.restDuration,
+    required this.repeatCount,
+  });
+}
+
+double calculateComplexity(List<ExerciseComplexityInput> inputs) {
   double contribution = 0;
   double penalty = 0;
 
-  for (int i = 0; i < exercises.length; i++) {
-    final ex = exercises[i];
-    final isRestSeparator = ex.steps.isEmpty;
+  for (int i = 0; i < inputs.length; i++) {
+    final ex = inputs[i];
+    final isRest = ex.cycleDuration == 0;
 
-    if (isRestSeparator) {
+    if (isRest) {
       if (i > 0) penalty += ex.restDuration * 3;
     } else {
-      final cycleDuration = ex.steps.fold(0, (sum, s) => sum + s.duration);
-      contribution += cycleDuration * ex.repeatCount;
+      contribution += ex.cycleDuration * ex.repeatCount;
       if (ex.restDuration > 0) {
         penalty += ex.restDuration * ex.repeatCount * 5;
       }

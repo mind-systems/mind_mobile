@@ -6,6 +6,7 @@ import 'package:mind/Views/ControlButton.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Views/ExerciseEditCell.dart';
+import 'package:mind/BreathModule/Presentation/Widgets/ComplexityIndicator.dart';
 
 class _DescriptionField extends StatefulWidget {
   const _DescriptionField({required this.description, required this.onChanged});
@@ -283,7 +284,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFooter(BuildContext context, WidgetRef ref, ConstructorMode mode, int totalDuration) {
+  Widget _buildFooter(BuildContext context, WidgetRef ref, ConstructorMode mode, int totalDuration, double complexity) {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
     return Container(
@@ -319,6 +320,8 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              const SizedBox(height: 4),
+              ComplexityIndicator(complexity: complexity, width: 120),
             ],
           ),
           Row(
@@ -368,7 +371,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
             Expanded(
               child: _buildExercisesList(description, exercises, ref),
             ),
-            _buildFooter(context, ref, mode, totalDuration),
+            _buildFooter(context, ref, mode, totalDuration, state.complexity),
           ],
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItem.dart';
+import 'package:mind/BreathModule/Presentation/Widgets/ComplexityIndicator.dart';
 
 class BreathSessionListCell extends StatelessWidget {
   final BreathSessionListCellModel model;
@@ -36,7 +37,7 @@ class BreathSessionListCell extends StatelessWidget {
 
               const SizedBox(height: 6),
 
-              // Duration + Subtitle
+              // Duration + Subtitle + Complexity
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -51,6 +52,13 @@ class BreathSessionListCell extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: ComplexityIndicator(complexity: model.complexity),
                     ),
                   ),
                 ],

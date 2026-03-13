@@ -9,6 +9,8 @@ class BreathSessionListCellModel extends BreathSessionListItem {
   final String subtitle;
   /// Общая длительность сессии: "12:40"
   final String duration;
+  /// Сложность сессии (0–500+)
+  final double complexity;
   /// Тип владения сессией (используется VM для группировки)
   final SessionOwnership ownership;
   /// Отмечена ли сессия звёздочкой (используется VM для группировки)
@@ -19,6 +21,7 @@ class BreathSessionListCellModel extends BreathSessionListItem {
     required this.title,
     required this.subtitle,
     required this.duration,
+    required this.complexity,
     required this.ownership,
     required this.isStarred,
   });

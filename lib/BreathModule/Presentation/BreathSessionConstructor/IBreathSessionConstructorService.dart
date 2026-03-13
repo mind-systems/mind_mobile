@@ -1,5 +1,6 @@
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorDTO.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/ExerciseEditCellModel.dart';
 
 /// Интерфейс сервиса для работы с конструктором сессий.
 /// Модуль конструктора не знает о деталях хранения, userId, sessionId.
@@ -30,4 +31,7 @@ abstract class IBreathSessionConstructorService {
   /// Вызывается только в режиме редактирования.
   /// Если сессии нет (режим создания) — метод ничего не делает.
   Future<void> delete();
+
+  /// Compute complexity score from the current exercise list.
+  double computeComplexity(List<ExerciseEditCellModel> exercises);
 }

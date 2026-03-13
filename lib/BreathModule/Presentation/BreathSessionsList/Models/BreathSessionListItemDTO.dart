@@ -5,6 +5,7 @@ class BreathSessionListItemDTO {
   final String description;
   final List<BreathPatternDTO> patterns;
   final int totalDurationSeconds;
+  final double complexity;
   final SessionOwnership ownership;
   final bool isStarred;
 
@@ -13,6 +14,7 @@ class BreathSessionListItemDTO {
     required this.description,
     required this.patterns,
     required this.totalDurationSeconds,
+    required this.complexity,
     required this.ownership,
     required this.isStarred,
   });

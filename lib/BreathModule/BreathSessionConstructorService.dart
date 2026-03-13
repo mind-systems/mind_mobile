@@ -1,4 +1,5 @@
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
+import 'package:mind/BreathModule/Core/ComplexityCalculator.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/IBreathSessionConstructorService.dart';
@@ -68,6 +69,16 @@ class BreathSessionConstructorService
 
     // Удаляем существующую сессию
     await provider.delete(existingSession!.id);
+  }
+
+  @override
+  double computeComplexity(List<ExerciseEditCellModel> exercises) {
+    final inputs = exercises.map((e) => ExerciseComplexityInput(
+      cycleDuration: e.inhale + e.hold1 + e.exhale + e.hold2,
+      restDuration: e.rest,
+      repeatCount: e.cycles,
+    )).toList();
+    return calculateComplexity(inputs);
   }
 
   // ===== PRIVATE MAPPING =====

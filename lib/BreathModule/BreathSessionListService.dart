@@ -111,6 +111,7 @@ class BreathSessionListService implements IBreathSessionListService {
       description: session.description,
       patterns: patterns,
       totalDurationSeconds: totalDuration,
+      complexity: session.complexity,
       ownership: ownership,
       isStarred: session.isStarred,
     );

@@ -269,6 +269,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
       title: dto.description,
       subtitle: _formatPatterns(dto.patterns),
       duration: _formatDuration(dto.totalDurationSeconds),
+      complexity: dto.complexity,
       ownership: dto.ownership,
       isStarred: dto.isStarred,
     );
