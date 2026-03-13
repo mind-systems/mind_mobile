@@ -1,7 +1,9 @@
+import 'package:rxdart/rxdart.dart';
 import 'package:mind/Core/AppSettings/AppSettingsNotifier.dart';
 import 'package:mind/Core/AppSettings/AppSettingsRepository.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/IProfileService.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/Models/ProfileDTOs.dart';
+import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -22,9 +24,14 @@ class ProfileService implements IProfileService {
 
   @override
   Stream<ProfileEvent> observeProfile() {
-    return userNotifier.stream.map(
-      (authState) => ProfileLoaded(user: UserDTO(name: authState.user.name)),
-    );
+    final expiry = userNotifier.stream
+        .where((s) => s is GuestState)
+        .map((_) => ProfileSessionExpired() as ProfileEvent)
+        .take(1);
+    final loaded = userNotifier.stream
+        .where((s) => s is! GuestState)
+        .map((s) => ProfileLoaded(user: UserDTO(name: s.user.name)) as ProfileEvent);
+    return expiry.mergeWith([loaded]);
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mind/BreathModule/BreathSessionConstructorCoordinator.dart';
 import 'package:mind/BreathModule/BreathSessionConstructorService.dart';
 import 'package:mind/BreathModule/BreathSessionListCoordinator.dart';
 import 'package:mind/BreathModule/BreathSessionCoordinator.dart';
@@ -50,11 +51,12 @@ class BreathModule {
         ? app.breathSessionNotifier.currentState.byId[sessionId]
         : null;
     assert(sessionId == null || session != null, 'Session $sessionId not found in cache — was it deleted before navigation?');
-    final service = BreathSessionConstructorService(userId: userId, existingSession: session, provider: app.breathSessionNotifier);
+    final service = BreathSessionConstructorService(userId: userId, existingSession: session, provider: app.breathSessionNotifier, userNotifier: app.userNotifier);
+    final coordinator = BreathSessionConstructorCoordinator(context);
     return ProviderScope(
       overrides: [
         breathSessionConstructorProvider.overrideWith(
-          (ref) => BreathSessionConstructorViewModel(service: service),
+          (ref) => BreathSessionConstructorViewModel(service: service, coordinator: coordinator),
         ),
       ],
       child: const BreathSessionConstructorScreen(),

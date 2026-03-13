@@ -34,4 +34,8 @@ abstract class IBreathSessionConstructorService {
 
   /// Compute complexity score from the current exercise list.
   double computeComplexity(List<ExerciseEditCellModel> exercises);
+
+  /// Emits a single event when the user session expires (forced logout).
+  /// The screen should pop itself when this fires.
+  Stream<void> observeSessionExpiry();
 }

@@ -1,5 +1,7 @@
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/ComplexityCalculator.dart';
+import 'package:mind/User/Models/AuthState.dart';
+import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/IBreathSessionConstructorService.dart';
@@ -15,11 +17,13 @@ class BreathSessionConstructorService
   final String userId;
   final BreathSession? existingSession;
   final BreathSessionNotifier provider;
+  final UserNotifier userNotifier;
 
   BreathSessionConstructorService({
     required this.userId,
     required this.existingSession,
     required this.provider,
+    required this.userNotifier,
   });
 
   @override
@@ -69,6 +73,14 @@ class BreathSessionConstructorService
 
     // Удаляем существующую сессию
     await provider.delete(existingSession!.id);
+  }
+
+  @override
+  Stream<void> observeSessionExpiry() {
+    return userNotifier.stream
+        .where((state) => state is GuestState)
+        .map((_) {})
+        .take(1);
   }
 
   @override

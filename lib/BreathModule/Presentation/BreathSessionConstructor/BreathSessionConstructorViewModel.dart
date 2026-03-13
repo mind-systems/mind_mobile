@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/IBreathSessionConstructorCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/IBreathSessionConstructorService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorState.dart';
@@ -18,9 +21,15 @@ final breathSessionConstructorProvider =
 class BreathSessionConstructorViewModel
     extends StateNotifier<BreathSessionConstructorState> {
   final IBreathSessionConstructorService service;
+  final IBreathSessionConstructorCoordinator coordinator;
+  StreamSubscription<void>? _sessionExpirySubscription;
 
-  BreathSessionConstructorViewModel({required this.service})
-    : super(_initializeState(service));
+  BreathSessionConstructorViewModel({required this.service, required this.coordinator})
+    : super(_initializeState(service)) {
+    _sessionExpirySubscription = service.observeSessionExpiry().listen((_) {
+      coordinator.dismiss();
+    });
+  }
 
   // Приватный статический метод для инициализации State из сервиса
   static BreathSessionConstructorState _initializeState(
@@ -102,6 +111,12 @@ class BreathSessionConstructorViewModel
 
     await service.delete();
     // Навигация/закрытие экрана — ответственность UI
+  }
+
+  @override
+  void dispose() {
+    _sessionExpirySubscription?.cancel();
+    super.dispose();
   }
 
   /// Собрать DTO из текущего состояния (приватный метод)

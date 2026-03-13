@@ -34,6 +34,8 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
     switch (event) {
       case ProfileLoaded e:
         state = state.copyWith(userName: e.user.name);
+      case ProfileSessionExpired _:
+        coordinator.dismiss();
     }
   }
 

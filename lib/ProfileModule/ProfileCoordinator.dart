@@ -20,6 +20,13 @@ class ProfileCoordinator implements IProfileCoordinator {
   }
 
   @override
+  void dismiss() {
+    if (context.mounted) {
+      context.pop();
+    }
+  }
+
+  @override
   void showThemePicker({
     required List<String> keys,
     required int selectedIndex,

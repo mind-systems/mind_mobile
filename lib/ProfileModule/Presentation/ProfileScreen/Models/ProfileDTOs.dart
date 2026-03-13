@@ -9,3 +9,5 @@ class ProfileLoaded extends ProfileEvent {
   final UserDTO user;
   ProfileLoaded({required this.user});
 }
+
+class ProfileSessionExpired extends ProfileEvent {}
