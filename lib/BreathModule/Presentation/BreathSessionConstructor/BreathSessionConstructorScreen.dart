@@ -7,6 +7,70 @@ import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSe
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/BreathSessionConstructorState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Views/ExerciseEditCell.dart';
 
+class _DescriptionField extends StatefulWidget {
+  const _DescriptionField({required this.description, required this.onChanged});
+
+  final String description;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_DescriptionField> createState() => _DescriptionFieldState();
+}
+
+class _DescriptionFieldState extends State<_DescriptionField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.description)
+      ..selection = TextSelection.collapsed(offset: widget.description.length);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SizedBox(
+        height: 32,
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: onSurface.withValues(alpha: 0.2),
+            ),
+          ),
+          alignment: Alignment.center,
+          child: TextField(
+            controller: _controller,
+            onChanged: widget.onChanged,
+            style: TextStyle(
+              color: onSurface,
+              fontSize: 16,
+              height: 1.2,
+            ),
+            decoration: const InputDecoration(
+              isDense: true,
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 16),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Экран конструктора дыхательных сессий
 class BreathSessionConstructorScreen extends ConsumerWidget {
   const BreathSessionConstructorScreen({
@@ -142,42 +206,11 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
   }
 
   Widget _buildDescriptionField(BuildContext context, WidgetRef ref, String description) {
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-    final controller = TextEditingController(text: description)
-      ..selection = TextSelection.collapsed(offset: description.length);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: SizedBox(
-        height: 32,
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.cardColor.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: onSurface.withValues(alpha: 0.2),
-            ),
-          ),
-          alignment: Alignment.center,
-          child: TextField(
-            controller: controller,
-            onChanged: (value) => ref
-                .read(breathSessionConstructorProvider.notifier)
-                .updateDescription(value),
-            style: TextStyle(
-              color: onSurface,
-              fontSize: 16,
-              height: 1.2,
-            ),
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16),
-            ),
-          ),
-        ),
-      ),
+    return _DescriptionField(
+      description: description,
+      onChanged: (value) => ref
+          .read(breathSessionConstructorProvider.notifier)
+          .updateDescription(value),
     );
   }
 
