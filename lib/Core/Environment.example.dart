@@ -4,6 +4,7 @@
 class Environment {
   final String name;
   final String apiBaseUrl;
+  final String wsBaseUrl;
   final bool isProduction;
   final String googleIosClientId;
   final String googleAndroidClientId;
@@ -12,6 +13,7 @@ class Environment {
   Environment._({
     required this.name,
     required this.apiBaseUrl,
+    required this.wsBaseUrl,
     required this.isProduction,
     required this.googleIosClientId,
     required this.googleAndroidClientId,
@@ -25,7 +27,8 @@ class Environment {
   static void initDev() {
     _instance = Environment._(
       name: 'Development',
-      apiBaseUrl: 'http://localhost:3000', // Замените на ваш devepopment URL
+      apiBaseUrl: 'http://localhost:3000', // Замените на ваш development URL
+      wsBaseUrl: 'ws://localhost:3000',    // Замените на ваш development WS URL
       isProduction: false,
       googleIosClientId: 'YOUR_DEV_IOS_CLIENT_ID',
       googleAndroidClientId: 'YOUR_DEV_ANDROID_CLIENT_ID',
@@ -36,8 +39,8 @@ class Environment {
   static void initProd() {
     _instance = Environment._(
       name: 'Production',
-      apiBaseUrl:
-          'https://your-api.com', // Замените на ваш production URL
+      apiBaseUrl: 'https://your-api.com',    // Замените на ваш production URL
+      wsBaseUrl: 'wss://your-api.com',       // Замените на ваш production WS URL
       isProduction: true,
       googleIosClientId: 'YOUR_PROD_IOS_CLIENT_ID',
       googleAndroidClientId: 'YOUR_PROD_ANDROID_CLIENT_ID',

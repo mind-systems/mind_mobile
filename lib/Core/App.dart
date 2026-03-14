@@ -1,3 +1,7 @@
+// STYLE RULE: All initializers in initialize() must be written as single-line statements.
+// Multi-line named-parameter calls are NOT allowed here. Keep each assignment on one line.
+// No trailing commas on initializer lines — parameters are added in the middle, not the end.
+// Example: final foo = Foo(a: a, b: b, c: c);
 import 'dart:async';
 import 'dart:io';
 
@@ -29,6 +33,8 @@ import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
 import 'package:mind/Core/Handlers/BreathSessionDeeplinkHandler.dart';
 import 'package:mind/User/Infrastructure/GoogleAuthProvider.dart';
 import 'package:mind/User/Infrastructure/SecureStorage.dart';
+import 'package:mind/Core/Socket/LiveSocketService.dart';
+import 'package:mind/Core/Socket/SocketConnectionCoordinator.dart';
 import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
@@ -48,6 +54,8 @@ class App {
   final BreathSessionNotifier breathSessionNotifier;
   final DeeplinkRouter deeplinkRouter;
   final AppSettingsNotifier appSettingsNotifier;
+  final LiveSocketService liveSocketService;
+  final SocketConnectionCoordinator socketConnectionCoordinator;
 
   App._({
     required this.db,
@@ -59,6 +67,8 @@ class App {
     required this.breathSessionNotifier,
     required this.deeplinkRouter,
     required this.appSettingsNotifier,
+    required this.liveSocketService,
+    required this.socketConnectionCoordinator,
   });
 
   static Future<void> initialize() async {
@@ -109,6 +119,10 @@ class App {
     final sessionHandler = BreathSessionDeeplinkHandler(router: appRouter);
     final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler, sessionHandler: sessionHandler);
 
+    final liveSocketService = LiveSocketService(storage: const FlutterSecureStorage());
+
+    final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService);
+
     shared = App._(
       db: db,
       httpClient: httpClient,
@@ -119,6 +133,8 @@ class App {
       breathSessionNotifier: breathSessionNotifier,
       deeplinkRouter: deeplinkRouter,
       appSettingsNotifier: appSettingsNotifier,
+      liveSocketService: liveSocketService,
+      socketConnectionCoordinator: socketConnectionCoordinator,
     );
 
     await shared.deeplinkRouter.init();
