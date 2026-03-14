@@ -18,10 +18,21 @@ class LiveSessionService implements ILiveSessionService {
   }
 
   @override
+  void pauseSession() {
+    _notifier.pause();
+  }
+
+  @override
+  void resumeSession() {
+    _notifier.unpause();
+  }
+
+  @override
   Stream<LiveSessionDto> get sessionStateStream {
     return _notifier.stream.map((state) => LiveSessionDto(
       liveSessionId: state.liveSessionId,
       isActive: state.status == LiveSessionStatus.active,
+      isPaused: state.isPaused,
     ));
   }
 }

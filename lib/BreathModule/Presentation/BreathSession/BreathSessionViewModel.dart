@@ -35,6 +35,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   bool _liveSessionStarted = false;
   bool _liveSessionEnded = false;
+  bool _liveSessionPaused = false;
 
   void Function(BreathSessionError error)? onErrorEvent;
 
@@ -54,6 +55,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       if (!dto.isActive && _liveSessionStarted && !_liveSessionEnded) {
         _liveSessionStarted = false;
       }
+      _liveSessionPaused = dto.isPaused;
     });
   }
 
@@ -190,12 +192,19 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   // ===== Public controls =====
 
-  void pause() => _stateMachine?.pause();
+  void pause() {
+    _stateMachine?.pause();
+    if (_liveSessionStarted && !_liveSessionPaused) {
+      liveSessionService.pauseSession();
+    }
+  }
 
   void resume() {
     if (!_liveSessionStarted) {
       liveSessionService.startSession(sessionId);
       _liveSessionStarted = true;
+    } else if (_liveSessionPaused) {
+      liveSessionService.resumeSession();
     }
     _stateMachine?.resume();
   }

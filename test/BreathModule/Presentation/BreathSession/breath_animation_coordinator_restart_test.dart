@@ -50,6 +50,10 @@ class _FakeLiveSessionService implements ILiveSessionService {
   @override
   void endSession() {}
   @override
+  void pauseSession() {}
+  @override
+  void resumeSession() {}
+  @override
   Stream<LiveSessionDto> get sessionStateStream => const Stream.empty();
 }
 

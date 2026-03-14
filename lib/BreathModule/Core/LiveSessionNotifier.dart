@@ -19,6 +19,7 @@ class LiveSessionNotifier {
   late final StreamSubscription<AuthState> _authSubscription;
 
   bool _isPendingStart = false;
+  bool _isPendingPause = false;
 
   final _state = BehaviorSubject<LiveSessionState>.seeded(LiveSessionState.initial());
   final _events = PublishSubject<LiveSessionEvent>();
@@ -35,6 +36,7 @@ class LiveSessionNotifier {
 
   void reset() {
     _isPendingStart = false;
+    _isPendingPause = false;
     _state.add(LiveSessionState.initial());
   }
 
@@ -47,6 +49,18 @@ class LiveSessionNotifier {
     });
   }
 
+  void pause() {
+    if (currentState.status != LiveSessionStatus.active || currentState.isPaused || _isPendingPause) return;
+    _isPendingPause = true;
+    _liveSocketService.emitLive('activity:pause');
+  }
+
+  void unpause() {
+    if (!currentState.isPaused) return;
+    _isPendingPause = false;
+    _liveSocketService.emitLive('activity:resume');
+  }
+
   void end() {
     if (currentState.status == LiveSessionStatus.idle) return;
     _liveSocketService.emitLive('activity:end');
@@ -56,19 +70,19 @@ class LiveSessionNotifier {
     final status = data['status'] as String?;
     final liveSessionId = data['liveSessionId'] as String?;
 
-    if (status == 'active') {
+    if (status == 'active' || status == 'resumed') {
+      final isPaused = (data['isPaused'] as bool?) ?? false;
+      final wasPaused = currentState.isPaused;
       final isNew = currentState.status != LiveSessionStatus.active;
       _isPendingStart = false;
-      _state.add(LiveSessionState(liveSessionId: liveSessionId, status: LiveSessionStatus.active));
+      _isPendingPause = false;
+      _state.add(LiveSessionState(liveSessionId: liveSessionId, status: LiveSessionStatus.active, isPaused: isPaused));
       if (isNew) {
         _events.add(LiveSessionStarted(liveSessionId: liveSessionId));
-      }
-    } else if (status == 'resumed') {
-      _isPendingStart = false;
-      final isNew = currentState.status != LiveSessionStatus.active;
-      _state.add(LiveSessionState(liveSessionId: liveSessionId, status: LiveSessionStatus.active));
-      if (isNew) {
-        _events.add(LiveSessionStarted(liveSessionId: liveSessionId));
+      } else if (wasPaused && !isPaused) {
+        _events.add(LiveSessionUnpaused());
+      } else if (!wasPaused && isPaused) {
+        _events.add(LiveSessionPaused());
       }
     } else if (status == 'ended') {
       _state.add(LiveSessionState.initial());
