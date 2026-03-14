@@ -1,13 +1,25 @@
+import 'dart:async';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import 'package:mind/Core/Environment.dart';
+import 'package:mind/Core/Socket/SocketConnectionState.dart';
 
 class LiveSocketService {
   final FlutterSecureStorage _storage;
 
   io.Socket? _liveSocket;
   io.Socket? _telemetrySocket;
+
+  final _connectionState = BehaviorSubject<SocketConnectionState>.seeded(
+    SocketConnectionState.disconnected,
+  );
+
+  Stream<SocketConnectionState> get connectionState => _connectionState.stream;
+
+  bool _isConnecting = false;
 
   bool get isConnected =>
       (_liveSocket?.connected ?? false) && (_telemetrySocket?.connected ?? false);
@@ -18,18 +30,30 @@ class LiveSocketService {
   LiveSocketService({required FlutterSecureStorage storage}) : _storage = storage;
 
   Future<void> connect() async {
-    if (isConnected) return;
+    if (isConnected || _isConnecting) return;
+    _isConnecting = true;
 
-    final jwt = await _storage.read(key: 'jwt_token');
-    if (jwt == null) return;
+    try {
+      final jwt = await _storage.read(key: 'jwt_token');
+      if (jwt == null) return;
 
-    final wsUrl = Environment.instance.wsBaseUrl;
+      _connectionState.add(SocketConnectionState.connecting);
 
-    _liveSocket = _buildSocket(wsUrl, '/live', jwt);
-    _telemetrySocket = _buildSocket(wsUrl, '/telemetry', jwt);
+      final wsUrl = Environment.instance.wsBaseUrl;
 
-    _liveSocket!.connect();
-    _telemetrySocket!.connect();
+      _liveSocket = _buildSocket(wsUrl, '/live', jwt);
+      _telemetrySocket = _buildSocket(wsUrl, '/telemetry', jwt);
+
+      _liveSocket!.onConnect((_) => _updateConnectionState());
+      _liveSocket!.onDisconnect((_) => _updateConnectionState());
+      _telemetrySocket!.onConnect((_) => _updateConnectionState());
+      _telemetrySocket!.onDisconnect((_) => _updateConnectionState());
+
+      _liveSocket!.connect();
+      _telemetrySocket!.connect();
+    } finally {
+      _isConnecting = false;
+    }
   }
 
   void emitLive(String event, [dynamic data]) {
@@ -41,10 +65,25 @@ class LiveSocketService {
   }
 
   void disconnect() {
+    _isConnecting = false;
     _liveSocket?.disconnect();
     _telemetrySocket?.disconnect();
     _liveSocket = null;
     _telemetrySocket = null;
+    _connectionState.add(SocketConnectionState.disconnected);
+  }
+
+  void dispose() {
+    disconnect();
+    _connectionState.close();
+  }
+
+  void _updateConnectionState() {
+    if (isConnected) {
+      _connectionState.add(SocketConnectionState.connected);
+    } else {
+      _connectionState.add(SocketConnectionState.disconnected);
+    }
   }
 
   io.Socket _buildSocket(String url, String namespace, String jwt) {
@@ -54,8 +93,10 @@ class LiveSocketService {
           .setTransports(['websocket'])
           .disableAutoConnect()
           .setAuth({'token': jwt})
+          .setReconnectionDelay(1000)
+          .setReconnectionDelayMax(30000)
+          .setReconnectionAttempts(double.infinity)
           .build(),
     );
   }
-
 }
