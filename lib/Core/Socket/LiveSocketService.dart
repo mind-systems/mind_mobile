@@ -17,7 +17,10 @@ class LiveSocketService {
     SocketConnectionState.disconnected,
   );
 
+  final _sessionStateController = StreamController<Map<String, dynamic>>.broadcast();
+
   Stream<SocketConnectionState> get connectionState => _connectionState.stream;
+  Stream<Map<String, dynamic>> get sessionStateEvents => _sessionStateController.stream;
 
   bool _isConnecting = false;
 
@@ -49,6 +52,10 @@ class LiveSocketService {
       _telemetrySocket!.onConnect((_) => _updateConnectionState());
       _telemetrySocket!.onDisconnect((_) => _updateConnectionState());
 
+      _liveSocket!.on('session:state', (data) {
+        if (data is Map<String, dynamic>) _sessionStateController.add(data);
+      });
+
       _liveSocket!.connect();
       _telemetrySocket!.connect();
     } finally {
@@ -76,6 +83,7 @@ class LiveSocketService {
   void dispose() {
     disconnect();
     _connectionState.close();
+    _sessionStateController.close();
   }
 
   void _updateConnectionState() {

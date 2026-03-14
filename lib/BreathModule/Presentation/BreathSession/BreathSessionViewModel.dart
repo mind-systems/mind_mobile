@@ -4,6 +4,7 @@ import 'package:mind/BreathModule/ITickService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionStateMachine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/ILiveSessionService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
@@ -22,11 +23,15 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   final ITickService tickService;
   final IBreathSessionService service;
   final IBreathSessionCoordinator coordinator;
+  final ILiveSessionService liveSessionService;
   final String sessionId;
 
   BreathSessionStateMachine? _stateMachine;
   StreamSubscription<BreathSessionStateMachineState>? _stateMachineSubscription;
   StreamSubscription<ResetReason>? _resetProxySubscription;
+
+  bool _liveSessionStarted = false;
+  bool _liveSessionEnded = false;
 
   void Function(BreathSessionError error)? onErrorEvent;
 
@@ -38,6 +43,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     required this.tickService,
     required this.service,
     required this.coordinator,
+    required this.liveSessionService,
     required this.sessionId,
   }) : super(BreathSessionState.initial());
 
@@ -48,6 +54,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       final dto = await service.getSession(sessionId);
       _sessionDTO = dto;
       _setupEngine(dto);
+      liveSessionService.startSession(sessionId);
+      _liveSessionStarted = true;
     } catch (e) {
       state = state.copyWith(loadState: SessionLoadState.error);
     }
@@ -173,9 +181,19 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   void resume() => _stateMachine?.resume();
 
-  void complete() => _stateMachine?.complete();
+  void _endLiveSession() {
+    if (_liveSessionStarted && !_liveSessionEnded) {
+      _liveSessionEnded = true;
+      liveSessionService.endSession();
+    }
+  }
 
-  void restart() {
+  void complete() {
+    _endLiveSession();
+    _stateMachine?.complete();
+  }
+
+  void restartEngine() {
     if (_sessionDTO == null) return;
     _setupEngine(_sessionDTO!);
   }
@@ -226,6 +244,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   @override
   void dispose() {
+    _endLiveSession();
     _stateMachineSubscription?.cancel();
     _resetProxySubscription?.cancel();
     _stateMachine?.dispose();

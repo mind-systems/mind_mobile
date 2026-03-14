@@ -11,6 +11,7 @@ import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathSha
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/ILiveSessionService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
@@ -41,6 +42,15 @@ class _FakeTickService implements ITickService {
 // ---------------------------------------------------------------------------
 // Fake IBreathSessionService — returns a hard-coded DTO
 // ---------------------------------------------------------------------------
+
+class _FakeLiveSessionService implements ILiveSessionService {
+  @override
+  void startSession(String sessionId) {}
+  @override
+  void endSession() {}
+  @override
+  Stream<LiveSessionDto> get sessionStateStream => const Stream.empty();
+}
 
 class _FakeBreathSessionCoordinator implements IBreathSessionCoordinator {
   @override
@@ -112,6 +122,7 @@ void main() {
             tickService: tickService,
             service: _FakeSessionService(_makeSession()),
             coordinator: _FakeBreathSessionCoordinator(),
+            liveSessionService: _FakeLiveSessionService(),
             sessionId: 'test',
           ),
         ),
@@ -194,7 +205,7 @@ void main() {
 
     // Simulate the restart button sequence from BreathSessionScreen.
     coordinator.reset();
-    viewModel.restart();
+    viewModel.restartEngine();
     await Future<void>.delayed(Duration.zero);
 
     // After restart, the engine resets to pause state — the coordinator should
@@ -216,7 +227,7 @@ void main() {
 
     // Restart
     coordinator.reset();
-    viewModel.restart();
+    viewModel.restartEngine();
     await Future<void>.delayed(Duration.zero);
 
     // Resume the restarted session

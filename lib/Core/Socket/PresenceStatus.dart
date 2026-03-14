@@ -1,1 +1,1 @@
-enum PresenceStatus { online, background, offline }
+enum PresenceStatus { online, background }

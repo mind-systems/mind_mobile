@@ -33,6 +33,8 @@ import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
 import 'package:mind/Core/Handlers/BreathSessionDeeplinkHandler.dart';
 import 'package:mind/User/Infrastructure/GoogleAuthProvider.dart';
 import 'package:mind/User/Infrastructure/SecureStorage.dart';
+import 'package:mind/BreathModule/Core/LiveSessionNotifier.dart';
+import 'package:mind/BreathModule/Core/LiveSessionService.dart';
 import 'package:mind/Core/Socket/LiveSocketService.dart';
 import 'package:mind/Core/Socket/PresenceNotifier.dart';
 import 'package:mind/Core/Socket/SocketConnectionCoordinator.dart';
@@ -58,6 +60,8 @@ class App {
   final LiveSocketService liveSocketService;
   final SocketConnectionCoordinator socketConnectionCoordinator;
   final PresenceNotifier presenceNotifier;
+  final LiveSessionNotifier liveSessionNotifier;
+  final LiveSessionService liveSessionService;
 
   App._({
     required this.db,
@@ -72,6 +76,8 @@ class App {
     required this.liveSocketService,
     required this.socketConnectionCoordinator,
     required this.presenceNotifier,
+    required this.liveSessionNotifier,
+    required this.liveSessionService,
   });
 
   static Future<void> initialize() async {
@@ -126,6 +132,8 @@ class App {
 
     final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService);
     final presenceNotifier = PresenceNotifier(liveSocketService: liveSocketService);
+    final liveSessionNotifier = LiveSessionNotifier(liveSocketService: liveSocketService, userNotifier: userNotifier);
+    final liveSessionService = LiveSessionService(notifier: liveSessionNotifier);
 
     shared = App._(
       db: db,
@@ -140,6 +148,8 @@ class App {
       liveSocketService: liveSocketService,
       socketConnectionCoordinator: socketConnectionCoordinator,
       presenceNotifier: presenceNotifier,
+      liveSessionNotifier: liveSessionNotifier,
+      liveSessionService: liveSessionService,
     );
 
     await shared.deeplinkRouter.init();

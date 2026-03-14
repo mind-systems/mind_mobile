@@ -37,7 +37,7 @@ class BreathModule {
     return ProviderScope(
       overrides: [
         breathViewModelProvider.overrideWith(
-          (ref) => BreathViewModel(tickService: tickService, service: service, coordinator: coordinator, sessionId: sessionId),
+          (ref) => BreathViewModel(tickService: tickService, service: service, coordinator: coordinator, liveSessionService: App.shared.liveSessionService, sessionId: sessionId),
         ),
       ],
       child: const BreathSessionScreen(),

@@ -23,13 +23,16 @@ class PresenceNotifier with WidgetsBindingObserver {
         _status.add(PresenceStatus.online);
         _liveSocketService.emitLive('presence:foreground');
       case AppLifecycleState.paused:
-      case AppLifecycleState.inactive:
+        _status.add(PresenceStatus.background);
+        _liveSocketService.emitLive('presence:background');
+      case AppLifecycleState.hidden:
         _status.add(PresenceStatus.background);
         _liveSocketService.emitLive('presence:background');
       case AppLifecycleState.detached:
-      case AppLifecycleState.hidden:
-        _status.add(PresenceStatus.offline);
+        _status.add(PresenceStatus.background);
         _liveSocketService.emitLive('presence:background');
+      case AppLifecycleState.inactive:
+        break;
     }
   }
 

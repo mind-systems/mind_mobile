@@ -246,7 +246,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
           onPressed: () {
             _coordinator.reset();
             _orbCoordinator.reset();
-            viewModel.restart();
+            viewModel.restartEngine();
           },
           iconSize: 40,
         ),
