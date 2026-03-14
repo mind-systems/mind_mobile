@@ -35,8 +35,8 @@ import 'package:mind/User/Infrastructure/GoogleAuthProvider.dart';
 import 'package:mind/User/Infrastructure/SecureStorage.dart';
 import 'package:mind/BreathModule/Core/LiveSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/LiveSessionService.dart';
+import 'package:mind/BreathModule/Core/TelemetryService.dart';
 import 'package:mind/Core/Socket/LiveSocketService.dart';
-import 'package:mind/Core/Socket/PresenceNotifier.dart';
 import 'package:mind/Core/Socket/SocketConnectionCoordinator.dart';
 import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/UserNotifier.dart';
@@ -59,9 +59,9 @@ class App {
   final AppSettingsNotifier appSettingsNotifier;
   final LiveSocketService liveSocketService;
   final SocketConnectionCoordinator socketConnectionCoordinator;
-  final PresenceNotifier presenceNotifier;
   final LiveSessionNotifier liveSessionNotifier;
   final LiveSessionService liveSessionService;
+  final TelemetryService telemetryService;
 
   App._({
     required this.db,
@@ -75,9 +75,9 @@ class App {
     required this.appSettingsNotifier,
     required this.liveSocketService,
     required this.socketConnectionCoordinator,
-    required this.presenceNotifier,
     required this.liveSessionNotifier,
     required this.liveSessionService,
+    required this.telemetryService,
   });
 
   static Future<void> initialize() async {
@@ -131,9 +131,9 @@ class App {
     final liveSocketService = LiveSocketService(storage: const FlutterSecureStorage());
 
     final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService);
-    final presenceNotifier = PresenceNotifier(liveSocketService: liveSocketService);
     final liveSessionNotifier = LiveSessionNotifier(liveSocketService: liveSocketService, userNotifier: userNotifier);
     final liveSessionService = LiveSessionService(notifier: liveSessionNotifier);
+    final telemetryService = TelemetryService(liveSocketService: liveSocketService);
 
     shared = App._(
       db: db,
@@ -147,9 +147,9 @@ class App {
       appSettingsNotifier: appSettingsNotifier,
       liveSocketService: liveSocketService,
       socketConnectionCoordinator: socketConnectionCoordinator,
-      presenceNotifier: presenceNotifier,
       liveSessionNotifier: liveSessionNotifier,
       liveSessionService: liveSessionService,
+      telemetryService: telemetryService,
     );
 
     await shared.deeplinkRouter.init();

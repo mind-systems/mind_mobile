@@ -18,9 +18,13 @@ class LiveSocketService {
   );
 
   final _sessionStateController = StreamController<Map<String, dynamic>>.broadcast();
+  final _telemetryStateController = StreamController<void>.broadcast();
+  final _dataAckController = StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<SocketConnectionState> get connectionState => _connectionState.stream;
   Stream<Map<String, dynamic>> get sessionStateEvents => _sessionStateController.stream;
+  Stream<void> get telemetryStateEvents => _telemetryStateController.stream;
+  Stream<Map<String, dynamic>> get dataAckEvents => _dataAckController.stream;
 
   bool _isConnecting = false;
 
@@ -56,6 +60,12 @@ class LiveSocketService {
         if (data is Map<String, dynamic>) _sessionStateController.add(data);
       });
 
+      _telemetrySocket!.onConnect((_) => _telemetryStateController.add(null));
+
+      _telemetrySocket!.on('data:ack', (data) {
+        if (data is Map<String, dynamic>) _dataAckController.add(data);
+      });
+
       _liveSocket!.connect();
       _telemetrySocket!.connect();
     } finally {
@@ -84,6 +94,8 @@ class LiveSocketService {
     disconnect();
     _connectionState.close();
     _sessionStateController.close();
+    _telemetryStateController.close();
+    _dataAckController.close();
   }
 
   void _updateConnectionState() {

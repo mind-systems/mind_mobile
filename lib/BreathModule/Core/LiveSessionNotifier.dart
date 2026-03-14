@@ -8,6 +8,10 @@ import 'package:mind/Core/Socket/LiveSocketService.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/UserNotifier.dart';
 
+// TODO: Not covered by unit tests — constructor takes concrete LiveSocketService
+// and UserNotifier (which requires UserRepository). Needs interface extraction
+// or Stream<AuthState> parameter to be testable without heavy fakes.
+
 class LiveSessionNotifier {
   final LiveSocketService _liveSocketService;
 
@@ -72,6 +76,9 @@ class LiveSessionNotifier {
     } else if (status == 'abandoned') {
       _state.add(LiveSessionState.initial());
       _events.add(LiveSessionAbandoned());
+    } else if (status == 'idle') {
+      _isPendingStart = false;
+      _state.add(LiveSessionState.initial());
     }
   }
 

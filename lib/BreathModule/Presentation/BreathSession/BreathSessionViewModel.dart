@@ -5,6 +5,7 @@ import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionStateM
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/ILiveSessionService.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/ITelemetryService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
@@ -24,11 +25,13 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   final IBreathSessionService service;
   final IBreathSessionCoordinator coordinator;
   final ILiveSessionService liveSessionService;
+  final ITelemetryService telemetryService;
   final String sessionId;
 
   BreathSessionStateMachine? _stateMachine;
   StreamSubscription<BreathSessionStateMachineState>? _stateMachineSubscription;
   StreamSubscription<ResetReason>? _resetProxySubscription;
+  StreamSubscription<LiveSessionDto>? _liveSessionStateSub;
 
   bool _liveSessionStarted = false;
   bool _liveSessionEnded = false;
@@ -44,8 +47,15 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     required this.service,
     required this.coordinator,
     required this.liveSessionService,
+    required this.telemetryService,
     required this.sessionId,
-  }) : super(BreathSessionState.initial());
+  }) : super(BreathSessionState.initial()) {
+    _liveSessionStateSub = liveSessionService.sessionStateStream.listen((dto) {
+      if (!dto.isActive && _liveSessionStarted && !_liveSessionEnded) {
+        _liveSessionStarted = false;
+      }
+    });
+  }
 
   // ===== Lifecycle =====
 
@@ -54,8 +64,6 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       final dto = await service.getSession(sessionId);
       _sessionDTO = dto;
       _setupEngine(dto);
-      liveSessionService.startSession(sessionId);
-      _liveSessionStarted = true;
     } catch (e) {
       state = state.copyWith(loadState: SessionLoadState.error);
     }
@@ -88,6 +96,11 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   }
 
   void _onEngineState(BreathSessionStateMachineState engineState) {
+    final phaseChanged = engineState.phase != state.phase || engineState.exerciseIndex != state.exerciseIndex;
+    if (phaseChanged && _liveSessionStarted) {
+      telemetryService.sendSample(sessionId, engineState.phase.name, engineState.currentIntervalMs);
+    }
+
     final previousActiveId = state.activeStepId;
     final newActiveId = engineState.activeStepId;
     final remaining = _stateMachine!.getCurrentPhaseInfo().remainingInPhase;
@@ -179,7 +192,13 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   void pause() => _stateMachine?.pause();
 
-  void resume() => _stateMachine?.resume();
+  void resume() {
+    if (!_liveSessionStarted) {
+      liveSessionService.startSession(sessionId);
+      _liveSessionStarted = true;
+    }
+    _stateMachine?.resume();
+  }
 
   void _endLiveSession() {
     if (_liveSessionStarted && !_liveSessionEnded) {
@@ -245,6 +264,7 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
   @override
   void dispose() {
     _endLiveSession();
+    _liveSessionStateSub?.cancel();
     _stateMachineSubscription?.cancel();
     _resetProxySubscription?.cancel();
     _stateMachine?.dispose();
