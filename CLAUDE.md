@@ -72,11 +72,12 @@ The breathing session feature has its own layered sub-structure under `lib/Breat
 
 - **`Core/BreathSessionNotifier.dart`** — domain notifier with pagination, CRUD, and typed event emission
 - **`Presentation/BreathSessionsList/`** — list screen with coordinator, ViewModel, and presentation DTOs
-- **`Presentation/BreathSession/`** — active session screen with 4-component animation system:
-  - `BreathSessionStateMachine` — state machine for breathing phases (inhale / hold / exhale / rest)
+- **`Presentation/BreathSession/`** — active session screen with 5-component system:
+  - `BreathSessionStateMachine` — state machine for breathing phases (inhale / hold / exhale / rest); emits enriched state with `resetReason`, phase metadata, and shape fields
   - `BreathMotionEngine` — physics-based position animation
   - `BreathShapeShifter` — path morphing between shapes (circle / square / triangle)
-  - `BreathAnimationCoordinator` — orchestrates motion + shape components
+  - `BreathAnimationCoordinator` — orchestrates motion + shape components; reads enriched state fields directly from `BreathSessionState`
+  - `LiveSessionCoordinator` — session lifecycle and telemetry dispatch; subscribes to `BreathSessionState` stream
 
 ### Routing
 

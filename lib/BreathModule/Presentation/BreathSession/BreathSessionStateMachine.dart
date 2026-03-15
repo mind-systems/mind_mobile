@@ -90,9 +90,6 @@ class BreathSessionStateMachine {
   final _stateController = StreamController<BreathSessionStateMachineState>.broadcast();
   Stream<BreathSessionStateMachineState> get stateStream => _stateController.stream;
 
-  final _resetController = StreamController<ResetReason>.broadcast();
-  Stream<ResetReason> get resetStream => _resetController.stream;
-
   late BreathSessionStateMachineState _state;
   BreathSessionStateMachineState get currentState => _state;
 
@@ -223,7 +220,6 @@ class BreathSessionStateMachine {
       nextExerciseShape: _state.nextExerciseShape,
     ));
     _tickSubscription?.cancel();
-    _resetController.close();
   }
 
   // ===== Tick =====
@@ -334,7 +330,6 @@ class BreathSessionStateMachine {
   void _startRest(int intervalMs, {bool isExerciseChange = false}) {
     _cycleTick = 0;
     final reason = isExerciseChange ? ResetReason.exerciseChange : ResetReason.rest;
-    _resetController.add(reason);
 
     final enriched = _computeEnrichedFields(0, isRest: true);
     _emit(BreathSessionStateMachineState(
@@ -364,7 +359,6 @@ class BreathSessionStateMachine {
 
   void _startNewCycle(int intervalMs, {bool isExerciseChange = false}) {
     final reason = isExerciseChange ? ResetReason.exerciseChange : ResetReason.newCycle;
-    _resetController.add(reason);
     final stepData = _getCurrentStepData(0);
     final enriched = _computeEnrichedFields(stepData.stepIndex);
 
@@ -397,8 +391,8 @@ class BreathSessionStateMachine {
     _exerciseIndex++;
 
     if (_exerciseIndex >= session.exercises.length) {
-      // Reset to last valid index so facade methods (currentExercise, etc.)
-      // don't throw while async emits from before complete() are still in flight.
+      // Reset to last valid index so currentExercise getter doesn't throw
+      // while async emits from before complete() are still in flight.
       _exerciseIndex = session.exercises.length - 1;
       complete();
       return;
@@ -439,115 +433,6 @@ class BreathSessionStateMachine {
       remainingTicks: 0,
       stepIndex: currentExercise.steps.length - 1,
     );
-  }
-
-  // ===== Facade methods для VM =====
-
-  ({BreathPhase phase, int remainingInPhase}) getCurrentPhaseInfo() {
-    if (_state.status == BreathSessionStatus.complete) {
-      return (phase: BreathPhase.rest, remainingInPhase: 0);
-    }
-
-    if (_state.status == BreathSessionStatus.rest || _state.phase == BreathPhase.rest) {
-      final remaining = (currentExercise.restDuration - _cycleTick).clamp(0, currentExercise.restDuration);
-      return (phase: BreathPhase.rest, remainingInPhase: remaining);
-    }
-
-    if (currentExercise.steps.isEmpty) {
-      return (phase: BreathPhase.rest, remainingInPhase: 0);
-    }
-
-    int accumulated = 0;
-    for (final step in currentExercise.steps) {
-      if (_cycleTick < accumulated + step.duration) {
-        return (
-          phase: step.phase,
-          remainingInPhase: (accumulated + step.duration) - _cycleTick,
-        );
-      }
-      accumulated += step.duration;
-    }
-
-    return (phase: currentExercise.steps.last.phase, remainingInPhase: 0);
-  }
-
-  ({int totalPhases, int currentPhaseIndex}) getCurrentPhaseMeta() {
-    if (currentExercise.steps.isEmpty) {
-      return (totalPhases: 0, currentPhaseIndex: 0);
-    }
-
-    int accumulated = 0;
-    for (int i = 0; i < currentExercise.steps.length; i++) {
-      if (_cycleTick < accumulated + currentExercise.steps[i].duration) {
-        return (totalPhases: currentExercise.steps.length, currentPhaseIndex: i);
-      }
-      accumulated += currentExercise.steps[i].duration;
-    }
-
-    return (totalPhases: currentExercise.steps.length, currentPhaseIndex: currentExercise.steps.length - 1);
-  }
-
-  BreathExerciseDTO? getNextExerciseWithShape() {
-    if (currentExercise.steps.isNotEmpty) return currentExercise;
-
-    for (int i = _exerciseIndex + 1; i < session.exercises.length; i++) {
-      if (session.exercises[i].steps.isNotEmpty) return session.exercises[i];
-    }
-
-    return null;
-  }
-
-  ({BreathPhase phase, int duration})? getNextPhaseInfo() {
-    if (_state.status == BreathSessionStatus.complete) return null;
-
-    if (_state.status == BreathSessionStatus.breath) {
-      int accumulated = 0;
-      int currentStepIndex = -1;
-
-      for (int i = 0; i < currentExercise.steps.length; i++) {
-        if (_cycleTick < accumulated + currentExercise.steps[i].duration) {
-          currentStepIndex = i;
-          break;
-        }
-        accumulated += currentExercise.steps[i].duration;
-      }
-
-      if (currentStepIndex >= 0 && currentStepIndex < currentExercise.steps.length - 1) {
-        final next = currentExercise.steps[currentStepIndex + 1];
-        return (phase: next.phase, duration: next.duration);
-      }
-
-      if (_repeatCounter + 1 < currentExercise.repeatCount) {
-        if (currentExercise.restDuration > 0) {
-          return (phase: BreathPhase.rest, duration: currentExercise.restDuration);
-        }
-        final first = currentExercise.steps.first;
-        return (phase: first.phase, duration: first.duration);
-      }
-
-      if (_exerciseIndex + 1 < session.exercises.length) {
-        final next = session.exercises[_exerciseIndex + 1];
-        if (next.isRestOnly) return (phase: BreathPhase.rest, duration: next.restDuration);
-        if (next.steps.isNotEmpty) return (phase: next.steps.first.phase, duration: next.steps.first.duration);
-      }
-
-      return null;
-    }
-
-    if (_state.status == BreathSessionStatus.rest ||
-        _state.status == BreathSessionStatus.pause) {
-      if (_repeatCounter < currentExercise.repeatCount && currentExercise.steps.isNotEmpty) {
-        final first = currentExercise.steps.first;
-        return (phase: first.phase, duration: first.duration);
-      }
-
-      if (_exerciseIndex + 1 < session.exercises.length) {
-        final next = session.exercises[_exerciseIndex + 1];
-        if (next.steps.isNotEmpty) return (phase: next.steps.first.phase, duration: next.steps.first.duration);
-      }
-    }
-
-    return null;
   }
 
   // ===== Enriched field computation =====
@@ -597,6 +482,5 @@ class BreathSessionStateMachine {
   void dispose() {
     _tickSubscription?.cancel();
     _stateController.close();
-    if (!_resetController.isClosed) _resetController.close();
   }
 }

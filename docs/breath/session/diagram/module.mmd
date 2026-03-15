@@ -31,20 +31,17 @@ flowchart TB
     subgraph ViewModelLayer["🎯 ViewModel Layer"]
         direction TB
 
-        StateMachine["<b>BreathSessionStateMachine</b><br/>═══════════════<br/><b>Внутренние счётчики:</b><br/>_exerciseIndex<br/>_repeatCounter<br/>_cycleTick<br/>═══════════════<br/><b>Управление:</b><br/>pause() / resume() / complete()<br/>═══════════════<br/><b>Тик-обработчики:</b><br/>_onBreathTick()<br/>_onRestTick()<br/>═══════════════<br/><b>Переходы:</b><br/>_startRest()<br/>_startNewCycle()<br/>_advanceExercise()<br/>═══════════════<br/><b>Facade:</b><br/>getCurrentPhaseInfo()<br/>getCurrentPhaseMeta()<br/>getNextPhaseInfo()<br/>getNextExerciseWithShape()"]:::viewmodel
+        StateMachine["<b>BreathSessionStateMachine</b><br/>═══════════════<br/><b>Внутренние счётчики:</b><br/>_exerciseIndex<br/>_repeatCounter<br/>_cycleTick<br/>═══════════════<br/><b>Управление:</b><br/>pause() / resume() / complete()<br/>═══════════════<br/><b>Тик-обработчики:</b><br/>_onBreathTick()<br/>_onRestTick()<br/>═══════════════<br/><b>Переходы:</b><br/>_startRest(isExerciseChange?)<br/>_startNewCycle(isExerciseChange?)<br/>_advanceExercise()"]:::viewmodel
 
-        StateMachineState["<b>BreathSessionStateMachineState</b><br/>───<br/>status: pause/breath/rest/complete<br/>phase: inhale/hold/exhale/rest<br/>exerciseIndex: int<br/>remainingTicks: int<br/>activeStepId: String?<br/>currentIntervalMs: int"]:::viewmodel
+        StateMachineState["<b>BreathSessionStateMachineState</b><br/>───<br/>status: pause/breath/rest/complete<br/>phase: inhale/hold/exhale/rest<br/>exerciseIndex: int<br/>remainingTicks: int<br/>activeStepId: String?<br/>currentIntervalMs: int<br/>───<br/>resetReason: newCycle/rest/exerciseChange/null<br/>totalPhases: int<br/>currentPhaseIndex: int<br/>currentPhaseTotalDuration: int<br/>currentExerciseShape: SetShape?<br/>nextExerciseShape: SetShape?"]:::viewmodel
 
-        BreathViewModel["<b>BreathViewModel</b><br/>═══════════════<br/><b>Async loading:</b><br/>initState() → getSession() → _setupEngine()<br/>SessionLoadState: loading → ready<br/>═══════════════<br/><b>Proxy pattern:</b><br/>_resetProxySubscription:<br/>  StateMachine.resetStream<br/>  → _resetController (стабильный)<br/>_engineSubscription:<br/>  StateMachine.stateStream<br/>  → Riverpod state<br/>═══════════════<br/><b>Управление:</b><br/>pause() / resume() / complete()<br/>restart() → _setupEngine(cached DTO)<br/>═══════════════<br/><b>Facade:</b><br/>currentExercise<br/>getCurrentPhaseInfo()<br/>getCurrentPhaseMeta()<br/>getNextPhaseInfo()<br/>getNextExerciseWithShape()"]:::viewmodel
+        BreathViewModel["<b>BreathViewModel</b><br/>═══════════════<br/><b>Async loading:</b><br/>initState() → getSession() → _setupEngine()<br/>SessionLoadState: loading → ready<br/>═══════════════<br/><b>Subscription:</b><br/>_stateMachineSubscription:<br/>  StateMachine.stateStream<br/>  → Riverpod state<br/>═══════════════<br/><b>Управление:</b><br/>pause() / resume() / complete()<br/>restartEngine() → _setupEngine(cached DTO)"]:::viewmodel
 
-        BreathSessionState["<b>BreathSessionState</b><br/>───<br/>loadState: loading/ready/error<br/>status: pause/breath/rest/complete<br/>phase: inhale/hold/exhale/rest<br/>exerciseIndex: int<br/>remainingTicks: int<br/>currentIntervalMs: int<br/>timelineSteps: List&lt;TimelineStep&gt;<br/>activeStepId: String?"]:::viewmodel
-
-        ResetStream["<b>resetStream</b><br/>───<br/>Stream&lt;ResetReason&gt;<br/>───<br/>newCycle: новый цикл<br/>rest: начало отдыха<br/>exerciseChange: смена упражнения<br/>───<br/>Стабилен при restart():<br/>прокси через _resetController"]:::stream
+        BreathSessionState["<b>BreathSessionState</b><br/>───<br/>loadState: loading/ready/error<br/>status: pause/breath/rest/complete<br/>phase: inhale/hold/exhale/rest<br/>exerciseIndex: int<br/>remainingTicks: int<br/>currentIntervalMs: int<br/>timelineSteps: List&lt;TimelineStep&gt;<br/>activeStepId: String?<br/>───<br/>resetReason: newCycle/rest/exerciseChange/null<br/>totalPhases: int<br/>currentPhaseIndex: int<br/>currentPhaseTotalDuration: int<br/>currentExerciseShape: SetShape?<br/>nextExerciseShape: SetShape?"]:::stream
 
         StateMachine -->|"эмитит"| StateMachineState
         BreathViewModel -->|"проксирует"| StateMachine
         BreathViewModel -->|"эмитит Riverpod"| BreathSessionState
-        BreathViewModel -->|"эмитит"| ResetStream
     end
 
     %% === СЛОЙ АНИМАЦИИ ===
@@ -55,9 +52,11 @@ flowchart TB
 
         BreathShapeShifter["<b>BreathShapeShifter</b><br/>═══════════════<br/><b>Геометрия:</b><br/>_currentPoints: 120 точек<br/>_currentShape<br/>_morphProgress: 0..1<br/>═══════════════<br/><b>Формы:</b><br/>circle / square<br/>triangleUp / triangleDown<br/>═══════════════<br/><b>Морфинг:</b><br/>morphTo(shape) → анимация 800ms<br/>Прямоугольные: через Path<br/>С кругом: через interpolation<br/>═══════════════<br/><b>API:</b><br/>initialize(center, size, vsync)<br/>updateBounds(center, size)<br/>morphTo(SetShape)<br/>getCurrentPath() → Path<br/>getPointPosition(time) → Offset"]:::animation
 
-        Coordinator["<b>BreathAnimationCoordinator</b><br/>═══════════════<br/><b>Оркестрация:</b><br/>Слушает BreathSessionState (Riverpod)<br/>Слушает resetStream (стабильный)<br/>═══════════════<br/><b>Синхронизация:</b><br/>status → motionEngine.setActive()<br/>setPhaseInfo() при старте breath<br/>remainingTicks → setRemainingPhaseTicks()<br/>intervalMs → setIntervalMs()<br/>═══════════════<br/><b>Сброс:</b><br/>reset(): деактивирует motionEngine,<br/>  сбрасывает кэши состояния<br/>═══════════════<br/><b>Морфинг по resetStream:</b><br/>exerciseChange/rest → morphTo(shape)<br/>newCycle → resetPosition(0.0)"]:::animation
+        Coordinator["<b>BreathAnimationCoordinator</b><br/>═══════════════<br/><b>Оркестрация:</b><br/>Слушает BreathSessionState (Riverpod)<br/>Читает resetReason из state<br/>═══════════════<br/><b>Синхронизация:</b><br/>status → motionEngine.setActive()<br/>setPhaseInfo() при старте breath<br/>remainingTicks → setRemainingPhaseTicks()<br/>intervalMs → setIntervalMs()<br/>═══════════════<br/><b>Сброс:</b><br/>reset(): деактивирует motionEngine,<br/>  сбрасывает кэши состояния<br/>═══════════════<br/><b>Морфинг по resetReason в state:</b><br/>exerciseChange/rest → morphTo(shape)<br/>newCycle → resetPosition(0.0)"]:::animation
 
-        OrbCoordinator["<b>OrbAnimationCoordinator</b><br/>═══════════════<br/><b>Оркестрация:</b><br/>Слушает BreathSessionState (Riverpod)<br/>Слушает resetStream (стабильный)<br/>═══════════════<br/><b>Прогресс:</b><br/>inhale → lerp(min, max, phaseRaw)<br/>exhale → lerp(min, max, 1-phaseRaw)<br/>hold/rest/pause → frozen<br/>═══════════════<br/><b>maxProgress по форме:</b><br/>circle → 0.8, остальные → 1.0<br/>═══════════════<br/><b>По resetStream:</b><br/>обновляет maxProgress<br/>сбрасывает orbProgress → min<br/>═══════════════<br/><b>Выход:</b><br/>ValueNotifier&lt;double&gt; orbProgress"]:::animation
+        OrbCoordinator["<b>OrbAnimationCoordinator</b><br/>═══════════════<br/><b>Оркестрация:</b><br/>Слушает BreathSessionState (Riverpod)<br/>Читает resetReason из state<br/>═══════════════<br/><b>Прогресс:</b><br/>inhale → lerp(min, max, phaseRaw)<br/>exhale → lerp(min, max, 1-phaseRaw)<br/>hold/rest/pause → frozen<br/>═══════════════<br/><b>maxProgress по форме:</b><br/>circle → 0.8, остальные → 1.0<br/>═══════════════<br/><b>По resetReason в state:</b><br/>обновляет maxProgress<br/>сбрасывает orbProgress → min<br/>═══════════════<br/><b>Выход:</b><br/>ValueNotifier&lt;double&gt; orbProgress"]:::animation
+
+        LiveSessionCoordinator["<b>LiveSessionCoordinator</b><br/>═══════════════<br/><b>Lifecycle:</b><br/>первый resume → startSession()<br/>pause → pauseSession()<br/>resume из паузы → resumeSession()<br/>complete → endSession()<br/>═══════════════<br/><b>Телеметрия:</b><br/>phase/exerciseIndex changed<br/>→ _handleTelemetry(state)<br/>→ sendSample(phase, durationMs)"]:::animation
 
         Coordinator -->|"управляет"| BreathMotionEngine
         Coordinator -->|"управляет"| BreathShapeShifter
@@ -67,7 +66,7 @@ flowchart TB
     subgraph UILayer["🖼️ UI Layer"]
         direction TB
 
-        BreathSessionScreen["<b>BreathSessionScreen</b><br/>═══════════════<br/><b>Создаёт (initState):</b><br/>BreathMotionEngine<br/>BreathShapeShifter<br/>BreathAnimationCoordinator<br/>OrbAnimationCoordinator<br/>═══════════════<br/><b>Post-frame callback:</b><br/>coordinator.initialize(state)<br/>orbCoordinator.initialize(state)<br/>viewModel.initState() [async]<br/>═══════════════<br/><b>Управление:</b><br/>pause() / resume() / restart()<br/>═══════════════<br/><b>Отображает:</b><br/>BreathShapeWidget<br/>EclipseOrb (ValueListenableBuilder)<br/>BreathTimelineWidget<br/>Кнопки управления"]:::ui
+        BreathSessionScreen["<b>BreathSessionScreen</b><br/>═══════════════<br/><b>Создаёт (initState):</b><br/>BreathMotionEngine<br/>BreathShapeShifter<br/>BreathAnimationCoordinator<br/>OrbAnimationCoordinator<br/>LiveSessionCoordinator<br/>═══════════════<br/><b>Post-frame callback:</b><br/>coordinator.initialize(state)<br/>orbCoordinator.initialize(state)<br/>viewModel.initState() [async]<br/>═══════════════<br/><b>Управление:</b><br/>pause() / resume() / restartEngine()<br/>═══════════════<br/><b>Отображает:</b><br/>BreathShapeWidget<br/>EclipseOrb (ValueListenableBuilder)<br/>BreathTimelineWidget<br/>Кнопки управления"]:::ui
 
         BreathWidget["<b>BreathShapeWidget</b><br/>───<br/>ListenableBuilder:<br/>motionController + shapeController<br/>───<br/>LayoutBuilder:<br/>updateBounds() при resize<br/>───<br/>CustomPaint:<br/>BreathShapePainter"]:::ui
 
@@ -88,9 +87,8 @@ flowchart TB
 
     %% ViewModel → Coordinators
     BreathViewModel -->|"Riverpod state"| Coordinator
-    BreathViewModel -->|"resetStream (прокси)"| Coordinator
     BreathViewModel -->|"Riverpod state"| OrbCoordinator
-    BreathViewModel -->|"resetStream (прокси)"| OrbCoordinator
+    BreathViewModel -->|"Riverpod state"| LiveSessionCoordinator
 
     %% Coordinator → Animation
     Coordinator -->|"синхронизирует"| BreathMotionEngine
@@ -105,7 +103,7 @@ flowchart TB
     BreathWidget -->|"передаёт данные"| BreathPainter
 
     %% UI → ViewModel
-    BreathSessionScreen -.->|"pause() / resume() / restart()"| BreathViewModel
+    BreathSessionScreen -.->|"pause() / resume() / restartEngine()"| BreathViewModel
     BreathSessionScreen -.->|"читает Riverpod state"| BreathViewModel
 
     %% === ЛЕГЕНДА ===
@@ -124,8 +122,8 @@ flowchart TB
         direction TB
         Flow1["<b>1. Инициализация</b><br/>Screen создаёт MotionEngine + ShapeShifter + Coordinator<br/>→ post-frame: coordinator.initialize() + viewModel.initState()<br/>→ async: getSession() → _setupEngine() → StateMachine создаётся<br/>→ loadState: loading → ready → Coordinator синхронизируется"]
         Flow2["<b>2. Tick Loop</b><br/>TickService → StateMachine._onTick()<br/>→ stateStream → ViewModel._onEngineState()<br/>→ Riverpod state → Coordinator._onStateChanged()<br/>→ motionEngine.setPhaseInfo() / setRemainingPhaseTicks()"]
-        Flow3["<b>3. Морфинг</b><br/>StateMachine._advanceExercise() / _startRest() / _startNewCycle()<br/>→ resetStream → (proxy) → viewModel.resetStream<br/>→ Coordinator._onReset()<br/>→ ShapeShifter.morphTo() + MotionEngine.resetPosition()"]
-        Flow4["<b>4. Рестарт</b><br/>Screen: coordinator.reset() + orbCoordinator.reset()<br/>→ viewModel.restart() → _setupEngine(cached DTO)<br/>→ новый StateMachine, proxy переподписывается<br/>→ Coordinators видят breath → активируются"]
+        Flow3["<b>3. Морфинг</b><br/>StateMachine._advanceExercise() / _startRest() / _startNewCycle()<br/>→ state.resetReason встроен в emit<br/>→ Riverpod state → Coordinator._onStateChanged()<br/>→ ShapeShifter.morphTo() + MotionEngine.resetPosition()"]
+        Flow4["<b>4. Рестарт</b><br/>Screen: coordinator.reset() + orbCoordinator.reset()<br/>→ viewModel.restartEngine() → _setupEngine(cached DTO)<br/>→ новый StateMachine создаётся<br/>→ Coordinators видят breath → активируются"]
         Flow5["<b>5. Рендеринг фигуры</b><br/>MotionEngine/ShapeShifter.notifyListeners()<br/>→ BreathShapeWidget rebuild<br/>→ Painter рисует Path + точку"]
         Flow6["<b>6. Рендеринг орба</b><br/>TickService → StateMachine → ViewModel → Riverpod state<br/>→ OrbCoordinator._onStateChanged()<br/>→ orbProgress.value = shapeDimension * progress<br/>→ ValueListenableBuilder → EclipseOrb(size: ...)"]
     end

@@ -4,7 +4,6 @@ import 'package:mind/BreathModule/ITickService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionStateMachine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep.dart';
@@ -26,13 +25,10 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   BreathSessionStateMachine? _stateMachine;
   StreamSubscription<BreathSessionStateMachineState>? _stateMachineSubscription;
-  StreamSubscription<ResetReason>? _resetProxySubscription;
 
   void Function(BreathSessionError error)? onErrorEvent;
 
   BreathSessionDTO? _sessionDTO;
-
-  final _resetController = StreamController<ResetReason>.broadcast();
 
   BreathViewModel({
     required this.tickService,
@@ -55,12 +51,10 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   void _setupEngine(BreathSessionDTO dto) {
     _stateMachineSubscription?.cancel();
-    _resetProxySubscription?.cancel();
     _stateMachine?.dispose();
 
     _stateMachine = BreathSessionStateMachine(session: dto, tickService: tickService);
 
-    _resetProxySubscription = _stateMachine!.resetStream.listen(_resetController.add);
     _stateMachineSubscription = _stateMachine!.stateStream.listen(_onEngineState);
 
     final timelineSteps = _buildTimelineSteps(dto);
@@ -189,6 +183,8 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   // ===== Public controls =====
 
+  Stream<void> get tickStream => tickService.tickStream.cast();
+
   void pause() => _stateMachine?.pause();
 
   void resume() => _stateMachine?.resume();
@@ -221,35 +217,12 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
     }
   }
 
-  // ===== Facade =====
-
-  Stream<void> get tickStream => tickService.tickStream.cast();
-
-  Stream<ResetReason> get resetStream => _resetController.stream;
-
-  BreathExerciseDTO get currentExercise => _stateMachine!.currentExercise;
-
-  ({BreathPhase phase, int remainingInPhase}) getCurrentPhaseInfo() =>
-      _stateMachine?.getCurrentPhaseInfo() ??
-      (phase: BreathPhase.rest, remainingInPhase: 0);
-
-  ({int totalPhases, int currentPhaseIndex}) getCurrentPhaseMeta() =>
-      _stateMachine?.getCurrentPhaseMeta() ?? (totalPhases: 0, currentPhaseIndex: 0);
-
-  BreathExerciseDTO? getNextExerciseWithShape() =>
-      _stateMachine?.getNextExerciseWithShape();
-
-  ({BreathPhase phase, int duration})? getNextPhaseInfo() =>
-      _stateMachine?.getNextPhaseInfo();
-
   // ===== Dispose =====
 
   @override
   void dispose() {
     _stateMachineSubscription?.cancel();
-    _resetProxySubscription?.cancel();
     _stateMachine?.dispose();
-    _resetController.close();
     super.dispose();
   }
 }

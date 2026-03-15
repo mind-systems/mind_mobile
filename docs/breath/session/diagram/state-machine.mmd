@@ -13,7 +13,7 @@ flowchart TD
     smInit["BreathSessionStateMachine()<br/>───<br/>Принимает session + tickService<br/>Подписывается на tickStream<br/>Устанавливает начальное состояние"]:::lifecycle
     fnPause["pause()<br/>───<br/>status → pause"]:::lifecycle
     fnResume["resume()<br/>───<br/>pause → breath или rest<br/>в зависимости от текущей фазы"]:::lifecycle
-    fnComplete["complete()<br/>───<br/>status → complete<br/>отменяет tickSubscription<br/>закрывает resetStream"]:::lifecycle
+    fnComplete["complete()<br/>───<br/>status → complete<br/>отменяет tickSubscription"]:::lifecycle
 
     %% Tick обработчики
     onTick["_onTick(TickData)<br/>───<br/>Обновляет currentIntervalMs<br/>Главный диспетчер по статусу"]:::tick
@@ -21,17 +21,12 @@ flowchart TD
     onRestTick["_onRestTick()<br/>───<br/>Обрабатывает отдых<br/>_cycleTick++"]:::tick
 
     %% Transition методы
-    startRest["_startRest()<br/>───<br/>_cycleTick = 0<br/>resetStream.add(rest)<br/>status → rest"]:::transition
-    startNewCycle["_startNewCycle()<br/>───<br/>resetStream.add(newCycle)<br/>status → breath, _cycleTick = 0"]:::transition
-    advanceExercise["_advanceExercise()<br/>───<br/>_exerciseIndex++<br/>_cycleTick = 0, _repeatCounter = 0<br/>resetStream.add(exerciseChange)"]:::transition
+    startRest["_startRest(isExerciseChange?)<br/>───<br/>_cycleTick = 0<br/>reason = rest или exerciseChange<br/>status → rest<br/>resetReason встроен в emit"]:::transition
+    startNewCycle["_startNewCycle(isExerciseChange?)<br/>───<br/>reason = newCycle или exerciseChange<br/>status → breath, _cycleTick = 0<br/>resetReason встроен в emit"]:::transition
+    advanceExercise["_advanceExercise()<br/>───<br/>_exerciseIndex++<br/>_cycleTick = 0, _repeatCounter = 0<br/>→ вызывает _startRest/NewCycle<br/>  с isExerciseChange: true"]:::transition
 
     %% Helper методы
     getCurrentStepData["_getCurrentStepData(tick)<br/>───<br/>Определяет текущий шаг<br/>по _cycleTick<br/>Возвращает phase + remainingTicks + stepIndex"]:::helper
-
-    %% Публичные facade-методы
-    getCurrentPhaseInfo["getCurrentPhaseInfo()<br/>───<br/>Текущая фаза + оставшиеся тики<br/>Используется Coordinator"]:::helper
-    getCurrentPhaseMeta["getCurrentPhaseMeta()<br/>───<br/>totalPhases + currentPhaseIndex<br/>Используется Coordinator"]:::helper
-    getNextPhaseInfo["getNextPhaseInfo()<br/>───<br/>Прогноз следующей фазы<br/>Используется UI"]:::helper
 
     %% Основной поток
     TickService -->|"tick every ~1s"| onTick
@@ -70,16 +65,11 @@ flowchart TD
     CheckNextType -->|"да"| startRest
     CheckNextType -->|"нет"| startNewCycle
 
-    startRest -->|"emit reset signal + state"| EmitState
-    startNewCycle -->|"emit reset signal"| getCurrentStepData
-
-    %% UI facade запросы
-    VM -.->|"getCurrentPhaseInfo()"| getCurrentPhaseInfo
-    VM -.->|"getCurrentPhaseMeta()"| getCurrentPhaseMeta
-    VM -.->|"getNextPhaseInfo()"| getNextPhaseInfo
+    startRest -->|"emit state (resetReason=rest|exerciseChange)"| EmitState
+    startNewCycle -->|"emit state (resetReason=newCycle|exerciseChange)"| EmitState
 
     %% Ключевые переменные
-    Variables["<b>Внутренние счётчики:</b><br/>_exerciseIndex: какое упражнение<br/>_repeatCounter: какой повтор<br/>_cycleTick: позиция внутри цикла<br/><br/><b>Стримы:</b><br/>stateStream → ViewModel<br/>resetStream → ViewModel (proxy)"]
+    Variables["<b>Внутренние счётчики:</b><br/>_exerciseIndex: какое упражнение<br/>_repeatCounter: какой повтор<br/>_cycleTick: позиция внутри цикла<br/><br/><b>Обогащённые поля в emit:</b><br/>resetReason: newCycle/rest/exerciseChange/null<br/>totalPhases, currentPhaseIndex<br/>currentPhaseTotalDuration<br/>currentExerciseShape, nextExerciseShape<br/><br/><b>Стрим:</b><br/>stateStream → ViewModel"]
 
     style Variables fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#3e2723,text-align:left
 

@@ -400,34 +400,6 @@ void main() {
       );
     });
 
-    test('resetStream emits exactly one event on exercise change (not two)', () async {
-      final ex1 = makeExercise(inhale: 1, exhale: 1);
-      final ex2 = makeExercise(inhale: 1, exhale: 1);
-      final session = makeSession([ex1, ex2]);
-      ticks = FakeTickService();
-      sm = BreathSessionStateMachine(session: session, tickService: ticks);
-
-      sm.resume();
-
-      final resetReasons = <ResetReason>[];
-      final sub = sm.resetStream.listen(resetReasons.add);
-
-      // Drive ex1 to completion (2 ticks)
-      ticks.tick();
-      await Future<void>.delayed(Duration.zero);
-      ticks.tick();
-      await Future<void>.delayed(Duration.zero);
-
-      sub.cancel();
-
-      expect(
-        resetReasons.length,
-        equals(1),
-        reason: 'resetStream must emit exactly once on exercise change, got $resetReasons',
-      );
-      expect(resetReasons.first, equals(ResetReason.exerciseChange));
-    });
-
     test('state on rest reset has resetReason = rest', () async {
       // inhale=1, exhale=1, repeatCount=2, restDuration=3 → after first cycle: rest
       final session = makeSession([makeExercise(inhale: 1, exhale: 1, restDuration: 3, repeatCount: 2)]);

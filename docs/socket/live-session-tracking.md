@@ -26,14 +26,14 @@ idle ──(activity:start)──▶ active ──(activity:pause)──▶ paus
 Вызов проходит через всю цепочку от UI до Socket.io:
 
 ```
-BreathSessionViewModel
+LiveSessionCoordinator
   └─▶ ILiveSessionService
         └─▶ LiveSessionService
               └─▶ LiveSessionNotifier
                     └─▶ LiveSocketService  ──▶  /live namespace
 ```
 
-`BreathSessionViewModel` следит за переходами состояния движка (`_onEngineState`). При первом Resume, если `_liveSessionStarted` ещё не выставлен, он вызывает `liveSessionService.startSession(sessionId)`. При паузе — `pauseSession()`, при Resume из паузы — `resumeSession()`, при `complete` — `endSession()`. Флаги `_liveSessionStarted`, `_liveSessionPaused` и `_liveSessionEnded` гарантируют идемпотентность: каждый lifecycle-переход отправляется ровно один раз.
+`LiveSessionCoordinator` подписывается на `BreathSessionState` и следит за переходами состояния движка. При первом Resume, если сессия ещё не запущена, он вызывает `liveSessionService.startSession(sessionId)`. При паузе — `pauseSession()`, при Resume из паузы — `resumeSession()`, при `complete` — `endSession()`. Внутренние флаги гарантируют идемпотентность: каждый lifecycle-переход отправляется ровно один раз. `BreathSessionViewModel` не содержит никакой логики работы с `ILiveSessionService`.
 
 `LiveSessionNotifier` — это доменная стейт-машина, которая хранит `LiveSessionState` (`status: idle | active`, `isPaused`, `liveSessionId`). Он держит pending-флаги (`_isPendingStart`, `_isPendingPause`) — защита от двойного emit при случайном двойном вызове. Нотификатор эмитирует типизированные события: `LiveSessionStarted`, `LiveSessionPaused`, `LiveSessionUnpaused`, `LiveSessionEnded`, `LiveSessionAbandoned`. При логауте он автоматически сбрасывается в idle.
 
@@ -52,7 +52,7 @@ BreathSessionViewModel
 }
 ```
 
-`BreathSessionViewModel` перехватывает обновления состояния движка. Если фаза изменилась и `_liveSessionStarted` выставлен, он вызывает `telemetryService.sendSample(sessionId, phase, durationMs)`. Timestamp выставляется на клиенте — это момент выдачи инструкции, то есть когда движок перешёл в эту фазу.
+`LiveSessionCoordinator` перехватывает обновления `BreathSessionState`. Если `state.phase` или `state.exerciseIndex` изменились и сессия активна, он вызывает `_handleTelemetry(state)`, который отправляет сэмпл через `telemetryService.sendSample(sessionId, phase, durationMs)`. Timestamp выставляется на клиенте — это момент выдачи инструкции, то есть когда движок перешёл в эту фазу.
 
 Когда сессия поставлена на паузу, `TelemetryGateway` на сервере блокирует входящие сэмплы `breath_phase` и возвращает `data:ack { error: 'session_paused' }`. Lifecycle-события (`paused`, `resumed`) при этом проходят всегда — они пишутся сервером самостоятельно при обработке `activity:pause` и `activity:resume`. В результате за маркером `paused` возникает чистый пробел в сэмплах, а маркер `resumed` его закрывает. Когда придут биометрические данные, этот пробел будет точно соответствовать времени паузы.
 

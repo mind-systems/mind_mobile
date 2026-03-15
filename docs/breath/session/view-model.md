@@ -30,11 +30,13 @@
 
 ## Завершение упражнения и переходы
 
-Метод _advanceExercise увеличивает _exerciseIndex и сбрасывает _cycleTick и _repeatCounter. Затем в resetStream отправляется событие exerciseChange. Если индекс выходит за пределы списка упражнений, вызывается complete, который фиксирует статус complete, отменяет подписку на TickService и закрывает resetStream.
+Метод _advanceExercise увеличивает _exerciseIndex и сбрасывает _cycleTick и _repeatCounter. Если индекс выходит за пределы списка упражнений, вызывается complete, который фиксирует статус complete и отменяет подписку на TickService.
 
-Метод _startRest сбрасывает _cycleTick, отправляет событие rest в resetStream и устанавливает статус rest с фазой rest и полным restDuration в качестве remainingTicks.
+Метод _startRest сбрасывает _cycleTick и устанавливает статус rest с фазой rest, полным restDuration в качестве remainingTicks и resetReason = rest (или exerciseChange, если это смена упражнения) прямо в эмитируемом состоянии.
 
-Метод _startNewCycle отправляет событие newCycle в resetStream, определяет параметры первого шага нового цикла и устанавливает статус breath.
+Метод _startNewCycle определяет параметры первого шага нового цикла, устанавливает статус breath и включает resetReason = newCycle (или exerciseChange) в эмитируемое состояние.
+
+Причина сброса передаётся через флаг isExerciseChange: _advanceExercise вызывает _startRest или _startNewCycle с isExerciseChange: true, и они сами встраивают нужный resetReason в состояние. Отдельного emit из _advanceExercise нет — сброс происходит единожды.
 
 Отдых, заданный внутри упражнения, используется только между циклами и не применяется после последнего повтора. Отдых между упражнениями возможен только в том случае, если он оформлен как отдельное упражнение-отдых.
 
@@ -42,14 +44,23 @@
 
 Метод _getCurrentStepData принимает номер тика внутри цикла и проходит по списку шагов упражнения, накапливая их длительности. Когда тик попадает в диапазон шага, возвращаются его фаза, индекс и количество тиков до конца этого шага. Если тик выходит за пределы всех шагов, возвращаются параметры последнего шага как fallback.
 
-## Proxy-паттерн resetStream
+## Обогащённые поля состояния
 
-BreathSessionStateMachine владеет собственным resetStream. При рестарте стейт-машина уничтожается и создаётся новая — её resetStream закрывается, и появляется свежий. Чтобы внешние подписчики не теряли подписку при каждом рестарте, ViewModel держит стабильный внутренний _resetController, который живёт весь lifecycle ViewModel. Подписка _resetProxySubscription прослушивает resetStream текущей стейт-машины и перенаправляет события в этот контроллер. При рестарте _setupEngine отменяет старую прокси-подписку и создаёт новую для нового экземпляра. Наружу ViewModel экспонирует viewModel.resetStream — стабильный стрим, который никогда не меняется.
+BreathSessionStateMachineState содержит набор предвычисленных полей, которые избавляют потребителей от повторного обхода структуры упражнений:
 
-## Facade-методы
+- **resetReason** — причина сброса анимации (newCycle, rest, exerciseChange) или null, если сброса не было
+- **totalPhases** — количество шагов в текущем упражнении
+- **currentPhaseIndex** — индекс текущего шага (0-based)
+- **currentPhaseTotalDuration** — полная длительность текущей фазы в тиках
+- **currentExerciseShape** — форма текущего упражнения (circle, square, triangle)
+- **nextExerciseShape** — форма следующего упражнения с шагами (или текущего, если оно уже имеет шаги)
 
-ViewModel предоставляет набор методов, которые делегируют вызовы напрямую в стейт-машину: currentExercise, getCurrentPhaseInfo, getCurrentPhaseMeta, getNextPhaseInfo, getNextExerciseWithShape. Если стейт-машина ещё не создана, методы возвращают безопасные значения по умолчанию.
+BreathSessionState (Riverpod) зеркально транслирует все эти поля из состояния стейт-машины. Координаторы анимации (_BreathAnimationCoordinator_, _OrbAnimationCoordinator_) читают их напрямую из BreathSessionState — без вызова каких-либо методов на ViewModel или StateMachine.
 
 ## Управление сессией
 
-Методы pause и resume делегируют вызовы в стейт-машину. Метод complete тоже делегируется. Метод restart пересоздаёт стейт-машину через _setupEngine, используя кэшированный DTO, загруженный при первом вызове initState.
+Методы pause и resume делегируют вызовы в стейт-машину. Метод complete тоже делегируется. Метод restartEngine пересоздаёт стейт-машину через _setupEngine, используя кэшированный DTO, загруженный при первом вызове initState.
+
+## LiveSessionCoordinator
+
+Жизненный цикл активности и телеметрия фаз вынесены в отдельный LiveSessionCoordinator, который подписывается на BreathSessionState наравне с анимационными координаторами. ViewModel не содержит никакой логики работы с ILiveSessionService — вся она сосредоточена в LiveSessionCoordinator.
