@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
@@ -53,7 +52,6 @@ class OrbAnimationCoordinator {
   }
 
   void _handleReset(BreathSessionState state) {
-    if (kDebugMode) debugPrint('[OrbCoord] reset: ${state.resetReason}');
 
     final shape = (state.resetReason == ResetReason.exerciseChange ||
             state.resetReason == ResetReason.rest)

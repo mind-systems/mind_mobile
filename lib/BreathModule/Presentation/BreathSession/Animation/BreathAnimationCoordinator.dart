@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathShapeShifter.dart';
@@ -55,8 +54,6 @@ class BreathAnimationCoordinator {
   }
 
   void _handleReset(BreathSessionState state) {
-    if (kDebugMode) debugPrint('[BreathCoord] reset: ${state.resetReason}');
-
     final shape = (state.resetReason == ResetReason.exerciseChange ||
             state.resetReason == ResetReason.rest)
         ? state.nextExerciseShape
@@ -76,6 +73,8 @@ class BreathAnimationCoordinator {
       motionEngine.setRemainingPhaseTicks(state.remainingTicks);
       _previousRemainingTicks = state.remainingTicks;
     }
+
+    motionEngine.setActive(state.status == BreathSessionStatus.breath);
   }
 
   void _onStateChanged(BreathSessionState state) {
