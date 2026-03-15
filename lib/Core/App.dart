@@ -19,6 +19,7 @@ import 'package:mind/Core/Api/BreathSessionApi.dart';
 import 'package:mind/Core/Api/DeviceApi.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
 import 'package:mind/Core/Api/UserApi.dart';
+import 'package:mind/Core/Socket/SocketDebugOverlay.dart';
 import 'package:mind/User/IUserApi.dart';
 import 'package:mind/Device/DeviceRepository.dart';
 import 'package:mind/Core/AppSettings/AppSettingsNotifier.dart';
@@ -201,11 +202,13 @@ class MyApp extends ConsumerWidget {
           .toList(),
       routerConfig: appRouter,
       builder: (context, child) {
-        return GlobalListeners(
+        final body = GlobalListeners(
           logoutNotifier: App.shared.logoutNotifier,
           authErrorStream: App.shared.userNotifier.authErrorStream,
           child: child!,
         );
+        if (Environment.instance.isProduction) return body;
+        return Stack(children: [body, const SocketDebugOverlay()]);
       },
     );
   }

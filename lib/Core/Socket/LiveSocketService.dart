@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
@@ -26,6 +27,9 @@ class LiveSocketService {
   Stream<Map<String, dynamic>> get sessionStateEvents => _sessionStateController.stream;
   Stream<void> get telemetryStateEvents => _telemetryStateController.stream;
   Stream<Map<String, dynamic>> get dataAckEvents => _dataAckController.stream;
+
+  final ValueNotifier<String> lastSentMessage = ValueNotifier('');
+  final ValueNotifier<String> lastReceivedMessage = ValueNotifier('');
 
   bool _isConnecting = false;
 
@@ -124,6 +128,7 @@ class LiveSocketService {
         if (data is Map<String, dynamic>) {
           log('[Socket] ← session:state: $data', name: 'LiveSocketService');
           _sessionStateController.add(data);
+          lastReceivedMessage.value = 'live: session:state → ${data['status']}';
         }
       });
 
@@ -133,6 +138,7 @@ class LiveSocketService {
         if (data is Map<String, dynamic>) {
           log('[Socket] ← data:ack: $data', name: 'LiveSocketService');
           _dataAckController.add(data);
+          lastReceivedMessage.value = 'telemetry: data:ack';
         }
       });
 
@@ -147,11 +153,13 @@ class LiveSocketService {
   void emitLive(String event, [dynamic data]) {
     log('[Socket] → live $event: $data', name: 'LiveSocketService');
     _liveSocket?.emit(event, data);
+    lastSentMessage.value = 'live: $event';
   }
 
   void emitTelemetry(String event, [dynamic data]) {
     log('[Socket] → telemetry $event', name: 'LiveSocketService');
     _telemetrySocket?.emit(event, data);
+    lastSentMessage.value = 'telemetry: $event';
   }
 
   void disconnect() {
@@ -172,6 +180,8 @@ class LiveSocketService {
 
   void dispose() {
     disconnect();
+    lastSentMessage.dispose();
+    lastReceivedMessage.dispose();
     _connectionState.close();
     _sessionStateController.close();
     _telemetryStateController.close();
