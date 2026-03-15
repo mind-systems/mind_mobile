@@ -19,6 +19,7 @@ import 'package:mind/Core/Api/BreathSessionApi.dart';
 import 'package:mind/Core/Api/DeviceApi.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
 import 'package:mind/Core/Api/UserApi.dart';
+import 'package:mind/User/IUserApi.dart';
 import 'package:mind/Device/DeviceRepository.dart';
 import 'package:mind/Core/AppSettings/AppSettingsNotifier.dart';
 import 'package:mind/Core/AppSettings/AppSettingsRepository.dart';
@@ -50,6 +51,8 @@ class App {
 
   final Database db;
   final HttpClient httpClient;
+  // todo debug for stats
+  final IUserApi userApi;
   final LogoutNotifier logoutNotifier;
   final UserRepository userRepository;
   final BreathSessionRepository breathSessionRepository;
@@ -66,6 +69,7 @@ class App {
   App._({
     required this.db,
     required this.httpClient,
+    required this.userApi,
     required this.logoutNotifier,
     required this.userRepository,
     required this.breathSessionRepository,
@@ -138,6 +142,7 @@ class App {
     shared = App._(
       db: db,
       httpClient: httpClient,
+      userApi: userApi,
       logoutNotifier: logoutNotifier,
       userRepository: userRepository,
       breathSessionRepository: breathSessionRepository,

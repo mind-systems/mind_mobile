@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/StatsCard.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/IHomeCoordinator.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Models/ModuleItem.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/HomeScreenCell.dart';
@@ -34,19 +35,27 @@ class HomeScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 1.0,
-            crossAxisSpacing: 12.0,
-            mainAxisSpacing: 12.0,
+      body: SafeArea(child: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.all(16.0),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 1.0,
+                crossAxisSpacing: 12.0,
+                mainAxisSpacing: 12.0,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => HomeScreenCell(item: modules[index]),
+                childCount: modules.length,
+              ),
+            ),
           ),
-          itemCount: modules.length,
-          itemBuilder: (context, index) => HomeScreenCell(item: modules[index]),
-        ),
-      ),
+          // todo debug
+          const SliverToBoxAdapter(child: StatsCard()),
+        ],
+      )),
     );
   }
 }
