@@ -1,3 +1,5 @@
+import 'package:mind/BreathModule/Models/ExerciseSet.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionStateMachine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep.dart';
 
 enum BreathSessionStatus { pause, breath, rest, complete }
@@ -25,6 +27,14 @@ class BreathSessionState {
   final bool isStarred;
   final bool canStar;
 
+  // Enriched fields (Phase 1)
+  final ResetReason? resetReason;
+  final int totalPhases;
+  final int currentPhaseIndex;
+  final int currentPhaseTotalDuration;
+  final SetShape? currentExerciseShape;
+  final SetShape? nextExerciseShape;
+
   const BreathSessionState({
     required this.loadState,
     required this.status,
@@ -36,6 +46,12 @@ class BreathSessionState {
     this.activeStepId,
     this.isStarred = false,
     this.canStar = false,
+    this.resetReason,
+    this.totalPhases = 0,
+    this.currentPhaseIndex = 0,
+    this.currentPhaseTotalDuration = 0,
+    this.currentExerciseShape,
+    this.nextExerciseShape,
   });
 
   factory BreathSessionState.initial() => const BreathSessionState(
@@ -60,6 +76,14 @@ class BreathSessionState {
     String? activeStepId,
     bool? isStarred,
     bool? canStar,
+    // Note: resetReason uses ?? so copyWith cannot clear it to null.
+    // Use explicit field assignment when clearing is needed.
+    ResetReason? resetReason,
+    int? totalPhases,
+    int? currentPhaseIndex,
+    int? currentPhaseTotalDuration,
+    SetShape? currentExerciseShape,
+    SetShape? nextExerciseShape,
   }) {
     return BreathSessionState(
       loadState: loadState ?? this.loadState,
@@ -72,6 +96,12 @@ class BreathSessionState {
       activeStepId: activeStepId ?? this.activeStepId,
       isStarred: isStarred ?? this.isStarred,
       canStar: canStar ?? this.canStar,
+      resetReason: resetReason ?? this.resetReason,
+      totalPhases: totalPhases ?? this.totalPhases,
+      currentPhaseIndex: currentPhaseIndex ?? this.currentPhaseIndex,
+      currentPhaseTotalDuration: currentPhaseTotalDuration ?? this.currentPhaseTotalDuration,
+      currentExerciseShape: currentExerciseShape ?? this.currentExerciseShape,
+      nextExerciseShape: nextExerciseShape ?? this.nextExerciseShape,
     );
   }
 }

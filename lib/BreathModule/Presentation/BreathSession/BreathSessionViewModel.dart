@@ -65,24 +65,33 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
     final timelineSteps = _buildTimelineSteps(dto);
 
-    state = state.copyWith(
+    final initialEngineState = _stateMachine!.currentState;
+    // Full constructor — copyWith cannot clear nullable fields on restart
+    // (e.g. stale currentExerciseShape from previous session).
+    state = BreathSessionState(
       loadState: SessionLoadState.ready,
       timelineSteps: timelineSteps,
-      status: _stateMachine!.currentState.status,
-      phase: _stateMachine!.currentState.phase,
-      exerciseIndex: _stateMachine!.currentState.exerciseIndex,
-      remainingTicks: _stateMachine!.currentState.remainingTicks,
-      activeStepId: _stateMachine!.currentState.activeStepId,
-      currentIntervalMs: _stateMachine!.currentState.currentIntervalMs,
+      status: initialEngineState.status,
+      phase: initialEngineState.phase,
+      exerciseIndex: initialEngineState.exerciseIndex,
+      remainingTicks: initialEngineState.remainingTicks,
+      activeStepId: initialEngineState.activeStepId,
+      currentIntervalMs: initialEngineState.currentIntervalMs,
       isStarred: dto.isStarred,
       canStar: dto.canStar,
+      resetReason: initialEngineState.resetReason,
+      totalPhases: initialEngineState.totalPhases,
+      currentPhaseIndex: initialEngineState.currentPhaseIndex,
+      currentPhaseTotalDuration: initialEngineState.currentPhaseTotalDuration,
+      currentExerciseShape: initialEngineState.currentExerciseShape,
+      nextExerciseShape: initialEngineState.nextExerciseShape,
     );
   }
 
   void _onEngineState(BreathSessionStateMachineState engineState) {
     final previousActiveId = state.activeStepId;
     final newActiveId = engineState.activeStepId;
-    final remaining = _stateMachine!.getCurrentPhaseInfo().remainingInPhase;
+    final remaining = engineState.remainingTicks;
 
     List<TimelineStep> updatedSteps = state.timelineSteps;
 
@@ -96,7 +105,10 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       }).toList();
     }
 
-    state = state.copyWith(
+    // Full constructor — copyWith cannot clear nullable fields (resetReason,
+    // currentExerciseShape, nextExerciseShape) when the engine emits null.
+    state = BreathSessionState(
+      loadState: state.loadState,
       status: engineState.status,
       phase: engineState.phase,
       exerciseIndex: engineState.exerciseIndex,
@@ -104,6 +116,14 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       activeStepId: engineState.activeStepId,
       currentIntervalMs: engineState.currentIntervalMs,
       timelineSteps: updatedSteps,
+      isStarred: state.isStarred,
+      canStar: state.canStar,
+      resetReason: engineState.resetReason,
+      totalPhases: engineState.totalPhases,
+      currentPhaseIndex: engineState.currentPhaseIndex,
+      currentPhaseTotalDuration: engineState.currentPhaseTotalDuration,
+      currentExerciseShape: engineState.currentExerciseShape,
+      nextExerciseShape: engineState.nextExerciseShape,
     );
   }
 
