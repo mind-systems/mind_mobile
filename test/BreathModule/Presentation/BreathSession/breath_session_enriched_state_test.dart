@@ -11,7 +11,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/BreathModule/ITickService.dart';
-import 'package:mind/BreathModule/Models/ExerciseSet.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionStateMachine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';

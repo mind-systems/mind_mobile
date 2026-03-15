@@ -1,7 +1,8 @@
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
 import 'package:mind/BreathModule/Models/StepType.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
 
-enum SetShape { square, triangleUp, triangleDown, circle }
+export 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
 
 class ExerciseSet {
   final List<ExerciseStep> steps;

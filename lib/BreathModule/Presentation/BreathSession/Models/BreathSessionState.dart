@@ -1,4 +1,4 @@
-import 'package:mind/BreathModule/Models/ExerciseSet.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionStateMachine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/TimelineStep.dart';
 

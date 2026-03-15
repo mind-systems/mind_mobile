@@ -4,7 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/BreathModule/ITickService.dart';
-import 'package:mind/BreathModule/Models/ExerciseSet.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathAnimationCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathShapeShifter.dart';

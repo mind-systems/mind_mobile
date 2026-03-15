@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mind/BreathModule/Models/ExerciseSet.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionStateMachine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';

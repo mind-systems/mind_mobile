@@ -4,7 +4,7 @@ import 'package:mind/l10n/app_localizations.dart';
 import 'package:mind/Views/ControlButton.dart';
 import 'package:mind/Views/SnackBarModule/GlobalSnackBarNotifier.dart';
 import 'package:mind/Views/SnackBarModule/Models/SnackBarEvent.dart';
-import 'package:mind/BreathModule/Models/ExerciseSet.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMotionEngine.dart';

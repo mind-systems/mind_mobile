@@ -39,8 +39,8 @@ class _StatsCardState extends ConsumerState<StatsCard> {
   String _formatDuration(int seconds) {
     final h = seconds ~/ 3600;
     final m = (seconds % 3600) ~/ 60;
-    if (h > 0) return '${h}ч ${m}мин';
-    return '${m}мин';
+    if (h > 0) return '$h ч $m мин';
+    return '$m мин';
   }
 
   String _formatDate(String? iso) {
@@ -64,7 +64,7 @@ class _StatsCardState extends ConsumerState<StatsCard> {
         height: 80,
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => Padding(
+      error: (_, _) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Text('Не удалось загрузить статистику', style: theme.textTheme.bodyMedium),
       ),

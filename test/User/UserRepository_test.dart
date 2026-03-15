@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/User/IAuthApi.dart';
 import 'package:mind/User/IUserApi.dart';
+import 'package:mind/User/Models/UserStatsDTO.dart';
 import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
 import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
 import 'package:mind/Core/Api/Models/UpdateUserRequest.dart';
@@ -15,6 +16,15 @@ import 'package:mind/User/UserRepository.dart';
 class FakeUserApi implements IUserApi {
   @override
   Future<void> updateUser(UpdateUserRequest request) async {}
+
+  @override
+  Future<UserStatsDTO> fetchStats() async => UserStatsDTO(
+        totalSessions: 0,
+        totalDurationSeconds: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        lastSessionDate: null,
+      );
 }
 
 // ---------------------------------------------------------------------------
