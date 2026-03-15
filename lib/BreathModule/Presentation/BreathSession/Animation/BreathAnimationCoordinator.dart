@@ -1,7 +1,5 @@
-import 'dart:async';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathMotionEngine.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathShapeShifter.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
@@ -14,14 +12,9 @@ class BreathAnimationCoordinator {
   final BreathViewModel viewModel;
 
   RemoveListener? _stateListener;
-  StreamSubscription? _resetSubscription;
 
-  int? _previousExerciseIndex;
   int? _previousRemainingTicks;
-
-  // Engine создаётся асинхронно в ViewModel.initState(), поэтому при initialize()
-  // resetStream может быть пустым. Переподписываемся при первом ready-состоянии.
-  bool _resetStreamSubscribed = false;
+  bool _initialized = false;
 
   BreathAnimationCoordinator({
     required this.motionEngine,
@@ -31,12 +24,10 @@ class BreathAnimationCoordinator {
 
   void initialize(BreathSessionState initialState) {
     _stateListener = viewModel.addListener(_onStateChanged);
-    _resetSubscription = viewModel.resetStream.listen(_onReset);
     _syncInitialState(initialState);
   }
 
   void _syncInitialState(BreathSessionState state) {
-    _previousExerciseIndex = state.exerciseIndex;
     _previousRemainingTicks = state.remainingTicks;
 
     if (state.loadState != SessionLoadState.ready) {
@@ -44,11 +35,10 @@ class BreathAnimationCoordinator {
       return;
     }
 
-    if (viewModel.currentExercise.steps.isNotEmpty) {
-      final phaseMeta = viewModel.getCurrentPhaseMeta();
+    if (state.totalPhases > 0) {
       motionEngine.setPhaseInfo(
-        totalPhases: phaseMeta.totalPhases,
-        currentPhaseIndex: phaseMeta.currentPhaseIndex,
+        totalPhases: state.totalPhases,
+        currentPhaseIndex: state.currentPhaseIndex,
       );
       motionEngine.setRemainingPhaseTicks(state.remainingTicks);
     } else {
@@ -57,31 +47,57 @@ class BreathAnimationCoordinator {
     motionEngine.setActive(state.status == BreathSessionStatus.breath);
   }
 
+  void _handleFirstReady(BreathSessionState state) {
+    if (state.nextExerciseShape != null) {
+      shapeShifter.morphToImmediate(state.nextExerciseShape!);
+    }
+    _initialized = true;
+  }
+
+  void _handleReset(BreathSessionState state) {
+    if (kDebugMode) debugPrint('[BreathCoord] reset: ${state.resetReason}');
+
+    final shape = (state.resetReason == ResetReason.exerciseChange ||
+            state.resetReason == ResetReason.rest)
+        ? state.nextExerciseShape
+        : state.currentExerciseShape;
+
+    if (shape != null) {
+      shapeShifter.morphTo(shape);
+    }
+
+    motionEngine.resetPosition(0.0);
+
+    if (state.totalPhases > 0) {
+      motionEngine.setPhaseInfo(
+        totalPhases: state.totalPhases,
+        currentPhaseIndex: state.currentPhaseIndex,
+      );
+      motionEngine.setRemainingPhaseTicks(state.remainingTicks);
+      _previousRemainingTicks = state.remainingTicks;
+    }
+  }
+
   void _onStateChanged(BreathSessionState state) {
     if (state.loadState != SessionLoadState.ready) return;
 
-    if (!_resetStreamSubscribed) {
-      _resetSubscription?.cancel();
-      _resetSubscription = viewModel.resetStream.listen(_onReset);
-      _resetStreamSubscribed = true;
-
-      final nextExercise = viewModel.getNextExerciseWithShape();
-      if (nextExercise?.shape != null) {
-        // Instant — shape widget is still hidden behind opacity fade-in,
-        // so no animation is needed here. Animated morphs happen via _onReset.
-        shapeShifter.morphToImmediate(nextExercise!.shape!);
-      }
+    if (!_initialized) {
+      _handleFirstReady(state);
     }
 
-    // 1. Активность
+    if (state.resetReason != null) {
+      _handleReset(state);
+      return;
+    }
+
+    // 1. Activity
     final shouldBeActive = state.status == BreathSessionStatus.breath;
     if (shouldBeActive != motionEngine.isActive) {
       if (shouldBeActive) {
-        if (viewModel.currentExercise.steps.isNotEmpty) {
-          final phaseMeta = viewModel.getCurrentPhaseMeta();
+        if (state.totalPhases > 0) {
           motionEngine.setPhaseInfo(
-            totalPhases: phaseMeta.totalPhases,
-            currentPhaseIndex: phaseMeta.currentPhaseIndex,
+            totalPhases: state.totalPhases,
+            currentPhaseIndex: state.currentPhaseIndex,
           );
           motionEngine.setRemainingPhaseTicks(state.remainingTicks);
           _previousRemainingTicks = state.remainingTicks;
@@ -93,18 +109,16 @@ class BreathAnimationCoordinator {
       motionEngine.setActive(shouldBeActive);
     }
 
-    // 2. Интервал
+    // 2. Interval
     if (state.currentIntervalMs > 0) {
       motionEngine.setIntervalMs(state.currentIntervalMs);
     }
 
-    // 3. Структура фаз и оставшиеся тики в текущей фазе
-    if (state.status == BreathSessionStatus.breath &&
-        viewModel.currentExercise.steps.isNotEmpty) {
-      final phaseMeta = viewModel.getCurrentPhaseMeta();
+    // 3. Phase structure and remaining ticks
+    if (state.status == BreathSessionStatus.breath && state.totalPhases > 0) {
       motionEngine.setPhaseInfo(
-        totalPhases: phaseMeta.totalPhases,
-        currentPhaseIndex: phaseMeta.currentPhaseIndex,
+        totalPhases: state.totalPhases,
+        currentPhaseIndex: state.currentPhaseIndex,
       );
 
       if (state.remainingTicks != _previousRemainingTicks) {
@@ -114,48 +128,6 @@ class BreathAnimationCoordinator {
     } else {
       _previousRemainingTicks = state.remainingTicks;
     }
-
-    // 4. Смена упражнения
-    if (_previousExerciseIndex != state.exerciseIndex) {
-      _previousExerciseIndex = state.exerciseIndex;
-    }
-  }
-
-  void _onReset(ResetReason reason) {
-    BreathExerciseDTO? shapeSource;
-
-    if (reason == ResetReason.exerciseChange || reason == ResetReason.rest) {
-      shapeSource = viewModel.getNextExerciseWithShape();
-    } else {
-      shapeSource = viewModel.currentExercise;
-    }
-
-    if (shapeSource?.shape != null) {
-      shapeShifter.morphTo(shapeSource!.shape!);
-    }
-
-    motionEngine.resetPosition(0.0);
-
-    // Re-sync phase structure immediately after position reset.
-    //
-    // Root cause (todo: fix properly): _onStateChanged fires synchronously via
-    // the Riverpod listener and processes stale remaining-ticks *before* this
-    // broadcast-stream callback arrives. By the time _onReset runs the ViewModel
-    // already holds the new cycle's state, so we re-sync the motion engine here
-    // with the correct position=0.0 and fresh remaining ticks.
-    //
-    // OrbAnimationCoordinator._onReset has the same workaround for the same
-    // reason — any fix here should be applied there too, and vice versa.
-    if (viewModel.currentExercise.steps.isNotEmpty) {
-      final phaseMeta = viewModel.getCurrentPhaseMeta();
-      motionEngine.setPhaseInfo(
-        totalPhases: phaseMeta.totalPhases,
-        currentPhaseIndex: phaseMeta.currentPhaseIndex,
-      );
-      final phaseInfo = viewModel.getCurrentPhaseInfo();
-      motionEngine.setRemainingPhaseTicks(phaseInfo.remainingInPhase);
-      _previousRemainingTicks = phaseInfo.remainingInPhase;
-    }
   }
 
   /// Resets coordinator state caches after a session restart.
@@ -164,13 +136,11 @@ class BreathAnimationCoordinator {
   /// ready-state triggers a full phaseInfo re-initialisation.
   void reset() {
     _previousRemainingTicks = null;
-    _previousExerciseIndex = null;
-    _resetStreamSubscribed = false;
+    _initialized = false;
     motionEngine.setActive(false);
   }
 
   void dispose() {
     _stateListener?.call();
-    _resetSubscription?.cancel();
   }
 }

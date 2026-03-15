@@ -11,8 +11,6 @@ import 'package:mind/BreathModule/Presentation/BreathSession/Animation/BreathSha
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/ILiveSessionService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/ITelemetryService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
@@ -43,24 +41,6 @@ class _FakeTickService implements ITickService {
 // ---------------------------------------------------------------------------
 // Fake IBreathSessionService — returns a hard-coded DTO
 // ---------------------------------------------------------------------------
-
-class _FakeLiveSessionService implements ILiveSessionService {
-  @override
-  void startSession(String sessionId) {}
-  @override
-  void endSession() {}
-  @override
-  void pauseSession() {}
-  @override
-  void resumeSession() {}
-  @override
-  Stream<LiveSessionDto> get sessionStateStream => const Stream.empty();
-}
-
-class _FakeTelemetryService implements ITelemetryService {
-  @override
-  void sendSample(String sessionId, String phase, int durationMs) {}
-}
 
 class _FakeBreathSessionCoordinator implements IBreathSessionCoordinator {
   @override
@@ -132,8 +112,6 @@ void main() {
             tickService: tickService,
             service: _FakeSessionService(_makeSession()),
             coordinator: _FakeBreathSessionCoordinator(),
-            liveSessionService: _FakeLiveSessionService(),
-            telemetryService: _FakeTelemetryService(),
             sessionId: 'test',
           ),
         ),

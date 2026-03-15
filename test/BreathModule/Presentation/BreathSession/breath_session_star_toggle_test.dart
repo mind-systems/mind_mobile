@@ -5,8 +5,6 @@ import 'package:mind/BreathModule/ITickService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/ILiveSessionService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/ITelemetryService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
@@ -24,24 +22,6 @@ class _FakeTickService implements ITickService {
 
   void tick([int intervalMs = 1000]) => _controller.add(TickData(intervalMs));
   void dispose() => _controller.close();
-}
-
-class _FakeLiveSessionService implements ILiveSessionService {
-  @override
-  void startSession(String sessionId) {}
-  @override
-  void endSession() {}
-  @override
-  void pauseSession() {}
-  @override
-  void resumeSession() {}
-  @override
-  Stream<LiveSessionDto> get sessionStateStream => const Stream.empty();
-}
-
-class _FakeTelemetryService implements ITelemetryService {
-  @override
-  void sendSample(String sessionId, String phase, int durationMs) {}
 }
 
 class _FakeCoordinator implements IBreathSessionCoordinator {
@@ -123,8 +103,6 @@ void main() {
         tickService: tickService,
         service: service,
         coordinator: _FakeCoordinator(),
-        liveSessionService: _FakeLiveSessionService(),
-        telemetryService: _FakeTelemetryService(),
         sessionId: 'test-session',
       );
 
@@ -143,8 +121,6 @@ void main() {
         tickService: tickService,
         service: service,
         coordinator: _FakeCoordinator(),
-        liveSessionService: _FakeLiveSessionService(),
-        telemetryService: _FakeTelemetryService(),
         sessionId: 'test-session',
       );
 
@@ -159,8 +135,6 @@ void main() {
         tickService: tickService,
         service: service,
         coordinator: _FakeCoordinator(),
-        liveSessionService: _FakeLiveSessionService(),
-        telemetryService: _FakeTelemetryService(),
         sessionId: 'test-session',
       );
       await vm.initState();
@@ -177,8 +151,6 @@ void main() {
         tickService: tickService,
         service: service,
         coordinator: _FakeCoordinator(),
-        liveSessionService: _FakeLiveSessionService(),
-        telemetryService: _FakeTelemetryService(),
         sessionId: 'test-session',
       );
       await vm.initState();
@@ -195,8 +167,6 @@ void main() {
         tickService: tickService,
         service: service,
         coordinator: _FakeCoordinator(),
-        liveSessionService: _FakeLiveSessionService(),
-        telemetryService: _FakeTelemetryService(),
         sessionId: 'test-session',
       );
       await vm.initState();

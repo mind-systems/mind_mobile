@@ -1,5 +1,4 @@
-import 'dart:async';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
@@ -22,21 +21,14 @@ class OrbAnimationCoordinator {
   final double _minProgress = _kMinProgress;
   double _maxProgress = _kMaxProgressOther;
 
-  bool _resetStreamSubscribed = false;
+  bool _initialized = false;
   RemoveListener? _stateListener;
-  StreamSubscription? _resetSubscription;
 
   // Interpolation
   late AnimationController _animController;
   double _previousProgress = _kMinProgress;
   double _targetProgress = _kMinProgress;
   final Curve _activeCurve = Curves.easeOut;
-
-  // State machine emits twice per tick (intervalMs update + phase/remaining),
-  // so deduplicate on (phase, remaining) to avoid restarting the animation
-  // before easeOut has had a chance to move orbProgress.
-  int? _lastAnimatedRemaining;
-  BreathPhase? _lastAnimatedPhase;
 
   OrbAnimationCoordinator({required this.viewModel, required this.vsync});
 
@@ -49,10 +41,9 @@ class OrbAnimationCoordinator {
     )..addListener(_onAnimationTick);
 
     _stateListener = viewModel.addListener(_onStateChanged);
-    _resetSubscription = viewModel.resetStream.listen(_onReset);
 
     if (initialState.loadState == SessionLoadState.ready) {
-      _updateMaxProgress(viewModel.getNextExerciseWithShape()?.shape);
+      _updateMaxProgress(initialState.nextExerciseShape);
     }
   }
 
@@ -61,17 +52,55 @@ class OrbAnimationCoordinator {
     orbProgress.value = _lerp(_previousProgress, _targetProgress, t);
   }
 
+  void _handleReset(BreathSessionState state) {
+    if (kDebugMode) debugPrint('[OrbCoord] reset: ${state.resetReason}');
+
+    final shape = (state.resetReason == ResetReason.exerciseChange ||
+            state.resetReason == ResetReason.rest)
+        ? state.nextExerciseShape
+        : state.currentExerciseShape;
+
+    _updateMaxProgress(shape);
+
+    if (state.resetReason == ResetReason.rest) {
+      // Snap to min — orb should be at minimum during rest, no animation needed.
+      _animController.stop();
+      _previousProgress = _kMinProgress;
+      _targetProgress = _kMinProgress;
+      orbProgress.value = _kMinProgress;
+      return;
+    }
+
+    // exerciseChange / newCycle: start animation from enriched state fields.
+    if (state.totalPhases > 0) {
+      final phase = state.phase;
+      if (phase == BreathPhase.inhale || phase == BreathPhase.exhale) {
+        final total = state.currentPhaseTotalDuration;
+        final remaining = state.remainingTicks;
+        if (total > 0) {
+          _startAnimation(phase: phase, total: total, remaining: remaining);
+          return;
+        }
+      }
+    }
+
+    // Fallback: not in an animated phase — freeze.
+    _animController.stop();
+    _previousProgress = orbProgress.value;
+    _targetProgress = orbProgress.value;
+  }
+
   void _onStateChanged(BreathSessionState state) {
     if (state.loadState != SessionLoadState.ready) return;
 
-    // Re-subscribe to resetStream on first ready state (same pattern as
-    // BreathAnimationCoordinator) because the stream may be empty at
-    // initialize() time due to async engine setup.
-    if (!_resetStreamSubscribed) {
-      _resetSubscription?.cancel();
-      _resetSubscription = viewModel.resetStream.listen(_onReset);
-      _resetStreamSubscribed = true;
-      _updateMaxProgress(viewModel.getNextExerciseWithShape()?.shape);
+    if (!_initialized) {
+      _updateMaxProgress(state.nextExerciseShape);
+      _initialized = true;
+    }
+
+    if (state.resetReason != null) {
+      _handleReset(state);
+      return;
     }
 
     // Non-breath status (pause, complete, idle) — freeze orb at current position.
@@ -88,79 +117,12 @@ class OrbAnimationCoordinator {
       return;
     }
 
-    final phaseMeta = viewModel.getCurrentPhaseMeta();
-    final currentPhaseIndex = phaseMeta.currentPhaseIndex;
-    final exercise = viewModel.currentExercise;
-
-    if (exercise.steps.isEmpty || currentPhaseIndex >= exercise.steps.length) return;
-
-    final total = exercise.steps[currentPhaseIndex].duration;
+    final total = state.currentPhaseTotalDuration;
     if (total <= 0) return;
 
     final remaining = state.remainingTicks;
 
-    // Skip duplicate emits — see _lastAnimatedRemaining field comment above.
-    if (remaining == _lastAnimatedRemaining && phase == _lastAnimatedPhase) return;
-    _lastAnimatedRemaining = remaining;
-    _lastAnimatedPhase = phase;
-
     _startAnimation(phase: phase, total: total, remaining: remaining);
-  }
-
-  void _onReset(ResetReason reason) {
-    final shapeSource = (reason == ResetReason.exerciseChange || reason == ResetReason.rest)
-        ? viewModel.getNextExerciseWithShape()
-        : viewModel.currentExercise;
-
-    _updateMaxProgress(shapeSource?.shape);
-
-    if (reason == ResetReason.rest) {
-      // Snap to min — orb should be at minimum during rest, no animation needed.
-      _animController.stop();
-      _previousProgress = _kMinProgress;
-      _targetProgress = _kMinProgress;
-      orbProgress.value = _kMinProgress;
-      return;
-    }
-
-    // exerciseChange / newCycle: re-sync animation immediately from fresh
-    // ViewModel state rather than waiting for the next _onStateChanged.
-    //
-    // Root cause (todo: fix properly): _onStateChanged fires synchronously via
-    // the Riverpod listener with stale data *before* this broadcast-stream
-    // callback arrives. By the time _onReset runs the ViewModel already holds
-    // the new cycle's state, so we start the animation here with fresh data and
-    // poison the dedup cache (_lastAnimatedRemaining) so that the stale
-    // _onStateChanged emit that follows is ignored.
-    //
-    // BreathAnimationCoordinator._onReset has the same workaround for the same
-    // reason — any fix here should be applied there too, and vice versa.
-    if (viewModel.currentExercise.steps.isNotEmpty) {
-      final phase = viewModel.getCurrentPhaseInfo().phase;
-      final phaseMeta = viewModel.getCurrentPhaseMeta();
-      final currentPhaseIndex = phaseMeta.currentPhaseIndex;
-      final exercise = viewModel.currentExercise;
-
-      if ((phase == BreathPhase.inhale || phase == BreathPhase.exhale) &&
-          currentPhaseIndex < exercise.steps.length) {
-        final total = exercise.steps[currentPhaseIndex].duration;
-        final remaining = viewModel.getCurrentPhaseInfo().remainingInPhase;
-
-        if (total > 0) {
-          _lastAnimatedRemaining = remaining;
-          _lastAnimatedPhase = phase;
-          _startAnimation(phase: phase, total: total, remaining: remaining);
-          return;
-        }
-      }
-    }
-
-    // Fallback: not in an animated phase — freeze and clear dedup cache.
-    _animController.stop();
-    _previousProgress = orbProgress.value;
-    _targetProgress = orbProgress.value;
-    _lastAnimatedRemaining = null;
-    _lastAnimatedPhase = null;
   }
 
   void _startAnimation({required BreathPhase phase, required int total, required int remaining}) {
@@ -199,15 +161,12 @@ class OrbAnimationCoordinator {
     _previousProgress = _kMinProgress;
     _targetProgress = _kMinProgress;
     orbProgress.value = _kMinProgress;
-    _resetStreamSubscribed = false;
-    _lastAnimatedRemaining = null;
-    _lastAnimatedPhase = null;
+    _initialized = false;
   }
 
   void dispose() {
     _animController.dispose();
     _stateListener?.call();
-    _resetSubscription?.cancel();
     orbProgress.dispose();
   }
 
