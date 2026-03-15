@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:rxdart/rxdart.dart';
@@ -36,55 +37,134 @@ class LiveSocketService {
 
   LiveSocketService({required FlutterSecureStorage storage}) : _storage = storage;
 
+  // connect() can be called concurrently from two sources:
+  //   - SocketConnectionCoordinator auth listener (on login)
+  //   - SocketConnectionCoordinator connectivity listener (on network restore)
+  //
+  // A connectivity flap (none → wifi) can arrive while the first connect() is
+  // suspended at `await _storage.read()`, causing a second concurrent call.
+  // _isConnecting guards the synchronous entry point, but it is reset in
+  // `finally` before the sockets actually establish — so a second caller
+  // that arrives after the await gap would pass the entry check and create
+  // duplicate socket pairs, causing the server to evict the first connection.
+  //
+  // Two-level deduplication:
+  //   1. _isConnecting — fast path: rejects callers that arrive before the await.
+  //   2. _liveSocket != null check after the await — rejects callers that slipped
+  //      through while the first call was suspended, or that arrived after a
+  //      disconnect() reset _isConnecting to false mid-flight.
   Future<void> connect() async {
-    if (isConnected || _isConnecting) return;
+    if (isConnected || _isConnecting) {
+      log('[Socket] connect() skipped: isConnected=$isConnected _isConnecting=$_isConnecting', name: 'LiveSocketService');
+      return;
+    }
     _isConnecting = true;
+    log('[Socket] connect() start', name: 'LiveSocketService');
 
     try {
       final jwt = await _storage.read(key: 'jwt_token');
-      if (jwt == null) return;
+      if (jwt == null) {
+        log('[Socket] connect() aborted: no jwt_token in storage', name: 'LiveSocketService');
+        return;
+      }
+
+      // Second deduplication check (see comment above): disconnect() resets
+      // _isConnecting synchronously, so a concurrent connect() call that
+      // arrived after the await gap may have already built the sockets.
+      if (_liveSocket != null || _telemetrySocket != null) {
+        log('[Socket] connect() aborted: sockets already exist after await', name: 'LiveSocketService');
+        return;
+      }
 
       _connectionState.add(SocketConnectionState.connecting);
 
       final wsUrl = Environment.instance.wsBaseUrl;
+      log('[Socket] connecting to $wsUrl', name: 'LiveSocketService');
 
       _liveSocket = _buildSocket(wsUrl, '/live', jwt);
       _telemetrySocket = _buildSocket(wsUrl, '/telemetry', jwt);
 
-      _liveSocket!.onConnect((_) => _updateConnectionState());
-      _liveSocket!.onDisconnect((_) => _updateConnectionState());
-      _telemetrySocket!.onConnect((_) => _updateConnectionState());
-      _telemetrySocket!.onDisconnect((_) => _updateConnectionState());
+      _liveSocket!.onConnect((_) {
+        log('[Socket] /live connected', name: 'LiveSocketService');
+        _updateConnectionState();
+      });
+      _liveSocket!.onDisconnect((_) {
+        log('[Socket] /live disconnected', name: 'LiveSocketService');
+        _updateConnectionState();
+      });
+      _liveSocket!.onConnectError((e) {
+        log('[Socket] /live connect error: $e', name: 'LiveSocketService');
+      });
+      _liveSocket!.onError((e) {
+        log('[Socket] /live error: $e', name: 'LiveSocketService');
+      });
+      _liveSocket!.on('disconnect', (reason) {
+        log('[Socket] /live disconnect reason: $reason', name: 'LiveSocketService');
+      });
+
+      _telemetrySocket!.onConnect((_) {
+        log('[Socket] /telemetry connected', name: 'LiveSocketService');
+        _updateConnectionState();
+      });
+      _telemetrySocket!.onDisconnect((_) {
+        log('[Socket] /telemetry disconnected', name: 'LiveSocketService');
+        _updateConnectionState();
+      });
+      _telemetrySocket!.onConnectError((e) {
+        log('[Socket] /telemetry connect error: $e', name: 'LiveSocketService');
+      });
+      _telemetrySocket!.onError((e) {
+        log('[Socket] /telemetry error: $e', name: 'LiveSocketService');
+      });
+      _telemetrySocket!.on('disconnect', (reason) {
+        log('[Socket] /telemetry disconnect reason: $reason', name: 'LiveSocketService');
+      });
 
       _liveSocket!.on('session:state', (data) {
-        if (data is Map<String, dynamic>) _sessionStateController.add(data);
+        if (data is Map<String, dynamic>) {
+          log('[Socket] ← session:state: $data', name: 'LiveSocketService');
+          _sessionStateController.add(data);
+        }
       });
 
       _telemetrySocket!.onConnect((_) => _telemetryStateController.add(null));
 
       _telemetrySocket!.on('data:ack', (data) {
-        if (data is Map<String, dynamic>) _dataAckController.add(data);
+        if (data is Map<String, dynamic>) {
+          log('[Socket] ← data:ack: $data', name: 'LiveSocketService');
+          _dataAckController.add(data);
+        }
       });
 
       _liveSocket!.connect();
       _telemetrySocket!.connect();
+      log('[Socket] connect() called on both sockets', name: 'LiveSocketService');
     } finally {
       _isConnecting = false;
     }
   }
 
   void emitLive(String event, [dynamic data]) {
+    log('[Socket] → live $event: $data', name: 'LiveSocketService');
     _liveSocket?.emit(event, data);
   }
 
   void emitTelemetry(String event, [dynamic data]) {
+    log('[Socket] → telemetry $event', name: 'LiveSocketService');
     _telemetrySocket?.emit(event, data);
   }
 
   void disconnect() {
+    log('[Socket] disconnect()', name: 'LiveSocketService');
+    // Reset _isConnecting so that a subsequent connect() is not blocked.
+    // destroy() (not disconnect()) is used to fully tear down the socket and
+    // remove all its internal listeners — this prevents stale onConnect /
+    // onDisconnect callbacks from firing after the socket references are nulled,
+    // which would cause _updateConnectionState() to read null sockets and
+    // incorrectly emit disconnected even for a newly created socket pair.
     _isConnecting = false;
-    _liveSocket?.disconnect();
-    _telemetrySocket?.disconnect();
+    _liveSocket?.destroy();
+    _telemetrySocket?.destroy();
     _liveSocket = null;
     _telemetrySocket = null;
     _connectionState.add(SocketConnectionState.disconnected);
@@ -100,8 +180,10 @@ class LiveSocketService {
 
   void _updateConnectionState() {
     if (isConnected) {
+      log('[Socket] state → connected', name: 'LiveSocketService');
       _connectionState.add(SocketConnectionState.connected);
     } else {
+      log('[Socket] state → disconnected (live=${_liveSocket?.connected} telemetry=${_telemetrySocket?.connected})', name: 'LiveSocketService');
       _connectionState.add(SocketConnectionState.disconnected);
     }
   }
