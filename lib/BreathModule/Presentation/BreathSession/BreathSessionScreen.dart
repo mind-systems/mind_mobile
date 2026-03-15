@@ -18,7 +18,10 @@ import 'package:mind/BreathModule/Presentation/BreathSession/Views/SessionBottom
 
 /// Экран дыхательной сессии
 class BreathSessionScreen extends ConsumerStatefulWidget {
-  const BreathSessionScreen({super.key});
+  final VoidCallback? onRestart;
+  final VoidCallback? onDispose;
+
+  const BreathSessionScreen({this.onRestart, this.onDispose, super.key});
 
   static String name = 'breath_session';
   static String path = '/$name';
@@ -89,6 +92,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
 
   @override
   void dispose() {
+    widget.onDispose?.call();
     _coordinator.dispose();
     _orbCoordinator.dispose();
     _motionEngine.dispose();
@@ -244,6 +248,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
         child: ControlButton(
           icon: Icons.replay,
           onPressed: () {
+            widget.onRestart?.call();
             _coordinator.reset();
             _orbCoordinator.reset();
             viewModel.restartEngine();

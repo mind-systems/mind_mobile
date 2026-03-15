@@ -9,6 +9,7 @@ import 'package:mind/BreathModule/BreathSessionService.dart';
 import 'package:mind/BreathModule/ClockTickService.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
+import 'package:mind/BreathModule/Presentation/BreathSession/LiveSessionCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorScreen.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListScreen.dart';
@@ -34,13 +35,21 @@ class BreathModule {
     final tickService = ClockTickService()..simulateTick();
     final service = BreathSessionService(notifier: App.shared.breathSessionNotifier, userNotifier: App.shared.userNotifier);
     final coordinator = BreathSessionCoordinator(context, userNotifier: App.shared.userNotifier);
+
+    final liveCoordinator = LiveSessionCoordinator(liveSessionService: App.shared.liveSessionService, telemetryService: App.shared.telemetryService, sessionId: sessionId);
+
     return ProviderScope(
       overrides: [
-        breathViewModelProvider.overrideWith(
-          (ref) => BreathViewModel(tickService: tickService, service: service, coordinator: coordinator, liveSessionService: App.shared.liveSessionService, telemetryService: App.shared.telemetryService, sessionId: sessionId),
-        ),
+        breathViewModelProvider.overrideWith((ref) {
+          final vm = BreathViewModel(tickService: tickService, service: service, coordinator: coordinator, sessionId: sessionId);
+          liveCoordinator.start(vm.stream);
+          return vm;
+        }),
       ],
-      child: const BreathSessionScreen(),
+      child: BreathSessionScreen(
+        onRestart: liveCoordinator.reset,
+        onDispose: liveCoordinator.dispose,
+      ),
     );
   }
 
