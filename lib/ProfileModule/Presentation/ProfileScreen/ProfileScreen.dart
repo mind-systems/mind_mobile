@@ -7,7 +7,7 @@ import 'package:mind/Views/SettingsCells/SettingsEditableCell.dart';
 import 'package:mind/Views/SettingsCells/SettingsDropdownCell.dart';
 import 'package:mind/Views/SettingsCells/SettingsSection.dart';
 import 'package:mind/Views/SettingsCells/SettingsSectionHeader.dart';
-import 'package:mind/l10n/app_localizations.dart';
+import 'package:mind_l10n/mind_l10n.dart';
 
 class ProfileScreen extends ConsumerWidget {
   static const String path = '/profile';

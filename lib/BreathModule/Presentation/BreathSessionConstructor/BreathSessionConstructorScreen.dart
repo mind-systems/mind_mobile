@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mind/l10n/app_localizations.dart';
+import 'package:mind_l10n/mind_l10n.dart';
 
 import 'package:mind/Views/ControlButton.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorViewModel.dart';

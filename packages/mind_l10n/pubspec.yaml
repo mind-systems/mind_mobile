@@ -1,0 +1,14 @@
+name: mind_l10n
+description: Localization package for Mind app.
+version: 0.0.1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any

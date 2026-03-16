@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/Models/ExerciseEditCellModel.dart';
 import 'package:mind/Views/app_dimensions.dart';
-import 'package:mind/l10n/app_localizations.dart';
+import 'package:mind_l10n/mind_l10n.dart';
 
 class ExerciseEditCell extends StatelessWidget {
   final ExerciseEditCellModel model;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mind/Views/AlertModule/Models/AlertResult.dart';
-import 'package:mind/l10n/app_localizations.dart';
+import 'package:mind_l10n/mind_l10n.dart';
 
 abstract class AppAlert {
   static Future<void> show(

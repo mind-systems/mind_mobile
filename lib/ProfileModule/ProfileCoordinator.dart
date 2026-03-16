@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mind/Core/App.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/IProfileCoordinator.dart';
 import 'package:mind/Views/OptionPickerSheet.dart';
-import 'package:mind/l10n/app_localizations.dart';
+import 'package:mind_l10n/mind_l10n.dart';
 
 class ProfileCoordinator implements IProfileCoordinator {
   final BuildContext context;

@@ -3,7 +3,7 @@ import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/StatsCard.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/IHomeCoordinator.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Models/ModuleItem.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/HomeScreenCell.dart';
-import 'package:mind/l10n/app_localizations.dart';
+import 'package:mind_l10n/mind_l10n.dart';
 
 class HomeScreen extends StatelessWidget {
   static const String path = '/';

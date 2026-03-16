@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mind/l10n/app_localizations.dart';
+import 'package:mind_l10n/mind_l10n.dart';
 
 class ComingSoonScreen extends StatelessWidget {
   static const String path = '/coming-soon';
