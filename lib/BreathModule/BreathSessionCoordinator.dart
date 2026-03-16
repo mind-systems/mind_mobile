@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorScreen.dart';
+import 'package:breath_module/breath_module.dart' show IBreathSessionCoordinator, BreathSessionConstructorScreen;
 import 'package:mind/Core/Handlers/BreathSessionDeeplinkHandler.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Presentation/Login/Models/AuthResult.dart';

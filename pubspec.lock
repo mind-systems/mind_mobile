@@ -73,6 +73,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  breath_module:
+    dependency: "direct main"
+    description:
+      path: "packages/breath_module"
+      relative: true
+    source: path
+    version: "0.0.1"
   build:
     dependency: transitive
     description:

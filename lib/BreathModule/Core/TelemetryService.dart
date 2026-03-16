@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:mind/BreathModule/Presentation/BreathSession/ITelemetryService.dart';
+import 'package:breath_module/breath_module.dart' show ITelemetryService;
 import 'package:mind/Core/Socket/LiveSocketService.dart';
 import 'package:mind/Core/Socket/TelemetryBuffer.dart';
 

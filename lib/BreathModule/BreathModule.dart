@@ -7,13 +7,7 @@ import 'package:mind/BreathModule/BreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/BreathSessionListService.dart';
 import 'package:mind/BreathModule/BreathSessionService.dart';
 import 'package:mind/BreathModule/ClockTickService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/LiveSessionCoordinator.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorScreen.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorViewModel.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListScreen.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListViewModel.dart';
+import 'package:breath_module/breath_module.dart';
 import 'package:mind/Core/App.dart';
 
 class BreathModule {

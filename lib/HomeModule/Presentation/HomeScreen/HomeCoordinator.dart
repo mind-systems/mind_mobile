@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListScreen.dart';
+import 'package:breath_module/breath_module.dart' show BreathSessionListScreen;
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/ProfileScreen.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Presentation/Login/Models/AuthResult.dart';

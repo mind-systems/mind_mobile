@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:mind/BreathModule/ITickService.dart';
+import 'package:breath_module/breath_module.dart' show ITickService, TickData;
 
 class ClockTickService implements ITickService {
   final StreamController<TickData> _tickController = StreamController<TickData>.broadcast();

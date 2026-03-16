@@ -4,9 +4,7 @@ import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/Models/BreathSessionNotifierEvent.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/IBreathSessionListService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItem.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItemDTO.dart';
+import 'package:breath_module/breath_module.dart' hide SetShape;
 import 'package:mind/User/UserNotifier.dart';
 
 class BreathSessionListService implements IBreathSessionListService {

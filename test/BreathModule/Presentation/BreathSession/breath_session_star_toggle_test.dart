@@ -1,14 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mind/BreathModule/ITickService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathStepDTO.dart';
+import 'package:breath_module/breath_module.dart' show ITickService, TickData, BreathViewModel, IBreathSessionCoordinator, IBreathSessionService, BreathExerciseDTO, BreathSessionDTO, BreathStepDTO, BreathPhase;
 
 // ---------------------------------------------------------------------------
 // Fakes

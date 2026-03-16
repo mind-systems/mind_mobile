@@ -1,12 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/IBreathSessionListCoordinator.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/IBreathSessionListService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItem.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListItemDTO.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathSessionListState.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListViewModel.dart';
+import 'package:breath_module/breath_module.dart' show IBreathSessionListCoordinator, IBreathSessionListService, BreathSessionListItemDTO, BreathSessionListState, BreathSessionListViewModel, BreathSessionListEvent, SessionOwnership, PageLoadedEvent, SectionHeaderType, SectionHeaderModel, BreathSessionListCellModel;
 
 // ---------------------------------------------------------------------------
 // Fakes

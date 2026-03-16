@@ -1,6 +1,6 @@
 import 'package:mind/BreathModule/Core/LiveSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/LiveSessionState.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/ILiveSessionService.dart';
+import 'package:breath_module/breath_module.dart' show ILiveSessionService, LiveSessionDto;
 
 class LiveSessionService implements ILiveSessionService {
   final LiveSessionNotifier _notifier;

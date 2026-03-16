@@ -10,13 +10,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mind/BreathModule/ITickService.dart';
-import 'package:mind/BreathModule/Presentation/CommonModels/SetShape.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionStateMachine.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathStepDTO.dart';
+import 'package:breath_module/breath_module.dart' show ITickService, TickData, SetShape, BreathSessionStateMachine, BreathSessionStateMachineState, BreathExerciseDTO, BreathSessionDTO, BreathSessionState, BreathSessionStatus, SessionLoadState, BreathStepDTO, BreathPhase, ResetReason;
 
 // ---------------------------------------------------------------------------
 // Fake tick service

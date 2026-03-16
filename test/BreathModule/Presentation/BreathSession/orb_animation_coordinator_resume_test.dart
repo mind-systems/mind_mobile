@@ -2,16 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mind/BreathModule/ITickService.dart';
-import 'package:mind/BreathModule/Presentation/CommonModels/SetShape.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Animation/OrbAnimationCoordinator.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathStepDTO.dart';
+import 'package:breath_module/breath_module.dart' show ITickService, TickData, SetShape, OrbAnimationCoordinator, BreathViewModel, breathViewModelProvider, IBreathSessionCoordinator, IBreathSessionService, BreathExerciseDTO, BreathSessionDTO, BreathStepDTO, BreathPhase;
 
 // ---------------------------------------------------------------------------
 // Manual TickService — emits ticks on demand

@@ -1,7 +1,6 @@
 import 'package:mind/BreathModule/BreathSessionDTOMapper.dart';
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
+import 'package:breath_module/breath_module.dart' show IBreathSessionService, BreathSessionDTO;
 import 'package:mind/User/UserNotifier.dart';
 
 class BreathSessionService implements IBreathSessionService {

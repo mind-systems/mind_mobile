@@ -36,6 +36,8 @@ dependencies:
     path: packages/mind_l10n
   mind_ui:
     path: packages/mind_ui
+  breath_module:
+    path: packages/breath_module
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

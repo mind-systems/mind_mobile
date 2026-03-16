@@ -2,10 +2,7 @@ import 'package:mind/BreathModule/Models/StepType.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionState.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathSessionDTO.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathExerciseDTO.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathStepDTO.dart';
+import 'package:breath_module/breath_module.dart' show BreathSessionDTO, BreathExerciseDTO, BreathStepDTO, BreathPhase;
 
 class BreathSessionDTOMapper {
   static BreathSessionDTO map(BreathSession session, {required String currentUserId}) {

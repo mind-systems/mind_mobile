@@ -1,5 +1,5 @@
 import 'package:go_router/go_router.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
+import 'package:breath_module/breath_module.dart' show BreathSessionScreen;
 import 'package:mind/Core/Environment.dart';
 
 class BreathSessionDeeplinkHandler {

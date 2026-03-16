@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/IBreathSessionListCoordinator.dart';
+import 'package:breath_module/breath_module.dart' show BreathSessionScreen, IBreathSessionListCoordinator;
 
 class BreathSessionListCoordinator implements IBreathSessionListCoordinator {
   final BuildContext context;

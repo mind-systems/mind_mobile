@@ -1,8 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:mind/BreathModule/BreathModule.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionScreen.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionConstructor/BreathSessionConstructorScreen.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/BreathSessionListScreen.dart';
+import 'package:breath_module/breath_module.dart' show BreathSessionScreen, BreathSessionConstructorScreen, BreathSessionListScreen;
 import 'package:mind/HomeModule/HomeModule.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/HomeScreen.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/ProfileScreen.dart';
