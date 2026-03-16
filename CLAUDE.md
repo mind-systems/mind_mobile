@@ -49,9 +49,10 @@ Screen + Coordinator (UI + navigation/side-effects)
 
 **Key principles**:
 - UI never touches repositories or notifiers directly.
-- The **ViewModel is the module boundary** — everything from ViewModel inward could be extracted into its own package. The Service interface is declared on this side of the boundary.
-- **Domain models do not leak into the module.** The Service converts domain models to DTOs before passing them to the ViewModel, so the module depends only on its own DTOs and the Service interface.
-- The Service implements an interface defined at the module boundary, keeping the module decoupled from concrete domain implementations.
+- **Modules are standalone Flutter packages** — `packages/breath_module`, `packages/mind_ui`, `packages/mind_l10n`. A package cannot import from `lib/` and has no knowledge of the domain layer.
+- The **ViewModel is the module boundary** — the Service interface is declared inside the package, alongside the ViewModel that uses it. The concrete Service lives in `lib/` and bridges domain → package via DTO conversion.
+- **Domain models do not leak into the module.** The Service converts domain models to DTOs before passing them to the ViewModel, so the package depends only on its own DTOs and the Service interface.
+- **Modules are wired at the app layer** — `lib/BreathModule/BreathModule.dart` is the assembly point: it creates concrete services and coordinators, injects domain notifiers from `App.shared`, and returns a `ProviderScope`-wrapped screen. See `docs/core/module-system.md`.
 
 ### Dependency Injection
 
@@ -63,21 +64,29 @@ DI is manual via `App.shared` singleton (`lib/Core/App.dart`). See `.ai-factory/
 |------|---------|
 | `lib/Core/` | App singleton, Database (Drift ORM + DAO interfaces), HttpClient (Dio), routing, environment config |
 | `lib/User/` | Auth state, login/logout, UserNotifier, UserRepository, IAuthApi |
-| `lib/BreathModule/` | Breathing session domain — models, repositories, notifiers, all presentation screens |
-| `lib/Views/` | Shared UI components (snackbar, buttons, text fields) |
+| `lib/BreathModule/` | Breathing session domain (notifiers, repositories, models) + concrete service/coordinator implementations wired to `packages/breath_module` |
+| `packages/breath_module/` | Standalone package — all presentation screens, ViewModels, service/coordinator interfaces, DTOs |
+| `packages/mind_ui/` | Standalone package — shared UI components (ControlButton, SnackBarModule, AppDimensions, theme tokens) |
+| `packages/mind_l10n/` | Standalone package — ARB files and generated `AppLocalizations` |
 
 ### BreathModule internals
 
-The breathing session feature has its own layered sub-structure under `lib/BreathModule/`:
+The breathing session feature is split across the domain layer (`lib/BreathModule/`) and the presentation package (`packages/breath_module/`):
 
+**Domain layer** (`lib/BreathModule/`):
 - **`Core/BreathSessionNotifier.dart`** — domain notifier with pagination, CRUD, and typed event emission
-- **`Presentation/BreathSessionsList/`** — list screen with coordinator, ViewModel, and presentation DTOs
-- **`Presentation/BreathSession/`** — active session screen with 5-component system:
+- **`BreathModule.dart`** — assembly point: creates services/coordinators, injects `App.shared` dependencies, returns `ProviderScope`-wrapped screens
+- **`BreathSessionListService`**, **`BreathSessionService`**, **`BreathSessionConstructorService`** — implement interfaces declared in `packages/breath_module`, bridge domain models → DTOs
+
+**Presentation package** (`packages/breath_module/`):
+- **`BreathSessionsList/`** — list screen with ViewModel, service/coordinator interfaces, DTOs
+- **`BreathSession/`** — active session screen with 5-component system:
   - `BreathSessionStateMachine` — state machine for breathing phases (inhale / hold / exhale / rest); emits enriched state with `resetReason`, phase metadata, and shape fields
   - `BreathMotionEngine` — physics-based position animation
   - `BreathShapeShifter` — path morphing between shapes (circle / square / triangle)
   - `BreathAnimationCoordinator` — orchestrates motion + shape components; reads enriched state fields directly from `BreathSessionState`
   - `LiveSessionCoordinator` — session lifecycle and telemetry dispatch; subscribes to `BreathSessionState` stream
+- **`BreathSessionConstructor/`** — session editor screen with ViewModel, interfaces, DTOs
 
 ### Routing
 
@@ -101,7 +110,7 @@ GoRouter is configured in `lib/router.dart`. Routes:
 ## Patterns to follow
 
 - **Notifiers emit typed events** — prefer adding event types (e.g., `SessionCreated`, `SessionDeleted`) over ad-hoc stream triggers. See `docs/core/notifier-pattern.md`.
-- **Coordinator pattern** — navigation and side effects live in a coordinator class, not the ViewModel or screen. See existing coordinators in `lib/BreathModule/Presentation/BreathSessionsList/`.
+- **Coordinator pattern** — navigation and side effects live in a coordinator class, not the ViewModel or screen. See existing coordinators in `lib/BreathModule/`.
 - **Service interface at module boundary** — the Service interface is declared in the module (alongside the ViewModel), not in the domain. The concrete Service implements it and bridges domain → module via DTO conversion.
 - **DTOs at the domain/module boundary** — domain models are converted to DTOs by the Service before crossing into the module. The ViewModel and everything inside the module work only with DTOs, never with raw domain models.
 - **Domain layer is pure Dart** — no Flutter or Riverpod imports in `Notifier` or `Repository` classes.
@@ -116,6 +125,7 @@ Detailed docs and Mermaid architecture diagrams live in `docs/`:
 - `docs/core/app-settings.md` — Theme and language persistence, server sync, AppSettingsNotifier
 - `docs/core/auth-gated-navigation.md` — Auth-gated navigation and route guards
 - `docs/core/alerts-and-snackbars.md` — When to use AppAlert vs SnackBar
+- `docs/core/module-system.md` — Pluggable package architecture, module boundary, wiring pattern
 - `docs/user/login-flow.md` — Login flow: passwordless email and Google Sign-In
 - `docs/breath/session/view-model.md` — BreathSessionStateMachine and BreathViewModel behaviour
 - `docs/breath/session/session-lifecycle.md` — session completion, idle state, and restart flow
