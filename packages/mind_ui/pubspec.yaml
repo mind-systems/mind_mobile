@@ -1,6 +1,7 @@
 name: mind_ui
 description: Shared UI components and theming for Mind app.
 version: 0.0.1
+publish_to: none
 
 environment:
   sdk: '>=3.7.0 <4.0.0'
