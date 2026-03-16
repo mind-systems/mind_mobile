@@ -11,6 +11,9 @@ import 'package:breath_module/breath_module.dart' show IBreathSessionListCoordin
 class _FakeCoordinator implements IBreathSessionListCoordinator {
   @override
   void openSession(String sessionId) {}
+
+  @override
+  void openConstructor() {}
 }
 
 class _FakeService implements IBreathSessionListService {
