@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/ProfileViewModel.dart';
-import 'package:mind/Views/AlertModule/AppAlert.dart';
-import 'package:mind/Views/SettingsCells/SettingsCell.dart';
-import 'package:mind/Views/SettingsCells/SettingsEditableCell.dart';
-import 'package:mind/Views/SettingsCells/SettingsDropdownCell.dart';
-import 'package:mind/Views/SettingsCells/SettingsSection.dart';
-import 'package:mind/Views/SettingsCells/SettingsSectionHeader.dart';
+import 'package:mind_ui/mind_ui.dart';
 import 'package:mind_l10n/mind_l10n.dart';
 
 class ProfileScreen extends ConsumerWidget {

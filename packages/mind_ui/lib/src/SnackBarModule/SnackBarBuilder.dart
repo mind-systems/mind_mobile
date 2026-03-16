@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'Models/SnackBarEvent.dart';
-import 'Models/SnackBarType.dart';
+import 'package:mind_ui/src/SnackBarModule/Models/SnackBarEvent.dart';
+import 'package:mind_ui/src/SnackBarModule/Models/SnackBarType.dart';
 
 class SnackBarBuilder {
   static SnackBar build(SnackBarEvent event) {

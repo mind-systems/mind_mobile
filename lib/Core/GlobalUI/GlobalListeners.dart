@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/Core/GlobalUI/GlobalKeys.dart';
 import 'package:mind/User/LogoutNotifier.dart';
-import 'package:mind/Views/SnackBarModule/GlobalSnackBarNotifier.dart';
-import 'package:mind/Views/SnackBarModule/Models/SnackBarEvent.dart';
-import 'package:mind/Views/SnackBarModule/SnackBarBuilder.dart';
+import 'package:mind_ui/mind_ui.dart';
 
 /// Слушает глобальные события приложения и координирует показ UI.
 ///

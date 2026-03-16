@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Models/ModuleItem.dart';
-import 'package:mind/Views/app_dimensions.dart';
+import 'package:mind_ui/mind_ui.dart';
 
 class HomeScreenCell extends StatelessWidget {
   final ModuleItem item;

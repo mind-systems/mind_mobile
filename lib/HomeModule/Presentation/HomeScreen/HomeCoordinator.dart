@@ -6,7 +6,7 @@ import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Presentation/Login/Models/AuthResult.dart';
 import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
 import 'package:mind/User/UserNotifier.dart';
-import 'package:mind/Views/ComingSoonScreen.dart';
+import 'package:mind_ui/mind_ui.dart';
 import 'IHomeCoordinator.dart';
 
 class HomeCoordinator implements IHomeCoordinator {

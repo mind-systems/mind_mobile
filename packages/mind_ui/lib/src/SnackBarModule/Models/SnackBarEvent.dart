@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'SnackBarType.dart';
+import 'package:mind_ui/src/SnackBarModule/Models/SnackBarType.dart';
 
 class SnackBarEvent {
   final String message;

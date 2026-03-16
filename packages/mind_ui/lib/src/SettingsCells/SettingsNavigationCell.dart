@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:mind/Views/SettingsCells/SettingsCell.dart';
+import 'package:mind_ui/src/SettingsCells/SettingsCell.dart';
 
-class SettingsDropdownCell extends StatelessWidget {
+class SettingsNavigationCell extends StatelessWidget {
   final String title;
   final String value;
   final VoidCallback onTap;
 
-  const SettingsDropdownCell({
+  const SettingsNavigationCell({
     super.key,
     required this.title,
     required this.value,
@@ -24,7 +24,7 @@ class SettingsDropdownCell extends StatelessWidget {
         children: [
           Text(value, style: TextStyle(color: onSurface.withValues(alpha: 0.6))),
           const SizedBox(width: 6),
-          Icon(Icons.expand_more, size: 18, color: onSurface.withValues(alpha: 0.5)),
+          Icon(Icons.chevron_right, size: 20, color: onSurface.withValues(alpha: 0.5)),
         ],
       ),
       onTap: onTap,

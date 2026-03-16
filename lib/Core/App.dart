@@ -25,7 +25,7 @@ import 'package:mind/Core/AppSettings/AppSettingsNotifier.dart';
 import 'package:mind/Core/AppSettings/AppSettingsRepository.dart';
 import 'package:mind/Core/AppSettings/AppSettingsState.dart';
 import 'package:mind/Core/AppSettings/SharedPreferencesStorage.dart';
-import 'package:mind/Core/AppTheme.dart';
+import 'package:mind_ui/mind_ui.dart';
 import 'package:mind/Core/Database/Database.dart';
 import 'package:mind/Core/DeeplinkRouter.dart';
 import 'package:mind/Core/Environment.dart';

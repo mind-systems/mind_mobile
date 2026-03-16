@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mind/Views/AlertModule/Models/AlertResult.dart';
+import 'package:mind_ui/src/AlertModule/Models/AlertResult.dart';
 import 'package:mind_l10n/mind_l10n.dart';
 
 abstract class AppAlert {

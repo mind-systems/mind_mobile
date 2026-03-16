@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mind/Views/SettingsCells/SettingsCell.dart';
+import 'package:mind_ui/src/SettingsCells/SettingsCell.dart';
 
 class SettingsSwitchCell extends StatelessWidget {
   final String title;

@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'Models/SnackBarEvent.dart';
+import 'package:mind_ui/src/SnackBarModule/Models/SnackBarEvent.dart';
 
 class GlobalSnackBarNotifier extends Notifier<SnackBarEvent?> {
   @override

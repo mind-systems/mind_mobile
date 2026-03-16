@@ -8,8 +8,7 @@ import 'package:mind/BreathModule/Presentation/BreathSessionsList/Models/BreathS
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListCell.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListSectionHeader.dart';
 import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/BreathSessionListSkeletonCell.dart';
-import 'package:mind/Views/SnackBarModule/GlobalSnackBarNotifier.dart';
-import 'package:mind/Views/SnackBarModule/Models/SnackBarEvent.dart';
+import 'package:mind_ui/mind_ui.dart';
 
 class BreathSessionListScreen extends ConsumerStatefulWidget {
   const BreathSessionListScreen({super.key});
