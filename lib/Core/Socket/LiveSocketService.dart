@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
@@ -126,6 +127,13 @@ class LiveSocketService implements ILiveSocketService {
         log('[Socket] /telemetry disconnect reason: $reason', name: 'LiveSocketService');
       });
 
+      _liveSocket!.on('exception', (data) {
+        log('[Socket] ← live exception: $data', name: 'LiveSocketService', level: 1000);
+      });
+      _telemetrySocket!.on('exception', (data) {
+        log('[Socket] ← telemetry exception: $data', name: 'LiveSocketService', level: 1000);
+      });
+
       _liveSocket!.on('session:state', (data) {
         if (data is Map<String, dynamic>) {
           log('[Socket] ← session:state: $data', name: 'LiveSocketService');
@@ -155,14 +163,18 @@ class LiveSocketService implements ILiveSocketService {
   @override
   void emitLive(String event, [Map<String, dynamic>? data]) {
     log('[Socket] → live $event: $data', name: 'LiveSocketService');
-    _liveSocket?.emit(event, data);
-    lastSentMessage.value = 'live: $event';
+    _liveSocket?.emit(event, data ?? <String, dynamic>{});
+    if (WidgetsBinding.instance.schedulerPhase == SchedulerPhase.idle) {
+      lastSentMessage.value = 'live: $event';
+    }
   }
 
   void emitTelemetry(String event, [dynamic data]) {
     log('[Socket] → telemetry $event', name: 'LiveSocketService');
     _telemetrySocket?.emit(event, data);
-    lastSentMessage.value = 'telemetry: $event';
+    if (WidgetsBinding.instance.schedulerPhase == SchedulerPhase.idle) {
+      lastSentMessage.value = 'telemetry: $event';
+    }
   }
 
   void disconnect() {

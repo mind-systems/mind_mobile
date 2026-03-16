@@ -30,7 +30,7 @@ class BreathModule {
     final service = BreathSessionService(notifier: App.shared.breathSessionNotifier, userNotifier: App.shared.userNotifier);
     final coordinator = BreathSessionCoordinator(context, userNotifier: App.shared.userNotifier);
 
-    final liveCoordinator = LiveSessionCoordinator(liveSessionService: App.shared.liveSessionService, telemetryService: App.shared.telemetryService, sessionId: sessionId);
+    final liveCoordinator = LiveBreathSessionCoordinator(liveSessionService: App.shared.liveSessionService, telemetryService: App.shared.telemetryService, sessionId: sessionId);
 
     return ProviderScope(
       overrides: [

@@ -34,9 +34,9 @@ import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
 import 'package:mind/Core/Handlers/BreathSessionDeeplinkHandler.dart';
 import 'package:mind/User/Infrastructure/GoogleAuthProvider.dart';
 import 'package:mind/User/Infrastructure/SecureStorage.dart';
-import 'package:mind/BreathModule/Core/LiveSessionNotifier.dart';
-import 'package:mind/BreathModule/Core/LiveSessionService.dart';
-import 'package:mind/BreathModule/Core/TelemetryService.dart';
+import 'package:mind/BreathModule/Core/LiveBreathSessionNotifier.dart';
+import 'package:mind/BreathModule/Core/LiveBreathSessionService.dart';
+import 'package:mind/BreathModule/Core/BreathTelemetryService.dart';
 import 'package:mind/Core/Socket/LiveSocketService.dart';
 import 'package:mind/Core/Socket/SocketConnectionCoordinator.dart';
 import 'package:mind/User/LogoutNotifier.dart';
@@ -62,9 +62,9 @@ class App {
   final AppSettingsNotifier appSettingsNotifier;
   final LiveSocketService liveSocketService;
   final SocketConnectionCoordinator socketConnectionCoordinator;
-  final LiveSessionNotifier liveSessionNotifier;
-  final LiveSessionService liveSessionService;
-  final TelemetryService telemetryService;
+  final LiveBreathSessionNotifier liveSessionNotifier;
+  final LiveBreathSessionService liveSessionService;
+  final BreathTelemetryService telemetryService;
 
   App._({
     required this.db,
@@ -135,9 +135,9 @@ class App {
     final liveSocketService = LiveSocketService(storage: const FlutterSecureStorage());
 
     final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService);
-    final liveSessionNotifier = LiveSessionNotifier(liveSocketService: liveSocketService, authStream: userNotifier.stream);
-    final liveSessionService = LiveSessionService(notifier: liveSessionNotifier);
-    final telemetryService = TelemetryService(liveSocketService: liveSocketService);
+    final liveSessionNotifier = LiveBreathSessionNotifier(liveSocketService: liveSocketService, authStream: userNotifier.stream);
+    final liveSessionService = LiveBreathSessionService(notifier: liveSessionNotifier);
+    final telemetryService = BreathTelemetryService(liveSocketService: liveSocketService);
 
     shared = App._(
       db: db,

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mind/BreathModule/Core/LiveSessionEvent.dart';
+import 'package:mind/BreathModule/Core/LiveBreathSessionEvent.dart';
 import 'package:mind/Core/App.dart';
 import 'package:mind/User/Models/UserStatsDTO.dart';
 
@@ -18,13 +18,13 @@ class StatsCard extends ConsumerStatefulWidget {
 }
 
 class _StatsCardState extends ConsumerState<StatsCard> {
-  late final StreamSubscription<LiveSessionEvent> _eventSub;
+  late final StreamSubscription<LiveBreathSessionEvent> _eventSub;
 
   @override
   void initState() {
     super.initState();
     _eventSub = App.shared.liveSessionNotifier.events.listen((event) {
-      if (event is LiveSessionEnded) {
+      if (event is LiveBreathSessionEnded) {
         ref.invalidate(userStatsFutureProvider);
       }
     });

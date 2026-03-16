@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:breath_module/breath_module.dart' show ITelemetryService;
+import 'package:breath_module/breath_module.dart' show IBreathTelemetryService;
 import 'package:mind/Core/Socket/LiveSocketService.dart';
 import 'package:mind/Core/Socket/TelemetryBuffer.dart';
 
-class TelemetryService implements ITelemetryService {
+class BreathTelemetryService implements IBreathTelemetryService {
   final LiveSocketService _liveSocketService;
   final TelemetryBuffer _buffer = TelemetryBuffer();
 
@@ -14,7 +14,7 @@ class TelemetryService implements ITelemetryService {
   StreamSubscription<void>? _telemetryStateSub;
   StreamSubscription<Map<String, dynamic>>? _dataAckSub;
 
-  TelemetryService({required LiveSocketService liveSocketService})
+  BreathTelemetryService({required LiveSocketService liveSocketService})
       : _liveSocketService = liveSocketService {
     _telemetryStateSub = _liveSocketService.telemetryStateEvents.listen((_) => flushBuffer());
     _dataAckSub = _liveSocketService.dataAckEvents.listen(_onDataAck);
@@ -24,9 +24,11 @@ class TelemetryService implements ITelemetryService {
   void sendSample(String sessionId, String phase, int durationMs) {
     final payload = {
       'sessionId': sessionId,
-      'phase': phase,
-      'durationMs': durationMs,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'data': {
+        'phase': phase,
+        'durationMs': durationMs,
+      },
     };
 
     if (_canSendNow()) {

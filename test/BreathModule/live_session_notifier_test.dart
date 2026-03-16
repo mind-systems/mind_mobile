@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rxdart/rxdart.dart';
 
-import 'package:mind/BreathModule/Core/LiveSessionNotifier.dart';
-import 'package:mind/BreathModule/Core/LiveSessionEvent.dart';
-import 'package:mind/BreathModule/Core/LiveSessionState.dart';
+import 'package:mind/BreathModule/Core/LiveBreathSessionNotifier.dart';
+import 'package:mind/BreathModule/Core/LiveBreathSessionEvent.dart';
+import 'package:mind/BreathModule/Core/LiveBreathSessionState.dart';
 import 'package:mind/Core/Socket/ILiveSocketService.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Models/User.dart';
@@ -43,11 +43,11 @@ final _user = User(id: 'user-1', email: 'a@b.com', name: 'A', language: '', isGu
 // Factory
 // ---------------------------------------------------------------------------
 
-({LiveSessionNotifier notifier, FakeLiveSocketService socket, BehaviorSubject<AuthState> authSubject})
+({LiveBreathSessionNotifier notifier, FakeLiveSocketService socket, BehaviorSubject<AuthState> authSubject})
     _make() {
   final socket = FakeLiveSocketService();
   final authSubject = BehaviorSubject<AuthState>.seeded(AuthenticatedState(_user));
-  final notifier = LiveSessionNotifier(liveSocketService: socket, authStream: authSubject.stream);
+  final notifier = LiveBreathSessionNotifier(liveSocketService: socket, authStream: authSubject.stream);
   return (notifier: notifier, socket: socket, authSubject: authSubject);
 }
 
@@ -60,11 +60,11 @@ void main() {
     test('emits activity:start to socket with correct payload', () {
       final (:notifier, :socket, :authSubject) = _make();
 
-      notifier.start('breath', 'session-abc');
+      notifier.start('breath_session', 'breath', 'session-abc');
 
       expect(socket.emitted, hasLength(1));
       expect(socket.emitted.first.$1, 'activity:start');
-      expect(socket.emitted.first.$2, {'activityRefType': 'breath', 'activityRefId': 'session-abc'});
+      expect(socket.emitted.first.$2, {'activityType': 'breath_session', 'activityRefType': 'breath', 'activityRefId': 'session-abc'});
 
       notifier.dispose();
       socket.dispose();
@@ -74,8 +74,8 @@ void main() {
     test('second start() before server ACK does not emit again', () {
       final (:notifier, :socket, :authSubject) = _make();
 
-      notifier.start('breath', 'session-abc');
-      notifier.start('breath', 'session-abc');
+      notifier.start('breath_session', 'breath', 'session-abc');
+      notifier.start('breath_session', 'breath', 'session-abc');
 
       expect(socket.emitted, hasLength(1));
 
@@ -90,7 +90,7 @@ void main() {
       await Future.delayed(Duration.zero);
 
       socket.emitted.clear();
-      notifier.start('breath', 'session-abc');
+      notifier.start('breath_session', 'breath', 'session-abc');
 
       expect(socket.emitted, isEmpty);
 
@@ -106,7 +106,7 @@ void main() {
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
       await Future.delayed(Duration.zero);
 
-      expect(notifier.currentState.status, LiveSessionStatus.active);
+      expect(notifier.currentState.status, LiveBreathSessionStatus.active);
       expect(notifier.currentState.isPaused, isFalse);
       expect(notifier.currentState.liveSessionId, 'live-1');
 
@@ -117,7 +117,7 @@ void main() {
 
     test('clears _isPendingStart', () async {
       final (:notifier, :socket, :authSubject) = _make();
-      notifier.start('breath', 'session-abc');
+      notifier.start('breath_session', 'breath', 'session-abc');
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
       await Future.delayed(Duration.zero);
 
@@ -127,7 +127,7 @@ void main() {
       // to idle first then trying
       socket.injectServerMessage({'status': 'idle'});
       await Future.delayed(Duration.zero);
-      notifier.start('breath', 'session-abc');
+      notifier.start('breath_session', 'breath', 'session-abc');
       expect(socket.emitted, hasLength(1));
 
       notifier.dispose();
@@ -135,17 +135,17 @@ void main() {
       authSubject.close();
     });
 
-    test('emits LiveSessionStarted event with liveSessionId', () async {
+    test('emits LiveBreathSessionStarted event with liveSessionId', () async {
       final (:notifier, :socket, :authSubject) = _make();
-      final events = <LiveSessionEvent>[];
+      final events = <LiveBreathSessionEvent>[];
       notifier.events.listen(events.add);
 
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
       await Future.delayed(Duration.zero);
 
       expect(events, hasLength(1));
-      expect(events.first, isA<LiveSessionStarted>());
-      expect((events.first as LiveSessionStarted).liveSessionId, 'live-1');
+      expect(events.first, isA<LiveBreathSessionStarted>());
+      expect((events.first as LiveBreathSessionStarted).liveSessionId, 'live-1');
 
       notifier.dispose();
       socket.dispose();
@@ -154,9 +154,9 @@ void main() {
   });
 
   group('server message → active (resume from paused)', () {
-    test('emits LiveSessionUnpaused when isPaused transitions false→true→false', () async {
+    test('emits LiveBreathSessionUnpaused when isPaused transitions false→true→false', () async {
       final (:notifier, :socket, :authSubject) = _make();
-      final events = <LiveSessionEvent>[];
+      final events = <LiveBreathSessionEvent>[];
       notifier.events.listen(events.add);
 
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
@@ -166,7 +166,7 @@ void main() {
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
       await Future.delayed(Duration.zero);
 
-      expect(events.last, isA<LiveSessionUnpaused>());
+      expect(events.last, isA<LiveBreathSessionUnpaused>());
 
       notifier.dispose();
       socket.dispose();
@@ -175,9 +175,9 @@ void main() {
   });
 
   group('server message → active (pause)', () {
-    test('emits LiveSessionPaused when isPaused transitions false→true', () async {
+    test('emits LiveBreathSessionPaused when isPaused transitions false→true', () async {
       final (:notifier, :socket, :authSubject) = _make();
-      final events = <LiveSessionEvent>[];
+      final events = <LiveBreathSessionEvent>[];
       notifier.events.listen(events.add);
 
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
@@ -185,7 +185,7 @@ void main() {
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': true});
       await Future.delayed(Duration.zero);
 
-      expect(events.last, isA<LiveSessionPaused>());
+      expect(events.last, isA<LiveBreathSessionPaused>());
 
       notifier.dispose();
       socket.dispose();
@@ -323,7 +323,7 @@ void main() {
       socket.injectServerMessage({'status': 'ended'});
       await Future.delayed(Duration.zero);
 
-      expect(notifier.currentState.status, LiveSessionStatus.idle);
+      expect(notifier.currentState.status, LiveBreathSessionStatus.idle);
       expect(notifier.currentState.liveSessionId, isNull);
 
       notifier.dispose();
@@ -331,9 +331,9 @@ void main() {
       authSubject.close();
     });
 
-    test('emits LiveSessionEnded event', () async {
+    test('emits LiveBreathSessionEnded event', () async {
       final (:notifier, :socket, :authSubject) = _make();
-      final events = <LiveSessionEvent>[];
+      final events = <LiveBreathSessionEvent>[];
       notifier.events.listen(events.add);
 
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
@@ -341,7 +341,7 @@ void main() {
       socket.injectServerMessage({'status': 'ended'});
       await Future.delayed(Duration.zero);
 
-      expect(events.last, isA<LiveSessionEnded>());
+      expect(events.last, isA<LiveBreathSessionEnded>());
 
       notifier.dispose();
       socket.dispose();
@@ -358,16 +358,16 @@ void main() {
       socket.injectServerMessage({'status': 'abandoned'});
       await Future.delayed(Duration.zero);
 
-      expect(notifier.currentState.status, LiveSessionStatus.idle);
+      expect(notifier.currentState.status, LiveBreathSessionStatus.idle);
 
       notifier.dispose();
       socket.dispose();
       authSubject.close();
     });
 
-    test('emits LiveSessionAbandoned event', () async {
+    test('emits LiveBreathSessionAbandoned event', () async {
       final (:notifier, :socket, :authSubject) = _make();
-      final events = <LiveSessionEvent>[];
+      final events = <LiveBreathSessionEvent>[];
       notifier.events.listen(events.add);
 
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
@@ -375,7 +375,7 @@ void main() {
       socket.injectServerMessage({'status': 'abandoned'});
       await Future.delayed(Duration.zero);
 
-      expect(events.last, isA<LiveSessionAbandoned>());
+      expect(events.last, isA<LiveBreathSessionAbandoned>());
 
       notifier.dispose();
       socket.dispose();
@@ -392,7 +392,7 @@ void main() {
       socket.injectServerMessage({'status': 'idle'});
       await Future.delayed(Duration.zero);
 
-      expect(notifier.currentState.status, LiveSessionStatus.idle);
+      expect(notifier.currentState.status, LiveBreathSessionStatus.idle);
 
       notifier.dispose();
       socket.dispose();
@@ -401,10 +401,10 @@ void main() {
 
     test('clears _isPendingStart and no event emitted', () async {
       final (:notifier, :socket, :authSubject) = _make();
-      final events = <LiveSessionEvent>[];
+      final events = <LiveBreathSessionEvent>[];
       notifier.events.listen(events.add);
 
-      notifier.start('breath', 'session-abc');
+      notifier.start('breath_session', 'breath', 'session-abc');
       socket.injectServerMessage({'status': 'idle'});
       await Future.delayed(Duration.zero);
 
@@ -412,7 +412,7 @@ void main() {
       expect(events, isEmpty);
       // Pending cleared — another start() should now emit
       socket.emitted.clear();
-      notifier.start('breath', 'session-abc');
+      notifier.start('breath_session', 'breath', 'session-abc');
       expect(socket.emitted, hasLength(1));
 
       notifier.dispose();
@@ -426,12 +426,12 @@ void main() {
       final (:notifier, :socket, :authSubject) = _make();
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
       await Future.delayed(Duration.zero);
-      expect(notifier.currentState.status, LiveSessionStatus.active);
+      expect(notifier.currentState.status, LiveBreathSessionStatus.active);
 
       authSubject.add(GuestState(_guest));
       await Future.delayed(Duration.zero);
 
-      expect(notifier.currentState.status, LiveSessionStatus.idle);
+      expect(notifier.currentState.status, LiveBreathSessionStatus.idle);
       expect(notifier.currentState.liveSessionId, isNull);
 
       notifier.dispose();
