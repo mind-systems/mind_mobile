@@ -11,34 +11,35 @@ import 'IBreathSessionListCoordinator.dart';
 enum SessionListError { loadFailed, pagingFailed, syncFailed }
 
 final breathSessionListViewModelProvider =
-    StateNotifierProvider<BreathSessionListViewModel, BreathSessionListState>((
-      ref,
-    ) {
+    NotifierProvider<BreathSessionListViewModel, BreathSessionListState>(() {
       throw UnimplementedError(
-        'BreathSessionListViewModel должен быть передан через override в модуле',
+        'BreathSessionListViewModel must be overridden via ProviderScope',
       );
     });
 
-class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
+class BreathSessionListViewModel extends Notifier<BreathSessionListState> {
   final IBreathSessionListService service;
   final IBreathSessionListCoordinator coordinator;
   final int pageSize;
 
   int _currentPage = 0;
-  StreamSubscription<BreathSessionListEvent>? _subscription;
 
   void Function(SessionListError error)? onErrorEvent;
 
-  BreathSessionListViewModel({required this.service, required this.coordinator, this.pageSize = 50})
-      : super(
-         BreathSessionListState(
-           items: [SkeletonCellModel(animated: true)],
-           mode: BreathSessionListMode.initialLoading,
-           hasMore: true,
-         ),
-       ) {
-    _subscription = service.observeChanges().listen(_onEvent);
+  BreathSessionListViewModel({required this.service, required this.coordinator, this.pageSize = 50});
+
+  @override
+  BreathSessionListState build() {
+    final subscription = service.observeChanges().listen(_onEvent);
+    ref.onDispose(() => subscription.cancel());
+
     _loadInitialPage();
+
+    return BreathSessionListState(
+      items: [SkeletonCellModel(animated: true)],
+      mode: BreathSessionListMode.initialLoading,
+      hasMore: true,
+    );
   }
 
   void _onEvent(BreathSessionListEvent event) {
@@ -212,12 +213,6 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
 
   void onSessionTap(String sessionId) {
     coordinator.openSession(sessionId);
-  }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    super.dispose();
   }
 
   /// Извлекает только ячейки с данными из items (без headers/skeletons)

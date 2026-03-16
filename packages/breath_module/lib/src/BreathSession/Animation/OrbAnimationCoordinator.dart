@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../CommonModels/SetShape.dart';
 import '../Models/BreathSessionState.dart';
 import '../BreathSessionViewModel.dart';
@@ -20,7 +19,7 @@ class OrbAnimationCoordinator {
   double _maxProgress = _kMaxProgressOther;
 
   bool _initialized = false;
-  RemoveListener? _stateListener;
+  void Function()? _stateListener;
 
   // Interpolation
   late AnimationController _animController;
@@ -38,7 +37,7 @@ class OrbAnimationCoordinator {
       duration: const Duration(seconds: 1),
     )..addListener(_onAnimationTick);
 
-    _stateListener = viewModel.addListener(_onStateChanged);
+    _stateListener = viewModel.listen(_onStateChanged);
 
     if (initialState.loadState == SessionLoadState.ready) {
       _updateMaxProgress(initialState.nextExerciseShape);

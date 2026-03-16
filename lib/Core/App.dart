@@ -161,7 +161,7 @@ class App {
 
     runApp(ProviderScope(
       overrides: [
-        appSettingsProvider.overrideWith((ref) => appSettingsNotifier),
+        appSettingsProvider.overrideWith(() => appSettingsNotifier),
       ],
       child: const MyApp(),
     ));

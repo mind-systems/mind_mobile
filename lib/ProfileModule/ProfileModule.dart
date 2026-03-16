@@ -16,7 +16,7 @@ class ProfileModule {
     return ProviderScope(
       overrides: [
         profileViewModelProvider.overrideWith(
-          (ref) => ProfileViewModel(service: service, coordinator: coordinator),
+          () => ProfileViewModel(service: service, coordinator: coordinator),
         ),
       ],
       child: const ProfileScreen(),

@@ -15,7 +15,7 @@ class OnboardingModule {
     return ProviderScope(
       overrides: [
         loginViewModelProvider.overrideWith(
-          (ref) => LoginViewModel(service: service),
+          () => LoginViewModel(service: service),
         ),
       ],
       child: const OnboardingScreen(),
@@ -30,7 +30,7 @@ class OnboardingModule {
     return ProviderScope(
       overrides: [
         loginViewModelProvider.overrideWith(
-          (ref) => LoginViewModel(service: service),
+          () => LoginViewModel(service: service),
         ),
       ],
       child: const LoginScreen(),

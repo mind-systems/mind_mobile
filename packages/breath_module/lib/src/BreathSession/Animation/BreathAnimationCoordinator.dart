@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'BreathMotionEngine.dart';
 import 'BreathShapeShifter.dart';
 import '../Models/BreathSessionState.dart';
@@ -9,7 +8,7 @@ class BreathAnimationCoordinator {
   final BreathShapeShifter shapeShifter;
   final BreathViewModel viewModel;
 
-  RemoveListener? _stateListener;
+  void Function()? _stateListener;
 
   int? _previousRemainingTicks;
   bool _initialized = false;
@@ -21,7 +20,7 @@ class BreathAnimationCoordinator {
   });
 
   void initialize(BreathSessionState initialState) {
-    _stateListener = viewModel.addListener(_onStateChanged);
+    _stateListener = viewModel.listen(_onStateChanged);
     _syncInitialState(initialState);
   }
 

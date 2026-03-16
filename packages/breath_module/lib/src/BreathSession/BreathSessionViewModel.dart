@@ -11,13 +11,13 @@ import 'Models/TimelineStep.dart';
 enum BreathSessionError { starFailed }
 
 final breathViewModelProvider =
-    StateNotifierProvider<BreathViewModel, BreathSessionState>((ref) {
+    NotifierProvider<BreathViewModel, BreathSessionState>(() {
   throw UnimplementedError(
-    'BreathViewModel должен быть передан через override в BreathModule',
+    'BreathViewModel must be overridden via ProviderScope',
   );
 });
 
-class BreathViewModel extends StateNotifier<BreathSessionState> {
+class BreathViewModel extends Notifier<BreathSessionState> {
   final ITickService tickService;
   final IBreathSessionService service;
   final IBreathSessionCoordinator coordinator;
@@ -30,12 +30,42 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
 
   BreathSessionDTO? _sessionDTO;
 
+  final _stateController = StreamController<BreathSessionState>.broadcast();
+
+  /// Stream of state updates — used by LiveSessionCoordinator.
+  Stream<BreathSessionState> get stream => _stateController.stream;
+
+  /// Subscribe to state changes. Returns a cancel function (drop-in for the
+  /// old StateNotifier.addListener API used by animation coordinators).
+  void Function() listen(void Function(BreathSessionState) onData) {
+    final sub = _stateController.stream.listen(onData);
+    return sub.cancel;
+  }
+
   BreathViewModel({
     required this.tickService,
     required this.service,
     required this.coordinator,
     required this.sessionId,
-  }) : super(BreathSessionState.initial());
+  });
+
+  @override
+  BreathSessionState build() {
+    ref.onDispose(() {
+      _stateMachineSubscription?.cancel();
+      _stateMachine?.dispose();
+      _stateController.close();
+    });
+    return BreathSessionState.initial();
+  }
+
+  @override
+  set state(BreathSessionState value) {
+    super.state = value;
+    if (!_stateController.isClosed) {
+      _stateController.add(value);
+    }
+  }
 
   // ===== Lifecycle =====
 
@@ -214,14 +244,5 @@ class BreathViewModel extends StateNotifier<BreathSessionState> {
       state = state.copyWith(isStarred: !newStarred);
       onErrorEvent?.call(BreathSessionError.starFailed);
     }
-  }
-
-  // ===== Dispose =====
-
-  @override
-  void dispose() {
-    _stateMachineSubscription?.cancel();
-    _stateMachine?.dispose();
-    super.dispose();
   }
 }

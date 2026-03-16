@@ -82,7 +82,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         breathViewModelProvider.overrideWith(
-          (ref) => BreathViewModel(
+          () => BreathViewModel(
             tickService: tickService,
             service: _FakeSessionService(_makeSession()),
             coordinator: _FakeBreathSessionCoordinator(),

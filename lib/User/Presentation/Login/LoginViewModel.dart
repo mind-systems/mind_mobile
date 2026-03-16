@@ -6,38 +6,37 @@ import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
 import 'package:mind/User/Presentation/Login/ILoginService.dart';
 import 'package:mind/User/Presentation/Login/Models/LoginState.dart';
 
-final loginViewModelProvider = StateNotifierProvider<LoginViewModel, LoginState>((ref) {
-  throw UnimplementedError('LoginViewModel должен быть передан через override в LoginModule');
+final loginViewModelProvider = NotifierProvider<LoginViewModel, LoginState>(() {
+  throw UnimplementedError('LoginViewModel must be overridden via ProviderScope');
 });
 
-class LoginViewModel extends StateNotifier<LoginState> {
+class LoginViewModel extends Notifier<LoginState> {
   final ILoginService service;
 
   void Function(LoginError error)? onErrorEvent;
   void Function()? onSuccessEvent;
   void Function()? onAuthenticatedEvent;
 
-  StreamSubscription<AuthState>? _authSubscription;
-  StreamSubscription<bool>? _authInProgressSubscription;
+  LoginViewModel({required this.service});
 
-  LoginViewModel({required this.service})
-      : super(const LoginState()) {
-    _authSubscription = service.observeAuthState().listen((authState) {
+  @override
+  LoginState build() {
+    final authSubscription = service.observeAuthState().listen((authState) {
       if (authState is AuthenticatedState) {
         onAuthenticatedEvent?.call();
       }
     });
 
-    _authInProgressSubscription = service.observeAuthInProgress().listen((value) {
+    final authInProgressSubscription = service.observeAuthInProgress().listen((value) {
       state = state.copyWith(isLoginInProgress: value);
     });
-  }
 
-  @override
-  void dispose() {
-    _authSubscription?.cancel();
-    _authInProgressSubscription?.cancel();
-    super.dispose();
+    ref.onDispose(() {
+      authSubscription.cancel();
+      authInProgressSubscription.cancel();
+    });
+
+    return const LoginState();
   }
 
   void updateEmail(String email) {

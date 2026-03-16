@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
@@ -68,8 +69,12 @@ final _authenticatedUser = User(
 // Factory
 // ---------------------------------------------------------------------------
 
-LoginViewModel _makeViewModel({FakeLoginService? service}) {
-  return LoginViewModel(service: service ?? FakeLoginService());
+ProviderContainer _makeContainer({required FakeLoginService service}) {
+  return ProviderContainer(
+    overrides: [
+      loginViewModelProvider.overrideWith(() => LoginViewModel(service: service)),
+    ],
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -78,15 +83,17 @@ LoginViewModel _makeViewModel({FakeLoginService? service}) {
 
 void main() {
   late FakeLoginService fakeService;
+  late ProviderContainer container;
   late LoginViewModel viewModel;
 
   setUp(() {
     fakeService = FakeLoginService();
-    viewModel = _makeViewModel(service: fakeService);
+    container = _makeContainer(service: fakeService);
+    viewModel = container.read(loginViewModelProvider.notifier);
   });
 
   tearDown(() {
-    viewModel.dispose();
+    container.dispose();
     fakeService.dispose();
   });
 

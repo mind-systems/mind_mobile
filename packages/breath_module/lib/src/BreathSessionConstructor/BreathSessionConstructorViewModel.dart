@@ -9,29 +9,29 @@ import 'Models/BreathSessionConstructorState.dart';
 import 'Models/ExerciseEditCellModel.dart';
 
 final breathSessionConstructorProvider =
-    StateNotifierProvider.autoDispose<
-      BreathSessionConstructorViewModel,
-      BreathSessionConstructorState
-    >((ref) {
-      throw UnimplementedError(
-        'BreathSessionConstructorViewModel должен быть передан через override в роутере',
-      );
-    });
+    NotifierProvider<BreathSessionConstructorViewModel, BreathSessionConstructorState>(
+      () => throw UnimplementedError(
+        'BreathSessionConstructorViewModel must be overridden via ProviderScope',
+      ),
+    );
 
 class BreathSessionConstructorViewModel
-    extends StateNotifier<BreathSessionConstructorState> {
+    extends Notifier<BreathSessionConstructorState> {
   final IBreathSessionConstructorService service;
   final IBreathSessionConstructorCoordinator coordinator;
-  StreamSubscription<void>? _sessionExpirySubscription;
 
-  BreathSessionConstructorViewModel({required this.service, required this.coordinator})
-    : super(_initializeState(service)) {
-    _sessionExpirySubscription = service.observeSessionExpiry().listen((_) {
+  BreathSessionConstructorViewModel({required this.service, required this.coordinator});
+
+  @override
+  BreathSessionConstructorState build() {
+    final subscription = service.observeSessionExpiry().listen((_) {
       coordinator.dismiss();
     });
+    ref.onDispose(() => subscription.cancel());
+
+    return _initializeState(service);
   }
 
-  // Приватный статический метод для инициализации State из сервиса
   static BreathSessionConstructorState _initializeState(
     IBreathSessionConstructorService service,
   ) {
@@ -111,12 +111,6 @@ class BreathSessionConstructorViewModel
 
     await service.delete();
     // Навигация/закрытие экрана — ответственность UI
-  }
-
-  @override
-  void dispose() {
-    _sessionExpirySubscription?.cancel();
-    super.dispose();
   }
 
   /// Собрать DTO из текущего состояния (приватный метод)

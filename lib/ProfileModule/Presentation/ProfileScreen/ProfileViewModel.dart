@@ -7,27 +7,31 @@ import 'package:mind/ProfileModule/Presentation/ProfileScreen/Models/ProfileDTOs
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/Models/ProfileState.dart';
 
 final profileViewModelProvider =
-    StateNotifierProvider<ProfileViewModel, ProfileState>(
-      (ref) => throw UnimplementedError(
+    NotifierProvider<ProfileViewModel, ProfileState>(
+      () => throw UnimplementedError(
         'ProfileViewModel must be overridden at ProviderScope',
       ),
     );
 
-class ProfileViewModel extends StateNotifier<ProfileState> {
+class ProfileViewModel extends Notifier<ProfileState> {
   final IProfileService service;
   final IProfileCoordinator coordinator;
 
-  StreamSubscription<ProfileEvent>? _subscription;
+  ProfileViewModel({required this.service, required this.coordinator});
 
-  ProfileViewModel({required this.service, required this.coordinator})
-      : super(ProfileState(
-          theme: service.currentTheme,
-          language: service.currentLanguage,
-        )) {
-    _subscription = service.observeProfile().listen(_onEvent);
+  @override
+  ProfileState build() {
+    final subscription = service.observeProfile().listen(_onEvent);
+    ref.onDispose(() => subscription.cancel());
+
     service.appVersion.then((version) {
       state = state.copyWith(appVersion: version);
     });
+
+    return ProfileState(
+      theme: service.currentTheme,
+      language: service.currentLanguage,
+    );
   }
 
   void _onEvent(ProfileEvent event) {
@@ -75,11 +79,5 @@ class ProfileViewModel extends StateNotifier<ProfileState> {
   Future<void> onLanguageChanged(String key) async {
     await service.updateLanguage(key);
     state = state.copyWith(language: key);
-  }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    super.dispose();
   }
 }

@@ -18,7 +18,7 @@ class BreathModule {
     return ProviderScope(
       overrides: [
         breathSessionListViewModelProvider.overrideWith(
-          (ref) => BreathSessionListViewModel(service: service, coordinator: coordinator),
+          () => BreathSessionListViewModel(service: service, coordinator: coordinator),
         ),
       ],
       child: const BreathSessionListScreen(),
@@ -34,7 +34,7 @@ class BreathModule {
 
     return ProviderScope(
       overrides: [
-        breathViewModelProvider.overrideWith((ref) {
+        breathViewModelProvider.overrideWith(() {
           final vm = BreathViewModel(tickService: tickService, service: service, coordinator: coordinator, sessionId: sessionId);
           liveCoordinator.start(vm.stream);
           return vm;
@@ -59,7 +59,7 @@ class BreathModule {
     return ProviderScope(
       overrides: [
         breathSessionConstructorProvider.overrideWith(
-          (ref) => BreathSessionConstructorViewModel(service: service, coordinator: coordinator),
+          () => BreathSessionConstructorViewModel(service: service, coordinator: coordinator),
         ),
       ],
       child: const BreathSessionConstructorScreen(),

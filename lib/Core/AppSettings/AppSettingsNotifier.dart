@@ -7,30 +7,37 @@ import 'package:mind/User/Models/AuthState.dart';
 import 'package:rxdart/rxdart.dart';
 
 final appSettingsProvider =
-    StateNotifierProvider<AppSettingsNotifier, AppSettingsState>(
-      (ref) => throw UnimplementedError(
+    NotifierProvider<AppSettingsNotifier, AppSettingsState>(
+      () => throw UnimplementedError(
         'AppSettingsNotifier must be overridden at ProviderScope',
       ),
     );
 
-class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
+class AppSettingsNotifier extends Notifier<AppSettingsState> {
   final AppSettingsRepository _repository;
-  StreamSubscription<AuthenticatedState>? _authSubscription;
+  final AppSettingsState _initialState;
+  final Stream<AuthState>? _authStateStream;
 
   AppSettingsNotifier({
     required AppSettingsRepository repository,
     required AppSettingsState initialState,
     Stream<AuthState>? authStateStream,
   })  : _repository = repository,
-        super(initialState) {
-    if (authStateStream != null) {
-      _authSubscription = authStateStream
+        _initialState = initialState,
+        _authStateStream = authStateStream;
+
+  @override
+  AppSettingsState build() {
+    if (_authStateStream != null) {
+      final subscription = _authStateStream
           .whereType<AuthenticatedState>()
-          .listen((state) {
-        final lang = state.user.language;
+          .listen((authState) {
+        final lang = authState.user.language;
         if (lang.isNotEmpty) setLanguage(lang);
       });
+      ref.onDispose(() => subscription.cancel());
     }
+    return _initialState;
   }
 
   AppSettingsState get currentState => state;
@@ -43,11 +50,5 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
   Future<void> setLanguage(String languageCode) async {
     await _repository.setLanguage(languageCode);
     state = state.copyWith(language: languageCode);
-  }
-
-  @override
-  void dispose() {
-    _authSubscription?.cancel();
-    super.dispose();
   }
 }

@@ -3,13 +3,13 @@ description: Breathing session presentation layer for Mind app.
 version: 0.0.1
 
 environment:
-  sdk: '>=3.3.0 <4.0.0'
+  sdk: '>=3.7.0 <4.0.0'
   flutter: '>=3.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: ^3.0.0
   mind_l10n:
     path: ../mind_l10n
   mind_ui:

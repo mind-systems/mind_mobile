@@ -1,7 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:breath_module/breath_module.dart' show ITickService, TickData, BreathViewModel, IBreathSessionCoordinator, IBreathSessionService, BreathExerciseDTO, BreathSessionDTO, BreathStepDTO, BreathPhase;
+import 'package:breath_module/breath_module.dart' show ITickService, TickData, BreathViewModel, breathViewModelProvider, IBreathSessionCoordinator, IBreathSessionService, BreathExerciseDTO, BreathSessionDTO, BreathStepDTO, BreathPhase;
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -71,6 +72,23 @@ BreathSessionDTO _makeDTO({bool isStarred = false, bool canStar = true}) {
   );
 }
 
+ProviderContainer _makeContainer({
+  required _FakeTickService tickService,
+  required _FakeSessionService service,
+}) {
+  final vm = BreathViewModel(
+    tickService: tickService,
+    service: service,
+    coordinator: _FakeCoordinator(),
+    sessionId: 'test-session',
+  );
+  return ProviderContainer(
+    overrides: [
+      breathViewModelProvider.overrideWith(() => vm),
+    ],
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -78,26 +96,22 @@ BreathSessionDTO _makeDTO({bool isStarred = false, bool canStar = true}) {
 void main() {
   late _FakeTickService tickService;
   late _FakeSessionService service;
-  late BreathViewModel vm;
+  late ProviderContainer container;
 
   setUp(() {
     tickService = _FakeTickService();
   });
 
   tearDown(() {
-    vm.dispose();
+    container.dispose();
     tickService.dispose();
   });
 
   group('star toggle', () {
     test('initState sets isStarred and canStar from DTO', () async {
       service = _FakeSessionService(_makeDTO(isStarred: true, canStar: true));
-      vm = BreathViewModel(
-        tickService: tickService,
-        service: service,
-        coordinator: _FakeCoordinator(),
-        sessionId: 'test-session',
-      );
+      container = _makeContainer(tickService: tickService, service: service);
+      final vm = container.read(breathViewModelProvider.notifier);
 
       expect(vm.state.isStarred, false);
       expect(vm.state.canStar, false);
@@ -110,12 +124,8 @@ void main() {
 
     test('initState sets canStar=false for own sessions', () async {
       service = _FakeSessionService(_makeDTO(isStarred: false, canStar: false));
-      vm = BreathViewModel(
-        tickService: tickService,
-        service: service,
-        coordinator: _FakeCoordinator(),
-        sessionId: 'test-session',
-      );
+      container = _makeContainer(tickService: tickService, service: service);
+      final vm = container.read(breathViewModelProvider.notifier);
 
       await vm.initState();
 
@@ -124,12 +134,8 @@ void main() {
 
     test('toggleStar success: flips isStarred', () async {
       service = _FakeSessionService(_makeDTO(isStarred: false, canStar: true));
-      vm = BreathViewModel(
-        tickService: tickService,
-        service: service,
-        coordinator: _FakeCoordinator(),
-        sessionId: 'test-session',
-      );
+      container = _makeContainer(tickService: tickService, service: service);
+      final vm = container.read(breathViewModelProvider.notifier);
       await vm.initState();
       expect(vm.state.isStarred, false);
 
@@ -140,12 +146,8 @@ void main() {
 
     test('toggleStar success: unstar a starred session', () async {
       service = _FakeSessionService(_makeDTO(isStarred: true, canStar: true));
-      vm = BreathViewModel(
-        tickService: tickService,
-        service: service,
-        coordinator: _FakeCoordinator(),
-        sessionId: 'test-session',
-      );
+      container = _makeContainer(tickService: tickService, service: service);
+      final vm = container.read(breathViewModelProvider.notifier);
       await vm.initState();
       expect(vm.state.isStarred, true);
 
@@ -156,12 +158,8 @@ void main() {
 
     test('toggleStar failure: reverts isStarred', () async {
       service = _FakeSessionService(_makeDTO(isStarred: false, canStar: true));
-      vm = BreathViewModel(
-        tickService: tickService,
-        service: service,
-        coordinator: _FakeCoordinator(),
-        sessionId: 'test-session',
-      );
+      container = _makeContainer(tickService: tickService, service: service);
+      final vm = container.read(breathViewModelProvider.notifier);
       await vm.initState();
       expect(vm.state.isStarred, false);
 

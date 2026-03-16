@@ -1,7 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:breath_module/breath_module.dart' show IBreathSessionListCoordinator, IBreathSessionListService, BreathSessionListItemDTO, BreathSessionListState, BreathSessionListViewModel, BreathSessionListEvent, SessionOwnership, PageLoadedEvent, SectionHeaderType, SectionHeaderModel, BreathSessionListCellModel;
+import 'package:breath_module/breath_module.dart' show IBreathSessionListCoordinator, IBreathSessionListService, BreathSessionListItemDTO, BreathSessionListState, BreathSessionListViewModel, breathSessionListViewModelProvider, BreathSessionListEvent, SessionOwnership, PageLoadedEvent, SectionHeaderType, SectionHeaderModel, BreathSessionListCellModel;
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -74,19 +75,27 @@ List<String> _extractCellIds(BreathSessionListState state) {
 
 void main() {
   late _FakeService service;
+  late ProviderContainer container;
   late BreathSessionListViewModel vm;
 
   setUp(() {
     service = _FakeService();
-    vm = BreathSessionListViewModel(
-      service: service,
-      coordinator: _FakeCoordinator(),
+    container = ProviderContainer(
+      overrides: [
+        breathSessionListViewModelProvider.overrideWith(
+          () => BreathSessionListViewModel(
+            service: service,
+            coordinator: _FakeCoordinator(),
+          ),
+        ),
+      ],
     );
+    vm = container.read(breathSessionListViewModelProvider.notifier);
     service.completeFetch();
   });
 
   tearDown(() {
-    vm.dispose();
+    container.dispose();
     service.dispose();
   });
 
