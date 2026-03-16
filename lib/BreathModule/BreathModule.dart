@@ -14,7 +14,7 @@ class BreathModule {
   static Widget buildSessionList(BuildContext context) {
     final app = App.shared;
     final service = BreathSessionListService(notifier: app.breathSessionNotifier, userNotifier: app.userNotifier);
-    final coordinator = BreathSessionListCoordinator(context);
+    final coordinator = BreathSessionListCoordinator(context, userNotifier: app.userNotifier);
     return ProviderScope(
       overrides: [
         breathSessionListViewModelProvider.overrideWith(

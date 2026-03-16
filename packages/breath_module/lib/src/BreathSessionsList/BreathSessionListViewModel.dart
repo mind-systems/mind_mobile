@@ -215,6 +215,10 @@ class BreathSessionListViewModel extends Notifier<BreathSessionListState> {
     coordinator.openSession(sessionId);
   }
 
+  void onCreateTap() {
+    coordinator.openConstructor();
+  }
+
   /// Извлекает только ячейки с данными из items (без headers/skeletons)
   List<BreathSessionListCellModel> _extractCellModels(
     List<BreathSessionListItem> items,

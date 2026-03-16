@@ -74,12 +74,21 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
     ref.read(breathSessionListViewModelProvider.notifier).onSessionTap(sessionId);
   }
 
+  void _onCreateTap() {
+    ref.read(breathSessionListViewModelProvider.notifier).onCreateTap();
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(breathSessionListViewModelProvider);
 
     return Scaffold(
       body: SafeArea(child: _buildBody(state)),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _onCreateTap,
+        mini: true,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
