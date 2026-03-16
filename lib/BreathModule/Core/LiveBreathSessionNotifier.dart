@@ -63,6 +63,11 @@ class LiveBreathSessionNotifier {
     _liveSocketService.emitLive('activity:end');
   }
 
+  void stop() {
+    if (currentState.status == LiveBreathSessionStatus.idle) return;
+    _liveSocketService.emitLive('activity:stop');
+  }
+
   void _onSessionState(Map<String, dynamic> data) {
     final status = data['status'] as String?;
     final liveSessionId = data['liveSessionId'] as String?;
@@ -82,6 +87,9 @@ class LiveBreathSessionNotifier {
         _events.add(LiveBreathSessionPaused());
       }
     } else if (status == 'ended' || status == 'completed') {
+      _state.add(LiveBreathSessionState.initial());
+      _events.add(LiveBreathSessionEnded());
+    } else if (status == 'interrupted') {
       _state.add(LiveBreathSessionState.initial());
       _events.add(LiveBreathSessionEnded());
     } else if (status == 'abandoned') {

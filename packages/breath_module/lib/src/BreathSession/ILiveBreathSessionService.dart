@@ -9,6 +9,7 @@ class LiveBreathSessionDto {
 abstract class ILiveBreathSessionService {
   void startSession(String sessionId);
   void endSession();
+  void stopSession();
   void pauseSession();
   void resumeSession();
   Stream<LiveBreathSessionDto> get sessionStateStream;

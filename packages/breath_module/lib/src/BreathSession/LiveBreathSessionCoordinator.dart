@@ -18,6 +18,7 @@ class LiveBreathSessionCoordinator {
   BreathSessionStatus? _previousStatus;
   BreathPhase? _previousPhase;
   int? _previousExerciseIndex;
+  BreathSessionState? _pendingTelemetry;
 
   LiveBreathSessionCoordinator({
     required this.liveSessionService,
@@ -30,6 +31,8 @@ class LiveBreathSessionCoordinator {
     _subscription = stateStream.listen(_onState);
     _liveSessionSub = liveSessionService.sessionStateStream.listen((dto) {
       _liveSessionId = dto.liveSessionId;
+      final liveId = dto.liveSessionId;
+      if (liveId != null) _flushPending(liveId);
     });
   }
 
@@ -79,16 +82,28 @@ class LiveBreathSessionCoordinator {
     final liveId = _liveSessionId;
     final isActive = state.status == BreathSessionStatus.breath ||
         state.status == BreathSessionStatus.rest;
-    if (!isActive || !_started || _ended || liveId == null) return;
+    if (!isActive || !_started || _ended) return;
 
     final phaseChanged = state.phase != _previousPhase ||
         state.exerciseIndex != _previousExerciseIndex;
-    if (phaseChanged) {
-      telemetryService.sendSample(liveId, state.phase.name, state.currentIntervalMs);
+    if (!phaseChanged) return;
+
+    if (liveId == null) {
+      _pendingTelemetry = state;
+      return;
     }
+    telemetryService.sendSample(liveId, state.phase.name, state.currentIntervalMs);
+  }
+
+  void _flushPending(String liveId) {
+    final pending = _pendingTelemetry;
+    if (pending == null) return;
+    _pendingTelemetry = null;
+    telemetryService.sendSample(liveId, pending.phase.name, pending.currentIntervalMs);
   }
 
   void reset() {
+    _pendingTelemetry = null;
     _started = false;
     _ended = false;
     _previousStatus = null;
@@ -99,9 +114,10 @@ class LiveBreathSessionCoordinator {
 
   void dispose() {
     if (_started && !_ended) {
-      dev.log('LiveBreathSessionCoordinator: dispose — ending active session [$sessionId]', name: 'LiveSession');
-      liveSessionService.endSession();
+      dev.log('LiveBreathSessionCoordinator: dispose — stopping session [$sessionId]', name: 'LiveSession');
+      liveSessionService.stopSession();
     }
+    _pendingTelemetry = null;
     _subscription?.cancel();
     _liveSessionSub?.cancel();
   }

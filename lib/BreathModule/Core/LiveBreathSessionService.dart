@@ -18,6 +18,11 @@ class LiveBreathSessionService implements ILiveBreathSessionService {
   }
 
   @override
+  void stopSession() {
+    _notifier.stop();
+  }
+
+  @override
   void pauseSession() {
     _notifier.pause();
   }
