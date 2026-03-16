@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/BreathModule/ITickService.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
+import 'package:mind/BreathModule/Presentation/CommonModels/SetShape.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Animation/OrbAnimationCoordinator.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/BreathSessionViewModel.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/IBreathSessionCoordinator.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
+import 'package:mind/BreathModule/Presentation/CommonModels/SetShape.dart';
 import 'dart:math' as math;
 
 class BreathShapeShifter extends ChangeNotifier {

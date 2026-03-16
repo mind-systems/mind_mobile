@@ -1,8 +1,8 @@
 import 'package:mind/BreathModule/Models/ExerciseStep.dart';
 import 'package:mind/BreathModule/Models/StepType.dart';
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
+import 'package:mind/BreathModule/Presentation/CommonModels/SetShape.dart';
 
-export 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
+export 'package:mind/BreathModule/Presentation/CommonModels/SetShape.dart';
 
 class ExerciseSet {
   final List<ExerciseStep> steps;

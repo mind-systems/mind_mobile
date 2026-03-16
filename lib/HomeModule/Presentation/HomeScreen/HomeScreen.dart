@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mind/BreathModule/Presentation/BreathSessionsList/Views/StatsCard.dart';
+import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/StatsCard.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/IHomeCoordinator.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Models/ModuleItem.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/HomeScreenCell.dart';

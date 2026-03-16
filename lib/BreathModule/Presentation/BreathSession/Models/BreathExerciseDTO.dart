@@ -1,4 +1,4 @@
-import 'package:mind/BreathModule/Presentation/BreathSession/Models/SetShape.dart';
+import 'package:mind/BreathModule/Presentation/CommonModels/SetShape.dart';
 import 'package:mind/BreathModule/Presentation/BreathSession/Models/BreathStepDTO.dart';
 
 class BreathExerciseDTO {
