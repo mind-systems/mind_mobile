@@ -126,6 +126,7 @@ Detailed docs and Mermaid architecture diagrams live in `docs/`:
 - `docs/core/auth-gated-navigation.md` — Auth-gated navigation and route guards
 - `docs/core/alerts-and-snackbars.md` — When to use AppAlert vs SnackBar
 - `docs/core/module-system.md` — Pluggable package architecture, module boundary, wiring pattern
+- `docs/core/testing.md` — Testing philosophy, what to test, fake patterns, current test inventory
 - `docs/user/login-flow.md` — Login flow: passwordless email and Google Sign-In
 - `docs/breath/session/view-model.md` — BreathSessionStateMachine and BreathViewModel behaviour
 - `docs/breath/session/session-lifecycle.md` — session completion, idle state, and restart flow
