@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:rxdart/rxdart.dart';
 
-import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
+import 'package:mind/BreathModule/Core/IBreathSessionRepository.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Core/Models/BreathSessionNotifierEvent.dart';
-import 'package:mind/User/UserNotifier.dart';
+import 'package:mind/User/Models/AuthState.dart';
 
 class BreathSessionsState {
   final Map<String, BreathSession> byId;
@@ -24,8 +24,7 @@ class BreathSessionsState {
 
 /// Доменный нотифаер — источник правды по сессиям дыхания.
 class BreathSessionNotifier {
-  final BreathSessionRepository repository;
-  final UserNotifier userNotifier;
+  final IBreathSessionRepository repository;
 
   final BehaviorSubject<BreathSessionsState> _subject = BehaviorSubject.seeded(
     const BreathSessionsState(byId: {}, order: [], lastEvent: null),
@@ -34,8 +33,8 @@ class BreathSessionNotifier {
   bool _isLoading = false;
   StreamSubscription<String>? _userSubscription;
 
-  BreathSessionNotifier({required this.repository, required this.userNotifier}) {
-    _userSubscription = userNotifier.stream
+  BreathSessionNotifier({required this.repository, required Stream<AuthState> authStream}) {
+    _userSubscription = authStream
         .map((s) => s.user.id)
         .distinct()
         .skip(1)

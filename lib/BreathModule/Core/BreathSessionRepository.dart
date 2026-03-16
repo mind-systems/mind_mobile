@@ -1,10 +1,11 @@
 import 'package:mind/BreathModule/Core/IBreathSessionApi.dart';
+import 'package:mind/BreathModule/Core/IBreathSessionRepository.dart';
 import 'package:mind/Core/Api/Models/SaveBreathSessionRequest.dart';
 import 'package:mind/Core/Api/Models/StarSessionRequest.dart';
 import 'package:mind/Core/Database/IBreathSessionDao.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 
-class BreathSessionRepository {
+class BreathSessionRepository implements IBreathSessionRepository {
   final IBreathSessionDao _dao;
   final IBreathSessionApi _api;
 
@@ -12,6 +13,7 @@ class BreathSessionRepository {
       : _dao = dao,
         _api = api;
 
+  @override
   Future<BreathSession> fetchById(String id) async {
     final session = await _dao.getSessionById(id);
     if (session != null) {
@@ -20,6 +22,7 @@ class BreathSessionRepository {
     return await _api.fetchById(id);
   }
 
+  @override
   Future<({List<BreathSession> sessions, bool hasMore})> refresh(int pageSize) async {
     final response = await _api.fetchAll(1, pageSize);
     await _dao.deleteAllSessions();
@@ -27,6 +30,7 @@ class BreathSessionRepository {
     return (sessions: response.data, hasMore: response.hasMore);
   }
 
+  @override
   Future<({List<BreathSession> sessions, bool hasMore})> fetch(int page, int pageSize) async {
     final offset = page * pageSize;
     final daoPage = await _dao.getSessions(limit: pageSize, offset: offset);
@@ -43,6 +47,7 @@ class BreathSessionRepository {
     return (sessions: response.data, hasMore: response.hasMore);
   }
 
+  @override
   Future<BreathSession> create(BreathSession session) async {
     final request = SaveBreathSessionRequest(
       description: session.description,
@@ -54,6 +59,7 @@ class BreathSessionRepository {
     return saved;
   }
 
+  @override
   Future<BreathSession> update(BreathSession session) async {
     final request = SaveBreathSessionRequest(
       description: session.description,
@@ -65,11 +71,13 @@ class BreathSessionRepository {
     return saved;
   }
 
+  @override
   Future<void> delete(String id) async {
     await _api.delete(id);
     await _dao.deleteSession(id);
   }
 
+  @override
   Future<void> starSession(String id, {required bool starred}) async {
     await _api.starSession(StarSessionRequest(id: id, starred: starred));
     final session = await _dao.getSessionById(id);
@@ -78,6 +86,7 @@ class BreathSessionRepository {
     }
   }
 
+  @override
   Future<void> deleteAll() async {
     await _dao.deleteAllSessions();
   }

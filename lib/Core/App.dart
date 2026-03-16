@@ -111,7 +111,7 @@ class App {
 
     final initialUser = await userRepository.loadUser();
     final userNotifier = UserNotifier(repository: userRepository, logoutNotifier: logoutNotifier, initialUser: initialUser);
-    final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository, userNotifier: userNotifier);
+    final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository, authStream: userNotifier.stream);
 
     final prefs = await SharedPreferences.getInstance();
     final appSettingsRepository = AppSettingsRepository(SharedPreferencesStorage(prefs));
@@ -135,7 +135,7 @@ class App {
     final liveSocketService = LiveSocketService(storage: const FlutterSecureStorage());
 
     final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService);
-    final liveSessionNotifier = LiveSessionNotifier(liveSocketService: liveSocketService, userNotifier: userNotifier);
+    final liveSessionNotifier = LiveSessionNotifier(liveSocketService: liveSocketService, authStream: userNotifier.stream);
     final liveSessionService = LiveSessionService(notifier: liveSessionNotifier);
     final telemetryService = TelemetryService(liveSocketService: liveSocketService);
 

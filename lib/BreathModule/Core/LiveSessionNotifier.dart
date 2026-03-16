@@ -4,16 +4,11 @@ import 'package:rxdart/rxdart.dart';
 
 import 'package:mind/BreathModule/Core/LiveSessionEvent.dart';
 import 'package:mind/BreathModule/Core/LiveSessionState.dart';
-import 'package:mind/Core/Socket/LiveSocketService.dart';
+import 'package:mind/Core/Socket/ILiveSocketService.dart';
 import 'package:mind/User/Models/AuthState.dart';
-import 'package:mind/User/UserNotifier.dart';
-
-// TODO: Not covered by unit tests — constructor takes concrete LiveSocketService
-// and UserNotifier (which requires UserRepository). Needs interface extraction
-// or Stream<AuthState> parameter to be testable without heavy fakes.
 
 class LiveSessionNotifier {
-  final LiveSocketService _liveSocketService;
+  final ILiveSocketService _liveSocketService;
 
   late final StreamSubscription<Map<String, dynamic>> _subscription;
   late final StreamSubscription<AuthState> _authSubscription;
@@ -28,10 +23,10 @@ class LiveSessionNotifier {
   Stream<LiveSessionEvent> get events => _events.stream;
   LiveSessionState get currentState => _state.value;
 
-  LiveSessionNotifier({required LiveSocketService liveSocketService, required UserNotifier userNotifier})
+  LiveSessionNotifier({required ILiveSocketService liveSocketService, required Stream<AuthState> authStream})
       : _liveSocketService = liveSocketService {
     _subscription = _liveSocketService.sessionStateEvents.listen(_onSessionState);
-    _authSubscription = userNotifier.stream.listen((auth) { if (auth is GuestState) reset(); });
+    _authSubscription = authStream.listen((auth) { if (auth is GuestState) reset(); });
   }
 
   void reset() {

@@ -7,9 +7,10 @@ import 'package:rxdart/rxdart.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import 'package:mind/Core/Environment.dart';
+import 'package:mind/Core/Socket/ILiveSocketService.dart';
 import 'package:mind/Core/Socket/SocketConnectionState.dart';
 
-class LiveSocketService {
+class LiveSocketService implements ILiveSocketService {
   final FlutterSecureStorage _storage;
 
   io.Socket? _liveSocket;
@@ -24,6 +25,7 @@ class LiveSocketService {
   final _dataAckController = StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<SocketConnectionState> get connectionState => _connectionState.stream;
+  @override
   Stream<Map<String, dynamic>> get sessionStateEvents => _sessionStateController.stream;
   Stream<void> get telemetryStateEvents => _telemetryStateController.stream;
   Stream<Map<String, dynamic>> get dataAckEvents => _dataAckController.stream;
@@ -150,7 +152,8 @@ class LiveSocketService {
     }
   }
 
-  void emitLive(String event, [dynamic data]) {
+  @override
+  void emitLive(String event, [Map<String, dynamic>? data]) {
     log('[Socket] → live $event: $data', name: 'LiveSocketService');
     _liveSocket?.emit(event, data);
     lastSentMessage.value = 'live: $event';
