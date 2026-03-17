@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mind_ui/mind_ui.dart';
 import 'package:mind_l10n/mind_l10n.dart';
-import '../BreathSessionConstructorScreen.dart';
+import '../Models/ActiveFieldKey.dart';
 import '../Models/ExerciseEditCellModel.dart';
+import 'BlinkingCursor.dart';
 
 class ExerciseEditCell extends StatelessWidget {
   final ExerciseEditCellModel model;
@@ -264,7 +265,7 @@ class ExerciseEditCell extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              _BlinkingCursor(color: onSurface, active: isFieldActive),
+              BlinkingCursor(color: onSurface, active: isFieldActive),
             ],
           ),
         ),
@@ -305,64 +306,5 @@ class ExerciseEditCell extends StatelessWidget {
     if (minutes > 0 && secs > 0) return '${minutes}m ${secs}s';
     if (minutes > 0) return '${minutes}m';
     return '${secs}s';
-  }
-}
-
-// ===== BLINKING CURSOR =====
-class _BlinkingCursor extends StatefulWidget {
-  final Color color;
-  final bool active;
-
-  const _BlinkingCursor({required this.color, required this.active});
-
-  @override
-  State<_BlinkingCursor> createState() => _BlinkingCursorState();
-}
-
-class _BlinkingCursorState extends State<_BlinkingCursor>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-    if (widget.active) _controller.repeat(reverse: true);
-  }
-
-  @override
-  void didUpdateWidget(covariant _BlinkingCursor oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.active && !oldWidget.active) {
-      _controller.repeat(reverse: true);
-    } else if (!widget.active && oldWidget.active) {
-      _controller.stop();
-      _controller.value = 0;
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: widget.active ? 1.0 : 0.0,
-      child: FadeTransition(
-        opacity: _controller,
-        child: Container(
-          width: 2,
-          height: 16,
-          margin: const EdgeInsets.only(left: 1),
-          color: widget.color,
-        ),
-      ),
-    );
   }
 }
