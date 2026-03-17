@@ -1,5 +1,6 @@
 import 'package:mind/BreathModule/BreathSessionDTOMapper.dart';
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
+import 'package:mind/BreathModule/Core/Models/BreathSessionNotifierEvent.dart';
 import 'package:breath_module/breath_module.dart' show IBreathSessionService, BreathSessionDTO;
 import 'package:mind/User/UserNotifier.dart';
 
@@ -18,6 +19,19 @@ class BreathSessionService implements IBreathSessionService {
       throw Exception('Session not found');
     }
     return BreathSessionDTOMapper.map(session, currentUserId: _currentUserId);
+  }
+
+  @override
+  Stream<BreathSessionDTO> observeSession(String id) {
+    return notifier.stream
+        .skip(1) // skip BehaviorSubject replay — we already loaded via getSession()
+        .expand((state) {
+      final event = state.lastEvent;
+      if (event is SessionUpdated && event.session.id == id) {
+        return [BreathSessionDTOMapper.map(event.session, currentUserId: _currentUserId)];
+      }
+      return [];
+    });
   }
 
   @override

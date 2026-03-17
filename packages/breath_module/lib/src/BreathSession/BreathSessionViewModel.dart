@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../ITickService.dart';
 import 'BreathSessionStateMachine.dart';
@@ -25,6 +26,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
 
   BreathSessionStateMachine? _stateMachine;
   StreamSubscription<BreathSessionStateMachineState>? _stateMachineSubscription;
+  StreamSubscription<BreathSessionDTO>? _sessionUpdateSubscription;
 
   void Function(BreathSessionError error)? onErrorEvent;
 
@@ -52,6 +54,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
   @override
   BreathSessionState build() {
     ref.onDispose(() {
+      _sessionUpdateSubscription?.cancel();
       _stateMachineSubscription?.cancel();
       _stateMachine?.dispose();
       _stateController.close();
@@ -74,6 +77,10 @@ class BreathViewModel extends Notifier<BreathSessionState> {
       final dto = await service.getSession(sessionId);
       _sessionDTO = dto;
       _setupEngine(dto);
+      _sessionUpdateSubscription = service.observeSession(sessionId).listen((dto) {
+        _sessionDTO = dto;
+        _setupEngine(dto);
+      });
     } catch (e) {
       state = state.copyWith(loadState: SessionLoadState.error);
     }
