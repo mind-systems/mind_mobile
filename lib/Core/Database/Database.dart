@@ -21,35 +21,14 @@ class Database extends _$Database {
   Database([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onUpgrade: (migrator, from, to) async {
       for (var step = from; step < to; step++) {
         if (step == 1) {
-          await migrator.addColumn(userRecord, userRecord.isGuest);
-        }
-        if (step == 2) {
           await migrator.createTable(breathSessions);
-        }
-        if (step == 3) {
-          await migrator.alterTable(TableMigration(userRecord));
-        }
-        if (step == 4) {
-          await migrator.addColumn(userRecord, userRecord.language);
-        }
-        if (step == 5) {
-          await migrator.addColumn(breathSessions, breathSessions.isStarred);
-        }
-        if (step == 6) {
-          await migrator.addColumn(breathSessions, breathSessions.createdAt);
-        }
-        if (step == 7) {
-          // complexity column requires NOT NULL with DEFAULT — simpler to
-          // drop cached sessions and let them re-sync from API on next launch
-          await customStatement('DELETE FROM breath_sessions');
-          await migrator.addColumn(breathSessions, breathSessions.complexity);
         }
       }
     },
