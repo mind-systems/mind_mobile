@@ -46,6 +46,9 @@ class _FakeSessionService implements IBreathSessionService {
     );
     return dto;
   }
+
+  @override
+  Stream<BreathSessionDTO> observeSession(String id) => Stream.value(dto);
 }
 
 // ---------------------------------------------------------------------------

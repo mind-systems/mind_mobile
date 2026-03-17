@@ -47,6 +47,9 @@ class _FakeSessionService implements IBreathSessionService {
 
   @override
   Future<BreathSessionDTO> starSession(String id, {required bool starred}) async => dto;
+
+  @override
+  Stream<BreathSessionDTO> observeSession(String id) => Stream.value(dto);
 }
 
 // ---------------------------------------------------------------------------
