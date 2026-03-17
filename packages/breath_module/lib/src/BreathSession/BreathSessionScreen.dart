@@ -136,6 +136,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
         final timelineHeight = itemHeight * 4.5;
 
         return Scaffold(
+          resizeToAvoidBottomInset: false,
           backgroundColor: const Color(0xFF0A0E27),
           body: SafeArea(
             bottom: false,
