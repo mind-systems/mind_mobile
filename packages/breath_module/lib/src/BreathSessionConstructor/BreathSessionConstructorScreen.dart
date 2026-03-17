@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind_l10n/mind_l10n.dart';
 import 'package:mind_ui/mind_ui.dart';
@@ -6,6 +7,23 @@ import 'BreathSessionConstructorViewModel.dart';
 import 'Models/BreathSessionConstructorState.dart';
 import 'Views/ExerciseEditCell.dart';
 import '../Widgets/ComplexityIndicator.dart';
+
+class ActiveFieldKey {
+  final String exerciseId;
+  final String fieldName;
+
+  const ActiveFieldKey({required this.exerciseId, required this.fieldName});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ActiveFieldKey &&
+          exerciseId == other.exerciseId &&
+          fieldName == other.fieldName;
+
+  @override
+  int get hashCode => Object.hash(exerciseId, fieldName);
+}
 
 class _DescriptionField extends StatefulWidget {
   const _DescriptionField({required this.description, required this.onChanged});
@@ -19,17 +37,19 @@ class _DescriptionField extends StatefulWidget {
 
 class _DescriptionFieldState extends State<_DescriptionField> {
   late final TextEditingController _controller;
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.description)
       ..selection = TextSelection.collapsed(offset: widget.description.length);
-  }
+}
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -53,6 +73,8 @@ class _DescriptionFieldState extends State<_DescriptionField> {
           alignment: Alignment.center,
           child: TextField(
             controller: _controller,
+            focusNode: _focusNode,
+            textInputAction: TextInputAction.next,
             onChanged: widget.onChanged,
             style: TextStyle(
               color: onSurface,
@@ -72,7 +94,7 @@ class _DescriptionFieldState extends State<_DescriptionField> {
 }
 
 /// Экран конструктора дыхательных сессий
-class BreathSessionConstructorScreen extends ConsumerWidget {
+class BreathSessionConstructorScreen extends ConsumerStatefulWidget {
   const BreathSessionConstructorScreen({
     super.key,
   });
@@ -80,22 +102,121 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
   static String name = 'breath_session_constructor';
   static String path = '/$name';
 
-  void _addExercise(WidgetRef ref) {
+  @override
+  ConsumerState<BreathSessionConstructorScreen> createState() =>
+      _BreathSessionConstructorScreenState();
+}
+
+class _BreathSessionConstructorScreenState
+    extends ConsumerState<BreathSessionConstructorScreen>
+    with WidgetsBindingObserver {
+  ActiveFieldKey? _activeField;
+  BuildContext? _activeFieldContext;
+  final TextEditingController _ghostController = TextEditingController();
+  final FocusNode _ghostFocus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _ghostFocus.addListener(_onGhostFocusChanged);
+  }
+
+  @override
+  void didChangeMetrics() {
+    // Keyboard appeared or resized — scroll active field into view
+    final ctx = _activeFieldContext;
+    if (ctx == null || _activeField == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _activeFieldContext != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 250),
+          alignment: 0.8,
+        );
+      }
+    });
+  }
+
+  void _onGhostFocusChanged() {
+    if (!_ghostFocus.hasFocus && _activeField != null) {
+      setState(() {
+        _activeField = null;
+        _activeFieldContext = null;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _ghostFocus.removeListener(_onGhostFocusChanged);
+    _ghostController.dispose();
+    _ghostFocus.dispose();
+    super.dispose();
+  }
+
+  void _onFieldTap(ActiveFieldKey key, int currentValue, BuildContext fieldContext) {
+    setState(() {
+      _activeField = key;
+      _activeFieldContext = fieldContext;
+    });
+    _ghostController.text = currentValue == 0 ? '' : currentValue.toString();
+    _ghostController.selection = TextSelection.collapsed(
+      offset: _ghostController.text.length,
+    );
+    _ghostFocus.requestFocus();
+  }
+
+  void _onGhostTextChanged(String text) {
+    final active = _activeField;
+    if (active == null) return;
+
+    final value = text.isEmpty ? 0 : (int.tryParse(text) ?? 0);
+    final vm = ref.read(breathSessionConstructorProvider.notifier);
+    final state = ref.read(breathSessionConstructorProvider);
+    final exercise = state.exercises.firstWhere(
+      (e) => e.id == active.exerciseId,
+      orElse: () => throw StateError('Exercise not found'),
+    );
+
+    switch (active.fieldName) {
+      case 'inhale':
+        vm.updateExercise(active.exerciseId, exercise.copyWith(inhale: value));
+      case 'hold1':
+        vm.updateExercise(active.exerciseId, exercise.copyWith(hold1: value));
+      case 'exhale':
+        vm.updateExercise(active.exerciseId, exercise.copyWith(exhale: value));
+      case 'hold2':
+        vm.updateExercise(active.exerciseId, exercise.copyWith(hold2: value));
+      case 'cycles':
+        vm.updateExercise(active.exerciseId, exercise.copyWith(cycles: value));
+      case 'rest':
+        vm.updateExercise(active.exerciseId, exercise.copyWith(rest: value));
+    }
+  }
+
+  void _dismissGhostField() {
+    setState(() => _activeField = null);
+    _ghostFocus.unfocus();
+  }
+
+  void _addExercise() {
     ref.read(breathSessionConstructorProvider.notifier).addExercise();
   }
 
-  void _removeExercise(WidgetRef ref, String id) {
+  void _removeExercise(String id) {
     ref.read(breathSessionConstructorProvider.notifier).removeExercise(id);
   }
 
-  Future<void> _deleteSession(BuildContext context, WidgetRef ref) async {
+  Future<void> _deleteSession() async {
     final confirmed = await _showDeleteConfirmation(context);
     if (confirmed != true) return;
 
     try {
       await ref.read(breathSessionConstructorProvider.notifier).delete();
 
-      if (!context.mounted) return;
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -106,7 +227,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
 
       Navigator.pop(context);
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -156,11 +277,11 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _saveSession(BuildContext context, WidgetRef ref) async {
+  Future<void> _saveSession() async {
     final vm = ref.read(breathSessionConstructorProvider.notifier);
 
     if (!vm.canSave) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -174,7 +295,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     try {
       await vm.save();
 
-      if (!context.mounted) return;
+      if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -185,7 +306,7 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
 
       Navigator.pop(context);
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -205,21 +326,99 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     return '${secs}s';
   }
 
-  Widget _buildDescriptionField(BuildContext context, WidgetRef ref, String description) {
-    return _DescriptionField(
-      description: description,
-      onChanged: (value) => ref
-          .read(breathSessionConstructorProvider.notifier)
-          .updateDescription(value),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        bottom: false,
+        child: Stack(
+          children: [
+            // Ghost TextField — invisible, always holds focus for numeric input
+            Positioned(
+              left: -1000,
+              top: -1000,
+              child: SizedBox(
+                width: 1,
+                height: 1,
+                child: TextField(
+                  controller: _ghostController,
+                  focusNode: _ghostFocus,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onChanged: _onGhostTextChanged,
+                  onSubmitted: (_) => _dismissGhostField(),
+                ),
+              ),
+            ),
+            Column(
+              children: [
+                Expanded(
+                  child: _buildExercisesList(),
+                ),
+                _buildFooter(),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildAddButton(BuildContext context, WidgetRef ref) {
+  Widget _buildExercisesList() {
+    return Consumer(
+      builder: (context, ref, _) {
+        final state = ref.watch(
+          breathSessionConstructorProvider.select(
+            (s) => (description: s.description, exercises: s.exercises),
+          ),
+        );
+
+        return GestureDetector(
+          onTap: _dismissGhostField,
+          behavior: HitTestBehavior.translucent,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              children: [
+                _DescriptionField(
+                  description: state.description,
+                  onChanged: (value) => ref
+                      .read(breathSessionConstructorProvider.notifier)
+                      .updateDescription(value),
+                ),
+                ...state.exercises.map((exercise) => ExerciseEditCell(
+                  key: ValueKey(exercise.id),
+                  model: exercise,
+                  activeField: _activeField,
+                  onFieldTap: (key, fieldContext) {
+                    final value = switch (key.fieldName) {
+                      'inhale' => exercise.inhale,
+                      'hold1' => exercise.hold1,
+                      'exhale' => exercise.exhale,
+                      'hold2' => exercise.hold2,
+                      'cycles' => exercise.cycles,
+                      'rest' => exercise.rest,
+                      _ => 0,
+                    };
+                    _onFieldTap(key, value, fieldContext);
+                  },
+                  onDelete: () => _removeExercise(exercise.id),
+                )),
+                _buildAddButton(context),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAddButton(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: OutlinedButton.icon(
-        onPressed: () => _addExercise(ref),
+        onPressed: _addExercise,
         icon: Icon(Icons.add, color: primary),
         label: Text(
           AppLocalizations.of(context)!.breathConstructorAddExercise,
@@ -244,136 +443,84 @@ class BreathSessionConstructorScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildExercisesList(
-    String description,
-    List<dynamic> exercises,
-    WidgetRef ref,
-  ) {
-    return NotificationListener<ScrollUpdateNotification>(
-      onNotification: (notification) {
-        if (notification.scrollDelta != null &&
-            notification.scrollDelta! < 0) {
-          FocusScope.of(notification.context!).unfocus();
-        }
-        return false;
-      },
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: exercises.length + 2, // description + exercises + add button
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return _buildDescriptionField(context, ref, description);
-          }
-
-          if (index <= exercises.length) {
-            final exercise = exercises[index - 1];
-            return ExerciseEditCell(
-              key: ValueKey(exercise.id),
-              model: exercise,
-              onChanged: (updated) => ref
-                  .read(breathSessionConstructorProvider.notifier)
-                  .updateExercise(exercise.id, updated),
-              onDelete: () => _removeExercise(ref, exercise.id),
-            );
-          }
-
-          return _buildAddButton(context, ref);
-        },
-      ),
-    );
-  }
-
-  Widget _buildFooter(BuildContext context, WidgetRef ref, ConstructorMode mode, int totalDuration, double complexity) {
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor.withValues(alpha: 0.5),
-        border: Border(
-          top: BorderSide(
-            color: onSurface.withValues(alpha: 0.1),
-            width: 1,
+  Widget _buildFooter() {
+    return Consumer(
+      builder: (context, ref, _) {
+        final state = ref.watch(
+          breathSessionConstructorProvider.select(
+            (s) => (mode: s.mode, totalDuration: s.totalDuration, complexity: s.complexity),
           ),
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                AppLocalizations.of(context)!.breathConstructorTotal,
-                style: TextStyle(
-                  color: onSurface.withValues(alpha: 0.5),
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                _formatTotalDuration(totalDuration),
-                style: TextStyle(
-                  color: onSurface,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              ComplexityIndicator(complexity: complexity, width: 120),
-            ],
-          ),
-          Row(
-            children: [
-              if (mode == ConstructorMode.edit) ...[
-                SizedBox(
-                  width: 50,
-                  height: 50,
-                  child: ControlButton(
-                    icon: Icons.delete_outline,
-                    onPressed: () => _deleteSession(context, ref),
-                    destructive: true,
-                    iconSize: 28,
-                  ),
-                ),
-                const SizedBox(width: 16),
-              ],
-              SizedBox(
-                width: 50,
-                height: 50,
-                child: ControlButton(
-                  icon: Icons.check,
-                  onPressed: () => _saveSession(context, ref),
-                  iconSize: 28,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+        );
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(breathSessionConstructorProvider);
-    final description = state.description;
-    final exercises = state.exercises;
-    final totalDuration = state.totalDuration;
-    final mode = state.mode;
-
-    return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: _buildExercisesList(description, exercises, ref),
+        final theme = Theme.of(context);
+        final onSurface = theme.colorScheme.onSurface;
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor.withValues(alpha: 0.5),
+            border: Border(
+              top: BorderSide(
+                color: onSurface.withValues(alpha: 0.1),
+                width: 1,
+              ),
             ),
-            _buildFooter(context, ref, mode, totalDuration, state.complexity),
-          ],
-        ),
-      ),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppLocalizations.of(context)!.breathConstructorTotal,
+                    style: TextStyle(
+                      color: onSurface.withValues(alpha: 0.5),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatTotalDuration(state.totalDuration),
+                    style: TextStyle(
+                      color: onSurface,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ComplexityIndicator(complexity: state.complexity, width: 120),
+                ],
+              ),
+              Row(
+                children: [
+                  if (state.mode == ConstructorMode.edit) ...[
+                    SizedBox(
+                      width: 50,
+                      height: 50,
+                      child: ControlButton(
+                        icon: Icons.delete_outline,
+                        onPressed: _deleteSession,
+                        destructive: true,
+                        iconSize: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
+                  SizedBox(
+                    width: 50,
+                    height: 50,
+                    child: ControlButton(
+                      icon: Icons.check,
+                      onPressed: _saveSession,
+                      iconSize: 28,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:mind_ui/mind_ui.dart';
 import 'package:mind_l10n/mind_l10n.dart';
+import '../BreathSessionConstructorScreen.dart';
 import '../Models/ExerciseEditCellModel.dart';
 
 class ExerciseEditCell extends StatelessWidget {
   final ExerciseEditCellModel model;
-  final ValueChanged<ExerciseEditCellModel> onChanged;
   final VoidCallback onDelete;
+  final ActiveFieldKey? activeField;
+  final void Function(ActiveFieldKey key, BuildContext fieldContext) onFieldTap;
 
   const ExerciseEditCell({
     super.key,
     required this.model,
-    required this.onChanged,
     required this.onDelete,
+    required this.activeField,
+    required this.onFieldTap,
   });
 
   // ===== Layout constants =====
@@ -25,14 +27,21 @@ class ExerciseEditCell extends StatelessWidget {
   static const double _spaceAfterSeparator = 6.0;
 
   static const double _footerRowHeight = 24.0;
-  static const double _controlRowHeight = 38.0;
-  static const double _narrowControlRowHeight = 32.0; // Narrower height for repeat and rest rows
+  static const double _narrowControlRowHeight = 32.0;
+
+  bool _isActive(String fieldName) =>
+      activeField != null &&
+      activeField!.exerciseId == model.id &&
+      activeField!.fieldName == fieldName;
+
+  void _tap(String fieldName, int value, BuildContext fieldContext) {
+    onFieldTap(ActiveFieldKey(exerciseId: model.id, fieldName: fieldName), fieldContext);
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
-    final textColor = onSurface.withValues(alpha: 0.9);
     final backgroundColor = theme.cardColor.withValues(alpha: 0.8);
     final l10n = AppLocalizations.of(context)!;
 
@@ -51,10 +60,10 @@ class ExerciseEditCell extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildPhaseField(l10n.breathPhaseInhale, model.inhale, (v) => onChanged(model.copyWith(inhale: v)), onSurface),
-              _buildPhaseField(l10n.breathPhaseHold, model.hold1, (v) => onChanged(model.copyWith(hold1: v)), onSurface),
-              _buildPhaseField(l10n.breathPhaseExhale, model.exhale, (v) => onChanged(model.copyWith(exhale: v)), onSurface),
-              _buildPhaseField(l10n.breathPhaseHold, model.hold2, (v) => onChanged(model.copyWith(hold2: v)), onSurface),
+              _buildPhaseField(l10n.breathPhaseInhale, 'inhale', model.inhale, onSurface),
+              _buildPhaseField(l10n.breathPhaseHold, 'hold1', model.hold1, onSurface),
+              _buildPhaseField(l10n.breathPhaseExhale, 'exhale', model.exhale, onSurface),
+              _buildPhaseField(l10n.breathPhaseHold, 'hold2', model.hold2, onSurface),
             ],
           ),
 
@@ -63,11 +72,11 @@ class ExerciseEditCell extends StatelessWidget {
           // ===== CYCLES =====
           _buildHorizontalField(
             l10n.breathConstructorRepeat,
+            'cycles',
             model.cycles,
-            (v) => onChanged(model.copyWith(cycles: v)),
             onSurface,
             height: _narrowControlRowHeight,
-            useNoBorderInput: true,
+            useNoBorder: true,
           ),
 
           const SizedBox(height: _spaceBetweenControls),
@@ -81,12 +90,12 @@ class ExerciseEditCell extends StatelessWidget {
           // ===== REST =====
           _buildHorizontalField(
             l10n.breathPhaseRest,
+            'rest',
             model.rest,
-            (v) => onChanged(model.copyWith(rest: v)),
             onSurface,
             showIcon: true,
             height: _narrowControlRowHeight,
-            useNoBorderInput: true,
+            useNoBorder: true,
           ),
 
           // ===== SEPARATOR =====
@@ -106,7 +115,7 @@ class ExerciseEditCell extends StatelessWidget {
                 Text(
                   _formatDuration(model.totalDuration),
                   style: TextStyle(
-                    color: textColor,
+                    color: onSurface.withValues(alpha: 0.9),
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -133,8 +142,7 @@ class ExerciseEditCell extends StatelessWidget {
   }
 
   // ===== PHASE FIELD =====
-  Widget _buildPhaseField(
-      String label, int value, ValueChanged<int> onChanged, Color onSurface) {
+  Widget _buildPhaseField(String label, String fieldName, int value, Color onSurface) {
     return Column(
       children: [
         Text(
@@ -145,21 +153,27 @@ class ExerciseEditCell extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        _buildNumericInput(value, onChanged, onSurface),
+        _buildNumericDisplay(
+          fieldName: fieldName,
+          value: value,
+          onSurface: onSurface,
+          textAlign: TextAlign.center,
+          showBorder: true,
+        ),
       ],
     );
   }
 
   // ===== HORIZONTAL FIELD =====
   Widget _buildHorizontalField(
-      String label,
-      int value,
-      ValueChanged<int> onChanged,
-      Color onSurface, {
-        bool showIcon = false,
-        double height = _controlRowHeight,
-        useNoBorderInput = true,
-      }) {
+    String label,
+    String fieldName,
+    int value,
+    Color onSurface, {
+    bool showIcon = false,
+    double height = 38.0,
+    bool useNoBorder = false,
+  }) {
     return SizedBox(
       height: height,
       child: Row(
@@ -181,17 +195,23 @@ class ExerciseEditCell extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _buildNumericInputRightAligned(value, onChanged, onSurface),
+                _buildNumericDisplay(
+                  fieldName: fieldName,
+                  value: value,
+                  onSurface: onSurface,
+                  textAlign: TextAlign.right,
+                  showBorder: false,
+                ),
                 const SizedBox(width: 8),
                 SizedBox(
                   width: 16,
                   height: 16,
                   child: showIcon
                       ? Icon(
-                    Icons.access_time,
-                    size: 16,
-                    color: onSurface.withValues(alpha: 0.5),
-                  )
+                          Icons.access_time,
+                          size: 16,
+                          color: onSurface.withValues(alpha: 0.5),
+                        )
                       : const SizedBox.shrink(),
                 ),
               ],
@@ -202,94 +222,54 @@ class ExerciseEditCell extends StatelessWidget {
     );
   }
 
-  Widget _buildNumericInputRightAligned(
-      int value,
-      ValueChanged<int> onChanged,
-      Color onSurface,
-      ) {
-    final controller = TextEditingController(text: value.toString())
-      ..selection = TextSelection.fromPosition(
-        TextPosition(offset: value.toString().length),
-      );
+  // ===== NUMERIC DISPLAY (replaces TextField) =====
+  Widget _buildNumericDisplay({
+    required String fieldName,
+    required int value,
+    required Color onSurface,
+    required TextAlign textAlign,
+    required bool showBorder,
+  }) {
+    final isFieldActive = _isActive(fieldName);
+    final displayText = value == 0 ? '0' : value.toString();
 
-    return SizedBox(
-      width: _inputFieldWidth,
-      height: _inputFieldHeight,
-      child: Container(
-        alignment: Alignment.center,
-        child: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          textAlign: TextAlign.right,
-          style: TextStyle(
-            color: onSurface,
-            fontSize: 16,
-            height: 1.1,
-            fontWeight: FontWeight.w500,
+    return Builder(builder: (fieldContext) => GestureDetector(
+      onTap: () => _tap(fieldName, value, fieldContext),
+      child: SizedBox(
+        width: _inputFieldWidth,
+        height: _inputFieldHeight,
+        child: Container(
+          decoration: showBorder
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: isFieldActive
+                        ? onSurface.withValues(alpha: 0.4)
+                        : onSurface.withValues(alpha: 0.1),
+                  ),
+                )
+              : null,
+          alignment: textAlign == TextAlign.center
+              ? Alignment.center
+              : Alignment.centerRight,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                displayText,
+                style: TextStyle(
+                  color: onSurface,
+                  fontSize: 16,
+                  height: 1.1,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              _BlinkingCursor(color: onSurface, active: isFieldActive),
+            ],
           ),
-          decoration: const InputDecoration(
-            isDense: true,
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.zero,
-          ),
-          onChanged: (text) {
-            if (text.isEmpty) {
-              onChanged(0);
-              return;
-            }
-            final parsed = int.tryParse(text);
-            if (parsed != null) onChanged(parsed);
-          },
         ),
       ),
-    );
-  }
-
-  Widget _buildNumericInput(int value, ValueChanged<int> onChanged, Color onSurface) {
-    final controller = TextEditingController(text: value.toString())
-      ..selection = TextSelection.fromPosition(
-        TextPosition(offset: value.toString().length),
-      );
-
-    return SizedBox(
-      width: _inputFieldWidth,
-      height: _inputFieldHeight,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: onSurface.withValues(alpha: 0.1),
-          ),
-        ),
-        alignment: Alignment.center,
-        child: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: onSurface,
-            fontSize: 16,
-            height: 1.1,
-            fontWeight: FontWeight.w500,
-          ),
-          decoration: const InputDecoration(
-            isDense: true,
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.zero,
-          ),
-          onChanged: (text) {
-            if (text.isEmpty) {
-              onChanged(0);
-              return;
-            }
-            final parsed = int.tryParse(text);
-            if (parsed != null) onChanged(parsed);
-          },
-        ),
-      ),
-    );
+    ));
   }
 
   Widget _buildShapeIcon(ExerciseIcon icon, Color onSurface) {
@@ -325,5 +305,64 @@ class ExerciseEditCell extends StatelessWidget {
     if (minutes > 0 && secs > 0) return '${minutes}m ${secs}s';
     if (minutes > 0) return '${minutes}m';
     return '${secs}s';
+  }
+}
+
+// ===== BLINKING CURSOR =====
+class _BlinkingCursor extends StatefulWidget {
+  final Color color;
+  final bool active;
+
+  const _BlinkingCursor({required this.color, required this.active});
+
+  @override
+  State<_BlinkingCursor> createState() => _BlinkingCursorState();
+}
+
+class _BlinkingCursorState extends State<_BlinkingCursor>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    if (widget.active) _controller.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _BlinkingCursor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active && !oldWidget.active) {
+      _controller.repeat(reverse: true);
+    } else if (!widget.active && oldWidget.active) {
+      _controller.stop();
+      _controller.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: widget.active ? 1.0 : 0.0,
+      child: FadeTransition(
+        opacity: _controller,
+        child: Container(
+          width: 2,
+          height: 16,
+          margin: const EdgeInsets.only(left: 1),
+          color: widget.color,
+        ),
+      ),
+    );
   }
 }
