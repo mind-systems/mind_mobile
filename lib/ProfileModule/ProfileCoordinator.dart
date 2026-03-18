@@ -12,11 +12,7 @@ class ProfileCoordinator implements IProfileCoordinator {
 
   @override
   void logout() {
-    App.shared.userNotifier.logout().then((_) {
-      if (context.mounted) {
-        context.pop();
-      }
-    });
+    App.shared.userNotifier.logout();
   }
 
   @override
