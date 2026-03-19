@@ -59,6 +59,9 @@
   "homeTabBreath": "Дыхание",
   "homeTabMind": "Mind",
 
+  "homeSuggestionsTitle": "Рекомендации для вас",
+  "homeSuggestionsError": "Не удалось загрузить рекомендации",
+
   "mcpTitle": "MCP",
   "mcpIntegrations": "Интеграции",
   "mcpDescription": "Токены доступа позволяют Claude Desktop работать с вашими упражнениями.",

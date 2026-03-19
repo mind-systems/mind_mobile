@@ -392,6 +392,18 @@ abstract class AppLocalizations {
   /// **'Mind'**
   String get homeTabMind;
 
+  /// No description provided for @homeSuggestionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions for you'**
+  String get homeSuggestionsTitle;
+
+  /// No description provided for @homeSuggestionsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load suggestions'**
+  String get homeSuggestionsError;
+
   /// No description provided for @mcpTitle.
   ///
   /// In en, this message translates to:

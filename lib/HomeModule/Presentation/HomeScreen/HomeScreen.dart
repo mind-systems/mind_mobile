@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/StatsCard.dart';
+import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/SuggestionsCard.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/IHomeCoordinator.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Models/ModuleItem.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/HomeScreenCell.dart';
@@ -52,6 +53,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SliverToBoxAdapter(child: SuggestionsCard()),
           // todo debug
           const SliverToBoxAdapter(child: StatsCard()),
         ],

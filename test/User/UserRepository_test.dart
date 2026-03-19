@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/User/IAuthApi.dart';
 import 'package:mind/User/IUserApi.dart';
+import 'package:mind/User/Models/SuggestionDTO.dart';
 import 'package:mind/User/Models/UserStatsDTO.dart';
 import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
 import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
@@ -25,6 +26,9 @@ class FakeUserApi implements IUserApi {
         longestStreak: 0,
         lastSessionDate: null,
       );
+
+  @override
+  Future<List<SuggestionDTO>> fetchSuggestions(String timeOfDay) async => [];
 }
 
 // ---------------------------------------------------------------------------

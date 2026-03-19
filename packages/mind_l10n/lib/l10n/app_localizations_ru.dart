@@ -164,6 +164,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get homeTabMind => 'Mind';
 
   @override
+  String get homeSuggestionsTitle => 'Рекомендации для вас';
+
+  @override
+  String get homeSuggestionsError => 'Не удалось загрузить рекомендации';
+
+  @override
   String get mcpTitle => 'MCP';
 
   @override

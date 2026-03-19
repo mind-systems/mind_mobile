@@ -65,6 +65,9 @@
   "homeTabBreath": "Breath",
   "homeTabMind": "Mind",
 
+  "homeSuggestionsTitle": "Suggestions for you",
+  "homeSuggestionsError": "Could not load suggestions",
+
   "mcpTitle": "MCP",
   "mcpIntegrations": "Integrations",
   "mcpDescription": "Personal access tokens allow Claude Desktop to access your exercises.",

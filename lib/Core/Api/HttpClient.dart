@@ -25,9 +25,9 @@ class HttpClient {
     _dio.interceptors.add(authInterceptor);
   }
 
-  Future<Response> get(String path) async {
+  Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) async {
     try {
-      return await _dio.get(path);
+      return await _dio.get(path, queryParameters: queryParameters);
     } on DioException catch (e) {
       throw _handleDioError(e);
     }

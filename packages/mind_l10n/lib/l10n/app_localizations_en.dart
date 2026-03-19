@@ -163,6 +163,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeTabMind => 'Mind';
 
   @override
+  String get homeSuggestionsTitle => 'Suggestions for you';
+
+  @override
+  String get homeSuggestionsError => 'Could not load suggestions';
+
+  @override
   String get mcpTitle => 'MCP';
 
   @override
