@@ -169,6 +169,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeSuggestionsError => 'Could not load suggestions';
 
   @override
+  String get homeSuggestionsMorning1 => 'Good morning';
+
+  @override
+  String get homeSuggestionsMorning2 => 'Morning energy';
+
+  @override
+  String get homeSuggestionsMorning3 => 'Start your day right';
+
+  @override
+  String get homeSuggestionsMorning4 => 'Wake up gently';
+
+  @override
+  String get homeSuggestionsMidday1 => 'Midday reset';
+
+  @override
+  String get homeSuggestionsMidday2 => 'Recharge your focus';
+
+  @override
+  String get homeSuggestionsMidday3 => 'Take a breath';
+
+  @override
+  String get homeSuggestionsMidday4 => 'A moment for yourself';
+
+  @override
+  String get homeSuggestionsEvening1 => 'Wind down';
+
+  @override
+  String get homeSuggestionsEvening2 => 'Evening calm';
+
+  @override
+  String get homeSuggestionsEvening3 => 'Prepare for rest';
+
+  @override
+  String get homeSuggestionsEvening4 => 'End the day well';
+
+  @override
   String get mcpTitle => 'MCP';
 
   @override

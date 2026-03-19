@@ -404,6 +404,42 @@ abstract class AppLocalizations {
   /// **'Could not load suggestions'**
   String get homeSuggestionsError;
 
+  /// No description provided for @homeSuggestionsMorning1.
+  String get homeSuggestionsMorning1;
+
+  /// No description provided for @homeSuggestionsMorning2.
+  String get homeSuggestionsMorning2;
+
+  /// No description provided for @homeSuggestionsMorning3.
+  String get homeSuggestionsMorning3;
+
+  /// No description provided for @homeSuggestionsMorning4.
+  String get homeSuggestionsMorning4;
+
+  /// No description provided for @homeSuggestionsMidday1.
+  String get homeSuggestionsMidday1;
+
+  /// No description provided for @homeSuggestionsMidday2.
+  String get homeSuggestionsMidday2;
+
+  /// No description provided for @homeSuggestionsMidday3.
+  String get homeSuggestionsMidday3;
+
+  /// No description provided for @homeSuggestionsMidday4.
+  String get homeSuggestionsMidday4;
+
+  /// No description provided for @homeSuggestionsEvening1.
+  String get homeSuggestionsEvening1;
+
+  /// No description provided for @homeSuggestionsEvening2.
+  String get homeSuggestionsEvening2;
+
+  /// No description provided for @homeSuggestionsEvening3.
+  String get homeSuggestionsEvening3;
+
+  /// No description provided for @homeSuggestionsEvening4.
+  String get homeSuggestionsEvening4;
+
   /// No description provided for @mcpTitle.
   ///
   /// In en, this message translates to:

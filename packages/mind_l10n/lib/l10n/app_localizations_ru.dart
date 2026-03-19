@@ -170,6 +170,42 @@ class AppLocalizationsRu extends AppLocalizations {
   String get homeSuggestionsError => 'Не удалось загрузить рекомендации';
 
   @override
+  String get homeSuggestionsMorning1 => 'Доброе утро';
+
+  @override
+  String get homeSuggestionsMorning2 => 'Утренняя энергия';
+
+  @override
+  String get homeSuggestionsMorning3 => 'Начните день правильно';
+
+  @override
+  String get homeSuggestionsMorning4 => 'Мягкое пробуждение';
+
+  @override
+  String get homeSuggestionsMidday1 => 'Перезарядка в середине дня';
+
+  @override
+  String get homeSuggestionsMidday2 => 'Восстановите концентрацию';
+
+  @override
+  String get homeSuggestionsMidday3 => 'Сделайте вдох';
+
+  @override
+  String get homeSuggestionsMidday4 => 'Момент для себя';
+
+  @override
+  String get homeSuggestionsEvening1 => 'Расслабьтесь';
+
+  @override
+  String get homeSuggestionsEvening2 => 'Вечерний покой';
+
+  @override
+  String get homeSuggestionsEvening3 => 'Подготовьтесь ко сну';
+
+  @override
+  String get homeSuggestionsEvening4 => 'Завершите день хорошо';
+
+  @override
   String get mcpTitle => 'MCP';
 
   @override

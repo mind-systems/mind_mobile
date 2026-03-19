@@ -62,6 +62,21 @@
   "homeSuggestionsTitle": "Рекомендации для вас",
   "homeSuggestionsError": "Не удалось загрузить рекомендации",
 
+  "homeSuggestionsMorning1": "Доброе утро",
+  "homeSuggestionsMorning2": "Утренняя энергия",
+  "homeSuggestionsMorning3": "Начните день правильно",
+  "homeSuggestionsMorning4": "Мягкое пробуждение",
+
+  "homeSuggestionsMidday1": "Перезарядка в середине дня",
+  "homeSuggestionsMidday2": "Восстановите концентрацию",
+  "homeSuggestionsMidday3": "Сделайте вдох",
+  "homeSuggestionsMidday4": "Момент для себя",
+
+  "homeSuggestionsEvening1": "Расслабьтесь",
+  "homeSuggestionsEvening2": "Вечерний покой",
+  "homeSuggestionsEvening3": "Подготовьтесь ко сну",
+  "homeSuggestionsEvening4": "Завершите день хорошо",
+
   "mcpTitle": "MCP",
   "mcpIntegrations": "Интеграции",
   "mcpDescription": "Токены доступа позволяют Claude Desktop работать с вашими упражнениями.",

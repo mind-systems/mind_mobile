@@ -38,6 +38,7 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(child: CustomScrollView(
         slivers: [
+          const SliverToBoxAdapter(child: SuggestionsCard()),
           SliverPadding(
             padding: const EdgeInsets.all(16.0),
             sliver: SliverGrid(
@@ -53,7 +54,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SuggestionsCard()),
           // todo debug
           const SliverToBoxAdapter(child: StatsCard()),
         ],

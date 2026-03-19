@@ -68,6 +68,21 @@
   "homeSuggestionsTitle": "Suggestions for you",
   "homeSuggestionsError": "Could not load suggestions",
 
+  "homeSuggestionsMorning1": "Good morning",
+  "homeSuggestionsMorning2": "Morning energy",
+  "homeSuggestionsMorning3": "Start your day right",
+  "homeSuggestionsMorning4": "Wake up gently",
+
+  "homeSuggestionsMidday1": "Midday reset",
+  "homeSuggestionsMidday2": "Recharge your focus",
+  "homeSuggestionsMidday3": "Take a breath",
+  "homeSuggestionsMidday4": "A moment for yourself",
+
+  "homeSuggestionsEvening1": "Wind down",
+  "homeSuggestionsEvening2": "Evening calm",
+  "homeSuggestionsEvening3": "Prepare for rest",
+  "homeSuggestionsEvening4": "End the day well",
+
   "mcpTitle": "MCP",
   "mcpIntegrations": "Integrations",
   "mcpDescription": "Personal access tokens allow Claude Desktop to access your exercises.",
