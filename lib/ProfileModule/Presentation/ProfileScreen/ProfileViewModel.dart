@@ -47,6 +47,10 @@ class ProfileViewModel extends Notifier<ProfileState> {
     coordinator.logout();
   }
 
+  void onMcpTap() {
+    coordinator.openMcp();
+  }
+
   Future<void> onNameChanged(String name) async {
     await service.updateName(name);
   }

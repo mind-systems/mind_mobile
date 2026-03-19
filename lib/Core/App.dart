@@ -17,6 +17,8 @@ import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/Core/Api/BreathSessionApi.dart';
 import 'package:mind/Core/Api/DeviceApi.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
+import 'package:mind/Core/Api/TokenApi.dart';
+import 'package:mind/Core/Api/ITokenApi.dart';
 import 'package:mind/Core/Api/UserApi.dart';
 import 'package:mind/Core/Socket/SocketDebugOverlay.dart';
 import 'package:mind/User/IUserApi.dart';
@@ -39,6 +41,7 @@ import 'package:mind/BreathModule/Core/LiveBreathSessionService.dart';
 import 'package:mind/BreathModule/Core/BreathTelemetryService.dart';
 import 'package:mind/Core/Socket/LiveSocketService.dart';
 import 'package:mind/Core/Socket/SocketConnectionCoordinator.dart';
+import 'package:mind/McpModule/Core/TokenNotifier.dart';
 import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
@@ -53,6 +56,7 @@ class App {
   final HttpClient httpClient;
   // todo debug for stats
   final IUserApi userApi;
+  final ITokenApi tokenApi;
   final LogoutNotifier logoutNotifier;
   final UserRepository userRepository;
   final BreathSessionRepository breathSessionRepository;
@@ -65,11 +69,13 @@ class App {
   final LiveBreathSessionNotifier liveSessionNotifier;
   final LiveBreathSessionService liveSessionService;
   final BreathTelemetryService telemetryService;
+  final TokenNotifier tokenNotifier;
 
   App._({
     required this.db,
     required this.httpClient,
     required this.userApi,
+    required this.tokenApi,
     required this.logoutNotifier,
     required this.userRepository,
     required this.breathSessionRepository,
@@ -82,6 +88,7 @@ class App {
     required this.liveSessionNotifier,
     required this.liveSessionService,
     required this.telemetryService,
+    required this.tokenNotifier,
   });
 
   static Future<void> initialize() async {
@@ -101,6 +108,7 @@ class App {
     final httpClient = HttpClient(authInterceptor: authInterceptor);
     final authApi = AuthApi(httpClient);
     final userApi = UserApi(httpClient);
+    final tokenApi = TokenApi(httpClient);
     final breathSessionApi = BreathSessionApi(httpClient);
 
     final deviceApi = DeviceApi(httpClient);
@@ -138,11 +146,13 @@ class App {
     final liveSessionNotifier = LiveBreathSessionNotifier(liveSocketService: liveSocketService, authStream: userNotifier.stream);
     final liveSessionService = LiveBreathSessionService(notifier: liveSessionNotifier);
     final telemetryService = BreathTelemetryService(liveSocketService: liveSocketService);
+    final tokenNotifier = TokenNotifier(api: tokenApi);
 
     shared = App._(
       db: db,
       httpClient: httpClient,
       userApi: userApi,
+      tokenApi: tokenApi,
       logoutNotifier: logoutNotifier,
       userRepository: userRepository,
       breathSessionRepository: breathSessionRepository,
@@ -155,6 +165,7 @@ class App {
       liveSessionNotifier: liveSessionNotifier,
       liveSessionService: liveSessionService,
       telemetryService: telemetryService,
+      tokenNotifier: tokenNotifier,
     );
 
     await shared.deeplinkRouter.init();

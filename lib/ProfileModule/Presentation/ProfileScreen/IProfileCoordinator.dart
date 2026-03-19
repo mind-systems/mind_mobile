@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 abstract class IProfileCoordinator {
   void logout();
   void dismiss();
+  void openMcp();
 
   void showThemePicker({
     required List<String> keys,

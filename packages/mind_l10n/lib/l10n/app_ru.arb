@@ -57,5 +57,22 @@
   "breathConstructorRepeat": "Повтор",
 
   "homeTabBreath": "Дыхание",
-  "homeTabMind": "Mind"
+  "homeTabMind": "Mind",
+
+  "mcpTitle": "MCP",
+  "mcpIntegrations": "Интеграции",
+  "mcpDescription": "Токены доступа позволяют Claude Desktop работать с вашими упражнениями.",
+  "mcpCreateToken": "Создать токен",
+  "mcpRevealTitle": "Скопируйте токен",
+  "mcpRevealWarning": "Он показывается один раз. Передайте его своему ИИ.",
+  "mcpCopy": "Копировать",
+  "mcpDone": "Готово",
+  "mcpRevokeConfirmTitle": "Отозвать токен",
+  "mcpRevokeConfirmDescription": "Этот токен перестанет работать немедленно.",
+  "mcpTokenName": "Название",
+  "mcpNewToken": "Новый токен",
+  "mcpCreatedAt": "Создан {date}",
+  "@mcpCreatedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  }
 }

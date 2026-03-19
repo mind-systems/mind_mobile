@@ -59,6 +59,16 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ],
             ),
+            SettingsSectionHeader(title: l10n.mcpIntegrations),
+            SettingsSection(
+              children: [
+                SettingsNavigationCell(
+                  title: l10n.mcpTitle,
+                  value: '',
+                  onTap: viewModel.onMcpTap,
+                ),
+              ],
+            ),
             SettingsSectionHeader(title: l10n.session),
             SettingsSection(
               children: [

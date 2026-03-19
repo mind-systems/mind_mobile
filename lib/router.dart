@@ -3,6 +3,8 @@ import 'package:mind/BreathModule/BreathModule.dart';
 import 'package:breath_module/breath_module.dart' show BreathSessionScreen, BreathSessionConstructorScreen, BreathSessionListScreen;
 import 'package:mind/HomeModule/HomeModule.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/HomeScreen.dart';
+import 'package:mind/McpModule/McpModule.dart';
+import 'package:mind/McpModule/Presentation/McpScreen/McpScreen.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/ProfileScreen.dart';
 import 'package:mind/ProfileModule/ProfileModule.dart';
 import 'package:mind/User/Presentation/Login/LoginScreen.dart';
@@ -62,6 +64,11 @@ final appRouter = GoRouter(
       builder: (context, state) {
         return ProfileModule.buildProfileScreen(context);
       },
+    ),
+    GoRoute(
+      path: McpScreen.path,
+      name: McpScreen.name,
+      builder: (context, state) => McpModule.buildMcpScreen(context),
     ),
     GoRoute(
       path: ComingSoonScreen.path,

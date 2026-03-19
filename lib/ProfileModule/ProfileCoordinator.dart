@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mind/Core/App.dart';
+import 'package:mind/McpModule/Presentation/McpScreen/McpScreen.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/IProfileCoordinator.dart';
 import 'package:mind_ui/mind_ui.dart';
 import 'package:mind_l10n/mind_l10n.dart';
@@ -19,6 +20,13 @@ class ProfileCoordinator implements IProfileCoordinator {
   void dismiss() {
     if (context.mounted) {
       context.pop();
+    }
+  }
+
+  @override
+  void openMcp() {
+    if (context.mounted) {
+      context.push(McpScreen.path);
     }
   }
 

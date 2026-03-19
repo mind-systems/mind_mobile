@@ -391,6 +391,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mind'**
   String get homeTabMind;
+
+  /// No description provided for @mcpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'MCP'**
+  String get mcpTitle;
+
+  /// No description provided for @mcpIntegrations.
+  ///
+  /// In en, this message translates to:
+  /// **'Integrations'**
+  String get mcpIntegrations;
+
+  /// No description provided for @mcpDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal access tokens allow Claude Desktop to access your exercises.'**
+  String get mcpDescription;
+
+  /// No description provided for @mcpCreateToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Create token'**
+  String get mcpCreateToken;
+
+  /// No description provided for @mcpRevealTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy your token'**
+  String get mcpRevealTitle;
+
+  /// No description provided for @mcpRevealWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This is shown only once. Give it to your AI.'**
+  String get mcpRevealWarning;
+
+  /// No description provided for @mcpCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get mcpCopy;
+
+  /// No description provided for @mcpDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get mcpDone;
+
+  /// No description provided for @mcpRevokeConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke token'**
+  String get mcpRevokeConfirmTitle;
+
+  /// No description provided for @mcpRevokeConfirmDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This token will stop working immediately.'**
+  String get mcpRevokeConfirmDescription;
+
+  /// No description provided for @mcpTokenName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get mcpTokenName;
+
+  /// No description provided for @mcpNewToken.
+  ///
+  /// In en, this message translates to:
+  /// **'New token'**
+  String get mcpNewToken;
+
+  /// No description provided for @mcpCreatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {date}'**
+  String mcpCreatedAt(String date);
 }
 
 class _AppLocalizationsDelegate

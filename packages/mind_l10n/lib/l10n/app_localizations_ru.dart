@@ -162,4 +162,47 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get homeTabMind => 'Mind';
+
+  @override
+  String get mcpTitle => 'MCP';
+
+  @override
+  String get mcpIntegrations => 'Интеграции';
+
+  @override
+  String get mcpDescription =>
+      'Токены доступа позволяют Claude Desktop работать с вашими упражнениями.';
+
+  @override
+  String get mcpCreateToken => 'Создать токен';
+
+  @override
+  String get mcpRevealTitle => 'Скопируйте токен';
+
+  @override
+  String get mcpRevealWarning => 'Он показывается один раз. Передайте его своему ИИ.';
+
+  @override
+  String get mcpCopy => 'Копировать';
+
+  @override
+  String get mcpDone => 'Готово';
+
+  @override
+  String get mcpRevokeConfirmTitle => 'Отозвать токен';
+
+  @override
+  String get mcpRevokeConfirmDescription =>
+      'Этот токен перестанет работать немедленно.';
+
+  @override
+  String get mcpTokenName => 'Название';
+
+  @override
+  String get mcpNewToken => 'Новый токен';
+
+  @override
+  String mcpCreatedAt(String date) {
+    return 'Создан $date';
+  }
 }

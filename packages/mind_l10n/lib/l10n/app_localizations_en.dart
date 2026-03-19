@@ -161,4 +161,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeTabMind => 'Mind';
+
+  @override
+  String get mcpTitle => 'MCP';
+
+  @override
+  String get mcpIntegrations => 'Integrations';
+
+  @override
+  String get mcpDescription =>
+      'Personal access tokens allow Claude Desktop to access your exercises.';
+
+  @override
+  String get mcpCreateToken => 'Create token';
+
+  @override
+  String get mcpRevealTitle => 'Copy your token';
+
+  @override
+  String get mcpRevealWarning => 'This is shown only once. Give it to your AI.';
+
+  @override
+  String get mcpCopy => 'Copy';
+
+  @override
+  String get mcpDone => 'Done';
+
+  @override
+  String get mcpRevokeConfirmTitle => 'Revoke token';
+
+  @override
+  String get mcpRevokeConfirmDescription =>
+      'This token will stop working immediately.';
+
+  @override
+  String get mcpTokenName => 'Name';
+
+  @override
+  String get mcpNewToken => 'New token';
+
+  @override
+  String mcpCreatedAt(String date) {
+    return 'Created $date';
+  }
 }

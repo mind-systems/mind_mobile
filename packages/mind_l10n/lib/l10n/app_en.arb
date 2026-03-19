@@ -63,5 +63,22 @@
   "breathConstructorRepeat": "Repeat",
 
   "homeTabBreath": "Breath",
-  "homeTabMind": "Mind"
+  "homeTabMind": "Mind",
+
+  "mcpTitle": "MCP",
+  "mcpIntegrations": "Integrations",
+  "mcpDescription": "Personal access tokens allow Claude Desktop to access your exercises.",
+  "mcpCreateToken": "Create token",
+  "mcpRevealTitle": "Copy your token",
+  "mcpRevealWarning": "This is shown only once. Give it to your AI.",
+  "mcpCopy": "Copy",
+  "mcpDone": "Done",
+  "mcpRevokeConfirmTitle": "Revoke token",
+  "mcpRevokeConfirmDescription": "This token will stop working immediately.",
+  "mcpTokenName": "Name",
+  "mcpNewToken": "New token",
+  "mcpCreatedAt": "Created {date}",
+  "@mcpCreatedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  }
 }
