@@ -85,6 +85,14 @@
 
   "homeStatsTotalSessions": "Total sessions",
   "homeStatsDuration": "Practice time",
+  "homeStatsDurationHours": "{h} h {m} min",
+  "@homeStatsDurationHours": {
+    "placeholders": { "h": { "type": "String" }, "m": { "type": "String" } }
+  },
+  "homeStatsDurationMinutes": "{m} min",
+  "@homeStatsDurationMinutes": {
+    "placeholders": { "m": { "type": "String" } }
+  },
   "homeStatsCurrentStreak": "Streak",
   "homeStatsBestStreak": "Record",
   "homeStatsLastSession": "Last session",

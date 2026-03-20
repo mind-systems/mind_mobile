@@ -79,6 +79,14 @@
 
   "homeStatsTotalSessions": "Всего сессий",
   "homeStatsDuration": "Время практики",
+  "homeStatsDurationHours": "{h} ч {m} мин",
+  "@homeStatsDurationHours": {
+    "placeholders": { "h": { "type": "String" }, "m": { "type": "String" } }
+  },
+  "homeStatsDurationMinutes": "{m} мин",
+  "@homeStatsDurationMinutes": {
+    "placeholders": { "m": { "type": "String" } }
+  },
   "homeStatsCurrentStreak": "Стрик",
   "homeStatsBestStreak": "Рекорд",
   "homeStatsLastSession": "Последняя сессия",

@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/HomeViewModel.dart';
+import 'package:mind/HomeModule/Presentation/HomeScreen/Models/HomeDTOs.dart';
 import 'package:mind_l10n/mind_l10n.dart';
 
 class StatsCard extends ConsumerWidget {
   const StatsCard({super.key});
+
+  static String _formatDuration(StatsDTO stats, AppLocalizations l10n) {
+    if (stats.durationHours > 0) {
+      return l10n.homeStatsDurationHours('${stats.durationHours}', '${stats.durationMinutes}');
+    }
+    return l10n.homeStatsDurationMinutes('${stats.durationMinutes}');
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,7 +32,7 @@ class StatsCard extends ConsumerWidget {
             children: [
               const SizedBox(height: 14),
               Text('${l10n.homeStatsTotalSessions}: ${stats.totalSessions}', style: theme.textTheme.bodyMedium),
-              Text('${l10n.homeStatsDuration}: ${stats.totalDuration}', style: theme.textTheme.bodyMedium),
+              Text('${l10n.homeStatsDuration}: ${_formatDuration(stats, l10n)}', style: theme.textTheme.bodyMedium),
               Text('${l10n.homeStatsCurrentStreak}: ${stats.currentStreak}  (${l10n.homeStatsBestStreak}: ${stats.longestStreak})', style: theme.textTheme.bodyMedium),
               Text('${l10n.homeStatsLastSession}: ${stats.lastSessionDate}', style: theme.textTheme.bodyMedium),
               const SizedBox(height: 14),

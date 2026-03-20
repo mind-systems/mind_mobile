@@ -212,6 +212,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get homeStatsDuration => 'Время практики';
 
   @override
+  String homeStatsDurationHours(String h, String m) => '$h ч $m мин';
+
+  @override
+  String homeStatsDurationMinutes(String m) => '$m мин';
+
+  @override
   String get homeStatsCurrentStreak => 'Стрик';
 
   @override

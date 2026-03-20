@@ -6,13 +6,15 @@ class SuggestionItemDTO {
 
 class StatsDTO {
   final int totalSessions;
-  final String totalDuration;
+  final int durationHours;
+  final int durationMinutes;
   final String currentStreak;
   final String longestStreak;
   final String lastSessionDate;
   const StatsDTO({
     required this.totalSessions,
-    required this.totalDuration,
+    required this.durationHours,
+    required this.durationMinutes,
     required this.currentStreak,
     required this.longestStreak,
     required this.lastSessionDate,

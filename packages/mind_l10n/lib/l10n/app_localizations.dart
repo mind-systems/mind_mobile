@@ -446,6 +446,12 @@ abstract class AppLocalizations {
   /// No description provided for @homeStatsDuration.
   String get homeStatsDuration;
 
+  /// No description provided for @homeStatsDurationHours.
+  String homeStatsDurationHours(String h, String m);
+
+  /// No description provided for @homeStatsDurationMinutes.
+  String homeStatsDurationMinutes(String m);
+
   /// No description provided for @homeStatsCurrentStreak.
   String get homeStatsCurrentStreak;
 
