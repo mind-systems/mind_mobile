@@ -16,7 +16,19 @@ Enum `DayPeriod` — чистый Dart, без зависимости от Flutt
 
 ## Загрузка данных
 
-`SuggestionsCard` загружает рекомендации через `FutureProvider.autoDispose`. API возвращает до 4 сессий из собственных и расшаренных (`shared = true`) сессий, подобранных по времени суток и уровню сложности пользователя. Провайдер `autoDispose` — данные перезагружаются при каждом возвращении на Home Screen, что гарантирует актуальность рекомендаций при смене периода суток.
+Рекомендации загружаются через сервисный слой HomeModule. `HomeService` реализует интерфейс `IHomeService` и инкапсулирует логику загрузки — определяет период суток, вызывает API, конвертирует ответ в `SuggestionItemDTO`. Для гостевого пользователя сервис возвращает пустой список без обращения к серверу.
+
+`HomeViewModel` (Riverpod `Notifier`) запрашивает рекомендации и статистику при инициализации и хранит результат в `HomeState`. Виджеты `SuggestionsCard` и `StatsCard` подписаны на `homeViewModelProvider` и перестраиваются при изменении состояния.
+
+Сервис также предоставляет `observeChanges()` — поток событий, на который подписан ViewModel:
+
+| Событие | Источник | Реакция ViewModel |
+|---------|----------|-------------------|
+| `StatsInvalidated` | Завершение живой сессии (`LiveBreathSessionEnded`) | Перезагрузка статистики |
+| `HomeSessionExpired` | `UserNotifier` перешёл в `GuestState` | Сброс состояния в начальное |
+| `HomeAuthenticated` | `UserNotifier` перешёл в `AuthenticatedState` | Загрузка рекомендаций и статистики |
+
+Точка сборки — `HomeModule.buildHomeScreen()`. Метод создаёт конкретные `HomeService` и `HomeCoordinator`, инжектит зависимости из `App.shared` и возвращает `ProviderScope` с переопределённым `homeViewModelProvider`.
 
 ## Карусель
 
@@ -24,7 +36,7 @@ Enum `DayPeriod` — чистый Dart, без зависимости от Flutt
 
 Карусель автоматически прокручивается со скоростью ~25 логических пикселей в секунду. Анимация реализована через `Ticker` — на каждом кадре `jumpTo` сдвигает позицию на `_pixelsPerSecond * dt`. При достижении края направление разворачивается. Как только пользователь касается списка (перехватывается через `UserScrollNotification`), автопрокрутка останавливается навсегда — тикер выключается и больше не запускается.
 
-По тапу на карточку открывается экран сессии через `context.push(BreathSessionScreen.path, extra: id)`.
+По тапу на карточку ViewModel вызывает координатор, который открывает экран сессии через `context.push(BreathSessionScreen.path, extra: id)`.
 
 ## Заголовок
 
@@ -33,5 +45,6 @@ Enum `DayPeriod` — чистый Dart, без зависимости от Flutt
 ## See Also
 
 - [Module System](../core/module-system.md) — архитектура модулей-пакетов
+- [Global Listeners](../core/global-listeners.md) — глобальная координация событий, включая session expired
 - [Auth-Gated Navigation](../core/auth-gated-navigation.md) — auth gate при переходе в профиль с HomeScreen
 - [Complexity](../breath/complexity.md) — расчёт сложности сессий, используемый в фильтрации рекомендаций
