@@ -12,30 +12,49 @@ class SyncEngine {
   final IBreathSessionDao breathSessionDao;
   final BreathSessionNotifier breathSessionNotifier;
 
-  bool _isSyncing = false;
+  Future<void>? _activeSyncOp;
 
   SyncEngine({required this.syncApi, required this.syncStateDao, required this.breathSessionDao, required this.breathSessionNotifier});
 
   Future<void> sync() async {
-    if (_isSyncing) return;
-    _isSyncing = true;
+    if (_activeSyncOp != null) return;
+    try {
+      _activeSyncOp = _doSync();
+      await _activeSyncOp;
+    } finally {
+      _activeSyncOp = null;
+    }
+  }
+
+  Future<void> _doSync() async {
     try {
       final lastEventId = await syncStateDao.getLastEventId();
       final response = await syncApi.fetchChanges(lastEventId);
       if (response.fullResync) {
+        if (lastEventId == 0) {
+          log('[SyncEngine] server sent fullResync for after=0, skipping to prevent loop', name: 'SyncEngine');
+          return;
+        }
         await _handleFullResync();
         return;
       }
       if (response.events.isEmpty) return;
-      await processEvents(response.events);
+      await _processEvents(response.events);
     } catch (e) {
       log('[SyncEngine] sync failed: $e', name: 'SyncEngine');
-    } finally {
-      _isSyncing = false;
     }
   }
 
   Future<void> processEvents(List<ChangeEvent> events) async {
+    // Wait for any in-flight sync() to finish before processing socket events,
+    // so we don't interleave REST-poll writes with socket-push writes.
+    if (_activeSyncOp != null) {
+      await _activeSyncOp;
+    }
+    await _processEvents(events);
+  }
+
+  Future<void> _processEvents(List<ChangeEvent> events) async {
     if (events.isEmpty) return;
     events.sort((a, b) => a.id.compareTo(b.id));
     final grouped = <String, List<ChangeEvent>>{};
