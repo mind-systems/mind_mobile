@@ -83,6 +83,12 @@
   "homeSuggestionsEvening3": "Prepare for rest",
   "homeSuggestionsEvening4": "End the day well",
 
+  "homeStatsTotalSessions": "Total sessions",
+  "homeStatsDuration": "Practice time",
+  "homeStatsCurrentStreak": "Streak",
+  "homeStatsBestStreak": "Record",
+  "homeStatsLastSession": "Last session",
+
   "mcpTitle": "MCP",
   "mcpIntegrations": "Integrations",
   "mcpDescription": "Personal access tokens allow Claude Desktop to access your exercises.",

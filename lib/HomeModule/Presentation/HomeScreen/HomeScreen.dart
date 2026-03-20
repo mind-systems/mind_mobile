@@ -1,37 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mind/HomeModule/Presentation/HomeScreen/HomeViewModel.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/StatsCard.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/SuggestionsCard.dart';
-import 'package:mind/HomeModule/Presentation/HomeScreen/IHomeCoordinator.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Models/ModuleItem.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/HomeScreenCell.dart';
 import 'package:mind_l10n/mind_l10n.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   static const String path = '/';
   static const String name = 'home';
 
-  final IHomeCoordinator coordinator;
-
-  const HomeScreen({super.key, required this.coordinator});
+  const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final vm = ref.read(homeViewModelProvider.notifier);
     final l10n = AppLocalizations.of(context)!;
     final modules = [
       ModuleItem(
         title: l10n.homeTabBreath,
         iconPath: 'assets/images/modules/home/breath.png',
-        onTap: coordinator.openBreath,
+        onTap: vm.onBreathTap,
       ),
       ModuleItem(
         title: l10n.homeTabMind,
         iconPath: 'assets/images/modules/home/bci.png',
-        onTap: coordinator.openComingSoon,
+        onTap: vm.onComingSoonTap,
       ),
       ModuleItem(
         title: l10n.profile,
         iconPath: 'assets/images/modules/home/profile.png',
-        onTap: coordinator.openProfile,
+        onTap: vm.onProfileTap,
       ),
     ];
 

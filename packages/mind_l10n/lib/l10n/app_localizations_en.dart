@@ -205,6 +205,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeSuggestionsEvening4 => 'End the day well';
 
   @override
+  String get homeStatsTotalSessions => 'Total sessions';
+
+  @override
+  String get homeStatsDuration => 'Practice time';
+
+  @override
+  String get homeStatsCurrentStreak => 'Streak';
+
+  @override
+  String get homeStatsBestStreak => 'Record';
+
+  @override
+  String get homeStatsLastSession => 'Last session';
+
+  @override
   String get mcpTitle => 'MCP';
 
   @override

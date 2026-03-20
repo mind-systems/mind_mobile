@@ -206,6 +206,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get homeSuggestionsEvening4 => 'Завершите день хорошо';
 
   @override
+  String get homeStatsTotalSessions => 'Всего сессий';
+
+  @override
+  String get homeStatsDuration => 'Время практики';
+
+  @override
+  String get homeStatsCurrentStreak => 'Стрик';
+
+  @override
+  String get homeStatsBestStreak => 'Рекорд';
+
+  @override
+  String get homeStatsLastSession => 'Последняя сессия';
+
+  @override
   String get mcpTitle => 'MCP';
 
   @override

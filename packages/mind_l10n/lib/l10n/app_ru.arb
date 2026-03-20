@@ -77,6 +77,12 @@
   "homeSuggestionsEvening3": "Подготовьтесь ко сну",
   "homeSuggestionsEvening4": "Завершите день хорошо",
 
+  "homeStatsTotalSessions": "Всего сессий",
+  "homeStatsDuration": "Время практики",
+  "homeStatsCurrentStreak": "Стрик",
+  "homeStatsBestStreak": "Рекорд",
+  "homeStatsLastSession": "Последняя сессия",
+
   "mcpTitle": "MCP",
   "mcpIntegrations": "Интеграции",
   "mcpDescription": "Токены доступа позволяют Claude Desktop работать с вашими упражнениями.",

@@ -440,6 +440,21 @@ abstract class AppLocalizations {
   /// No description provided for @homeSuggestionsEvening4.
   String get homeSuggestionsEvening4;
 
+  /// No description provided for @homeStatsTotalSessions.
+  String get homeStatsTotalSessions;
+
+  /// No description provided for @homeStatsDuration.
+  String get homeStatsDuration;
+
+  /// No description provided for @homeStatsCurrentStreak.
+  String get homeStatsCurrentStreak;
+
+  /// No description provided for @homeStatsBestStreak.
+  String get homeStatsBestStreak;
+
+  /// No description provided for @homeStatsLastSession.
+  String get homeStatsLastSession;
+
   /// No description provided for @mcpTitle.
   ///
   /// In en, this message translates to:
