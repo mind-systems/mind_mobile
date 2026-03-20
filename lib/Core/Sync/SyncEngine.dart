@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
@@ -5,16 +6,28 @@ import 'package:mind/Core/Api/ISyncApi.dart';
 import 'package:mind/Core/Api/Models/ChangeEvent.dart';
 import 'package:mind/Core/Database/IBreathSessionDao.dart';
 import 'package:mind/Core/Database/ISyncStateDao.dart';
+import 'package:mind/User/Models/AuthState.dart';
 
 class SyncEngine {
   final ISyncApi syncApi;
   final ISyncStateDao syncStateDao;
   final IBreathSessionDao breathSessionDao;
   final BreathSessionNotifier breathSessionNotifier;
-
+  late final StreamSubscription<AuthState> _authSubscription;
   Future<void>? _activeSyncOp;
 
-  SyncEngine({required this.syncApi, required this.syncStateDao, required this.breathSessionDao, required this.breathSessionNotifier});
+  SyncEngine({required this.syncApi, required this.syncStateDao, required this.breathSessionDao, required this.breathSessionNotifier, required Stream<AuthState> authStream}) {
+    _authSubscription = authStream.skip(1).where((s) => s is AuthenticatedState).listen((_) => sync());
+  }
+
+  Future<void> dispose() async {
+    await _authSubscription.cancel();
+  }
+
+  Future<void> waitForColdStart(bool isAuthenticated) {
+    if (!isAuthenticated) return Future.value();
+    return sync().timeout(const Duration(seconds: 5), onTimeout: () {});
+  }
 
   Future<void> sync() async {
     if (_activeSyncOp != null) return;

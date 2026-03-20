@@ -47,7 +47,6 @@ import 'package:mind/Core/Sync/SyncEngine.dart';
 import 'package:mind/Core/Sync/SyncSocketListener.dart';
 import 'package:mind/McpModule/Core/TokenNotifier.dart';
 import 'package:mind/User/LogoutNotifier.dart';
-import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
 import 'package:mind/Core/GlobalUI/GlobalListeners.dart';
@@ -130,14 +129,8 @@ class App {
     final initialUser = await userRepository.loadUser();
     final userNotifier = UserNotifier(repository: userRepository, logoutNotifier: logoutNotifier, initialUser: initialUser);
     final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository, authStream: userNotifier.stream);
-    final syncEngine = SyncEngine(syncApi: syncApi, syncStateDao: db.syncStateDao, breathSessionDao: db.breathSessionDao, breathSessionNotifier: breathSessionNotifier);
-    if (!initialUser.isGuest) {
-      await syncEngine.sync().timeout(const Duration(seconds: 5), onTimeout: () {});
-    }
-    userNotifier.stream
-        .skip(1)
-        .where((s) => s is AuthenticatedState)
-        .listen((_) => syncEngine.sync());
+    final syncEngine = SyncEngine(syncApi: syncApi, syncStateDao: db.syncStateDao, breathSessionDao: db.breathSessionDao, breathSessionNotifier: breathSessionNotifier, authStream: userNotifier.stream);
+    await syncEngine.waitForColdStart(!initialUser.isGuest);
 
     final prefs = await SharedPreferences.getInstance();
     final appSettingsRepository = AppSettingsRepository(SharedPreferencesStorage(prefs));
