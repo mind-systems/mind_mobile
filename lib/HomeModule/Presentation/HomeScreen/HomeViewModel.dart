@@ -23,7 +23,7 @@ class HomeViewModel extends Notifier<HomeState> {
     final subscription = service.observeChanges().listen(_onEvent);
     ref.onDispose(() => subscription.cancel());
 
-    _loadInitialData();
+    Future.microtask(() => _loadInitialData());
 
     return HomeState.initial().copyWith(isGuest: service.isGuest);
   }
