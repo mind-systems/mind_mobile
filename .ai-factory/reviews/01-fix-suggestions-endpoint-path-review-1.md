@@ -1,24 +1,42 @@
 # Review: Fix suggestions endpoint path
 
-## Scope
+## Code Review Summary
 
-Single line change in `lib/Core/Api/UserApi.dart:26` — endpoint path updated from `'/users/me/suggestions'` to `'/breath_sessions/suggestions'`.
+**Files Reviewed:** 5 (1 modified, 4 deleted)
+**Risk Level:** 🟢 Low
 
-## Checklist
+### Context Gates
 
-| Check | Result |
-|-------|--------|
-| Path matches backend controller | OK — endpoint moved to `breath_sessions` controller |
-| Query parameter preserved | OK — `timeOfDay` still passed unchanged |
-| Response parsing unchanged | OK — still deserializes `List<SuggestionDTO>` |
-| Method signature unchanged | OK — `IUserApi` contract intact |
-| Callers unaffected | OK — `SuggestionsCard` and test fake both go through `IUserApi.fetchSuggestions()`, no hardcoded paths elsewhere |
-| Auth: endpoint still requires JWT | Assumed — `breath_sessions/` routes are auth-gated on the backend like `users/me/` was; `AuthInterceptor` attaches the token regardless of path |
-| No migration needed | OK — client-only change |
-| No type mismatches | OK — response shape hasn't changed |
+- **ARCHITECTURE.md:** WARN — no architectural boundaries affected; changes are metadata-only (roadmap + review file cleanup).
+- **RULES.md:** not present — skipped.
+- **ROADMAP.md:** OK — milestone 4 ("Rewrite HomeScreen widgets to use ViewModel") marked as SKIPPED because milestone 3 ("Create HomeScreen Service layer") already migrated `SuggestionsCard` and `StatsCard` to the ViewModel. No orphaned work.
 
-## Issues found
+### Changes
+
+**`.ai-factory/ROADMAP.md`** — Milestone 4 status changed from `[ ]` to `[x] ⚠️ SKIPPED (already implemented)`. Verified correct: the HomeScreen Service layer commit (`61cceee`) already rewired both widgets to use `homeViewModelProvider`, so this milestone has no remaining work.
+
+**Deleted review files** — Four review files for milestones 1-3 removed. These reviews were already consumed and their findings addressed in prior commits.
+
+### Verification of underlying code change (commit `f74ffa4`)
+
+The endpoint path fix itself was committed earlier. Verified:
+- `UserApi.fetchSuggestions()` now hits `'/breath_sessions/suggestions'` — correct.
+- Query parameter (`timeOfDay`) and response parsing (`List<SuggestionDTO>`) unchanged — correct.
+- No remaining references to `'/users/me/suggestions'` in application code (only in plan/roadmap docs as historical context).
+- `AuthInterceptor` attaches JWT regardless of path — no auth regression.
+- No migration needed — client-only change.
+
+### Critical Issues
 
 None.
+
+### Suggestions
+
+None.
+
+### Positive Notes
+
+- Clean housekeeping: old review files removed after their findings were addressed, keeping the `.ai-factory/reviews/` directory uncluttered.
+- SKIPPED milestone correctly annotated with reason rather than silently checked off.
 
 REVIEW_PASS
