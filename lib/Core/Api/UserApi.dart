@@ -23,7 +23,7 @@ class UserApi implements IUserApi {
   @override
   Future<List<SuggestionDTO>> fetchSuggestions(String timeOfDay) async {
     final response = await _http.get(
-      '/users/me/suggestions',
+      '/breath_sessions/suggestions',
       queryParameters: {'timeOfDay': timeOfDay},
     );
     return (response.data as List<dynamic>)
