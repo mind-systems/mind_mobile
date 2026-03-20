@@ -17,6 +17,8 @@ import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/Core/Api/BreathSessionApi.dart';
 import 'package:mind/Core/Api/DeviceApi.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
+import 'package:mind/Core/Api/ISyncApi.dart';
+import 'package:mind/Core/Api/SyncApi.dart';
 import 'package:mind/Core/Api/TokenApi.dart';
 import 'package:mind/Core/Api/ITokenApi.dart';
 import 'package:mind/Core/Api/UserApi.dart';
@@ -57,6 +59,7 @@ class App {
   // todo debug for stats
   final IUserApi userApi;
   final ITokenApi tokenApi;
+  final ISyncApi syncApi;
   final UserRepository userRepository;
   final BreathSessionRepository breathSessionRepository;
   final UserNotifier userNotifier;
@@ -75,6 +78,7 @@ class App {
     required this.httpClient,
     required this.userApi,
     required this.tokenApi,
+    required this.syncApi,
     required this.userRepository,
     required this.breathSessionRepository,
     required this.userNotifier,
@@ -108,6 +112,7 @@ class App {
     final userApi = UserApi(httpClient);
     final tokenApi = TokenApi(httpClient);
     final breathSessionApi = BreathSessionApi(httpClient);
+    final syncApi = SyncApi(httpClient);
 
     final deviceApi = DeviceApi(httpClient);
     unawaited(DeviceRepository(api: deviceApi, storage: SecureStorage()).ping());
@@ -151,6 +156,7 @@ class App {
       httpClient: httpClient,
       userApi: userApi,
       tokenApi: tokenApi,
+      syncApi: syncApi,
       userRepository: userRepository,
       breathSessionRepository: breathSessionRepository,
       userNotifier: userNotifier,
