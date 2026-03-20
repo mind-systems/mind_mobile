@@ -62,7 +62,7 @@ DI is manual via `App.shared` singleton (`lib/Core/App.dart`). See `.ai-factory/
 
 | Path | Purpose |
 |------|---------|
-| `lib/Core/` | App singleton, Database (Drift ORM + DAO interfaces), HttpClient (Dio), routing, environment config |
+| `lib/Core/` | App singleton, Database (Drift ORM + DAO interfaces), HttpClient (Dio), routing, environment config, Sync (SyncEngine + SyncSocketListener) |
 | `lib/User/` | Auth state, login/logout, UserNotifier, UserRepository, IAuthApi |
 | `lib/HomeModule/` | Home screen — module grid, suggestions widget, stats card, coordinator |
 | `lib/BreathModule/` | Breathing session domain (notifiers, repositories, models) + concrete service/coordinator implementations wired to `packages/breath_module` |
@@ -133,6 +133,7 @@ Detailed docs and Mermaid architecture diagrams live in `docs/`:
 - `docs/core/auth-gated-navigation.md` — Auth-gated navigation and route guards
 - `docs/core/alerts-and-snackbars.md` — When to use AppAlert vs SnackBar
 - `docs/core/module-system.md` — Pluggable package architecture, module boundary, wiring pattern
+- `docs/core/sync-engine.md` — Data sync: SyncEngine, cold start, socket events, cursor management
 - `docs/core/testing.md` — Testing philosophy, what to test, fake patterns, current test inventory
 - `docs/home/suggestions-widget.md` — Time-of-day suggestions carousel on HomeScreen
 - `docs/user/login-flow.md` — Login flow: passwordless email and Google Sign-In

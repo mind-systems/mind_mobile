@@ -26,4 +26,8 @@ See `.ai-factory/ARCHITECTURE.md` for architecture decisions, folder structure, 
 | `lib/router.dart` | All GoRouter routes |
 | `lib/Core/Database/Database.dart` | Drift schema — run `flutter pub run build_runner build` after changes |
 | `lib/Core/Api/AuthInterceptor.dart` | JWT attach + 401 → logout flow |
+| `lib/Core/Sync/SyncEngine.dart` | Data sync pipeline: fetch changes → group → batch-refetch → apply to Drift |
+| `lib/Core/Sync/SyncSocketListener.dart` | Bridges Socket.IO `sync:changed` events to SyncEngine |
+| `lib/Core/Api/SyncApi.dart` | REST client for `/sync/changes` and `/breath_sessions/batch` |
+| `lib/Core/Database/SyncStateDao.dart` | Drift DAO for sync cursor (`lastEventId`) persistence |
 | `lib/Core/Environment.example.dart` | Template for `Environment.dart` (gitignored, must be created on first setup) |
