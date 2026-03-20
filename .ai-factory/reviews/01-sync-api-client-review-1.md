@@ -1,35 +1,36 @@
 # Review: Sync API Client
 
-## Scope
+## Code Review Summary
 
-6 files changed: 3 response models (`ChangeEvent`, `SyncResponse`, `BatchSessionsResponse`), interface (`ISyncApi`), implementation (`SyncApi`), DI wiring (`App.dart`).
+**Files Reviewed:** 6 (3 response models, 1 interface, 1 implementation, 1 DI wiring)
+**Risk Level:** 🟢 Low
 
-## Correctness
+### Context Gates
 
-**Models** — All three follow the established `fromJson` factory pattern. Field types match the sync-engine spec (`id` as `int`, `entity`/`refId`/`action` as `String`). `SyncResponse.fullResync` correctly defaults to `false` when absent from JSON — matches the spec where a normal incremental response omits the flag.
+- **ARCHITECTURE.md:** WARN — no violations. New files placed in `lib/Core/Api/` and `lib/Core/Api/Models/`, consistent with the architecture's Core infrastructure layer. `ISyncApi` sits alongside `ITokenApi` in `Core/Api/`, appropriate for a cross-cutting sync concern.
+- **RULES.md:** WARN — file does not exist, no rules to check.
+- **ROADMAP.md:** OK — "Sync API Client" milestone is present and marked complete.
 
-**SyncApi.fetchChanges** — String-interpolated query param (`?after=$lastEventId`). `lastEventId` is `int`, so no URL-encoding concern. Matches the pattern in `BreathSessionApi.fetchAll`.
+### Critical Issues
 
-**SyncApi.fetchSessionsBatch** — Joins UUIDs with commas into the query string. UUIDs contain only `[a-f0-9-]`, so no encoding issue. URL length is bounded by the caller (SyncEngine controls batch size).
+None.
 
-**App.dart** — Field, constructor param, initializer, and `App._()` argument all wired correctly. Follows single-line style rule. Positioned after `breathSessionApi` in the init sequence.
+### Suggestions
 
-## Bugs
+None.
 
-None found.
+### Positive Notes
 
-## Security
+- **Consistent patterns throughout.** All three models (`ChangeEvent`, `SyncResponse`, `BatchSessionsResponse`) follow the established `fromJson` factory style used by `TokenDTO` and `BreathSessionsListResponse`. The list deserialization in `BatchSessionsResponse.fromJson` is identical to the pattern in `BreathSessionsListResponse.fromJson`.
 
-- Both endpoints go through `HttpClient` → `AuthInterceptor` (JWT attached automatically). No auth bypass.
-- No user-controlled strings are interpolated into URLs — `lastEventId` is `int`, `ids` are UUIDs from the sync event pipeline. No injection vector.
+- **`SyncResponse.fullResync` handles absent keys gracefully.** The `as bool? ?? false` pattern correctly defaults to `false` when the server omits the flag during normal incremental responses.
 
-## Runtime risks
+- **`SyncApi` follows existing API class patterns exactly.** Constructor takes `HttpClient`, methods are `async`, deserialization uses `response.data as Map<String, dynamic>`. Matches `TokenApi` and `BreathSessionApi`.
 
-None. Error handling is inherited from `HttpClient._handleDioError` (all `DioException`s become `ApiException`). No new failure modes introduced.
+- **DI wiring is correct and well-positioned.** `syncApi` field, constructor param, initializer (after `breathSessionApi`), and `App._()` argument are all in the right places. Single-line initializer style rule is followed.
 
-## Minor notes (non-blocking)
+- **No security concerns.** Both endpoints go through `HttpClient` → `AuthInterceptor` (JWT attached automatically). `lastEventId` is `int` and `ids` are UUIDs from the sync pipeline — no user-controlled strings interpolated into URLs.
 
-- **Empty ids list**: If `fetchSessionsBatch` is called with an empty list, the request becomes `GET /breath_sessions/batch?ids=`. Not a bug — the caller (SyncEngine) should guard against this, and it's outside the API client's scope.
-- **Query param style**: `fetchChanges` and `fetchSessionsBatch` use URL string interpolation. `UserApi.fetchSuggestions` uses the `queryParameters` map. Both work with Dio — this is a pre-existing inconsistency, not introduced by this change.
+- **Error handling inherited cleanly.** All `DioException`s are caught by `HttpClient._handleDioError` and converted to `ApiException`. No new error paths introduced.
 
 REVIEW_PASS
