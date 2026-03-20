@@ -57,7 +57,6 @@ class App {
   // todo debug for stats
   final IUserApi userApi;
   final ITokenApi tokenApi;
-  final LogoutNotifier logoutNotifier;
   final UserRepository userRepository;
   final BreathSessionRepository breathSessionRepository;
   final UserNotifier userNotifier;
@@ -76,7 +75,6 @@ class App {
     required this.httpClient,
     required this.userApi,
     required this.tokenApi,
-    required this.logoutNotifier,
     required this.userRepository,
     required this.breathSessionRepository,
     required this.userNotifier,
@@ -153,7 +151,6 @@ class App {
       httpClient: httpClient,
       userApi: userApi,
       tokenApi: tokenApi,
-      logoutNotifier: logoutNotifier,
       userRepository: userRepository,
       breathSessionRepository: breathSessionRepository,
       userNotifier: userNotifier,
@@ -208,7 +205,7 @@ class MyApp extends ConsumerWidget {
       routerConfig: appRouter,
       builder: (context, child) {
         final body = GlobalListeners(
-          logoutNotifier: App.shared.logoutNotifier,
+          sessionExpiredStream: App.shared.userNotifier.sessionExpiredStream,
           authErrorStream: App.shared.userNotifier.authErrorStream,
           child: child!,
         );

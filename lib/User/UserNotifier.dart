@@ -17,6 +17,7 @@ class UserNotifier {
   final BehaviorSubject<AuthState> _subject;
   final BehaviorSubject<bool> _authInProgressSubject = BehaviorSubject<bool>.seeded(false);
   final PublishSubject<String> _authErrorSubject = PublishSubject<String>();
+  final PublishSubject<void> _sessionExpiredSubject = PublishSubject<void>();
   StreamSubscription<void>? _logoutSubscription;
 
   UserNotifier({
@@ -36,6 +37,8 @@ class UserNotifier {
   Stream<bool> get authInProgressStream => _authInProgressSubject.stream;
 
   Stream<String> get authErrorStream => _authErrorSubject.stream;
+
+  Stream<void> get sessionExpiredStream => _sessionExpiredSubject.stream;
 
   AuthState get currentState => _subject.value;
 
@@ -108,10 +111,12 @@ class UserNotifier {
     final currentUser = _subject.value.user;
     final newGuest = await repository.clearSession(currentUser);
     _subject.add(GuestState(newGuest));
+    _sessionExpiredSubject.add(null);
   }
 
   void dispose() {
     _logoutSubscription?.cancel();
+    _sessionExpiredSubject.close();
     _authErrorSubject.close();
     _authInProgressSubject.close();
     _subject.close();

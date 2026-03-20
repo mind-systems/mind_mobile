@@ -3,23 +3,24 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/Core/GlobalUI/GlobalKeys.dart';
-import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind_ui/mind_ui.dart';
 
-/// Слушает глобальные события приложения и координирует показ UI.
+/// Listens to global app events and coordinates UI presentation.
 ///
-/// Обрабатывает:
-/// - События снэкбаров через [GlobalSnackBarNotifier]
-/// - События логаута через [LogoutNotifier]
+/// Handles:
+/// - Snackbar events via [GlobalSnackBarNotifier]
+/// - Session expiry via [sessionExpiredStream] (fires only when an authenticated
+///   session is actually cleared — not for guest 401s)
+/// - Auth errors via [authErrorStream]
 ///
-/// Должен оборачивать корневой виджет приложения.
+/// Should wrap the root widget of the application.
 class GlobalListeners extends ConsumerStatefulWidget {
-  final LogoutNotifier logoutNotifier;
+  final Stream<void> sessionExpiredStream;
   final Stream<String> authErrorStream;
   final Widget child;
 
   const GlobalListeners({
-    required this.logoutNotifier,
+    required this.sessionExpiredStream,
     required this.authErrorStream,
     required this.child,
     super.key,
@@ -30,13 +31,13 @@ class GlobalListeners extends ConsumerStatefulWidget {
 }
 
 class _GlobalListenersState extends ConsumerState<GlobalListeners> {
-  StreamSubscription<void>? _logoutSubscription;
+  StreamSubscription<void>? _sessionExpiredSubscription;
   StreamSubscription<String>? _authErrorSubscription;
 
   @override
   void initState() {
     super.initState();
-    _logoutSubscription = widget.logoutNotifier.stream.listen((_) {
+    _sessionExpiredSubscription = widget.sessionExpiredStream.listen((_) {
       _showSnackBar(SnackBarEvent.error('Сессия истекла'));
     });
 
@@ -47,7 +48,7 @@ class _GlobalListenersState extends ConsumerState<GlobalListeners> {
 
   @override
   void dispose() {
-    _logoutSubscription?.cancel();
+    _sessionExpiredSubscription?.cancel();
     _authErrorSubscription?.cancel();
     super.dispose();
   }

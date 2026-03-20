@@ -3,7 +3,7 @@
 ## Milestones
 
 - [x] **Fix suggestions endpoint path** — change `/users/me/suggestions` → `/breath_sessions/suggestions` in `UserApi.fetchSuggestions()`
-- [ ] **Route 401 handling through UserNotifier** — `LogoutNotifier` becomes a private channel; `GlobalListeners` moves to `UserNotifier.sessionExpiredStream`; no more broadcast to all subscribers on every 401; see [note](.ai-factory/notes/route-401-through-usernotifier.md)
+- [x] **Route 401 handling through UserNotifier** — `LogoutNotifier` becomes a private channel; `GlobalListeners` moves to `UserNotifier.sessionExpiredStream`; no more broadcast to all subscribers on every 401; see [note](.ai-factory/notes/route-401-through-usernotifier.md)
 - [ ] **Create HomeScreen Service layer** — add `IHomeService`, `HomeService`, `HomeViewModel`, DTOs, and state; follow ProfileModule pattern; guest-guard moves into Service; see [note](.ai-factory/notes/homescreen-service-layer.md)
 - [ ] **Rewrite HomeScreen widgets to use ViewModel** — `SuggestionsCard` and `StatsCard` stop calling `App.shared` directly; watch `homeViewModelProvider` instead; `StatsCard` drops to `ConsumerWidget`; `HomeModule` wires everything via `ProviderScope` overrides
 
