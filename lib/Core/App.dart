@@ -43,8 +43,11 @@ import 'package:mind/BreathModule/Core/LiveBreathSessionService.dart';
 import 'package:mind/BreathModule/Core/BreathTelemetryService.dart';
 import 'package:mind/Core/Socket/LiveSocketService.dart';
 import 'package:mind/Core/Socket/SocketConnectionCoordinator.dart';
+import 'package:mind/Core/Sync/SyncEngine.dart';
+import 'package:mind/Core/Sync/SyncSocketListener.dart';
 import 'package:mind/McpModule/Core/TokenNotifier.dart';
 import 'package:mind/User/LogoutNotifier.dart';
+import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
 import 'package:mind/Core/GlobalUI/GlobalListeners.dart';
@@ -72,6 +75,8 @@ class App {
   final LiveBreathSessionService liveSessionService;
   final BreathTelemetryService telemetryService;
   final TokenNotifier tokenNotifier;
+  final SyncEngine syncEngine;
+  final SyncSocketListener syncSocketListener;
 
   App._({
     required this.db,
@@ -91,6 +96,8 @@ class App {
     required this.liveSessionService,
     required this.telemetryService,
     required this.tokenNotifier,
+    required this.syncEngine,
+    required this.syncSocketListener,
   });
 
   static Future<void> initialize() async {
@@ -123,6 +130,8 @@ class App {
     final initialUser = await userRepository.loadUser();
     final userNotifier = UserNotifier(repository: userRepository, logoutNotifier: logoutNotifier, initialUser: initialUser);
     final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository, authStream: userNotifier.stream);
+    final syncEngine = SyncEngine(syncApi: syncApi, syncStateDao: db.syncStateDao, breathSessionDao: db.breathSessionDao, breathSessionNotifier: breathSessionNotifier);
+    if (initialUser is AuthenticatedState) unawaited(syncEngine.sync());
 
     final prefs = await SharedPreferences.getInstance();
     final appSettingsRepository = AppSettingsRepository(SharedPreferencesStorage(prefs));
@@ -144,6 +153,7 @@ class App {
     final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler, sessionHandler: sessionHandler);
 
     final liveSocketService = LiveSocketService(storage: const FlutterSecureStorage());
+    final syncSocketListener = SyncSocketListener(liveSocketService: liveSocketService, syncEngine: syncEngine);
 
     final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService);
     final liveSessionNotifier = LiveBreathSessionNotifier(liveSocketService: liveSocketService, authStream: userNotifier.stream);
@@ -169,6 +179,8 @@ class App {
       liveSessionService: liveSessionService,
       telemetryService: telemetryService,
       tokenNotifier: tokenNotifier,
+      syncEngine: syncEngine,
+      syncSocketListener: syncSocketListener,
     );
 
     await shared.deeplinkRouter.init();

@@ -20,6 +20,9 @@ class FakeLiveSocketService implements ILiveSocketService {
   @override
   Stream<Map<String, dynamic>> get sessionStateEvents => _controller.stream;
 
+  @override
+  Stream<Map<String, dynamic>> get syncChangedEvents => const Stream.empty();
+
   final List<(String, Map<String, dynamic>?)> emitted = [];
 
   @override

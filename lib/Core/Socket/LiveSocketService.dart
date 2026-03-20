@@ -24,12 +24,15 @@ class LiveSocketService implements ILiveSocketService {
   final _sessionStateController = StreamController<Map<String, dynamic>>.broadcast();
   final _telemetryStateController = StreamController<void>.broadcast();
   final _dataAckController = StreamController<Map<String, dynamic>>.broadcast();
+  final _syncChangedController = StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<SocketConnectionState> get connectionState => _connectionState.stream;
   @override
   Stream<Map<String, dynamic>> get sessionStateEvents => _sessionStateController.stream;
   Stream<void> get telemetryStateEvents => _telemetryStateController.stream;
   Stream<Map<String, dynamic>> get dataAckEvents => _dataAckController.stream;
+  @override
+  Stream<Map<String, dynamic>> get syncChangedEvents => _syncChangedController.stream;
 
   final ValueNotifier<String> lastSentMessage = ValueNotifier('');
   final ValueNotifier<String> lastReceivedMessage = ValueNotifier('');
@@ -142,6 +145,14 @@ class LiveSocketService implements ILiveSocketService {
         }
       });
 
+      _liveSocket!.on('sync:changed', (data) {
+        if (data is Map<String, dynamic>) {
+          log('[Socket] ← sync:changed', name: 'LiveSocketService');
+          _syncChangedController.add(data);
+          lastReceivedMessage.value = 'live: sync:changed';
+        }
+      });
+
       _telemetrySocket!.onConnect((_) => _telemetryStateController.add(null));
 
       _telemetrySocket!.on('data:ack', (data) {
@@ -201,6 +212,7 @@ class LiveSocketService implements ILiveSocketService {
     _sessionStateController.close();
     _telemetryStateController.close();
     _dataAckController.close();
+    _syncChangedController.close();
   }
 
   void _updateConnectionState() {

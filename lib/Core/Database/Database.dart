@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:mind/Core/Database/IUserDao.dart';
 import 'package:mind/Core/Database/IBreathSessionDao.dart';
+import 'package:mind/Core/Database/ISyncStateDao.dart';
 import 'package:mind/User/Models/User.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
@@ -15,13 +16,14 @@ import 'package:mind/BreathModule/Models/StepType.dart';
 part 'Database.g.dart';
 part 'UserDao.dart';
 part 'BreathSessionDao.dart';
+part 'SyncStateDao.dart';
 
-@DriftDatabase(tables: [UserRecord, BreathSessions], daos: [UserDao, BreathSessionDao])
+@DriftDatabase(tables: [UserRecord, BreathSessions, SyncState], daos: [UserDao, BreathSessionDao, SyncStateDao])
 class Database extends _$Database {
   Database([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -29,6 +31,9 @@ class Database extends _$Database {
       for (var step = from; step < to; step++) {
         if (step == 1) {
           await migrator.createTable(breathSessions);
+        }
+        if (step == 2) {
+          await migrator.createTable(syncState);
         }
       }
     },

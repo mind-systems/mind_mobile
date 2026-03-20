@@ -43,6 +43,10 @@ class BreathSessionNotifier {
 
   void _onUserIdChanged(String _) async {
     await repository.deleteAll();
+    invalidate();
+  }
+
+  void invalidate() {
     _subject.add(BreathSessionsState(
       byId: {},
       order: [],
