@@ -26,6 +26,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
   BreathSessionStateMachine? _stateMachine;
   StreamSubscription<BreathSessionStateMachineState>? _stateMachineSubscription;
   StreamSubscription<BreathSessionDTO>? _sessionUpdateSubscription;
+  StreamSubscription<void>? _sessionDeletionSubscription;
 
   void Function(BreathSessionError error)? onErrorEvent;
 
@@ -53,6 +54,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
   @override
   BreathSessionState build() {
     ref.onDispose(() {
+      _sessionDeletionSubscription?.cancel();
       _sessionUpdateSubscription?.cancel();
       _stateMachineSubscription?.cancel();
       _stateMachine?.dispose();
@@ -79,6 +81,9 @@ class BreathViewModel extends Notifier<BreathSessionState> {
       _sessionUpdateSubscription = service.observeSession(sessionId).listen((dto) {
         _sessionDTO = dto;
         _setupEngine(dto);
+      });
+      _sessionDeletionSubscription = service.observeSessionDeletion(sessionId).listen((_) {
+        coordinator.dismiss();
       });
     } catch (e) {
       state = state.copyWith(loadState: SessionLoadState.error);

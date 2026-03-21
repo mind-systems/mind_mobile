@@ -23,11 +23,30 @@ class BreathSessionConstructorService
     required this.userNotifier,
   });
 
+  List<ExerciseEditCellModel> _defaultExercises() {
+    return [
+      ExerciseEditCellModel(
+        id: const Uuid().v4(),
+        inhale: 0,
+        hold1: 0,
+        exhale: 0,
+        hold2: 0,
+        cycles: 1,
+        rest: 15,
+      ),
+      ExerciseEditCellModel.create(),
+    ];
+  }
+
   @override
   BreathSessionConstructorDTO getInitialState() {
-    // Если сессии нет — возвращаем пустой DTO для создания
+    // Если сессии нет — возвращаем DTO с упражнениями по умолчанию
     if (existingSession == null) {
-      return BreathSessionConstructorDTO.empty();
+      return BreathSessionConstructorDTO(
+        description: '',
+        shared: false,
+        exercises: _defaultExercises(),
+      );
     }
 
     // Если есть — конвертируем в DTO для редактирования

@@ -54,13 +54,8 @@ class BreathSessionListCell extends StatelessWidget {
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 4),
-                      child: ComplexityIndicator(complexity: model.complexity),
-                    ),
-                  ),
+                  const SizedBox(width: 12),
+                  ComplexityIndicator(complexity: model.complexity),
                 ],
               ),
 

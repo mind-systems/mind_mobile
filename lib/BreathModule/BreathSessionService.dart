@@ -35,6 +35,17 @@ class BreathSessionService implements IBreathSessionService {
   }
 
   @override
+  Stream<void> observeSessionDeletion(String id) {
+    return notifier.stream
+        .skip(1)
+        .expand((state) {
+      final event = state.lastEvent;
+      if (event is SessionDeleted && event.id == id) return [null];
+      return [];
+    });
+  }
+
+  @override
   Future<BreathSessionDTO> starSession(String id, {required bool starred}) async {
     await notifier.starSession(id, starred: starred);
     final session = await notifier.getById(id);

@@ -20,6 +20,12 @@ class BreathSessionCoordinator implements IBreathSessionCoordinator {
   }
 
   @override
+  void dismiss() {
+    if (!context.mounted) return;
+    context.pop();
+  }
+
+  @override
   void openConstructor(String sessionId) {
     if (!context.mounted) return;
     final authState = userNotifier.currentState;
