@@ -206,16 +206,23 @@ class AppLocalizationsRu extends AppLocalizations {
   String get homeSuggestionsEvening4 => 'Завершите день хорошо';
 
   @override
+  String get level => 'Уровень';
+
+  @override
   String get homeStatsTotalSessions => 'Всего сессий';
 
   @override
   String get homeStatsDuration => 'Время практики';
 
   @override
-  String homeStatsDurationHours(String h, String m) => '$h ч $m мин';
+  String homeStatsDurationHours(String h, String m) {
+    return '$h ч $m мин';
+  }
 
   @override
-  String homeStatsDurationMinutes(String m) => '$m мин';
+  String homeStatsDurationMinutes(String m) {
+    return '$m мин';
+  }
 
   @override
   String get homeStatsCurrentStreak => 'Стрик';
@@ -243,7 +250,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mcpRevealTitle => 'Скопируйте токен';
 
   @override
-  String get mcpRevealWarning => 'Он показывается один раз. Передайте его своему ИИ.';
+  String get mcpRevealWarning =>
+      'Он показывается один раз. Передайте его своему ИИ.';
 
   @override
   String get mcpCopy => 'Копировать';

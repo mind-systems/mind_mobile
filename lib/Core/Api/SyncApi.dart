@@ -18,6 +18,8 @@ class SyncApi implements ISyncApi {
   Future<BatchSessionsResponse> fetchSessionsBatch(List<String> ids) async {
     final joinedIds = ids.join(',');
     final response = await _http.get('/breath_sessions/batch?ids=$joinedIds');
-    return BatchSessionsResponse.fromJson(response.data as Map<String, dynamic>);
+    final data = response.data;
+    final json = data is List ? {'data': data} : data as Map<String, dynamic>;
+    return BatchSessionsResponse.fromJson(json);
   }
 }

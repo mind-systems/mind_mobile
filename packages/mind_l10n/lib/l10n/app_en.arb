@@ -83,6 +83,7 @@
   "homeSuggestionsEvening3": "Prepare for rest",
   "homeSuggestionsEvening4": "End the day well",
 
+  "level": "Level",
   "homeStatsTotalSessions": "Total sessions",
   "homeStatsDuration": "Practice time",
   "homeStatsDurationHours": "{h} h {m} min",

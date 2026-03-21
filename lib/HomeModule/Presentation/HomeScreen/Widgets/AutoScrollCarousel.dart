@@ -22,7 +22,7 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel>
 
   Duration _lastTickTime = Duration.zero;
   bool _forward = true;
-  bool _stopped = false;
+  bool _userHasScrolled = false;
 
   // ~25 logical pixels per second
   static const double _pixelsPerSecond = 25.0;
@@ -41,7 +41,7 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel>
   }
 
   void _onTick(Duration elapsed) {
-    if (_stopped) return;
+    if (_userHasScrolled) return;
     if (!_scrollController.hasClients) return;
 
     final position = _scrollController.position;
@@ -56,9 +56,9 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel>
     final delta = _pixelsPerSecond * dt * (_forward ? 1 : -1);
     final newPixels = (position.pixels + delta).clamp(0.0, max);
 
-    if (newPixels >= max) {
+    if (newPixels >= max && _forward) {
       _forward = false;
-    } else if (newPixels <= 0) {
+    } else if (newPixels <= 0 && !_forward) {
       _forward = true;
     }
 
@@ -74,15 +74,13 @@ class _AutoScrollCarouselState extends State<AutoScrollCarousel>
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<UserScrollNotification>(
-      onNotification: (notification) {
-        _stopped = true;
-        _ticker.stop();
-        return false;
-      },
+    return Listener(
+      onPointerDown: (_) => _userHasScrolled = true,
       child: ListView.builder(
         controller: _scrollController,
         scrollDirection: Axis.horizontal,
+        primary: false,
+        physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: widget.itemCount,
         itemBuilder: (context, index) {

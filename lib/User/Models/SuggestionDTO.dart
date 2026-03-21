@@ -13,7 +13,7 @@ class SuggestionDTO {
 
   factory SuggestionDTO.fromJson(Map<String, dynamic> json) => SuggestionDTO(
     id: json['id'] as String? ?? '',
-    title: json['title'] as String? ?? '',
+    title: json['description'] as String? ?? '',
     description: json['description'] as String? ?? '',
     iconUrl: json['iconUrl'] as String?,
   );

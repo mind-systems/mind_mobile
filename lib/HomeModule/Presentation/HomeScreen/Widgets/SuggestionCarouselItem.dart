@@ -38,7 +38,7 @@ class SuggestionCarouselItem extends StatelessWidget {
           child: Text(
             title,
             style: theme.textTheme.bodyMedium,
-            maxLines: 2,
+            maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
         ),

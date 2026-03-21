@@ -146,9 +146,10 @@ class LiveSocketService implements ILiveSocketService {
       });
 
       _liveSocket!.on('sync:changed', (data) {
-        if (data is Map<String, dynamic>) {
+        final payload = data is List ? data[0] : data;
+        if (payload is Map<String, dynamic>) {
           log('[Socket] ← sync:changed', name: 'LiveSocketService');
-          _syncChangedController.add(data);
+          _syncChangedController.add(payload);
           lastReceivedMessage.value = 'live: sync:changed';
         }
       });

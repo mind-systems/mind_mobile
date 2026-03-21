@@ -17,9 +17,13 @@ class ComplexityIndicator extends StatelessWidget {
     this.width,
   });
 
-  double get _revealWidth {
-    final figures = _minFigures +
+  static double normalizeComplexity(double complexity) {
+    return _minFigures +
         (complexity / _maxComplexity).clamp(0.0, 1.0) * (_maxFigures - _minFigures);
+  }
+
+  double get _revealWidth {
+    final figures = normalizeComplexity(complexity);
     return (figures / _maxFigures) * _totalWidth;
   }
 

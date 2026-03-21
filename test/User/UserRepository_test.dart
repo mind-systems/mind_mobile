@@ -25,6 +25,7 @@ class FakeUserApi implements IUserApi {
         currentStreak: 0,
         longestStreak: 0,
         lastSessionDate: null,
+        maxCompletedComplexity: 0,
       );
 
   @override

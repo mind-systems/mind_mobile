@@ -19,8 +19,8 @@ import 'package:mind/Core/Api/DeviceApi.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
 import 'package:mind/Core/Api/ISyncApi.dart';
 import 'package:mind/Core/Api/SyncApi.dart';
-import 'package:mind/Core/Api/TokenApi.dart';
-import 'package:mind/Core/Api/ITokenApi.dart';
+import 'package:mind/Core/Api/PersonalAccessTokenApi.dart';
+import 'package:mind/Core/Api/IPersonalAccessTokenApi.dart';
 import 'package:mind/Core/Api/UserApi.dart';
 import 'package:mind/Core/Socket/SocketDebugOverlay.dart';
 import 'package:mind/User/IUserApi.dart';
@@ -61,7 +61,7 @@ class App {
   final HttpClient httpClient;
   // todo debug for stats
   final IUserApi userApi;
-  final ITokenApi tokenApi;
+  final IPersonalAccessTokenApi tokenApi;
   final ISyncApi syncApi;
   final UserRepository userRepository;
   final BreathSessionRepository breathSessionRepository;
@@ -119,7 +119,7 @@ class App {
     final httpClient = HttpClient(authInterceptor: authInterceptor);
     final authApi = AuthApi(httpClient);
     final userApi = UserApi(httpClient);
-    final tokenApi = TokenApi(httpClient);
+    final tokenApi = PersonalAccessTokenApi(httpClient);
     final breathSessionApi = BreathSessionApi(httpClient);
     final syncApi = SyncApi(httpClient);
 

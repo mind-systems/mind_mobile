@@ -4,6 +4,7 @@ class UserStatsDTO {
   final int currentStreak;
   final int longestStreak;
   final String? lastSessionDate;
+  final int maxCompletedComplexity;
 
   UserStatsDTO({
     required this.totalSessions,
@@ -11,6 +12,7 @@ class UserStatsDTO {
     required this.currentStreak,
     required this.longestStreak,
     required this.lastSessionDate,
+    required this.maxCompletedComplexity,
   });
 
   factory UserStatsDTO.fromJson(Map<String, dynamic> json) => UserStatsDTO(
@@ -19,5 +21,6 @@ class UserStatsDTO {
     currentStreak: json['currentStreak'] ?? 0,
     longestStreak: json['longestStreak'] ?? 0,
     lastSessionDate: json['lastSessionDate'] as String?,
+    maxCompletedComplexity: json['maxCompletedComplexity'] ?? 0,
   );
 }

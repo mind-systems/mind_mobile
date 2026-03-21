@@ -1,3 +1,4 @@
+import 'package:breath_module/breath_module.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionEvent.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionNotifier.dart';
@@ -41,6 +42,7 @@ class HomeService implements IHomeService {
       currentStreak: '${stats.currentStreak}',
       longestStreak: '${stats.longestStreak}',
       lastSessionDate: _formatDate(stats.lastSessionDate),
+      level: ComplexityIndicator.normalizeComplexity(stats.maxCompletedComplexity.toDouble()),
     );
   }
 

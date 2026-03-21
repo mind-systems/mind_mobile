@@ -11,6 +11,7 @@ class StatsDTO {
   final String currentStreak;
   final String longestStreak;
   final String lastSessionDate;
+  final double level;
   const StatsDTO({
     required this.totalSessions,
     required this.durationHours,
@@ -18,6 +19,7 @@ class StatsDTO {
     required this.currentStreak,
     required this.longestStreak,
     required this.lastSessionDate,
+    required this.level,
   });
 }
 

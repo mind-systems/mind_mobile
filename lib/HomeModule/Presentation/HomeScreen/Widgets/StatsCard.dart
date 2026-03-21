@@ -31,6 +31,7 @@ class StatsCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 14),
+              Text('${l10n.level}: ${stats.level.toStringAsFixed(1)}', style: theme.textTheme.bodyMedium),
               Text('${l10n.homeStatsTotalSessions}: ${stats.totalSessions}', style: theme.textTheme.bodyMedium),
               Text('${l10n.homeStatsDuration}: ${_formatDuration(stats, l10n)}', style: theme.textTheme.bodyMedium),
               Text('${l10n.homeStatsCurrentStreak}: ${stats.currentStreak}  (${l10n.homeStatsBestStreak}: ${stats.longestStreak})', style: theme.textTheme.bodyMedium),

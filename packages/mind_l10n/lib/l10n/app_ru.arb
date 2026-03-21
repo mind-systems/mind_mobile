@@ -77,6 +77,7 @@
   "homeSuggestionsEvening3": "Подготовьтесь ко сну",
   "homeSuggestionsEvening4": "Завершите день хорошо",
 
+  "level": "Уровень",
   "homeStatsTotalSessions": "Всего сессий",
   "homeStatsDuration": "Время практики",
   "homeStatsDurationHours": "{h} ч {m} мин",

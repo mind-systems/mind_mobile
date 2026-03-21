@@ -14,7 +14,7 @@ import 'app_localizations_ru.dart';
 /// returned by `AppLocalizations.of(context)`.
 ///
 /// Applications need to include `AppLocalizations.delegate()` in their app's
-/// `localizationsDelegates` list, and the locales they support in the app's
+/// `localizationDelegates` list, and the locales they support in the app's
 /// `supportedLocales` list. For example:
 ///
 /// ```dart
@@ -46,12 +46,12 @@ import 'app_localizations_ru.dart';
 ///
 /// iOS applications define key application metadata, including supported
 /// locales, in an Info.plist file that is built into the application bundle.
-/// To configure the locales supported by your app, you'll need to edit this
+/// To configure the locales supported by your app, you’ll need to edit this
 /// file.
 ///
-/// First, open your project's ios/Runner.xcworkspace Xcode workspace file.
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
 /// Then, in the Project Navigator, open the Info.plist file under the Runner
-/// project's Runner folder.
+/// project’s Runner folder.
 ///
 /// Next, select the Information Property List item, select Add Item from the
 /// Editor menu, then select Localizations from the pop-up menu.
@@ -405,60 +405,123 @@ abstract class AppLocalizations {
   String get homeSuggestionsError;
 
   /// No description provided for @homeSuggestionsMorning1.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
   String get homeSuggestionsMorning1;
 
   /// No description provided for @homeSuggestionsMorning2.
+  ///
+  /// In en, this message translates to:
+  /// **'Morning energy'**
   String get homeSuggestionsMorning2;
 
   /// No description provided for @homeSuggestionsMorning3.
+  ///
+  /// In en, this message translates to:
+  /// **'Start your day right'**
   String get homeSuggestionsMorning3;
 
   /// No description provided for @homeSuggestionsMorning4.
+  ///
+  /// In en, this message translates to:
+  /// **'Wake up gently'**
   String get homeSuggestionsMorning4;
 
   /// No description provided for @homeSuggestionsMidday1.
+  ///
+  /// In en, this message translates to:
+  /// **'Midday reset'**
   String get homeSuggestionsMidday1;
 
   /// No description provided for @homeSuggestionsMidday2.
+  ///
+  /// In en, this message translates to:
+  /// **'Recharge your focus'**
   String get homeSuggestionsMidday2;
 
   /// No description provided for @homeSuggestionsMidday3.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a breath'**
   String get homeSuggestionsMidday3;
 
   /// No description provided for @homeSuggestionsMidday4.
+  ///
+  /// In en, this message translates to:
+  /// **'A moment for yourself'**
   String get homeSuggestionsMidday4;
 
   /// No description provided for @homeSuggestionsEvening1.
+  ///
+  /// In en, this message translates to:
+  /// **'Wind down'**
   String get homeSuggestionsEvening1;
 
   /// No description provided for @homeSuggestionsEvening2.
+  ///
+  /// In en, this message translates to:
+  /// **'Evening calm'**
   String get homeSuggestionsEvening2;
 
   /// No description provided for @homeSuggestionsEvening3.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare for rest'**
   String get homeSuggestionsEvening3;
 
   /// No description provided for @homeSuggestionsEvening4.
+  ///
+  /// In en, this message translates to:
+  /// **'End the day well'**
   String get homeSuggestionsEvening4;
 
+  /// No description provided for @level.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get level;
+
   /// No description provided for @homeStatsTotalSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Total sessions'**
   String get homeStatsTotalSessions;
 
   /// No description provided for @homeStatsDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice time'**
   String get homeStatsDuration;
 
   /// No description provided for @homeStatsDurationHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{h} h {m} min'**
   String homeStatsDurationHours(String h, String m);
 
   /// No description provided for @homeStatsDurationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{m} min'**
   String homeStatsDurationMinutes(String m);
 
   /// No description provided for @homeStatsCurrentStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Streak'**
   String get homeStatsCurrentStreak;
 
   /// No description provided for @homeStatsBestStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
   String get homeStatsBestStreak;
 
   /// No description provided for @homeStatsLastSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Last session'**
   String get homeStatsLastSession;
 
   /// No description provided for @mcpTitle.

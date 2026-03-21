@@ -10,23 +10,32 @@ class SocketDebugOverlay extends StatefulWidget {
 }
 
 class _SocketDebugOverlayState extends State<SocketDebugOverlay> {
-  double _top = 60;
-  double _left = 16;
+  static const double _cardWidth = 280.0;
+  // 8.2% of card width visible on the right edge, 20.6% down the screen
+  static const double _visibleFraction = 0.082;
+  static const double _topFraction = 0.206;
+
+  double? _top;
+  double? _left;
 
   void _onPanUpdate(DragUpdateDetails details) {
     setState(() {
-      _top += details.delta.dy;
-      _left += details.delta.dx;
+      _top = (_top ?? 0) + details.delta.dy;
+      _left = (_left ?? 0) + details.delta.dx;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final top = _top ?? size.height * _topFraction;
+    final left = _left ?? size.width - _cardWidth * _visibleFraction;
+
     return Stack(
       children: [
         Positioned(
-          top: _top,
-          left: _left,
+          top: top,
+          left: left,
           child: GestureDetector(
             onPanUpdate: _onPanUpdate,
             child: _buildCard(context),

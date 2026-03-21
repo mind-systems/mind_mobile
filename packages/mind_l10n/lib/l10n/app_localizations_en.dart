@@ -205,16 +205,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeSuggestionsEvening4 => 'End the day well';
 
   @override
+  String get level => 'Level';
+
+  @override
   String get homeStatsTotalSessions => 'Total sessions';
 
   @override
   String get homeStatsDuration => 'Practice time';
 
   @override
-  String homeStatsDurationHours(String h, String m) => '$h h $m min';
+  String homeStatsDurationHours(String h, String m) {
+    return '$h h $m min';
+  }
 
   @override
-  String homeStatsDurationMinutes(String m) => '$m min';
+  String homeStatsDurationMinutes(String m) {
+    return '$m min';
+  }
 
   @override
   String get homeStatsCurrentStreak => 'Streak';

@@ -2,7 +2,7 @@ import 'dart:developer';
 
 import 'package:rxdart/rxdart.dart';
 
-import 'package:mind/Core/Api/ITokenApi.dart';
+import 'package:mind/Core/Api/IPersonalAccessTokenApi.dart';
 import 'package:mind/Core/Api/Models/CreateTokenRequest.dart';
 import 'package:mind/McpModule/Core/Models/Token.dart';
 import 'package:mind/McpModule/Core/Models/TokenNotifierEvent.dart';
@@ -15,13 +15,13 @@ class TokenNotifierState {
 }
 
 class TokenNotifier {
-  final ITokenApi _api;
+  final IPersonalAccessTokenApi _api;
 
   final BehaviorSubject<TokenNotifierState> _subject = BehaviorSubject.seeded(
     const TokenNotifierState(tokens: []),
   );
 
-  TokenNotifier({required ITokenApi api}) : _api = api;
+  TokenNotifier({required IPersonalAccessTokenApi api}) : _api = api;
 
   Stream<TokenNotifierState> get stream => _subject.stream;
 
