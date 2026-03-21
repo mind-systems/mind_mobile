@@ -17,6 +17,7 @@ class SocketConnectionCoordinator {
   SocketConnectionCoordinator({
     required UserNotifier userNotifier,
     required LiveSocketService liveSocketService,
+    required Stream<List<ConnectivityResult>> connectivityStream,
   }) : _liveSocketService = liveSocketService {
     _authSubscription = userNotifier.stream.listen((state) {
       if (state is AuthenticatedState) {
@@ -30,7 +31,7 @@ class SocketConnectionCoordinator {
       }
     });
 
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
+    _connectivitySubscription = connectivityStream.listen((results) {
       log('[SocketCoordinator] connectivity changed: $results', name: 'SocketConnectionCoordinator');
       if (results.contains(ConnectivityResult.none)) {
         log('[SocketCoordinator] no connectivity, disconnecting', name: 'SocketConnectionCoordinator');
@@ -40,6 +41,13 @@ class SocketConnectionCoordinator {
         _liveSocketService.connect();
       }
     });
+  }
+
+  void onAppResumed() {
+    if (_isAuthenticated && !_liveSocketService.isConnected) {
+      log('[SocketCoordinator] app resumed, socket not connected — reconnecting', name: 'SocketConnectionCoordinator');
+      _liveSocketService.connect();
+    }
   }
 
   void dispose() {

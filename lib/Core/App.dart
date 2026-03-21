@@ -42,6 +42,7 @@ import 'package:mind/BreathModule/Core/LiveBreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionService.dart';
 import 'package:mind/BreathModule/Core/BreathTelemetryService.dart';
 import 'package:mind/Core/Socket/LiveSocketService.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mind/Core/Socket/SocketConnectionCoordinator.dart';
 import 'package:mind/Core/Sync/SyncEngine.dart';
 import 'package:mind/Core/Sync/SyncSocketListener.dart';
@@ -76,6 +77,7 @@ class App {
   final TokenNotifier tokenNotifier;
   final SyncEngine syncEngine;
   final SyncSocketListener syncSocketListener;
+  final AppLifecycleListener lifecycleListener;
 
   App._({
     required this.db,
@@ -97,6 +99,7 @@ class App {
     required this.tokenNotifier,
     required this.syncEngine,
     required this.syncSocketListener,
+    required this.lifecycleListener,
   });
 
   static Future<void> initialize() async {
@@ -154,7 +157,8 @@ class App {
     final liveSocketService = LiveSocketService(storage: const FlutterSecureStorage());
     final syncSocketListener = SyncSocketListener(liveSocketService: liveSocketService, syncEngine: syncEngine);
 
-    final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService);
+    final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService, connectivityStream: Connectivity().onConnectivityChanged);
+    final lifecycleListener = AppLifecycleListener(onResume: socketConnectionCoordinator.onAppResumed);
     final liveSessionNotifier = LiveBreathSessionNotifier(liveSocketService: liveSocketService, authStream: userNotifier.stream);
     final liveSessionService = LiveBreathSessionService(notifier: liveSessionNotifier);
     final telemetryService = BreathTelemetryService(liveSocketService: liveSocketService);
@@ -180,6 +184,7 @@ class App {
       tokenNotifier: tokenNotifier,
       syncEngine: syncEngine,
       syncSocketListener: syncSocketListener,
+      lifecycleListener: lifecycleListener,
     );
 
     await shared.deeplinkRouter.init();
