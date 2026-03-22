@@ -63,6 +63,8 @@ class HomeViewModel extends Notifier<HomeState> {
       case HomeAuthenticated _:
         state = state.copyWith(isGuest: false);
         _loadInitialData();
+      case HomeAppResumed _:
+        _loadSuggestions();
     }
   }
 

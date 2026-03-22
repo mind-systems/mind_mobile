@@ -13,11 +13,13 @@ class HomeService implements IHomeService {
   final IUserApi userApi;
   final LiveBreathSessionNotifier liveSessionNotifier;
   final UserNotifier userNotifier;
+  final Stream<void> resumeStream;
 
   HomeService({
     required this.userApi,
     required this.liveSessionNotifier,
     required this.userNotifier,
+    required this.resumeStream,
   });
 
   @override
@@ -58,7 +60,8 @@ class HomeService implements IHomeService {
     final authenticated = userChanges
         .where((s) => s is AuthenticatedState)
         .map((_) => HomeAuthenticated() as HomeEvent);
-    return statsInvalidated.mergeWith([sessionExpired, authenticated]);
+    final resumeEvents = resumeStream.map((_) => HomeAppResumed() as HomeEvent);
+    return statsInvalidated.mergeWith([sessionExpired, authenticated, resumeEvents]);
   }
 
   String _formatDate(String? iso) {

@@ -30,3 +30,5 @@ class StatsInvalidated extends HomeEvent {}
 class HomeSessionExpired extends HomeEvent {}
 
 class HomeAuthenticated extends HomeEvent {}
+
+class HomeAppResumed extends HomeEvent {}

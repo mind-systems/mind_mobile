@@ -13,12 +13,15 @@ class SocketConnectionCoordinator {
 
   late final StreamSubscription<AuthState> _authSubscription;
   late final StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  late final StreamSubscription<void> _resumeSubscription;
 
   SocketConnectionCoordinator({
     required UserNotifier userNotifier,
     required LiveSocketService liveSocketService,
     required Stream<List<ConnectivityResult>> connectivityStream,
+    required Stream<void> resumeStream,
   }) : _liveSocketService = liveSocketService {
+    _resumeSubscription = resumeStream.listen((_) => onAppResumed());
     _authSubscription = userNotifier.stream.listen((state) {
       if (state is AuthenticatedState) {
         log('[SocketCoordinator] auth → authenticated, connecting', name: 'SocketConnectionCoordinator');
@@ -51,6 +54,7 @@ class SocketConnectionCoordinator {
   }
 
   void dispose() {
+    _resumeSubscription.cancel();
     _authSubscription.cancel();
     _connectivitySubscription.cancel();
   }

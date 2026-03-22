@@ -12,6 +12,7 @@ class HomeModule {
       userApi: App.shared.userApi,
       liveSessionNotifier: App.shared.liveSessionNotifier,
       userNotifier: App.shared.userNotifier,
+      resumeStream: App.shared.appLifecycleService.onResume,
     );
     final coordinator = HomeCoordinator(context, userNotifier: App.shared.userNotifier);
     return ProviderScope(
