@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/Models/BreathSessionNotifierEvent.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
@@ -11,17 +9,16 @@ class BreathSessionListService implements IBreathSessionListService {
   final BreathSessionNotifier notifier;
   final UserNotifier userNotifier;
 
-  final StreamController<BreathSessionListEvent> _controller =
-      StreamController<BreathSessionListEvent>.broadcast();
-
-  late final StreamSubscription _subscription;
-
-  BreathSessionListService({required this.notifier, required this.userNotifier}) {
-    _subscription = notifier.stream.listen(_onNotifierState);
-  }
+  BreathSessionListService({required this.notifier, required this.userNotifier});
 
   @override
-  Stream<BreathSessionListEvent> observeChanges() => _controller.stream;
+  Stream<BreathSessionListEvent> observeChanges() {
+    return notifier.stream.expand((state) {
+      final event = state.lastEvent;
+      if (event == null) return [];
+      return [_mapEvent(event)];
+    });
+  }
 
   /// ---------- Pagination ----------
 
@@ -37,57 +34,35 @@ class BreathSessionListService implements IBreathSessionListService {
 
   /// ---------- Notifier → Service ----------
 
-  void _onNotifierState(BreathSessionsState state) {
-    final event = state.lastEvent;
-    if (event == null) return;
-
+  BreathSessionListEvent _mapEvent(BreathSessionNotifierEvent event) {
     switch (event) {
       case PageLoaded e:
-        _controller.add(
-          PageLoadedEvent(
-            page: e.page,
-            items: _mapSessions(e.sessions),
-            hasMore: e.hasMore,
-          ),
+        return PageLoadedEvent(
+          page: e.page,
+          items: _mapSessions(e.sessions),
+          hasMore: e.hasMore,
         );
-        break;
 
       case SessionsRefreshed e:
-        _controller.add(
-          SessionsRefreshedEvent(
-            items: _mapSessions(e.sessions),
-            hasMore: e.hasMore,
-          ),
+        return SessionsRefreshedEvent(
+          items: _mapSessions(e.sessions),
+          hasMore: e.hasMore,
         );
-        break;
 
       case SessionCreated e:
-        _controller.add(
-          SessionCreatedEvent(_mapSession(e.session)),
-        );
-        break;
+        return SessionCreatedEvent(_mapSession(e.session));
 
       case SessionUpdated e:
-        _controller.add(
-          SessionUpdatedEvent(_mapSession(e.session)),
-        );
-        break;
+        return SessionUpdatedEvent(_mapSession(e.session));
 
       case SessionDeleted e:
-        _controller.add(
-          SessionDeletedEvent(e.id),
-        );
-        break;
+        return SessionDeletedEvent(e.id);
 
       case SessionsInvalidated _:
-        _controller.add(SessionsInvalidatedEvent());
-        break;
+        return SessionsInvalidatedEvent();
 
       case SessionStarred e:
-        _controller.add(
-          SessionUpdatedEvent(_mapSession(e.session)),
-        );
-        break;
+        return SessionUpdatedEvent(_mapSession(e.session));
     }
   }
 
@@ -162,10 +137,4 @@ class BreathSessionListService implements IBreathSessionListService {
     return SessionOwnership.shared;
   }
 
-  /// ---------- Lifecycle ----------
-
-  void dispose() {
-    _subscription.cancel();
-    _controller.close();
-  }
 }

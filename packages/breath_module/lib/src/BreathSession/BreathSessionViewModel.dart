@@ -59,6 +59,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
       _stateMachineSubscription?.cancel();
       _stateMachine?.dispose();
       _stateController.close();
+      tickService.dispose();
     });
     return BreathSessionState.initial();
   }

@@ -141,6 +141,7 @@ Detailed docs and Mermaid architecture diagrams live in `docs/`:
 - `docs/breath/constructor.md` — Session constructor: ghost TextField, exercise editing, modes
 - `docs/breath/complexity.md` — Session complexity calculation and visual indicator
 - `docs/breath/session/view-model.md` — BreathSessionStateMachine and BreathViewModel behaviour
+- `docs/breath/session/tick-sources.md` — tick sources (clock vs heart rate), ownership, runtime switching
 - `docs/breath/session/session-lifecycle.md` — session completion, idle state, and restart flow
 - `docs/breath/session/orb-animation.md` — OrbAnimationCoordinator and orb scaling
 - `docs/breath/session/shape-morph-animation.md` — BreathShapeShifter path morphing

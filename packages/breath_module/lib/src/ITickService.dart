@@ -1,5 +1,6 @@
 abstract class ITickService {
   Stream<TickData> get tickStream;
+  void dispose();
 }
 
 class TickData {
