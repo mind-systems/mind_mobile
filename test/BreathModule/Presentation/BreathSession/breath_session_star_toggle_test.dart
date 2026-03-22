@@ -15,6 +15,7 @@ class _FakeTickService implements ITickService {
   Stream<TickData> get tickStream => _controller.stream;
 
   void tick([int intervalMs = 1000]) => _controller.add(TickData(intervalMs));
+  @override
   void dispose() => _controller.close();
 }
 
@@ -23,6 +24,8 @@ class _FakeCoordinator implements IBreathSessionCoordinator {
   void openConstructor(String sessionId) {}
   @override
   void shareSession(String sessionId) {}
+  @override
+  void dismiss() {}
 }
 
 class _FakeSessionService implements IBreathSessionService {
@@ -49,6 +52,9 @@ class _FakeSessionService implements IBreathSessionService {
 
   @override
   Stream<BreathSessionDTO> observeSession(String id) => Stream.value(dto);
+
+  @override
+  Stream<void> observeSessionDeletion(String id) => const Stream.empty();
 }
 
 // ---------------------------------------------------------------------------

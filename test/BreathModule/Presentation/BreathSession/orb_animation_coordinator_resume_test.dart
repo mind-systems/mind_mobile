@@ -16,7 +16,8 @@ class _ManualTickService implements ITickService {
 
   void tick([int intervalMs = 1000]) => _controller.add(TickData(intervalMs));
 
-  void close() => _controller.close();
+  @override
+  void dispose() => _controller.close();
 }
 
 // ---------------------------------------------------------------------------
@@ -28,6 +29,8 @@ class _FakeBreathSessionCoordinator implements IBreathSessionCoordinator {
   void openConstructor(String sessionId) {}
   @override
   void shareSession(String sessionId) {}
+  @override
+  void dismiss() {}
 }
 
 class _FakeSessionService implements IBreathSessionService {
@@ -42,6 +45,9 @@ class _FakeSessionService implements IBreathSessionService {
 
   @override
   Stream<BreathSessionDTO> observeSession(String id) => Stream.value(dto);
+
+  @override
+  Stream<void> observeSessionDeletion(String id) => const Stream.empty();
 }
 
 // ---------------------------------------------------------------------------
@@ -95,7 +101,7 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    addTearDown(tickService.close);
+    addTearDown(tickService.dispose);
 
     viewModel = container.read(breathViewModelProvider.notifier);
     coordinator = OrbAnimationCoordinator(viewModel: viewModel, vsync: tester);

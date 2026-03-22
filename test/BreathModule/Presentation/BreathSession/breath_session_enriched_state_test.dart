@@ -24,6 +24,7 @@ class FakeTickService implements ITickService {
 
   void tick([int intervalMs = 1000]) => _controller.add(TickData(intervalMs));
 
+  @override
   void dispose() => _controller.close();
 }
 

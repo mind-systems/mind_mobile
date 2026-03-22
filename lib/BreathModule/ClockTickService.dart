@@ -15,6 +15,7 @@ class ClockTickService implements ITickService {
     });
   }
 
+  @override
   void dispose() {
     _timer?.cancel();
     _tickController.close();
