@@ -48,6 +48,7 @@ class SyncEngine {
           log('[SyncEngine] server sent fullResync for after=0, skipping to prevent loop', name: 'SyncEngine');
           return;
         }
+        log('[SyncEngine] ⚠️ fullResync requested by server (lastEventId=$lastEventId)', name: 'SyncEngine');
         await _handleFullResync();
         return;
       }
@@ -100,8 +101,17 @@ class SyncEngine {
     }
     upsertIds.removeAll(deleteIds);
     if (upsertIds.isNotEmpty) {
-      final response = await syncApi.fetchSessionsBatch(upsertIds.toList());
-      await breathSessionDao.saveSessions(response.data);
+      const chunkSize = 50;
+      final idList = upsertIds.toList();
+      if (idList.length > chunkSize) {
+        log('[SyncEngine] ⚠️ large batch: ${idList.length} sessions to fetch — this suggests cursor was reset or first-run. Fetching in chunks of $chunkSize.', name: 'SyncEngine');
+      }
+      for (var i = 0; i < idList.length; i += chunkSize) {
+        final chunk = idList.sublist(i, (i + chunkSize).clamp(0, idList.length));
+        log('[SyncEngine] fetching batch ${i ~/ chunkSize + 1}: ${chunk.length} sessions', name: 'SyncEngine');
+        final response = await syncApi.fetchSessionsBatch(chunk);
+        await breathSessionDao.saveSessions(response.data);
+      }
     }
     for (final id in deleteIds) {
       await breathSessionDao.deleteSession(id);

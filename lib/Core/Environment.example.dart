@@ -16,6 +16,7 @@ class Environment {
   final String googleIosClientIdPlain;
   final String googleServerClientIdPlain;
   final String googleOAuthCallbackScheme;
+  final String deeplinkScheme;
 
   Environment._({
     required this.name,
@@ -32,6 +33,7 @@ class Environment {
     required this.googleIosClientIdPlain,
     required this.googleServerClientIdPlain,
     required this.googleOAuthCallbackScheme,
+    required this.deeplinkScheme,
   });
 
   static late Environment _instance;
@@ -54,6 +56,7 @@ class Environment {
       googleIosClientIdPlain: 'YOUR_DEV_IOS_CLIENT_ID',
       googleServerClientIdPlain: 'YOUR_DEV_SERVER_CLIENT_ID',
       googleOAuthCallbackScheme: 'com.googleusercontent.apps.YOUR_DEV_IOS_CLIENT_ID',
+      deeplinkScheme: 'mind-dev',
     );
   }
 
@@ -73,6 +76,7 @@ class Environment {
       googleIosClientIdPlain: 'YOUR_PROD_IOS_CLIENT_ID',
       googleServerClientIdPlain: 'YOUR_PROD_SERVER_CLIENT_ID',
       googleOAuthCallbackScheme: 'com.googleusercontent.apps.YOUR_PROD_IOS_CLIENT_ID',
+      deeplinkScheme: 'mind',
     );
   }
 }

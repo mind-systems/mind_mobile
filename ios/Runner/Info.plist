@@ -29,8 +29,15 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.713251873631-nibqcan83cp6i5l722s556fr83pjn7qc</string>
-				<string>com.googleusercontent.apps.334027113385-usetn30jr4c5v5vv6u0gkthl2ji15i1j</string>
+				<string>$(REVERSED_CLIENT_ID)</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(DEEPLINK_SCHEME)</string>
 			</array>
 		</dict>
 	</array>
