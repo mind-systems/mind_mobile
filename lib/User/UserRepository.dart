@@ -78,13 +78,21 @@ class UserRepository {
     return user;
   }
 
-  /// Phase 1: Google OAuth — picker + consent → server auth code.
+  /// Phase 1: Google OAuth — picker + consent → server auth code + optional redirectUri.
   /// Throws [GoogleSignInCanceledException] if the user dismisses the dialog.
-  Future<String> getGoogleServerAuthCode() => _google.getServerAuthCode();
+  Future<({String code, String? redirectUri})> getGoogleServerAuthCode() => _google.getServerAuthCode();
 
   /// Phase 2: sends auth code to our backend → returns User.
-  Future<User> authenticateWithGoogle({required String serverAuthCode, String? language}) async {
-    final request = GoogleAuthRequest(serverAuthCode: serverAuthCode, language: language);
+  Future<User> authenticateWithGoogle({
+    required String serverAuthCode,
+    String? redirectUri,
+    String? language,
+  }) async {
+    final request = GoogleAuthRequest(
+      serverAuthCode: serverAuthCode,
+      language: language,
+      redirectUri: redirectUri,
+    );
     final user = await _api.googleAuth(request);
     await _replaceGuestWithUser(user);
     return user;

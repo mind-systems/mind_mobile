@@ -1,8 +1,9 @@
 abstract class IGoogleAuthProvider {
-  /// Shows the native Google account picker and returns a server auth code
-  /// in a single OAuth flow. Throws [GoogleSignInCanceledException] if the
-  /// user dismisses the dialog.
-  Future<String> getServerAuthCode();
+  /// Returns a record with the server auth code and an optional redirect URI.
+  /// redirectUri is non-null only when the browser fallback was used — pass it
+  /// to the backend so it can complete the code exchange.
+  /// Throws [GoogleSignInCanceledException] if the user cancels.
+  Future<({String code, String? redirectUri})> getServerAuthCode();
 
   Future<void> signOut();
 }

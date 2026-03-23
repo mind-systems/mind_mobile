@@ -5,19 +5,33 @@ class Environment {
   final String name;
   final String apiBaseUrl;
   final String wsBaseUrl;
+  final String deeplinkUrl;
+  final String linkDomain;
+  final String iosBundleId;
+  final String androidPackageName;
   final bool isProduction;
   final String googleIosClientId;
   final String googleAndroidClientId;
   final String googleServerClientId;
+  final String googleIosClientIdPlain;
+  final String googleServerClientIdPlain;
+  final String googleOAuthCallbackScheme;
 
   Environment._({
     required this.name,
     required this.apiBaseUrl,
     required this.wsBaseUrl,
+    required this.deeplinkUrl,
+    required this.linkDomain,
+    required this.iosBundleId,
+    required this.androidPackageName,
     required this.isProduction,
     required this.googleIosClientId,
     required this.googleAndroidClientId,
     required this.googleServerClientId,
+    required this.googleIosClientIdPlain,
+    required this.googleServerClientIdPlain,
+    required this.googleOAuthCallbackScheme,
   });
 
   static late Environment _instance;
@@ -29,10 +43,17 @@ class Environment {
       name: 'Development',
       apiBaseUrl: 'http://localhost:3000', // Замените на ваш development URL
       wsBaseUrl: 'ws://localhost:3000',    // Замените на ваш development WS URL
+      deeplinkUrl: 'https://YOUR_DEV_DEEPLINK_URL',
+      linkDomain: 'YOUR_DEV_LINK_DOMAIN',
+      iosBundleId: 'YOUR_DEV_IOS_BUNDLE_ID',
+      androidPackageName: 'YOUR_DEV_ANDROID_PACKAGE_NAME',
       isProduction: false,
-      googleIosClientId: 'YOUR_DEV_IOS_CLIENT_ID',
-      googleAndroidClientId: 'YOUR_DEV_ANDROID_CLIENT_ID',
-      googleServerClientId: 'YOUR_DEV_SERVER_CLIENT_ID',
+      googleIosClientId: 'YOUR_DEV_IOS_CLIENT_ID.apps.googleusercontent.com',
+      googleAndroidClientId: 'YOUR_DEV_ANDROID_CLIENT_ID.apps.googleusercontent.com',
+      googleServerClientId: 'YOUR_DEV_SERVER_CLIENT_ID.apps.googleusercontent.com',
+      googleIosClientIdPlain: 'YOUR_DEV_IOS_CLIENT_ID',
+      googleServerClientIdPlain: 'YOUR_DEV_SERVER_CLIENT_ID',
+      googleOAuthCallbackScheme: 'com.googleusercontent.apps.YOUR_DEV_IOS_CLIENT_ID',
     );
   }
 
@@ -41,10 +62,17 @@ class Environment {
       name: 'Production',
       apiBaseUrl: 'https://your-api.com',    // Замените на ваш production URL
       wsBaseUrl: 'wss://your-api.com',       // Замените на ваш production WS URL
+      deeplinkUrl: 'https://YOUR_PROD_DEEPLINK_URL',
+      linkDomain: 'YOUR_PROD_LINK_DOMAIN',
+      iosBundleId: 'YOUR_PROD_IOS_BUNDLE_ID',
+      androidPackageName: 'YOUR_PROD_ANDROID_PACKAGE_NAME',
       isProduction: true,
-      googleIosClientId: 'YOUR_PROD_IOS_CLIENT_ID',
-      googleAndroidClientId: 'YOUR_PROD_ANDROID_CLIENT_ID',
-      googleServerClientId: 'YOUR_PROD_SERVER_CLIENT_ID',
+      googleIosClientId: 'YOUR_PROD_IOS_CLIENT_ID.apps.googleusercontent.com',
+      googleAndroidClientId: 'YOUR_PROD_ANDROID_CLIENT_ID.apps.googleusercontent.com',
+      googleServerClientId: 'YOUR_PROD_SERVER_CLIENT_ID.apps.googleusercontent.com',
+      googleIosClientIdPlain: 'YOUR_PROD_IOS_CLIENT_ID',
+      googleServerClientIdPlain: 'YOUR_PROD_SERVER_CLIENT_ID',
+      googleOAuthCallbackScheme: 'com.googleusercontent.apps.YOUR_PROD_IOS_CLIENT_ID',
     );
   }
 }

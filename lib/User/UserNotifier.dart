@@ -63,9 +63,9 @@ class UserNotifier {
 
   Future<void> loginWithGoogle({String? language}) async {
     // Phase 1: Google picker + consent — no spinner
-    final String serverAuthCode;
+    final ({String code, String? redirectUri}) googleAuth;
     try {
-      serverAuthCode = await repository.getGoogleServerAuthCode();
+      googleAuth = await repository.getGoogleServerAuthCode();
     } on GoogleSignInCanceledException {
       return;
     }
@@ -74,7 +74,7 @@ class UserNotifier {
     _authInProgressSubject.add(true);
     try {
       final authenticatedUser = await repository.authenticateWithGoogle(
-        serverAuthCode: serverAuthCode, language: language);
+        serverAuthCode: googleAuth.code, redirectUri: googleAuth.redirectUri, language: language);
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e) {
       log('[UserNotifier] loginWithGoogle error: $e');

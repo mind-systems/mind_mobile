@@ -93,13 +93,14 @@ class FakeAuthApi implements IAuthApi {
 
 class FakeGoogleAuthProvider implements IGoogleAuthProvider {
   String serverAuthCodeToReturn = 'fake-server-auth-code';
+  String? redirectUriToReturn;
   bool cancelOnGetCode = false;
   bool signedOut = false;
 
   @override
-  Future<String> getServerAuthCode() async {
+  Future<({String code, String? redirectUri})> getServerAuthCode() async {
     if (cancelOnGetCode) throw GoogleSignInCanceledException();
-    return serverAuthCodeToReturn;
+    return (code: serverAuthCodeToReturn, redirectUri: redirectUriToReturn);
   }
 
   @override
@@ -280,9 +281,10 @@ void main() {
       google.serverAuthCodeToReturn = 'my-auth-code';
       final repo = _makeRepo(google: google);
 
-      final code = await repo.getGoogleServerAuthCode();
+      final (:code, :redirectUri) = await repo.getGoogleServerAuthCode();
 
       expect(code, 'my-auth-code');
+      expect(redirectUri, isNull);
     });
 
     test('propagates GoogleSignInCanceledException', () async {
