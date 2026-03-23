@@ -41,10 +41,15 @@ class FakeUserRepository implements UserRepository {
   Future<User> loadUser() async => _guestUser;
 
   @override
-  Future<String> getGoogleServerAuthCode() async => 'fake-server-auth-code';
+  Future<({String code, String? redirectUri})> getGoogleServerAuthCode() async =>
+      (code: 'fake-server-auth-code', redirectUri: null);
 
   @override
-  Future<User> authenticateWithGoogle({required String serverAuthCode, String? language}) async {
+  Future<User> authenticateWithGoogle({
+    required String serverAuthCode,
+    String? redirectUri,
+    String? language,
+  }) async {
     lastGoogleLanguage = language;
     return _guestUser;
   }
