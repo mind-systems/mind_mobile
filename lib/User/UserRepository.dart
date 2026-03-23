@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:mind/User/IAuthApi.dart';
 import 'package:mind/User/IUserApi.dart';
 import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
@@ -42,6 +44,16 @@ class UserRepository {
     final existingUser = await _userDao.getUser();
 
     if (existingUser != null) {
+      if (!existingUser.isGuest) {
+        final token = await _storage.read('jwt_token');
+        if (token == null) {
+          log('[UserRepository] loadUser — authenticated user in DB but no token in storage, downgrading to guest');
+          await _userDao.deleteUser(existingUser.id);
+          final guest = User.guest();
+          await _userDao.saveUser(guest);
+          return guest;
+        }
+      }
       return existingUser;
     }
 
@@ -92,9 +104,13 @@ class UserRepository {
   }
 
   Future<User> clearSession(User currentUser) async {
-    await _google.signOut();
-    await _api.clearToken();
+    try {
+      await _google.signOut();
+    } catch (e) {
+      log('[UserRepository] clearSession — Google sign out error (non-fatal): $e');
+    }
 
+    await _api.clearToken();
     await _userDao.deleteUser(currentUser.id);
 
     final newGuest = User.guest();
