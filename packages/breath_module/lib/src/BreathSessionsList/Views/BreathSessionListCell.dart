@@ -15,7 +15,7 @@ class BreathSessionListCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final pixel = 1 / MediaQuery.of(context).devicePixelRatio;
+    final pixel = 1 / MediaQuery.devicePixelRatioOf(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

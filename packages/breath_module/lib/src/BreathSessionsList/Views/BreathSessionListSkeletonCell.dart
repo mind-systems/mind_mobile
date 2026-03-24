@@ -22,7 +22,7 @@ class BreathSessionListSkeletonCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final baseColor = theme.cardColor;
-    final pixel = 1 / MediaQuery.of(context).devicePixelRatio;
+    final pixel = 1 / MediaQuery.devicePixelRatioOf(context);
 
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
