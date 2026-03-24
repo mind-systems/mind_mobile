@@ -114,6 +114,13 @@ GoRouter is configured in `lib/router.dart`. Routes:
 - On 401, it publishes to `LogoutNotifier` stream, which `GlobalListeners` catches to trigger logout
 - `UserNotifier` manages `AuthenticatedState` / `GuestState`
 
+## Proto contract ownership
+
+`mind_api/proto/` is the single source of truth. This project **must not modify `.proto` files**.
+
+- When `mind_api/proto/` changes, copy the updated files into `mind_mobile/proto/` and run the codegen script (`scripts/gen_proto.sh`) to regenerate Dart stubs.
+- Never symlink — copy explicitly so the proto snapshot in this repo is stable and independent of `mind_api` checkout state.
+
 ## Patterns to follow
 
 - **Notifiers emit typed events** — prefer adding event types (e.g., `SessionCreated`, `SessionDeleted`) over ad-hoc stream triggers. See `docs/core/notifier-pattern.md`.
