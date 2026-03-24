@@ -53,6 +53,7 @@ class SyncEngine {
         return;
       }
       if (response.events.isEmpty) return;
+      log('[SyncEngine] processing ${response.events.length} events (cursor was $lastEventId)', name: 'SyncEngine');
       await _processEvents(response.events);
     } catch (e) {
       log('[SyncEngine] sync failed: $e', name: 'SyncEngine');
