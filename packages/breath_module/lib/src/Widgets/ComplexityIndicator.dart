@@ -32,23 +32,26 @@ class ComplexityIndicator extends StatelessWidget {
     final color =
         Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6);
 
-    // 5 icons in a row, parent SizedBox controls how much is visible.
-    // SingleChildScrollView accepts content wider than constraints
-    // without throwing overflow errors. NeverScrollable prevents scrolling.
+    // 5 icons in a row; OverflowBox overrides layout constraints so the Row
+    // can be wider than the parent without triggering an overflow warning.
+    // ClipRect clips the overflowing content at paint time.
     final indicator = SizedBox(
       width: _revealWidth,
       height: _iconSize,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const NeverScrollableScrollPhysics(),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(
-            _count,
-            (_) => Icon(
-              Icons.self_improvement,
-              size: _iconSize,
-              color: color,
+      child: ClipRect(
+        child: OverflowBox(
+          alignment: Alignment.centerLeft,
+          maxWidth: _totalWidth,
+          maxHeight: _iconSize,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(
+              _count,
+              (_) => Icon(
+                Icons.self_improvement,
+                size: _iconSize,
+                color: color,
+              ),
             ),
           ),
         ),
