@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mind_l10n/mind_l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,6 +25,7 @@ class BreathSessionListScreen extends ConsumerStatefulWidget {
 
 class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen> {
   late final ScrollController _scrollController;
+  Timer? _scrollThrottleTimer;
 
   // Примерная высота одной ячейки для расчёта порога пагинации
   static const double _estimatedCellHeight = 109.0;
@@ -36,6 +39,7 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
 
   @override
   void dispose() {
+    _scrollThrottleTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -57,6 +61,8 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
   }
 
   void _onScroll() {
+    if (_scrollThrottleTimer?.isActive ?? false) return;
+
     if (!_scrollController.hasClients) return;
 
     final threshold = _scrollController.position.maxScrollExtent - (10 * _estimatedCellHeight);
@@ -64,6 +70,10 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
     if (_scrollController.position.pixels >= threshold) {
       ref.read(breathSessionListViewModelProvider.notifier).loadNextPage();
     }
+
+    _scrollThrottleTimer = Timer(const Duration(milliseconds: 200), () {
+      _scrollThrottleTimer = null;
+    });
   }
 
   Future<void> _onRefresh() async {
