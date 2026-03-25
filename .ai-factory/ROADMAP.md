@@ -24,7 +24,7 @@
 
 - [x] **Create `lib/Core/Grpc/GrpcAuthInterceptor.dart`** — implements `ClientInterceptor`; overrides `interceptUnary` (async, reads token from `FlutterSecureStorage`, merges `CallOptions`, catches `GrpcError` code 16 → `LogoutNotifier.triggerLogout()`) and `interceptStreaming` (sync, attaches token via pre-built options, pipes errors to same handler)
 - [x] **Instantiate once in `App._init()`** — pass same instance to every stub in `GrpcClient`; inject `FlutterSecureStorage` and `LogoutNotifier`
-- [ ] **Remove `lib/Core/Api/AuthInterceptor.dart`** — only after all Dio-based APIs are replaced (do last in this phase)
+- [x] **Remove `lib/Core/Api/AuthInterceptor.dart`** — only after all Dio-based APIs are replaced (do last in this phase)
 
 ### 2.5 Replace AuthApi with generated stub
 
