@@ -9,7 +9,7 @@
 ### 2.2 protoc codegen setup
 
 - [x] **Install toolchain** — install `protoc` (document exact version in `mind_mobile/proto/README.md`) and `dart pub global activate protoc_plugin`
-- [ ] **Copy proto files** — create `mind_mobile/proto/` and copy all `.proto` files from `mind_api/proto/` (no symlinks — copy explicitly; `mind_api/proto/` is the source of truth)
+- [x] **Copy proto files** — create `mind_mobile/proto/` and copy all `.proto` files from `mind_api/proto/` (no symlinks — copy explicitly; `mind_api/proto/` is the source of truth)
 - [ ] **Create `scripts/gen_proto.sh`** — runs `protoc` with `--dart_out=grpc:lib/Core/Grpc/generated/` for each `.proto` file; document command in `mind_mobile/CLAUDE.md`
 - [ ] **Run codegen** — execute script, commit generated files to `lib/Core/Grpc/generated/`
 
