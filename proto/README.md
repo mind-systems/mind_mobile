@@ -32,4 +32,8 @@ dart pub global activate protoc_plugin 25.0.0
 
 ## Codegen
 
-The codegen script (`scripts/gen_proto.sh`) will be added in a follow-up plan (roadmap item 2.2). Once available, run it to regenerate Dart stubs from the `.proto` files in this directory.
+Run the codegen script from the repository root:
+
+    ./scripts/gen_proto.sh
+
+This generates Dart stubs into `lib/Core/Grpc/generated/`. Re-run after copying updated `.proto` files from `mind_api/proto/`.

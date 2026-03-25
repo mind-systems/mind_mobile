@@ -23,6 +23,9 @@ flutter pub run build_runner build
 
 # Add a package dependency
 flutter pub add <package_name>
+
+# Regenerate gRPC Dart stubs (after proto files change)
+./scripts/gen_proto.sh
 ```
 
 > **Always use `flutter pub add` to add packages — never edit `pubspec.yaml` manually.**
