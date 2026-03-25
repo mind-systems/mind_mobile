@@ -21,6 +21,7 @@ A Flutter mindfulness app for iOS and Android. Users create and run guided breat
 - **Flavors:** `dev` and `prod`
 - **Local Database:** Drift 2.x (SQLite ORM with code generation)
 - **HTTP Client:** Dio 5.x with `AuthInterceptor` for JWT attach + 401 handling
+- **gRPC Client:** grpc 5.x + protobuf 6.x for Protocol Buffer messaging
 - **Presentation State:** Riverpod 2.x (`StateNotifier` + `ProviderScope`)
 - **Domain State:** RxDart 0.28 (`BehaviorSubject`, typed event streams)
 - **Navigation:** GoRouter 17.x with coordinator pattern for side-effects

@@ -4,7 +4,7 @@
 
 ### 2.1 Install Flutter gRPC packages
 
-- [ ] **Add gRPC packages** — `flutter pub add grpc protobuf`
+- [x] **Add gRPC packages** — `flutter pub add grpc protobuf`
 
 ### 2.2 protoc codegen setup
 
