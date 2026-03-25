@@ -13,10 +13,12 @@ import 'package:mind/Core/Grpc/generated/users.pbgrpc.dart';
 
 class GrpcClient {
   final ClientChannel _channel;
+  final List<ClientInterceptor> _interceptors;
   StreamSubscription<void>? _detachSubscription;
 
-  GrpcClient({required String host, required int port, required bool isSecure, Stream<void>? detachStream})
-      : _channel = ClientChannel(host, port: port, options: ChannelOptions(credentials: isSecure ? const ChannelCredentials.secure() : const ChannelCredentials.insecure())) {
+  GrpcClient({required String host, required int port, required bool isSecure, Stream<void>? detachStream, List<ClientInterceptor> interceptors = const []})
+      : _channel = ClientChannel(host, port: port, options: ChannelOptions(credentials: isSecure ? const ChannelCredentials.secure() : const ChannelCredentials.insecure())),
+        _interceptors = interceptors {
     if (detachStream != null) {
       _detachSubscription = detachStream.listen((_) {
         log('[GrpcClient] app detached — shutting down channel', name: 'GrpcClient');
@@ -25,14 +27,14 @@ class GrpcClient {
     }
   }
 
-  late final authService = AuthServiceClient(_channel);
-  late final breathSessionService = BreathSessionServiceClient(_channel);
-  late final deviceService = DeviceServiceClient(_channel);
-  late final liveService = LiveServiceClient(_channel);
-  late final statsService = StatsServiceClient(_channel);
-  late final syncService = SyncServiceClient(_channel);
-  late final telemetryService = TelemetryServiceClient(_channel);
-  late final userService = UserServiceClient(_channel);
+  late final authService = AuthServiceClient(_channel, interceptors: _interceptors);
+  late final breathSessionService = BreathSessionServiceClient(_channel, interceptors: _interceptors);
+  late final deviceService = DeviceServiceClient(_channel, interceptors: _interceptors);
+  late final liveService = LiveServiceClient(_channel, interceptors: _interceptors);
+  late final statsService = StatsServiceClient(_channel, interceptors: _interceptors);
+  late final syncService = SyncServiceClient(_channel, interceptors: _interceptors);
+  late final telemetryService = TelemetryServiceClient(_channel, interceptors: _interceptors);
+  late final userService = UserServiceClient(_channel, interceptors: _interceptors);
 
   Future<void> shutdown() async {
     _detachSubscription?.cancel();

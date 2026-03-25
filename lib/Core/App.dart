@@ -44,6 +44,7 @@ import 'package:mind/BreathModule/Core/BreathTelemetryService.dart';
 import 'package:mind/Core/Socket/LiveSocketService.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mind/Core/AppLifecycleService.dart';
+import 'package:mind/Core/Grpc/GrpcAuthInterceptor.dart';
 import 'package:mind/Core/Grpc/GrpcClient.dart';
 import 'package:mind/Core/Socket/SocketConnectionCoordinator.dart';
 import 'package:mind/Core/Sync/SyncEngine.dart';
@@ -162,7 +163,8 @@ class App {
     final syncSocketListener = SyncSocketListener(liveSocketService: liveSocketService, syncEngine: syncEngine);
 
     final appLifecycleService = AppLifecycleService();
-    final grpcClient = GrpcClient(host: Environment.instance.grpcHost, port: Environment.instance.grpcPort, isSecure: Environment.instance.grpcSecure, detachStream: appLifecycleService.onDetach);
+    final grpcAuthInterceptor = GrpcAuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
+    final grpcClient = GrpcClient(host: Environment.instance.grpcHost, port: Environment.instance.grpcPort, isSecure: Environment.instance.grpcSecure, detachStream: appLifecycleService.onDetach, interceptors: [grpcAuthInterceptor]);
     final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
     final liveSessionNotifier = LiveBreathSessionNotifier(liveSocketService: liveSocketService, authStream: userNotifier.stream);
     final liveSessionService = LiveBreathSessionService(notifier: liveSessionNotifier);

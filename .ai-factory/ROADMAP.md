@@ -23,7 +23,7 @@
 > Key decisions: token read from `FlutterSecureStorage` directly (not `UserNotifier`); `interceptStreaming` cannot be async — streaming calls must be opened only after at least one successful unary call has already loaded the token; `StatusCode.unauthenticated` (16) is the correct code to intercept.
 
 - [x] **Create `lib/Core/Grpc/GrpcAuthInterceptor.dart`** — implements `ClientInterceptor`; overrides `interceptUnary` (async, reads token from `FlutterSecureStorage`, merges `CallOptions`, catches `GrpcError` code 16 → `LogoutNotifier.triggerLogout()`) and `interceptStreaming` (sync, attaches token via pre-built options, pipes errors to same handler)
-- [ ] **Instantiate once in `App._init()`** — pass same instance to every stub in `GrpcClient`; inject `FlutterSecureStorage` and `LogoutNotifier`
+- [x] **Instantiate once in `App._init()`** — pass same instance to every stub in `GrpcClient`; inject `FlutterSecureStorage` and `LogoutNotifier`
 - [ ] **Remove `lib/Core/Api/AuthInterceptor.dart`** — only after all Dio-based APIs are replaced (do last in this phase)
 
 ### 2.5 Replace AuthApi with generated stub
