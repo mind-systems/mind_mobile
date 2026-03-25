@@ -44,6 +44,7 @@ import 'package:mind/BreathModule/Core/BreathTelemetryService.dart';
 import 'package:mind/Core/Socket/LiveSocketService.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mind/Core/AppLifecycleService.dart';
+import 'package:mind/Core/Grpc/GrpcClient.dart';
 import 'package:mind/Core/Socket/SocketConnectionCoordinator.dart';
 import 'package:mind/Core/Sync/SyncEngine.dart';
 import 'package:mind/Core/Sync/SyncSocketListener.dart';
@@ -60,6 +61,7 @@ class App {
 
   final Database db;
   final HttpClient httpClient;
+  final GrpcClient grpcClient;
   // todo debug for stats
   final IUserApi userApi;
   final IPersonalAccessTokenApi tokenApi;
@@ -83,6 +85,7 @@ class App {
   App._({
     required this.db,
     required this.httpClient,
+    required this.grpcClient,
     required this.userApi,
     required this.tokenApi,
     required this.syncApi,
@@ -159,6 +162,7 @@ class App {
     final syncSocketListener = SyncSocketListener(liveSocketService: liveSocketService, syncEngine: syncEngine);
 
     final appLifecycleService = AppLifecycleService();
+    final grpcClient = GrpcClient(host: Environment.instance.grpcHost, port: Environment.instance.grpcPort, isSecure: Environment.instance.grpcSecure, detachStream: appLifecycleService.onDetach);
     final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
     final liveSessionNotifier = LiveBreathSessionNotifier(liveSocketService: liveSocketService, authStream: userNotifier.stream);
     final liveSessionService = LiveBreathSessionService(notifier: liveSessionNotifier);
@@ -168,6 +172,7 @@ class App {
     shared = App._(
       db: db,
       httpClient: httpClient,
+      grpcClient: grpcClient,
       userApi: userApi,
       tokenApi: tokenApi,
       syncApi: syncApi,

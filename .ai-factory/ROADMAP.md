@@ -15,7 +15,7 @@
 
 ### 2.3 Create GrpcClient
 
-- [ ] **Create `lib/Core/Grpc/GrpcClient.dart`** — singleton class that holds a `ClientChannel` (host + port from `Environment.dart`); exposes lazy-initialized stubs for each service (`AuthServiceClient`, `BreathSessionsServiceClient`, etc.); expose a `shutdown()` method that calls `channel.shutdown()` — call it on logout and when the app is terminated (`WidgetsBindingObserver.didChangeAppLifecycleState`)
+- [x] **Create `lib/Core/Grpc/GrpcClient.dart`** — singleton class that holds a `ClientChannel` (host + port from `Environment.dart`); exposes lazy-initialized stubs for each service (`AuthServiceClient`, `BreathSessionsServiceClient`, etc.); expose a `shutdown()` method that calls `channel.shutdown()` — call it on logout and when the app is terminated (`WidgetsBindingObserver.didChangeAppLifecycleState`)
 - [ ] **Update `lib/Core/Environment.dart` (and `.example.dart`)** — add `grpcHost` and `grpcPort` fields; add dev/prod values
 
 ### 2.4 Replace AuthInterceptor with gRPC ClientInterceptor

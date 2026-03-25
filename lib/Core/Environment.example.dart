@@ -17,6 +17,9 @@ class Environment {
   final String googleServerClientIdPlain;
   final String googleOAuthCallbackScheme;
   final String deeplinkScheme;
+  final String grpcHost;
+  final int grpcPort;
+  final bool grpcSecure;
 
   Environment._({
     required this.name,
@@ -34,6 +37,9 @@ class Environment {
     required this.googleServerClientIdPlain,
     required this.googleOAuthCallbackScheme,
     required this.deeplinkScheme,
+    required this.grpcHost,
+    required this.grpcPort,
+    required this.grpcSecure,
   });
 
   static late Environment _instance;
@@ -57,6 +63,9 @@ class Environment {
       googleServerClientIdPlain: 'YOUR_DEV_SERVER_CLIENT_ID',
       googleOAuthCallbackScheme: 'com.googleusercontent.apps.YOUR_DEV_IOS_CLIENT_ID',
       deeplinkScheme: 'mind-dev',
+      grpcHost: 'YOUR_DEV_GRPC_HOST',
+      grpcPort: 50051,
+      grpcSecure: false,
     );
   }
 
@@ -77,6 +86,9 @@ class Environment {
       googleServerClientIdPlain: 'YOUR_PROD_SERVER_CLIENT_ID',
       googleOAuthCallbackScheme: 'com.googleusercontent.apps.YOUR_PROD_IOS_CLIENT_ID',
       deeplinkScheme: 'mind',
+      grpcHost: 'YOUR_PROD_GRPC_HOST',
+      grpcPort: 443,
+      grpcSecure: true,
     );
   }
 }
