@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:breath_module/breath_module.dart' show IBreathTelemetryService;
 import 'package:mind/Core/Grpc/LiveSessionGrpcService.dart';
-import 'package:mind/Core/Socket/TelemetryBuffer.dart';
+import 'package:mind/Core/Grpc/TelemetryBuffer.dart';
 
 class BreathTelemetryService implements IBreathTelemetryService {
   final LiveSessionGrpcService _liveSocketService;

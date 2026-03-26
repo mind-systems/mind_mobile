@@ -24,7 +24,6 @@ import 'package:mind/Core/Api/IPersonalAccessTokenApi.dart';
 import 'package:mind/User/IStatsApi.dart';
 import 'package:mind/User/StatsGrpcApi.dart';
 import 'package:mind/User/UserGrpcApi.dart';
-import 'package:mind/Core/Socket/SocketDebugOverlay.dart';
 import 'package:mind/User/IUserApi.dart';
 import 'package:mind/Device/DeviceRepository.dart';
 import 'package:mind/Core/AppSettings/AppSettingsNotifier.dart';
@@ -234,13 +233,11 @@ class MyApp extends ConsumerWidget {
           .toList(),
       routerConfig: appRouter,
       builder: (context, child) {
-        final body = GlobalListeners(
+        return GlobalListeners(
           sessionExpiredStream: App.shared.userNotifier.sessionExpiredStream,
           authErrorStream: App.shared.userNotifier.authErrorStream,
           child: child!,
         );
-        if (Environment.instance.isProduction) return body;
-        return Stack(children: [body, const SocketDebugOverlay()]);
       },
     );
   }

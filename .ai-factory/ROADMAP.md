@@ -82,7 +82,7 @@
 
 ### 3.6 Remove Socket.io infrastructure (mobile side)
 
-- [ ] **Delete Socket.io client files and remove dependency** — delete `lib/Core/Socket/LiveSocketService.dart`, `ILiveSocketService.dart`, `SocketConnectionState.dart`, `SocketConnectionCoordinator.dart`, `SocketDebugOverlay.dart`, `SyncSocketListener.dart`; run `flutter pub remove socket_io_client`
+- [x] **Delete Socket.io client files and remove dependency** — delete `lib/Core/Socket/LiveSocketService.dart`, `ILiveSocketService.dart`, `SocketConnectionState.dart`, `SocketConnectionCoordinator.dart`, `SocketDebugOverlay.dart`, `SyncSocketListener.dart`; run `flutter pub remove socket_io_client`
 
 ---
 

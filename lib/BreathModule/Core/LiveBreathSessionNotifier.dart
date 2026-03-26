@@ -5,7 +5,7 @@ import 'package:rxdart/rxdart.dart';
 
 import 'package:mind/BreathModule/Core/LiveBreathSessionEvent.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionState.dart';
-import 'package:mind/Core/Socket/ILiveSocketService.dart';
+import 'package:mind/Core/Grpc/ILiveSocketService.dart';
 import 'package:mind/User/Models/AuthState.dart';
 
 class LiveBreathSessionNotifier {

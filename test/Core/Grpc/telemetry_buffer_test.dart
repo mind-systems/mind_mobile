@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mind/Core/Socket/TelemetryBuffer.dart';
+import 'package:mind/Core/Grpc/TelemetryBuffer.dart';
 
 void main() {
   group('TelemetryBuffer', () {

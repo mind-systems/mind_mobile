@@ -4,15 +4,13 @@ import 'dart:math' as math;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fixnum/fixnum.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter/widgets.dart';
 import 'package:protobuf/well_known_types/google/protobuf/struct.pb.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'package:mind/Core/Grpc/generated/live.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/telemetry.pbgrpc.dart';
-import 'package:mind/Core/Socket/ILiveSocketService.dart';
-import 'package:mind/Core/Socket/SocketConnectionState.dart';
+import 'package:mind/Core/Grpc/ILiveSocketService.dart';
+import 'package:mind/Core/Grpc/SocketConnectionState.dart';
 import 'package:mind/User/Models/AuthState.dart';
 
 class LiveSessionGrpcService implements ILiveSocketService {
@@ -47,9 +45,6 @@ class LiveSessionGrpcService implements ILiveSocketService {
   Stream<void> get telemetryStateEvents => _telemetryStateController.stream;
 
   Stream<Map<String, dynamic>> get dataAckEvents => _dataAckController.stream;
-
-  final ValueNotifier<String> lastSentMessage = ValueNotifier('');
-  final ValueNotifier<String> lastReceivedMessage = ValueNotifier('');
 
   // ── Stream handles ────────────────────────────────────────────────────────
 
@@ -172,8 +167,6 @@ class LiveSessionGrpcService implements ILiveSocketService {
     _sessionStateController.close();
     _telemetryStateController.close();
     _dataAckController.close();
-    lastSentMessage.dispose();
-    lastReceivedMessage.dispose();
   }
 
   // ── Reconnect infrastructure ──────────────────────────────────────────────
@@ -227,11 +220,6 @@ class LiveSessionGrpcService implements ILiveSocketService {
               'isPaused': event.isPaused,
             };
             _sessionStateController.add(data);
-            if (WidgetsBinding.instance.schedulerPhase ==
-                SchedulerPhase.idle) {
-              lastReceivedMessage.value =
-                  'live: session:state → ${data['status']}';
-            }
           case LiveResponse_Event.sessionError:
             log(
               '[LiveSessionGrpc] session error: ${r.sessionError.code} — ${r.sessionError.message}',
@@ -293,10 +281,6 @@ class LiveSessionGrpcService implements ILiveSocketService {
               'sessionId': ack.sessionId,
             };
             _dataAckController.add(data);
-            if (WidgetsBinding.instance.schedulerPhase ==
-                SchedulerPhase.idle) {
-              lastReceivedMessage.value = 'telemetry: data:ack';
-            }
           case TelemetryResponse_Event.error:
             log(
               '[LiveSessionGrpc] telemetry error: ${r.error.code} — ${r.error.message}',
@@ -367,9 +351,6 @@ class LiveSessionGrpcService implements ILiveSocketService {
     }
 
     _liveSink!.add(request);
-    if (WidgetsBinding.instance.schedulerPhase == SchedulerPhase.idle) {
-      lastSentMessage.value = 'live: $event';
-    }
   }
 
   void emitTelemetry(String event, [dynamic data]) {
@@ -399,9 +380,6 @@ class LiveSessionGrpcService implements ILiveSocketService {
     );
 
     _telemetrySink!.add(telemetryData);
-    if (WidgetsBinding.instance.schedulerPhase == SchedulerPhase.idle) {
-      lastSentMessage.value = 'telemetry: $event';
-    }
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────
