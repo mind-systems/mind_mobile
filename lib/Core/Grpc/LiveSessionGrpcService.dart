@@ -385,9 +385,13 @@ class LiveSessionGrpcService implements ILiveSocketService {
   // ── Private helpers ───────────────────────────────────────────────────────
 
   ActivityType _mapActivityType(String? type) {
-    return type == 'breath'
-        ? ActivityType.BREATH
-        : ActivityType.ACTIVITY_TYPE_UNSPECIFIED;
+    switch (type) {
+      case 'breath':
+      case 'breath_session':
+        return ActivityType.BREATH;
+      default:
+        return ActivityType.ACTIVITY_TYPE_UNSPECIFIED;
+    }
   }
 
   Struct _mapToStruct(Map<String, dynamic> map) {
