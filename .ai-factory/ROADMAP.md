@@ -45,7 +45,7 @@
 
 ### 2.8 Replace SyncApi with generated stub
 
-- [ ] **Implement `lib/Core/Sync/SyncGrpcApi.dart`** — update `ISyncApi.getChanges(cursor, limit)` signature if needed; create `SyncGrpcApi` via `GrpcClient.syncStub`; wire in `App.dart`
+- [x] **Implement `lib/Core/Sync/SyncGrpcApi.dart`** — update `ISyncApi.getChanges(cursor, limit)` signature if needed; create `SyncGrpcApi` via `GrpcClient.syncStub`; wire in `App.dart`
 - [ ] **Delete SyncApi.dart** — remove `lib/Core/Api/SyncApi.dart` after SyncGrpcApi is wired
 
 ### 2.9 Replace DeviceApi with generated stub
