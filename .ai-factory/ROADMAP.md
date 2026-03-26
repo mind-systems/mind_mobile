@@ -51,7 +51,7 @@
 ### 2.9 Replace DeviceApi with generated stub
 
 - [x] **Implement `lib/Core/Device/DeviceGrpcApi.dart`** — implements device interface (or inline if no interface exists) via `GrpcClient.deviceStub`; wire in `App.dart`
-- [ ] **Delete DeviceApi.dart** — remove `lib/Core/Api/DeviceApi.dart` after DeviceGrpcApi is wired
+- [x] **Delete DeviceApi.dart** — remove `lib/Core/Api/DeviceApi.dart` after DeviceGrpcApi is wired
 
 ### 2.10 Replace PersonalAccessTokenApi with generated stub
 
