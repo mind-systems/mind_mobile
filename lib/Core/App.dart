@@ -15,7 +15,7 @@ import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/User/AuthGrpcApi.dart';
 import 'package:mind/BreathModule/Core/BreathSessionGrpcApi.dart';
-import 'package:mind/Core/Api/DeviceApi.dart';
+import 'package:mind/Device/DeviceGrpcApi.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
 import 'package:mind/Core/Api/ISyncApi.dart';
 import 'package:mind/Core/Sync/SyncGrpcApi.dart';
@@ -131,7 +131,7 @@ class App {
     final breathSessionApi = BreathSessionGrpcApi(grpcClient.breathSessionService);
     final syncApi = SyncGrpcApi(grpcClient.syncService, grpcClient.breathSessionService);
 
-    final deviceApi = DeviceApi(httpClient);
+    final deviceApi = DeviceGrpcApi(grpcClient.deviceService);
     unawaited(DeviceRepository(api: deviceApi, storage: SecureStorage()).ping());
 
     final userRepository = UserRepository(userDao: db.userDao, api: authApi, userApi: userApi, google: GoogleAuthProvider(), storage: SecureStorage());
