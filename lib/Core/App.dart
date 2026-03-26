@@ -19,7 +19,7 @@ import 'package:mind/Device/DeviceGrpcApi.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
 import 'package:mind/Core/Api/ISyncApi.dart';
 import 'package:mind/Core/Sync/SyncGrpcApi.dart';
-import 'package:mind/Core/Api/PersonalAccessTokenApi.dart';
+import 'package:mind/McpModule/PersonalAccessTokenGrpcApi.dart';
 import 'package:mind/Core/Api/IPersonalAccessTokenApi.dart';
 import 'package:mind/User/UserGrpcApi.dart';
 import 'package:mind/Core/Socket/SocketDebugOverlay.dart';
@@ -127,7 +127,7 @@ class App {
     final grpcClient = GrpcClient(host: Environment.instance.grpcHost, port: Environment.instance.grpcPort, isSecure: Environment.instance.grpcSecure, detachStream: appLifecycleService.onDetach, interceptors: [grpcAuthInterceptor]);
     final authApi = AuthGrpcApi(grpcClient.authService, const FlutterSecureStorage());
     final userApi = UserGrpcApi(grpcClient.userService, grpcClient.statsService, grpcClient.breathSessionService);
-    final tokenApi = PersonalAccessTokenApi(httpClient);
+    final tokenApi = PersonalAccessTokenGrpcApi(grpcClient.authService);
     final breathSessionApi = BreathSessionGrpcApi(grpcClient.breathSessionService);
     final syncApi = SyncGrpcApi(grpcClient.syncService, grpcClient.breathSessionService);
 
