@@ -370,8 +370,8 @@ class LiveSessionGrpcService implements ILiveSocketService {
     final telemetryData = TelemetryData(
       sessionId: data['sessionId'] as String? ?? '',
       timestamp: Int64(data['timestamp'] as int? ?? 0),
-      moduleId: 'breath',
-      instructionType: 'breath_phase',
+      moduleId: data['module_id'] as String? ?? '',
+      instructionType: data['instruction_type'] as String? ?? '',
       data: _mapToStruct(
           (data['data'] as Map<String, dynamic>?) ?? <String, dynamic>{}),
     );

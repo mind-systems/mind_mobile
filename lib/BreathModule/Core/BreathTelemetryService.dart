@@ -25,6 +25,8 @@ class BreathTelemetryService implements IBreathTelemetryService {
     final payload = {
       'sessionId': sessionId,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'module_id': 'breath',
+      'instruction_type': 'breath_phase',
       'data': {
         'phase': phase,
         'durationMs': durationMs,

@@ -76,7 +76,7 @@
 > Reconnect strategy: `package:grpc` does not reconnect closed streams automatically. On `GrpcError` with retryable status, wait with exponential back-off and re-open the RPC call. `interceptStreaming` cannot be async — token must be available synchronously (guaranteed if streaming is only opened after a successful unary call).
 
 - [x] **Create `lib/Core/Grpc/LiveSessionGrpcService.dart`** — holds `_liveCall` (bidi), `_telemetryCall` (bidi), `_syncCall` (server-streaming); implements reconnect with exponential back-off; maps domain events to `LiveRequest` proto messages; drives existing `BehaviorSubject<SocketConnectionState>` and stream controllers
-- [ ] **Update `BreathTelemetryService.sendSample()`** — when mapping to `TelemetryData` proto, add `module_id: "breath"` and `instruction_type: "breath_phase"`; currently mobile sends only `{ phase, durationMs }` with no type discriminator (`lib/BreathModule/Core/BreathTelemetryService.dart`)
+- [x] **Update `BreathTelemetryService.sendSample()`** — when mapping to `TelemetryData` proto, add `module_id: "breath"` and `instruction_type: "breath_phase"`; currently mobile sends only `{ phase, durationMs }` with no type discriminator (`lib/BreathModule/Core/BreathTelemetryService.dart`)
 - [ ] **Replace `SocketConnectionCoordinator.dart`** — wire lifecycle (connect/disconnect/reconnect) to `LiveSessionGrpcService`; replace Socket.io connection state handling
 - [ ] **Update `LiveSessionCoordinator.dart` in `packages/breath_module/`** — replace calls to `ILiveSocketService` methods with equivalent gRPC stream sends if interface changes
 
