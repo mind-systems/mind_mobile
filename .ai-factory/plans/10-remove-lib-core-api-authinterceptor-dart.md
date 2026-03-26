@@ -24,7 +24,7 @@ Deletes the Dio-based `AuthInterceptor` after all HTTP APIs have been migrated t
 
 ### Phase 1: Remove AuthInterceptor from code
 
-- [ ] **Task 1: Delete `AuthInterceptor.dart` and update `HttpClient.dart`**
+- [x] **Task 1: Delete `AuthInterceptor.dart` and update `HttpClient.dart`**
   Files: `lib/Core/Api/AuthInterceptor.dart`, `lib/Core/Api/HttpClient.dart`
   Delete `lib/Core/Api/AuthInterceptor.dart`. In `HttpClient.dart`:
   - Remove the `import 'package:mind/Core/Api/AuthInterceptor.dart';` import
@@ -35,7 +35,7 @@ Deletes the Dio-based `AuthInterceptor` after all HTTP APIs have been migrated t
   - Remove the `flutter_secure_storage` import if no longer used in the file
   - `HttpClient` remains functional as a plain Dio wrapper (still used until Phase 4 removes Dio entirely) — it just no longer attaches an interceptor or manages tokens
 
-- [ ] **Task 2: Update `App.dart` initialization** (depends on Task 1)
+- [x] **Task 2: Update `App.dart` initialization** (depends on Task 1)
   Files: `lib/Core/App.dart`
   - Remove the `import 'package:mind/Core/Api/AuthInterceptor.dart';` import
   - Find and remove the line that creates the `AuthInterceptor` instance (`final authInterceptor = AuthInterceptor(...)`)
@@ -43,13 +43,13 @@ Deletes the Dio-based `AuthInterceptor` after all HTTP APIs have been migrated t
   - Keep single-line style per the App.dart style rule (comment at top of file)
   - Note: by the time this plan executes, `App.dart` will have changed substantially from milestones 2.5–2.11 (new gRPC APIs wired, old Dio APIs removed). Locate the correct lines by content, not by line number.
 
-- [ ] **Task 3: Update `LogoutNotifier.dart` doc comments** (depends on Task 1)
+- [x] **Task 3: Update `LogoutNotifier.dart` doc comments** (depends on Task 1)
   Files: `lib/User/LogoutNotifier.dart`
   Replace `[AuthInterceptor]` references in the doc comment with `[GrpcAuthInterceptor]`. The comment currently describes `AuthInterceptor` as the producer that calls `triggerLogout` on 401 responses — update both mentions to reference `[GrpcAuthInterceptor]` and `StatusCode.unauthenticated` instead of 401 for accuracy.
 
 ### Phase 2: Update documentation and project config
 
-- [ ] **Task 4: Update project configuration files** (depends on Task 1)
+- [x] **Task 4: Update project configuration files** (depends on Task 1)
   Files: `CLAUDE.md`, `AGENTS.md`, `.ai-factory/DESCRIPTION.md`, `.ai-factory/ARCHITECTURE.md`, `.ai-factory/ROADMAP.md`
   Minimal updates — replace or remove `AuthInterceptor` mentions:
   - `CLAUDE.md`: find the bullet about `AuthInterceptor` in the Authentication flow section and replace with equivalent text about `GrpcAuthInterceptor` handling JWT and unauthenticated errors
@@ -58,7 +58,7 @@ Deletes the Dio-based `AuthInterceptor` after all HTTP APIs have been migrated t
   - `.ai-factory/ARCHITECTURE.md`: update the `Api/` folder comment (currently "Dio client + AuthInterceptor") to "Dio client (legacy, no interceptor)". Also update the DI Wiring initialization order diagram — remove "Auth Interceptor" from the chain
   - `.ai-factory/ROADMAP.md`: check off the Phase 2.4 item for removing `AuthInterceptor`. If Phase 4.3 still references deleting `AuthInterceptor.dart`, update it to note the file is already deleted (only `HttpClient.dart` and `flutter pub remove dio` remain for Phase 4.3)
 
-- [ ] **Task 5: Update feature documentation** (depends on Task 1)
+- [x] **Task 5: Update feature documentation** (depends on Task 1)
   Files: `docs/core/jwt-authentication.md`, `docs/core/global-listeners.md`, `docs/core/testing.md`, `docs/user/login-flow.md`
   These docs are written in Russian — preserve the language when editing.
   - `docs/core/jwt-authentication.md`: replace all `AuthInterceptor` mentions with `GrpcAuthInterceptor`. Update the description of how tokens are attached (gRPC metadata instead of HTTP headers) and how unauthenticated errors are caught (`StatusCode.unauthenticated` instead of HTTP 401). Keep the same narrative structure.

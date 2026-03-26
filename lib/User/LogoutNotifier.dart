@@ -2,7 +2,7 @@ import 'package:rxdart/rxdart.dart';
 
 /// Private mediator between [GrpcAuthInterceptor] (producer) and [UserNotifier] (sole consumer).
 ///
-/// [GrpcAuthInterceptor] calls [triggerLogout] on every 401 response.
+/// [GrpcAuthInterceptor] calls [triggerLogout] on every UNAUTHENTICATED (code 16) response.
 /// [UserNotifier] subscribes and calls [clearSession], which guards against
 /// repeated invocations and emits on [UserNotifier.sessionExpiredStream] only
 /// when an authenticated session is actually cleared.

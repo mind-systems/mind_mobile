@@ -37,7 +37,8 @@ lib/
 ├── Core/                           # App infrastructure (shared across modules)
 │   ├── App.dart                    # Manual DI — initialization root
 │   ├── Database/                   # Drift schema + DAOs
-│   ├── Api/                        # GrpcClient + GrpcAuthInterceptor
+│   ├── Api/                        # API interfaces + request/response DTOs
+│   ├── Grpc/                       # GrpcClient, GrpcAuthInterceptor, LiveSessionGrpcService
 │   └── GlobalUI/                   # GlobalKeys, GlobalListeners
 │
 ├── <FeatureModule>/                 # One folder per feature (e.g. BreathModule, User)
@@ -167,7 +168,7 @@ class BreathSessionListViewModel extends StateNotifier<BreathSessionListState> {
 Manual DI in `App.shared`. Initialization order is fixed:
 
 ```
-Google Sign-In → Database → HTTP client → Auth Interceptor
+Google Sign-In → Database → GrpcAuthInterceptor → GrpcClient
 → Repositories → Domain Notifiers → DeeplinkRouter
 → runApp(ProviderScope(overrides: [...]))
 ```

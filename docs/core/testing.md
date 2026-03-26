@@ -34,7 +34,7 @@ The internals of the box (private fields, internal loops, helper methods) are no
 | **Services** (bridge between domain and presentation) | Thin translation layers. Their inputs and outputs are the domain notifier and the ViewModel interface — both of which are already tested at their own level. |
 | **Mappers / converters** | Mechanical field assignments. Bugs here are caught immediately at runtime and are obvious to read. |
 | **Navigation coordinators** | Routing calls — easy to verify manually, hard to fake correctly, low regression risk. |
-| **Infrastructure** (`LiveSocketService`, `AuthInterceptor`, `HttpClient`) | Require mocking socket.io / Dio. Fragile, expensive to maintain, simple logic. |
+| **Infrastructure** (`LiveSessionGrpcService`, `GrpcAuthInterceptor`, `GrpcClient`) | Require mocking gRPC. Fragile, expensive to maintain, simple logic. |
 | **Animation coordinators** | Exception: keep existing animation tests that guard against known regressions (pause/resume bugs). Don't add new ones. |
 
 ---

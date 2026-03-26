@@ -67,6 +67,6 @@ Screen + Coordinator (UI + navigation/side-effects)
 ## Non-Functional Requirements
 
 - Logging: Structured via `lib/Logger.dart`
-- Error handling: `ApiException` model, typed notifier events for error propagation
+- Error handling: `GrpcError` exceptions, typed notifier events for error propagation
 - Security: JWT stored in `flutter_secure_storage`; gRPC auth interceptor handles token attach + logout on UNAUTHENTICATED (code 16)
 - Code generation: Drift schema uses `build_runner` — run after modifying `lib/Core/Database/Database.dart`

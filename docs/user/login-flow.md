@@ -34,5 +34,5 @@
 ## See Also
 
 - [Auth-Gated Navigation](../core/auth-gated-navigation.md) — паттерн `AuthResult` + `context.push(...).then(...)`
-- [JWT Authentication](jwt-authentication.md) — токены, AuthInterceptor, logout по 401
+- [JWT Authentication](jwt-authentication.md) — токены, GrpcAuthInterceptor, logout по UNAUTHENTICATED
 - [Global Listeners](../core/global-listeners.md) — как `authErrorStream` доходит до UI

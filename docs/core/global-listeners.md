@@ -4,13 +4,13 @@ GlobalListeners в архитектуре приложения — это коо
 
 Каждое событие инкапсулировано в свой нотифаер. Логаут не знает о диплинках, диплинки не знают о снэкбарах, снэкбары не знают о навигации. Модули остаются изолированными, а связь между ними происходит через события.
 
-## Обработка 401
+## Обработка UNAUTHENTICATED
 
 Цепочка обработки протухшего токена выглядит так:
 
-`AuthInterceptor` (401) → `LogoutNotifier.triggerLogout()` → `UserNotifier.clearSession()` → `sessionExpiredStream` → `GlobalListeners` показывает снэкбар
+`GrpcAuthInterceptor` (UNAUTHENTICATED) → `LogoutNotifier.triggerLogout()` → `UserNotifier.clearSession()` → `sessionExpiredStream` → `GlobalListeners` показывает снэкбар
 
-`LogoutNotifier` — приватный медиатор между `AuthInterceptor` и `UserNotifier`. Внешний код не должен подписываться на него напрямую. Вся логика принятия решений сосредоточена в `UserNotifier.clearSession()`: он проверяет, что текущее состояние — `AuthenticatedState` (защита от повторных 401 в гостевом режиме), сбрасывает сессию и только тогда эмитит событие в `sessionExpiredStream`. Это гарантирует, что снэкбар «Сессия истекла» показывается ровно один раз и только когда аутентифицированная сессия действительно завершилась.
+`LogoutNotifier` — приватный медиатор между `GrpcAuthInterceptor` и `UserNotifier`. Внешний код не должен подписываться на него напрямую. Вся логика принятия решений сосредоточена в `UserNotifier.clearSession()`: он проверяет, что текущее состояние — `AuthenticatedState` (защита от повторных UNAUTHENTICATED в гостевом режиме), сбрасывает сессию и только тогда эмитит событие в `sessionExpiredStream`. Это гарантирует, что снэкбар «Сессия истекла» показывается ровно один раз и только когда аутентифицированная сессия действительно завершилась.
 
 `GlobalListeners` принимает два стрима от `UserNotifier`:
 
