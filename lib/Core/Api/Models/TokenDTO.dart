@@ -9,11 +9,6 @@ class TokenDTO {
     required this.createdAt,
   });
 
-  factory TokenDTO.fromJson(Map<String, dynamic> json) => TokenDTO(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    createdAt: json['createdAt'] as String,
-  );
 }
 
 class CreateTokenResponse {
@@ -22,8 +17,4 @@ class CreateTokenResponse {
 
   CreateTokenResponse({required this.token, required this.metadata});
 
-  factory CreateTokenResponse.fromJson(Map<String, dynamic> json) => CreateTokenResponse(
-    token: json['token'] as String,
-    metadata: TokenDTO.fromJson(json),
-  );
 }

@@ -56,7 +56,7 @@
 ### 2.10 Replace PersonalAccessTokenApi with generated stub
 
 - [x] **Implement `lib/McpModule/PersonalAccessTokenGrpcApi.dart`** — update `IPersonalAccessTokenApi` signatures if needed; implements via `GrpcClient.authStub` (PAT methods are in `auth.proto`); wire in `App.dart`
-- [ ] **Delete PersonalAccessTokenApi.dart** — remove `lib/Core/Api/PersonalAccessTokenApi.dart` after PersonalAccessTokenGrpcApi is wired
+- [x] **Delete PersonalAccessTokenApi.dart** — remove `lib/Core/Api/PersonalAccessTokenApi.dart` after PersonalAccessTokenGrpcApi is wired
 
 ### 2.11 Replace StatsApi with generated stub
 
