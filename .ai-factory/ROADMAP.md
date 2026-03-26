@@ -30,7 +30,7 @@
 
 > **Prerequisite:** 2.4 complete — `GrpcAuthInterceptor` must be wired before any API stub is used.
 
-- [ ] **Implement `lib/User/AuthGrpcApi.dart`** — update `IAuthApi` signatures to match proto shapes; create `AuthGrpcApi` implementing `IAuthApi` via `GrpcClient.authStub`; wire in `App.dart`
+- [x] **Implement `lib/User/AuthGrpcApi.dart`** — update `IAuthApi` signatures to match proto shapes; create `AuthGrpcApi` implementing `IAuthApi` via `GrpcClient.authStub`; wire in `App.dart`
 - [ ] **Delete AuthApi.dart** — remove `lib/Core/Api/AuthApi.dart` after AuthGrpcApi is wired
 
 ### 2.6 Replace BreathSessionApi with generated stub

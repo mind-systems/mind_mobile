@@ -11,13 +11,13 @@ class AuthApi implements IAuthApi {
   AuthApi(this._http);
 
   @override
-  Future<void> sendCode(SendCodeRequest request) async {
-    await _http.post('/auth/send-code', data: request.toJson());
+  Future<void> sendCode({required String email, required String locale}) async {
+    await _http.post('/auth/send-code', data: SendCodeRequest(email: email, language: locale).toJson());
   }
 
   @override
-  Future<User> verifyCode(VerifyCodeRequest request) async {
-    final response = await _http.post('/auth/verify-code', data: request.toJson());
+  Future<User> verifyCode({required String email, required String code, String? language}) async {
+    final response = await _http.post('/auth/verify-code', data: VerifyCodeRequest(email: email, code: code, language: language).toJson());
 
     final authHeader = response.headers.value('Authorization');
     if (authHeader != null) {
@@ -29,8 +29,8 @@ class AuthApi implements IAuthApi {
   }
 
   @override
-  Future<User> googleAuth(GoogleAuthRequest request) async {
-    final response = await _http.post('/auth/google', data: request.toJson());
+  Future<User> googleAuth({required String serverAuthCode, String? language, String? redirectUri}) async {
+    final response = await _http.post('/auth/google', data: GoogleAuthRequest(serverAuthCode: serverAuthCode, language: language, redirectUri: redirectUri).toJson());
 
     final authHeader = response.headers.value('Authorization');
     if (authHeader != null) {
@@ -42,8 +42,8 @@ class AuthApi implements IAuthApi {
   }
 
   @override
-  Future<void> logout(User user) async {
-    await _http.post('/auth/logout', data: {'id': user.id});
+  Future<void> logout() async {
+    await _http.post('/auth/logout', data: {});
     await _http.clearToken();
   }
 

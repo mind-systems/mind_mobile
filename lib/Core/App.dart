@@ -12,8 +12,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
-import 'package:mind/Core/Api/AuthApi.dart';
 import 'package:mind/Core/Api/AuthInterceptor.dart';
+import 'package:mind/User/AuthGrpcApi.dart';
 import 'package:mind/Core/Api/BreathSessionApi.dart';
 import 'package:mind/Core/Api/DeviceApi.dart';
 import 'package:mind/Core/Api/HttpClient.dart';
@@ -122,7 +122,10 @@ class App {
 
     final authInterceptor = AuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
     final httpClient = HttpClient(authInterceptor: authInterceptor);
-    final authApi = AuthApi(httpClient);
+    final appLifecycleService = AppLifecycleService();
+    final grpcAuthInterceptor = GrpcAuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
+    final grpcClient = GrpcClient(host: Environment.instance.grpcHost, port: Environment.instance.grpcPort, isSecure: Environment.instance.grpcSecure, detachStream: appLifecycleService.onDetach, interceptors: [grpcAuthInterceptor]);
+    final authApi = AuthGrpcApi(grpcClient.authService, const FlutterSecureStorage());
     final userApi = UserApi(httpClient);
     final tokenApi = PersonalAccessTokenApi(httpClient);
     final breathSessionApi = BreathSessionApi(httpClient);
@@ -162,9 +165,6 @@ class App {
     final liveSocketService = LiveSocketService(storage: const FlutterSecureStorage());
     final syncSocketListener = SyncSocketListener(liveSocketService: liveSocketService, syncEngine: syncEngine);
 
-    final appLifecycleService = AppLifecycleService();
-    final grpcAuthInterceptor = GrpcAuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
-    final grpcClient = GrpcClient(host: Environment.instance.grpcHost, port: Environment.instance.grpcPort, isSecure: Environment.instance.grpcSecure, detachStream: appLifecycleService.onDetach, interceptors: [grpcAuthInterceptor]);
     final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
     final liveSessionNotifier = LiveBreathSessionNotifier(liveSocketService: liveSocketService, authStream: userNotifier.stream);
     final liveSessionService = LiveBreathSessionService(notifier: liveSessionNotifier);

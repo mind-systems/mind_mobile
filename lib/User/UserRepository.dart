@@ -2,10 +2,7 @@ import 'dart:developer';
 
 import 'package:mind/User/IAuthApi.dart';
 import 'package:mind/User/IUserApi.dart';
-import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
-import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
 import 'package:mind/Core/Api/Models/UpdateUserRequest.dart';
-import 'package:mind/Core/Api/Models/VerifyCodeRequest.dart';
 import 'package:mind/Core/Database/IUserDao.dart';
 import 'package:mind/User/Infrastructure/IGoogleAuthProvider.dart';
 import 'package:mind/User/Infrastructure/ISecureStorage.dart';
@@ -63,7 +60,7 @@ class UserRepository {
   }
 
   Future<void> sendPasswordlessSignInLink(String email, {String language = 'en'}) async {
-    await _api.sendCode(SendCodeRequest(email: email, language: language));
+    await _api.sendCode(email: email, locale: language);
     await _storage.write(_pendingSignInEmailKey, email);
   }
 
@@ -72,7 +69,7 @@ class UserRepository {
     if (email == null || email.isEmpty) {
       throw Exception('No pending email found');
     }
-    final user = await _api.verifyCode(VerifyCodeRequest(email: email, code: code, language: language));
+    final user = await _api.verifyCode(email: email, code: code, language: language);
     await _replaceGuestWithUser(user);
     await _storage.delete(_pendingSignInEmailKey);
     return user;
@@ -88,12 +85,7 @@ class UserRepository {
     String? redirectUri,
     String? language,
   }) async {
-    final request = GoogleAuthRequest(
-      serverAuthCode: serverAuthCode,
-      language: language,
-      redirectUri: redirectUri,
-    );
-    final user = await _api.googleAuth(request);
+    final user = await _api.googleAuth(serverAuthCode: serverAuthCode, language: language, redirectUri: redirectUri);
     await _replaceGuestWithUser(user);
     return user;
   }
@@ -107,7 +99,7 @@ class UserRepository {
   }
 
   Future<User> logout(User currentUser) async {
-    await _api.logout(currentUser);
+    await _api.logout();
     return await clearSession(currentUser);
   }
 

@@ -3,10 +3,7 @@ import 'package:mind/User/IAuthApi.dart';
 import 'package:mind/User/IUserApi.dart';
 import 'package:mind/User/Models/SuggestionDTO.dart';
 import 'package:mind/User/Models/UserStatsDTO.dart';
-import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
-import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
 import 'package:mind/Core/Api/Models/UpdateUserRequest.dart';
-import 'package:mind/Core/Api/Models/VerifyCodeRequest.dart';
 import 'package:mind/Core/Database/IUserDao.dart';
 import 'package:mind/User/Infrastructure/IGoogleAuthProvider.dart';
 import 'package:mind/User/Infrastructure/ISecureStorage.dart';
@@ -56,33 +53,33 @@ class FakeAuthApi implements IAuthApi {
   String? lastVerifiedEmail;
   String? lastVerifiedCode;
   String? lastGoogleServerAuthCode;
-  User? loggedOutUser;
+  bool logoutCalled = false;
   bool tokenCleared = false;
 
   User verifyCodeResponse = _authenticatedUser;
   User googleAuthResponse = _authenticatedUser;
 
   @override
-  Future<void> sendCode(SendCodeRequest request) async {
-    lastSentEmail = request.email;
+  Future<void> sendCode({required String email, required String locale}) async {
+    lastSentEmail = email;
   }
 
   @override
-  Future<User> verifyCode(VerifyCodeRequest request) async {
-    lastVerifiedEmail = request.email;
-    lastVerifiedCode = request.code;
+  Future<User> verifyCode({required String email, required String code, String? language}) async {
+    lastVerifiedEmail = email;
+    lastVerifiedCode = code;
     return verifyCodeResponse;
   }
 
   @override
-  Future<User> googleAuth(GoogleAuthRequest request) async {
-    lastGoogleServerAuthCode = request.serverAuthCode;
+  Future<User> googleAuth({required String serverAuthCode, String? language, String? redirectUri}) async {
+    lastGoogleServerAuthCode = serverAuthCode;
     return googleAuthResponse;
   }
 
   @override
-  Future<void> logout(User user) async {
-    loggedOutUser = user;
+  Future<void> logout() async {
+    logoutCalled = true;
   }
 
   @override
@@ -309,7 +306,7 @@ void main() {
 
       final newGuest = await repo.logout(_authenticatedUser);
 
-      expect(api.loggedOutUser?.id, _authenticatedUser.id);
+      expect(api.logoutCalled, true);
       expect(api.tokenCleared, true);
       expect(google.signedOut, true);
       expect(newGuest.isGuest, true);

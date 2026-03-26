@@ -1,12 +1,9 @@
-import 'package:mind/Core/Api/Models/GoogleAuthRequest.dart';
-import 'package:mind/Core/Api/Models/SendCodeRequest.dart';
-import 'package:mind/Core/Api/Models/VerifyCodeRequest.dart';
 import 'package:mind/User/Models/User.dart';
 
 abstract class IAuthApi {
-  Future<void> sendCode(SendCodeRequest request);
-  Future<User> verifyCode(VerifyCodeRequest request);
-  Future<User> googleAuth(GoogleAuthRequest request);
-  Future<void> logout(User user);
+  Future<void> sendCode({required String email, required String locale});
+  Future<User> verifyCode({required String email, required String code, String? language});
+  Future<User> googleAuth({required String serverAuthCode, String? language, String? redirectUri});
+  Future<void> logout();
   Future<void> clearToken();
 }
