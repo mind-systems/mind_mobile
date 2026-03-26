@@ -9,7 +9,7 @@ This was chosen because the app has meaningful business logic (breathing phases,
 ## Decision Rationale
 
 - **Project type:** Flutter mobile app with offline-first local DB + remote API sync
-- **Tech stack:** Dart/Flutter, Riverpod (presentation), RxDart (domain), Drift (SQLite), Dio (HTTP)
+- **Tech stack:** Dart/Flutter, Riverpod (presentation), RxDart (domain), Drift (SQLite), gRPC
 - **Key factor:** Domain logic must be testable without Flutter; UI must be replaceable without touching business logic
 
 ## Layer Stack
@@ -26,7 +26,7 @@ This was chosen because the app has meaningful business logic (breathing phases,
 ├─────────────────────────────────────────────────────────────────┤
 │  Notifier               (RxDart BehaviorSubject, typed events)  │
 ├─────────────────────────────────────────────────────────────────┤
-│  Repository             (Drift DB + Dio API)                    │
+│  Repository             (Drift DB + gRPC API)                   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -37,7 +37,7 @@ lib/
 ├── Core/                           # App infrastructure (shared across modules)
 │   ├── App.dart                    # Manual DI — initialization root
 │   ├── Database/                   # Drift schema + DAOs
-│   ├── Api/                        # Dio client + AuthInterceptor
+│   ├── Api/                        # GrpcClient + GrpcAuthInterceptor
 │   └── GlobalUI/                   # GlobalKeys, GlobalListeners
 │
 ├── <FeatureModule>/                 # One folder per feature (e.g. BreathModule, User)
@@ -201,7 +201,7 @@ When adding a new feature `FooModule`:
 1. **Domain** — `lib/FooModule/Core/`
    - [ ] `FooNotifierEvent.dart` — sealed class with all event types
    - [ ] `FooNotifier.dart` — `BehaviorSubject<FooNotifierEvent>`, pure Dart
-   - [ ] `FooRepository.dart` — Drift DAO + Dio calls, pure Dart
+   - [ ] `FooRepository.dart` — Drift DAO + gRPC calls, pure Dart
 
 2. **Service**
    - [ ] `lib/FooModule/FooService.dart` — implements `IFooService`, subscribes to `FooNotifier`, maps domain → DTOs

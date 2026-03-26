@@ -10,7 +10,7 @@ A Flutter mindfulness app for iOS and Android. Users create and run guided breat
 - Breathing session list — paginated, synced with remote API, locally persisted via Drift (SQLite)
 - Active session screen — guided breathing phases (inhale / hold / exhale / rest) with a 4-component animation system
 - Session constructor — create custom breathing exercises with configurable steps
-- Authentication — Google Sign-In (server auth code flow) and passwordless email (one-time code), JWT tokens with auto-refresh via Dio interceptor
+- Authentication — Google Sign-In (server auth code flow) and passwordless email (one-time code), JWT tokens with auto-refresh via gRPC interceptor
 - Onboarding — first-run flow for new users
 - Deep link support via `app_links`
 
@@ -20,7 +20,6 @@ A Flutter mindfulness app for iOS and Android. Users create and run guided breat
 - **Framework:** Flutter 3+ (iOS + Android targets)
 - **Flavors:** `dev` and `prod`
 - **Local Database:** Drift 2.x (SQLite ORM with code generation)
-- **HTTP Client:** Dio 5.x with `AuthInterceptor` for JWT attach + 401 handling
 - **gRPC Client:** grpc 5.x + protobuf 6.x for Protocol Buffer messaging
 - **Presentation State:** Riverpod 2.x (`StateNotifier` + `ProviderScope`)
 - **Domain State:** RxDart 0.28 (`BehaviorSubject`, typed event streams)
@@ -38,7 +37,7 @@ Pattern: Layered Flutter Architecture with Domain/Module Boundary
 Layered architecture with strict domain/module boundary:
 
 ```
-Repository (Drift DB + Dio API)
+Repository (Drift DB + gRPC API)
     ↕
 Notifier (domain state — RxDart BehaviorSubject, emits typed events)
     ↕
@@ -60,7 +59,7 @@ Screen + Coordinator (UI + navigation/side-effects)
 
 | Path | Purpose |
 |------|---------|
-| `lib/Core/` | `App` singleton, Drift database, Dio API client, routing, Google Sign-In init, auth interceptor |
+| `lib/Core/` | `App` singleton, Drift database, GrpcClient, routing, Google Sign-In init, gRPC auth interceptor |
 | `lib/User/` | Auth state, login/logout, `UserNotifier`, `UserRepository`, login/onboarding screens |
 | `lib/BreathModule/` | Full breathing feature — domain, repositories, notifiers, all presentation screens |
 | `lib/Views/` | Shared UI components (snackbar, buttons, text fields) |
@@ -69,5 +68,5 @@ Screen + Coordinator (UI + navigation/side-effects)
 
 - Logging: Structured via `lib/Logger.dart`
 - Error handling: `ApiException` model, typed notifier events for error propagation
-- Security: JWT stored in `flutter_secure_storage`; auth interceptor handles token refresh + logout on 401
+- Security: JWT stored in `flutter_secure_storage`; gRPC auth interceptor handles token attach + logout on UNAUTHENTICATED (code 16)
 - Code generation: Drift schema uses `build_runner` — run after modifying `lib/Core/Database/Database.dart`

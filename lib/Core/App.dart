@@ -12,11 +12,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/BreathSessionRepository.dart';
-import 'package:mind/Core/Api/AuthInterceptor.dart';
 import 'package:mind/User/AuthGrpcApi.dart';
 import 'package:mind/BreathModule/Core/BreathSessionGrpcApi.dart';
 import 'package:mind/Device/DeviceGrpcApi.dart';
-import 'package:mind/Core/Api/HttpClient.dart';
 import 'package:mind/Core/Api/ISyncApi.dart';
 import 'package:mind/Core/Sync/SyncGrpcApi.dart';
 import 'package:mind/McpModule/PersonalAccessTokenGrpcApi.dart';
@@ -61,7 +59,6 @@ class App {
   static late App shared;
 
   final Database db;
-  final HttpClient httpClient;
   final GrpcClient grpcClient;
   final IUserApi userApi;
   final IStatsApi statsApi;
@@ -84,7 +81,6 @@ class App {
 
   App._({
     required this.db,
-    required this.httpClient,
     required this.grpcClient,
     required this.userApi,
     required this.statsApi,
@@ -119,8 +115,6 @@ class App {
     final db = Database();
     final logoutNotifier = LogoutNotifier();
 
-    final authInterceptor = AuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
-    final httpClient = HttpClient(authInterceptor: authInterceptor);
     final appLifecycleService = AppLifecycleService();
     final grpcAuthInterceptor = GrpcAuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
     final grpcClient = GrpcClient(host: Environment.instance.grpcHost, port: Environment.instance.grpcPort, isSecure: Environment.instance.grpcSecure, detachStream: appLifecycleService.onDetach, interceptors: [grpcAuthInterceptor]);
@@ -172,7 +166,6 @@ class App {
 
     shared = App._(
       db: db,
-      httpClient: httpClient,
       grpcClient: grpcClient,
       userApi: userApi,
       statsApi: statsApi,

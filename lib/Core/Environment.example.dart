@@ -3,8 +3,6 @@
 
 class Environment {
   final String name;
-  final String apiBaseUrl;
-  final String wsBaseUrl;
   final String deeplinkUrl;
   final String linkDomain;
   final String iosBundleId;
@@ -23,8 +21,6 @@ class Environment {
 
   Environment._({
     required this.name,
-    required this.apiBaseUrl,
-    required this.wsBaseUrl,
     required this.deeplinkUrl,
     required this.linkDomain,
     required this.iosBundleId,
@@ -49,8 +45,6 @@ class Environment {
   static void initDev() {
     _instance = Environment._(
       name: 'Development',
-      apiBaseUrl: 'http://localhost:3000', // Замените на ваш development URL
-      wsBaseUrl: 'ws://localhost:3000',    // Замените на ваш development WS URL
       deeplinkUrl: 'https://YOUR_DEV_DEEPLINK_URL',
       linkDomain: 'YOUR_DEV_LINK_DOMAIN',
       iosBundleId: 'YOUR_DEV_IOS_BUNDLE_ID',
@@ -72,8 +66,6 @@ class Environment {
   static void initProd() {
     _instance = Environment._(
       name: 'Production',
-      apiBaseUrl: 'https://your-api.com',    // Замените на ваш production URL
-      wsBaseUrl: 'wss://your-api.com',       // Замените на ваш production WS URL
       deeplinkUrl: 'https://YOUR_PROD_DEEPLINK_URL',
       linkDomain: 'YOUR_PROD_LINK_DOMAIN',
       iosBundleId: 'YOUR_PROD_IOS_BUNDLE_ID',

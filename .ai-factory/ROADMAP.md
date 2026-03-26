@@ -90,8 +90,8 @@
 
 ### 4.3 Remove Dio from mobile
 
-- [ ] **Delete Dio infrastructure** — delete `lib/Core/Api/HttpClient.dart` and `lib/Core/Api/AuthInterceptor.dart` (only after all API files in 2.5–2.11 are deleted and `GrpcAuthInterceptor` is active)
-- [ ] **Remove Dio and verify** — `flutter pub remove dio`; confirm no remaining `package:dio` imports with `grep -r "package:dio" lib/`
+- [x] **Delete Dio infrastructure** — delete `lib/Core/Api/HttpClient.dart` and `lib/Core/Api/AuthInterceptor.dart` (only after all API files in 2.5–2.11 are deleted and `GrpcAuthInterceptor` is active)
+- [x] **Remove Dio and verify** — `flutter pub remove dio`; confirm no remaining `package:dio` imports with `grep -r "package:dio" lib/`
 
 ---
 

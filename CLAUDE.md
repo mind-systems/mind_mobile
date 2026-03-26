@@ -39,7 +39,7 @@ flutter pub add <package_name>
 The app uses a layered architecture with **RxDart** for domain state and **Riverpod** for presentation state.
 
 ```
-Repository (Drift DB + Dio API)
+Repository (Drift DB + gRPC API)
     ↕
 Notifier (domain state — RxDart BehaviorSubject, emits typed events)
     ↕
@@ -65,7 +65,7 @@ DI is manual via `App.shared` singleton (`lib/Core/App.dart`). See `.ai-factory/
 
 | Path | Purpose |
 |------|---------|
-| `lib/Core/` | App singleton, Database (Drift ORM + DAO interfaces), HttpClient (Dio), routing, environment config, Sync (SyncEngine + SyncSocketListener) |
+| `lib/Core/` | App singleton, Database (Drift ORM + DAO interfaces), GrpcClient, routing, environment config, Sync (SyncEngine + SyncGrpcListener) |
 | `lib/User/` | Auth state, login/logout, UserNotifier, UserRepository, IAuthApi |
 | `lib/HomeModule/` | Home screen — module grid, suggestions widget, stats card, coordinator |
 | `lib/BreathModule/` | Breathing session domain (notifiers, repositories, models) + concrete service/coordinator implementations wired to `packages/breath_module` |
@@ -113,8 +113,8 @@ GoRouter is configured in `lib/router.dart`. Routes:
 ### Authentication flow
 
 - Two login methods: **Google Sign-In** (server auth code flow) and **passwordless email** (one-time code via deep link)
-- `AuthInterceptor` (`lib/Core/Api/AuthInterceptor.dart`) attaches JWT tokens and handles 401 responses
-- On 401, it publishes to `LogoutNotifier` stream, which `GlobalListeners` catches to trigger logout
+- `GrpcAuthInterceptor` (`lib/Core/Grpc/GrpcAuthInterceptor.dart`) attaches JWT tokens and handles gRPC UNAUTHENTICATED (code 16) responses
+- On code 16, it publishes to `LogoutNotifier` stream, which `GlobalListeners` catches to trigger logout
 - `UserNotifier` manages `AuthenticatedState` / `GuestState`
 
 ## Proto contract ownership
