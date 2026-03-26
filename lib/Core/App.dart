@@ -50,7 +50,7 @@ import 'package:mind/Core/Grpc/GrpcAuthInterceptor.dart';
 import 'package:mind/Core/Grpc/GrpcClient.dart';
 import 'package:mind/Core/Socket/SocketConnectionCoordinator.dart';
 import 'package:mind/Core/Sync/SyncEngine.dart';
-import 'package:mind/Core/Sync/SyncSocketListener.dart';
+import 'package:mind/Core/Sync/SyncGrpcListener.dart';
 import 'package:mind/McpModule/Core/TokenNotifier.dart';
 import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/UserNotifier.dart';
@@ -82,7 +82,7 @@ class App {
   final BreathTelemetryService telemetryService;
   final TokenNotifier tokenNotifier;
   final SyncEngine syncEngine;
-  final SyncSocketListener syncSocketListener;
+  final SyncGrpcListener syncGrpcListener;
   final AppLifecycleService appLifecycleService;
 
   App._({
@@ -106,7 +106,7 @@ class App {
     required this.telemetryService,
     required this.tokenNotifier,
     required this.syncEngine,
-    required this.syncSocketListener,
+    required this.syncGrpcListener,
     required this.appLifecycleService,
   });
 
@@ -167,7 +167,7 @@ class App {
     final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler, sessionHandler: sessionHandler);
 
     final liveSocketService = LiveSocketService(storage: const FlutterSecureStorage());
-    final syncSocketListener = SyncSocketListener(liveSocketService: liveSocketService, syncEngine: syncEngine);
+    final syncGrpcListener = SyncGrpcListener(syncService: grpcClient.syncService, syncEngine: syncEngine, syncStateDao: db.syncStateDao, authStream: userNotifier.stream);
 
     final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
     final liveSessionNotifier = LiveBreathSessionNotifier(liveSocketService: liveSocketService, authStream: userNotifier.stream);
@@ -196,7 +196,7 @@ class App {
       telemetryService: telemetryService,
       tokenNotifier: tokenNotifier,
       syncEngine: syncEngine,
-      syncSocketListener: syncSocketListener,
+      syncGrpcListener: syncGrpcListener,
       appLifecycleService: appLifecycleService,
     );
 

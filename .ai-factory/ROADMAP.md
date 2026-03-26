@@ -69,7 +69,7 @@
 
 ### 3.4 Replace Socket.io sync push
 
-- [ ] **Create SyncGrpcListener** — create `lib/Core/Sync/SyncGrpcListener.dart` and wire in `App.dart`; replace Socket.io `sync:changed` listener with a gRPC server-streaming call to `WatchChanges`; on each received `ChangeEvent`, call `SyncEngine.onChangeEvent()`; replace `SyncSocketListener` with `SyncGrpcListener` in `App.dart`
+- [x] **Create SyncGrpcListener** — create `lib/Core/Sync/SyncGrpcListener.dart` and wire in `App.dart`; replace Socket.io `sync:changed` listener with a gRPC server-streaming call to `WatchChanges`; on each received `ChangeEvent`, call `SyncEngine.onChangeEvent()`; replace `SyncSocketListener` with `SyncGrpcListener` in `App.dart`
 
 ### 3.5 Replace LiveSocketService
 
