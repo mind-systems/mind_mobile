@@ -35,7 +35,7 @@
 
 ### 2.6 Replace BreathSessionApi with generated stub
 
-- [ ] **Implement `lib/BreathModule/Core/BreathSessionGrpcApi.dart`** — update `IBreathSessionApi` signatures if proto shapes differ; create `BreathSessionGrpcApi` via `GrpcClient.breathSessionsStub`; wire in `BreathModule.dart`
+- [x] **Implement `lib/BreathModule/Core/BreathSessionGrpcApi.dart`** — update `IBreathSessionApi` signatures if proto shapes differ; create `BreathSessionGrpcApi` via `GrpcClient.breathSessionsStub`; wire in `BreathModule.dart`
 - [ ] **Delete BreathSessionApi.dart** — remove `lib/Core/Api/BreathSessionApi.dart` after BreathSessionGrpcApi is wired
 
 ### 2.7 Replace UserApi with generated stub
