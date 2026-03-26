@@ -61,7 +61,7 @@
 ### 2.11 Replace StatsApi with generated stub
 
 - [x] **Implement `lib/User/StatsGrpcApi.dart`** — implements stats interface (or inline if no interface exists) via `GrpcClient.statsStub`; maps `GetStatsResponse` to domain model; wire in `App.dart` or the relevant notifier
-- [ ] **Delete StatsApi.dart** — remove old `StatsApi.dart` if it exists, after StatsGrpcApi is wired
+- [x] **Delete StatsApi.dart** — remove old `StatsApi.dart` if it exists, after StatsGrpcApi is wired
 
 ---
 
