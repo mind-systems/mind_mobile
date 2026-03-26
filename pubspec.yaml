@@ -68,6 +68,7 @@ dependencies:
   flutter_web_auth_2: ^5.0.1
   grpc: ^5.1.0
   protobuf: ^6.0.0
+  fixnum: ^1.1.1
 
 dev_dependencies:
   flutter_test:
