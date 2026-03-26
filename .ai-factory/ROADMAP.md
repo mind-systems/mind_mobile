@@ -41,7 +41,7 @@
 ### 2.7 Replace UserApi with generated stub
 
 - [x] **Implement `lib/User/UserGrpcApi.dart`** — implements `IUserApi` via `GrpcClient.usersStub`; wire in `App.dart`
-- [ ] **Delete UserApi.dart** — remove `lib/Core/Api/UserApi.dart` after UserGrpcApi is wired
+- [x] **Delete UserApi.dart** — remove `lib/Core/Api/UserApi.dart` after UserGrpcApi is wired
 
 ### 2.8 Replace SyncApi with generated stub
 
