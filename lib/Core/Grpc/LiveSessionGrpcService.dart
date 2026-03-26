@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:math' as math;
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -62,6 +63,8 @@ class LiveSessionGrpcService implements ILiveSocketService {
 
   bool _isAuthenticated = false;
   late final StreamSubscription<AuthState> _authSubscription;
+  late final StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  late final StreamSubscription<void> _resumeSubscription;
   bool _isConnecting = false;
 
   bool get isConnected => _liveSub != null && _telemetrySub != null;
@@ -80,6 +83,8 @@ class LiveSessionGrpcService implements ILiveSocketService {
     required LiveServiceClient liveService,
     required TelemetryServiceClient telemetryService,
     required Stream<AuthState> authStream,
+    required Stream<List<ConnectivityResult>> connectivityStream,
+    required Stream<void> resumeStream,
   })  : _liveService = liveService,
         _telemetryService = telemetryService {
     _authSubscription = authStream.listen((state) {
@@ -89,6 +94,21 @@ class LiveSessionGrpcService implements ILiveSocketService {
       } else if (state is GuestState) {
         _isAuthenticated = false;
         disconnect();
+      }
+    });
+    _connectivitySubscription = connectivityStream.listen((results) {
+      if (results.contains(ConnectivityResult.none)) {
+        log('[LiveSessionGrpc] connectivity lost, disconnecting', name: 'LiveSessionGrpcService');
+        disconnect();
+      } else if (_isAuthenticated) {
+        log('[LiveSessionGrpc] connectivity restored, reconnecting', name: 'LiveSessionGrpcService');
+        connect();
+      }
+    });
+    _resumeSubscription = resumeStream.listen((_) {
+      if (_isAuthenticated && !isConnected) {
+        log('[LiveSessionGrpc] app resumed, not connected — reconnecting', name: 'LiveSessionGrpcService');
+        connect();
       }
     });
   }
@@ -146,6 +166,8 @@ class LiveSessionGrpcService implements ILiveSocketService {
   void dispose() {
     disconnect();
     _authSubscription.cancel();
+    _connectivitySubscription.cancel();
+    _resumeSubscription.cancel();
     _connectionState.close();
     _sessionStateController.close();
     _telemetryStateController.close();

@@ -43,12 +43,11 @@ import 'package:mind/User/Infrastructure/SecureStorage.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionService.dart';
 import 'package:mind/BreathModule/Core/BreathTelemetryService.dart';
-import 'package:mind/Core/Socket/LiveSocketService.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mind/Core/AppLifecycleService.dart';
 import 'package:mind/Core/Grpc/GrpcAuthInterceptor.dart';
 import 'package:mind/Core/Grpc/GrpcClient.dart';
-import 'package:mind/Core/Socket/SocketConnectionCoordinator.dart';
+import 'package:mind/Core/Grpc/LiveSessionGrpcService.dart';
 import 'package:mind/Core/Sync/SyncEngine.dart';
 import 'package:mind/Core/Sync/SyncGrpcListener.dart';
 import 'package:mind/McpModule/Core/TokenNotifier.dart';
@@ -75,8 +74,7 @@ class App {
   final BreathSessionNotifier breathSessionNotifier;
   final DeeplinkRouter deeplinkRouter;
   final AppSettingsNotifier appSettingsNotifier;
-  final LiveSocketService liveSocketService;
-  final SocketConnectionCoordinator socketConnectionCoordinator;
+  final LiveSessionGrpcService liveSocketService;
   final LiveBreathSessionNotifier liveSessionNotifier;
   final LiveBreathSessionService liveSessionService;
   final BreathTelemetryService telemetryService;
@@ -100,7 +98,6 @@ class App {
     required this.deeplinkRouter,
     required this.appSettingsNotifier,
     required this.liveSocketService,
-    required this.socketConnectionCoordinator,
     required this.liveSessionNotifier,
     required this.liveSessionService,
     required this.telemetryService,
@@ -166,10 +163,9 @@ class App {
     final sessionHandler = BreathSessionDeeplinkHandler(router: appRouter);
     final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler, sessionHandler: sessionHandler);
 
-    final liveSocketService = LiveSocketService(storage: const FlutterSecureStorage());
+    final liveSocketService = LiveSessionGrpcService(liveService: grpcClient.liveService, telemetryService: grpcClient.telemetryService, authStream: userNotifier.stream, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
     final syncGrpcListener = SyncGrpcListener(syncService: grpcClient.syncService, syncEngine: syncEngine, syncStateDao: db.syncStateDao, authStream: userNotifier.stream);
 
-    final socketConnectionCoordinator = SocketConnectionCoordinator(userNotifier: userNotifier, liveSocketService: liveSocketService, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
     final liveSessionNotifier = LiveBreathSessionNotifier(liveSocketService: liveSocketService, authStream: userNotifier.stream);
     final liveSessionService = LiveBreathSessionService(notifier: liveSessionNotifier);
     final telemetryService = BreathTelemetryService(liveSocketService: liveSocketService);
@@ -190,7 +186,6 @@ class App {
       deeplinkRouter: deeplinkRouter,
       appSettingsNotifier: appSettingsNotifier,
       liveSocketService: liveSocketService,
-      socketConnectionCoordinator: socketConnectionCoordinator,
       liveSessionNotifier: liveSessionNotifier,
       liveSessionService: liveSessionService,
       telemetryService: telemetryService,

@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:breath_module/breath_module.dart' show IBreathTelemetryService;
-import 'package:mind/Core/Socket/LiveSocketService.dart';
+import 'package:mind/Core/Grpc/LiveSessionGrpcService.dart';
 import 'package:mind/Core/Socket/TelemetryBuffer.dart';
 
 class BreathTelemetryService implements IBreathTelemetryService {
-  final LiveSocketService _liveSocketService;
+  final LiveSessionGrpcService _liveSocketService;
   final TelemetryBuffer _buffer = TelemetryBuffer();
 
   int _maxSamplesPerSecond = 10;
@@ -14,7 +14,7 @@ class BreathTelemetryService implements IBreathTelemetryService {
   StreamSubscription<void>? _telemetryStateSub;
   StreamSubscription<Map<String, dynamic>>? _dataAckSub;
 
-  BreathTelemetryService({required LiveSocketService liveSocketService})
+  BreathTelemetryService({required LiveSessionGrpcService liveSocketService})
       : _liveSocketService = liveSocketService {
     _telemetryStateSub = _liveSocketService.telemetryStateEvents.listen((_) => flushBuffer());
     _dataAckSub = _liveSocketService.dataAckEvents.listen(_onDataAck);
