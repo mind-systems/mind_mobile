@@ -5,18 +5,21 @@ import 'package:mind/BreathModule/Core/LiveBreathSessionNotifier.dart';
 import 'package:mind/Core/TimeOfDayHelper.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/IHomeService.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Models/HomeDTOs.dart';
+import 'package:mind/User/IStatsApi.dart';
 import 'package:mind/User/IUserApi.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/UserNotifier.dart';
 
 class HomeService implements IHomeService {
   final IUserApi userApi;
+  final IStatsApi statsApi;
   final LiveBreathSessionNotifier liveSessionNotifier;
   final UserNotifier userNotifier;
   final Stream<void> resumeStream;
 
   HomeService({
     required this.userApi,
+    required this.statsApi,
     required this.liveSessionNotifier,
     required this.userNotifier,
     required this.resumeStream,
@@ -36,7 +39,7 @@ class HomeService implements IHomeService {
   @override
   Future<StatsDTO?> fetchStats() async {
     if (isGuest) return null;
-    final stats = await userApi.fetchStats();
+    final stats = await statsApi.fetchStats();
     return StatsDTO(
       totalSessions: stats.totalSessions,
       durationHours: stats.totalDurationSeconds ~/ 3600,

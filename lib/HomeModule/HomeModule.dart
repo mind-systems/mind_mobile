@@ -10,6 +10,7 @@ class HomeModule {
   static Widget buildHomeScreen(BuildContext context) {
     final service = HomeService(
       userApi: App.shared.userApi,
+      statsApi: App.shared.statsApi,
       liveSessionNotifier: App.shared.liveSessionNotifier,
       userNotifier: App.shared.userNotifier,
       resumeStream: App.shared.appLifecycleService.onResume,

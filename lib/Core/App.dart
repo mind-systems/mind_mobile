@@ -21,6 +21,8 @@ import 'package:mind/Core/Api/ISyncApi.dart';
 import 'package:mind/Core/Sync/SyncGrpcApi.dart';
 import 'package:mind/McpModule/PersonalAccessTokenGrpcApi.dart';
 import 'package:mind/Core/Api/IPersonalAccessTokenApi.dart';
+import 'package:mind/User/IStatsApi.dart';
+import 'package:mind/User/StatsGrpcApi.dart';
 import 'package:mind/User/UserGrpcApi.dart';
 import 'package:mind/Core/Socket/SocketDebugOverlay.dart';
 import 'package:mind/User/IUserApi.dart';
@@ -63,8 +65,8 @@ class App {
   final Database db;
   final HttpClient httpClient;
   final GrpcClient grpcClient;
-  // todo debug for stats
   final IUserApi userApi;
+  final IStatsApi statsApi;
   final IPersonalAccessTokenApi tokenApi;
   final ISyncApi syncApi;
   final UserRepository userRepository;
@@ -88,6 +90,7 @@ class App {
     required this.httpClient,
     required this.grpcClient,
     required this.userApi,
+    required this.statsApi,
     required this.tokenApi,
     required this.syncApi,
     required this.userRepository,
@@ -126,7 +129,8 @@ class App {
     final grpcAuthInterceptor = GrpcAuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
     final grpcClient = GrpcClient(host: Environment.instance.grpcHost, port: Environment.instance.grpcPort, isSecure: Environment.instance.grpcSecure, detachStream: appLifecycleService.onDetach, interceptors: [grpcAuthInterceptor]);
     final authApi = AuthGrpcApi(grpcClient.authService, const FlutterSecureStorage());
-    final userApi = UserGrpcApi(grpcClient.userService, grpcClient.statsService, grpcClient.breathSessionService);
+    final statsApi = StatsGrpcApi(grpcClient.statsService);
+    final userApi = UserGrpcApi(grpcClient.userService, grpcClient.breathSessionService);
     final tokenApi = PersonalAccessTokenGrpcApi(grpcClient.authService);
     final breathSessionApi = BreathSessionGrpcApi(grpcClient.breathSessionService);
     final syncApi = SyncGrpcApi(grpcClient.syncService, grpcClient.breathSessionService);
@@ -176,6 +180,7 @@ class App {
       httpClient: httpClient,
       grpcClient: grpcClient,
       userApi: userApi,
+      statsApi: statsApi,
       tokenApi: tokenApi,
       syncApi: syncApi,
       userRepository: userRepository,
