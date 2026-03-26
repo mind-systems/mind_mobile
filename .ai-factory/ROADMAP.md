@@ -78,7 +78,7 @@
 - [x] **Create `lib/Core/Grpc/LiveSessionGrpcService.dart`** — holds `_liveCall` (bidi), `_telemetryCall` (bidi), `_syncCall` (server-streaming); implements reconnect with exponential back-off; maps domain events to `LiveRequest` proto messages; drives existing `BehaviorSubject<SocketConnectionState>` and stream controllers
 - [x] **Update `BreathTelemetryService.sendSample()`** — when mapping to `TelemetryData` proto, add `module_id: "breath"` and `instruction_type: "breath_phase"`; currently mobile sends only `{ phase, durationMs }` with no type discriminator (`lib/BreathModule/Core/BreathTelemetryService.dart`)
 - [x] **Replace `SocketConnectionCoordinator.dart`** — wire lifecycle (connect/disconnect/reconnect) to `LiveSessionGrpcService`; replace Socket.io connection state handling
-- [ ] **Update `LiveSessionCoordinator.dart` in `packages/breath_module/`** — replace calls to `ILiveSocketService` methods with equivalent gRPC stream sends if interface changes
+- [x] **Update `LiveSessionCoordinator.dart` in `packages/breath_module/`** — replace calls to `ILiveSocketService` methods with equivalent gRPC stream sends if interface changes
 
 ### 3.6 Remove Socket.io infrastructure (mobile side)
 

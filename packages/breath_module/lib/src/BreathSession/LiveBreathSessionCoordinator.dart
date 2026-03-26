@@ -103,6 +103,7 @@ class LiveBreathSessionCoordinator {
   }
 
   void reset() {
+    _liveSessionId = null;
     _pendingTelemetry = null;
     _started = false;
     _ended = false;
