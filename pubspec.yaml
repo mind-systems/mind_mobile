@@ -69,6 +69,7 @@ dependencies:
   grpc: ^5.1.0
   protobuf: ^6.0.0
   fixnum: ^1.1.1
+  dio: ^5.9.2
 
 dev_dependencies:
   flutter_test:

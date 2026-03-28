@@ -18,6 +18,7 @@ class Environment {
   final String grpcHost;
   final int grpcPort;
   final bool grpcSecure;
+  final String apiBaseUrl;
 
   Environment._({
     required this.name,
@@ -36,6 +37,7 @@ class Environment {
     required this.grpcHost,
     required this.grpcPort,
     required this.grpcSecure,
+    required this.apiBaseUrl,
   });
 
   static late Environment _instance;
@@ -60,6 +62,7 @@ class Environment {
       grpcHost: 'YOUR_DEV_GRPC_HOST',
       grpcPort: 50051,
       grpcSecure: false,
+      apiBaseUrl: 'http://localhost:3000',
     );
   }
 
@@ -81,6 +84,7 @@ class Environment {
       grpcHost: 'YOUR_PROD_GRPC_HOST',
       grpcPort: 443,
       grpcSecure: true,
+      apiBaseUrl: 'https://YOUR_PROD_API_URL',
     );
   }
 }

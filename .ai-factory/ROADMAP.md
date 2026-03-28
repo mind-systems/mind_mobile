@@ -95,6 +95,31 @@
 
 ---
 
+## Phase 5 — HTTP Client
+
+### 5.1 Restore Dio as general-purpose HTTP client
+
+- [x] **Restore `lib/Core/Api/HttpClient.dart`** — re-add from `dev` branch (commit `bb04376`); wraps Dio with `get`, `post`, `patch`, `put`, `delete` methods and structured error handling via `ApiException`; restore `lib/Core/Api/Models/ApiExeption.dart`; `flutter pub add dio`
+
+---
+
+## Phase 6 — ILiveSocketService cleanup
+
+### 6.1 Drop dead `syncChangedEvents` from the interface
+
+- [ ] **Remove `syncChangedEvents` from `ILiveSocketService`** — the method is a stub returning `Stream.empty()` in `LiveSessionGrpcService`; sync is now handled entirely by `SyncGrpcListener`; remove the getter from the abstract interface and delete the stub implementation
+
+### 6.2 Replace `emitLive(String)` with typed gRPC commands
+
+- [ ] **Replace `emitLive(String event, Map?)` with typed methods in `ILiveSocketService`** — the string-event API is a Socket.io leftover; replace with explicit methods: `sendActivityStart({required ActivityType type, String? refId})`, `sendActivityEnd()`, `sendActivityStop()`, `sendActivityPause()`, `sendActivityResume()`; update `LiveSessionGrpcService` to implement typed methods (remove the string-switch); update `LiveBreathSessionNotifier` to call typed methods
+
+### 6.3 Strip all Socket.io naming leftovers
+
+- [ ] **Rename `*GrpcApi` → `*Api` classes and files** — `AuthGrpcApi`, `UserGrpcApi`, `BreathSessionGrpcApi`, `SyncGrpcApi`, `DeviceGrpcApi`, `PersonalAccessTokenGrpcApi`, `StatsGrpcApi`; update wiring in `App.dart` and `BreathModule.dart`
+- [ ] **Rename `ILiveSocketService` → `ILiveSessionService` and all `liveSocket*` variables** — rename class and file; update imports in `LiveSessionGrpcService.dart`, `LiveBreathSessionNotifier.dart`, test file; rename field `_liveSocketService` → `_liveSessionService` and param `liveSocketService` → `liveSessionService` in `App.dart`, `LiveBreathSessionNotifier.dart`, `BreathTelemetryService.dart`; rename `FakeLiveSocketService` → `FakeLiveSessionService` in test
+
+---
+
 ## Completed
 
 | Milestone | Date |
