@@ -148,7 +148,7 @@
 ### 7.6 Create BreathModuleInstructionStream
 
 - [x] **Rename `BreathTelemetryService` → `BreathModuleInstructionStream`** — file + class rename; injects `ModuleInstructionStream` instead of `ILiveSessionService`; on breath phase change emits `InstructionSample(phase, durationMs)`; rate limiting and `InstructionBuffer` stay as-is
-- [ ] **Remove `IBreathTelemetryService` interface** — replace with `BreathModuleInstructionStream` concrete class at the wiring point; update `BreathModule.dart`
+- [x] **Remove `IBreathTelemetryService` interface** — replace with `BreathModuleInstructionStream` concrete class at the wiring point; update `BreathModule.dart`
 
 ### 7.7 Update module boundary interfaces
 
