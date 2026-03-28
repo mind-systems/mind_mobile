@@ -1,37 +1,36 @@
 import 'dart:async';
 import 'dart:developer';
-import 'dart:math' as math;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:protobuf/well_known_types/google/protobuf/struct.pb.dart';
-import 'package:rxdart/rxdart.dart';
 
 import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Core/Grpc/generated/live.pbgrpc.dart' as proto;
 import 'package:mind/Core/Grpc/generated/telemetry.pbgrpc.dart';
+import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
+import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
 import 'package:mind/Core/Grpc/ILiveSessionService.dart';
-import 'package:mind/Core/Grpc/SocketConnectionState.dart';
 import 'package:mind/User/Models/AuthState.dart';
 
 class LiveSessionGrpcService implements ILiveSessionService {
   final proto.LiveServiceClient _liveService;
   final TelemetryServiceClient _telemetryService;
 
-  // ── Connection state ──────────────────────────────────────────────────────
+  // ── Connection manager ────────────────────────────────────────────────────
 
-  final _connectionState = BehaviorSubject<SocketConnectionState>.seeded(
-    SocketConnectionState.disconnected,
-  );
+  late final GrpcConnectionManager _connectionManager;
+
+  Stream<GrpcConnectionState> get connectionState =>
+      _connectionManager.connectionState;
+
+  // ── Session event streams ─────────────────────────────────────────────────
 
   final _sessionStateController =
       StreamController<Map<String, dynamic>>.broadcast();
   final _telemetryStateController = StreamController<void>.broadcast();
   final _dataAckController =
       StreamController<Map<String, dynamic>>.broadcast();
-
-  Stream<SocketConnectionState> get connectionState =>
-      _connectionState.stream;
 
   @override
   Stream<Map<String, dynamic>> get sessionStateEvents =>
@@ -49,23 +48,7 @@ class LiveSessionGrpcService implements ILiveSessionService {
   StreamController<proto.LiveRequest>? _liveSink;
   StreamController<TelemetryData>? _telemetrySink;
 
-  // ── Auth + connection guards ──────────────────────────────────────────────
-
-  bool _isAuthenticated = false;
-  late final StreamSubscription<AuthState> _authSubscription;
-  late final StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
-  late final StreamSubscription<void> _resumeSubscription;
-  bool _isConnecting = false;
-
   bool get isConnected => _liveSub != null && _telemetrySub != null;
-
-  // ── Reconnect state ───────────────────────────────────────────────────────
-
-  Timer? _reconnectTimer;
-  int _reconnectAttempt = 0;
-
-  static const Duration _initialDelay = Duration(seconds: 1);
-  static const Duration _maxDelay = Duration(seconds: 30);
 
   // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -77,71 +60,24 @@ class LiveSessionGrpcService implements ILiveSessionService {
     required Stream<void> resumeStream,
   })  : _liveService = liveService,
         _telemetryService = telemetryService {
-    _authSubscription = authStream.listen((state) {
-      if (state is AuthenticatedState) {
-        _isAuthenticated = true;
-        connect();
-      } else if (state is GuestState) {
-        _isAuthenticated = false;
-        disconnect();
-      }
-    });
-    _connectivitySubscription = connectivityStream.listen((results) {
-      if (results.contains(ConnectivityResult.none)) {
-        log('[LiveSessionGrpc] connectivity lost, disconnecting', name: 'LiveSessionGrpcService');
-        disconnect();
-      } else if (_isAuthenticated) {
-        log('[LiveSessionGrpc] connectivity restored, reconnecting', name: 'LiveSessionGrpcService');
-        connect();
-      }
-    });
-    _resumeSubscription = resumeStream.listen((_) {
-      if (_isAuthenticated && !isConnected) {
-        log('[LiveSessionGrpc] app resumed, not connected — reconnecting', name: 'LiveSessionGrpcService');
-        connect();
-      }
-    });
+    _connectionManager = GrpcConnectionManager(
+      authStream: authStream,
+      connectivityStream: connectivityStream,
+      resumeStream: resumeStream,
+      onConnect: _connect,
+      onDisconnect: _disconnect,
+      isConnected: () => isConnected,
+    );
   }
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  // ── Private connection callbacks ──────────────────────────────────────────
 
-  Future<void> connect() async {
-    if (isConnected || _isConnecting) {
-      log(
-        '[LiveSessionGrpc] connect() skipped: isConnected=$isConnected _isConnecting=$_isConnecting',
-        name: 'LiveSessionGrpcService',
-      );
-      return;
-    }
-    _isConnecting = true;
-    _connectionState.add(SocketConnectionState.connecting);
-    log('[LiveSessionGrpc] connect() start', name: 'LiveSessionGrpcService');
-
-    try {
-      await Future.wait([_openLiveStream(), _openTelemetryStream()]);
-      _resetBackoff();
-      _connectionState.add(SocketConnectionState.connected);
-      log(
-        '[LiveSessionGrpc] connect() succeeded',
-        name: 'LiveSessionGrpcService',
-      );
-    } catch (e) {
-      log(
-        '[LiveSessionGrpc] connect() failed: $e',
-        name: 'LiveSessionGrpcService',
-      );
-      disconnect();
-      _scheduleReconnect();
-    } finally {
-      _isConnecting = false;
-    }
+  Future<void> _connect() async {
+    await Future.wait([_openLiveStream(), _openTelemetryStream()]);
   }
 
-  void disconnect() {
+  void _disconnect() {
     log('[LiveSessionGrpc] disconnect()', name: 'LiveSessionGrpcService');
-    _isConnecting = false;
-    _reconnectTimer?.cancel();
-    _reconnectTimer = null;
     _liveSub?.cancel();
     _liveSub = null;
     _telemetrySub?.cancel();
@@ -150,50 +86,15 @@ class LiveSessionGrpcService implements ILiveSessionService {
     _liveSink = null;
     _telemetrySink?.close();
     _telemetrySink = null;
-    _connectionState.add(SocketConnectionState.disconnected);
   }
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
   void dispose() {
-    disconnect();
-    _authSubscription.cancel();
-    _connectivitySubscription.cancel();
-    _resumeSubscription.cancel();
-    _connectionState.close();
+    _connectionManager.dispose();
     _sessionStateController.close();
     _telemetryStateController.close();
     _dataAckController.close();
-  }
-
-  // ── Reconnect infrastructure ──────────────────────────────────────────────
-
-  Duration _nextDelay() {
-    final base = _initialDelay * math.pow(2, _reconnectAttempt);
-    final clamped =
-        base.inMilliseconds < _maxDelay.inMilliseconds ? base : _maxDelay;
-    final jitter =
-        (clamped.inMilliseconds * 0.25 * (math.Random().nextDouble() * 2 - 1))
-            .round();
-    _reconnectAttempt++;
-    final ms =
-        (clamped.inMilliseconds + jitter).clamp(0, _maxDelay.inMilliseconds);
-    return Duration(milliseconds: ms);
-  }
-
-  void _scheduleReconnect() {
-    if (!_isAuthenticated) return;
-    _reconnectTimer?.cancel();
-    final delay = _nextDelay();
-    log(
-      '[LiveSessionGrpc] reconnecting in ${delay.inSeconds}s (attempt $_reconnectAttempt)',
-      name: 'LiveSessionGrpcService',
-    );
-    _reconnectTimer = Timer(delay, () {
-      if (_isAuthenticated) connect();
-    });
-  }
-
-  void _resetBackoff() {
-    _reconnectAttempt = 0;
   }
 
   // ── Live bidi stream ──────────────────────────────────────────────────────
@@ -229,16 +130,16 @@ class LiveSessionGrpcService implements ILiveSessionService {
           '[LiveSessionGrpc] live stream error: $e',
           name: 'LiveSessionGrpcService',
         );
-        disconnect();
-        _scheduleReconnect();
+        _connectionManager.disconnect();
+        _connectionManager.scheduleReconnect();
       },
       onDone: () {
         log(
           '[LiveSessionGrpc] live stream done',
           name: 'LiveSessionGrpcService',
         );
-        disconnect();
-        _scheduleReconnect();
+        _connectionManager.disconnect();
+        _connectionManager.scheduleReconnect();
       },
     );
   }
@@ -290,16 +191,16 @@ class LiveSessionGrpcService implements ILiveSessionService {
           '[LiveSessionGrpc] telemetry stream error: $e',
           name: 'LiveSessionGrpcService',
         );
-        disconnect();
-        _scheduleReconnect();
+        _connectionManager.disconnect();
+        _connectionManager.scheduleReconnect();
       },
       onDone: () {
         log(
           '[LiveSessionGrpc] telemetry stream done',
           name: 'LiveSessionGrpcService',
         );
-        disconnect();
-        _scheduleReconnect();
+        _connectionManager.disconnect();
+        _connectionManager.scheduleReconnect();
       },
     );
     // Signal to BreathTelemetryService that the telemetry channel is ready

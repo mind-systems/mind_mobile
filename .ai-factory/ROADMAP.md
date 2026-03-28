@@ -124,7 +124,7 @@
 
 ### 7.1 Extract GrpcConnectionManager
 
-- [ ] **Extract `GrpcConnectionManager` from `LiveSessionGrpcService`** — pull out connect / disconnect / backoff / auth+connectivity+resume listeners into a standalone class; expose `Stream<ConnectionState>` that other classes subscribe to; rename `SocketConnectionState` → `ConnectionState` (file + enum), scope it to `lib/Core/Grpc/`
+- [x] **Extract `GrpcConnectionManager` from `LiveSessionGrpcService`** — pull out connect / disconnect / backoff / auth+connectivity+resume listeners into a standalone class; expose `Stream<ConnectionState>` that other classes subscribe to; rename `SocketConnectionState` → `ConnectionState` (file + enum), scope it to `lib/Core/Grpc/`
 
 ### 7.2 Create ModuleStateChannel
 
