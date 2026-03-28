@@ -107,7 +107,7 @@
 
 ### 6.1 Drop dead `syncChangedEvents` from the interface
 
-- [ ] **Remove `syncChangedEvents` from `ILiveSocketService`** — the method is a stub returning `Stream.empty()` in `LiveSessionGrpcService`; sync is now handled entirely by `SyncGrpcListener`; remove the getter from the abstract interface and delete the stub implementation
+- [x] **Remove `syncChangedEvents` from `ILiveSocketService`** — the method is a stub returning `Stream.empty()` in `LiveSessionGrpcService`; sync is now handled entirely by `SyncGrpcListener`; remove the getter from the abstract interface and delete the stub implementation
 
 ### 6.2 Replace `emitLive(String)` with typed gRPC commands
 

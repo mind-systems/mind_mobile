@@ -36,12 +36,6 @@ class LiveSessionGrpcService implements ILiveSocketService {
   Stream<Map<String, dynamic>> get sessionStateEvents =>
       _sessionStateController.stream;
 
-  /// Sync changes are handled by SyncGrpcListener — this service returns an
-  /// empty stream so that ILiveSocketService consumers compile without changes.
-  @override
-  Stream<Map<String, dynamic>> get syncChangedEvents =>
-      Stream<Map<String, dynamic>>.empty();
-
   Stream<void> get telemetryStateEvents => _telemetryStateController.stream;
 
   Stream<Map<String, dynamic>> get dataAckEvents => _dataAckController.stream;
