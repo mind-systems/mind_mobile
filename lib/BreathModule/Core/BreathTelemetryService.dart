@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:breath_module/breath_module.dart' show IBreathTelemetryService;
 import 'package:mind/Core/Grpc/LiveSessionGrpcService.dart';
-import 'package:mind/Core/Grpc/TelemetryBuffer.dart';
+import 'package:mind/Core/Grpc/InstructionBuffer.dart';
 
 class BreathTelemetryService implements IBreathTelemetryService {
   final LiveSessionGrpcService _liveSessionService;
-  final TelemetryBuffer _buffer = TelemetryBuffer();
+  final InstructionBuffer _buffer = InstructionBuffer();
 
   int _maxSamplesPerSecond = 10;
   DateTime? _lastSendTime;

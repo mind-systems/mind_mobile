@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mind/Core/Grpc/TelemetryBuffer.dart';
+import 'package:mind/Core/Grpc/InstructionBuffer.dart';
 
 void main() {
-  group('TelemetryBuffer', () {
-    late TelemetryBuffer buffer;
+  group('InstructionBuffer', () {
+    late InstructionBuffer buffer;
 
     setUp(() {
-      buffer = TelemetryBuffer(capacity: 3);
+      buffer = InstructionBuffer(capacity: 3);
     });
 
     test('starts empty', () {

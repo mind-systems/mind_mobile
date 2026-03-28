@@ -133,7 +133,7 @@
 
 ### 7.3 Create ModuleInstructionStream
 
-- [ ] **Create `ModuleInstructionStream` — instruction samples over telemetry.proto** — owns the `TelemetryService/StreamTelemetry` bidi stream; subscribes to `GrpcConnectionManager.connectionState`; exposes `emit(InstructionSample)` and `Stream<InstructionAck>`
+- [x] **Create `ModuleInstructionStream` — instruction samples over telemetry.proto** — owns the `TelemetryService/StreamTelemetry` bidi stream; subscribes to `GrpcConnectionManager.connectionState`; exposes `emit(InstructionSample)` and `Stream<InstructionAck>`
 - [ ] **Rename `TelemetryBuffer` → `InstructionBuffer`** — file + class rename; update all usages
 
 ### 7.4 Delete LiveSessionGrpcService
