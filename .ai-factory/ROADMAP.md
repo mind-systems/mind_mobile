@@ -120,6 +120,42 @@
 
 ---
 
+## Phase 7 — Live Session Architecture Refactor
+
+### 7.1 Extract GrpcConnectionManager
+
+- [ ] **Extract `GrpcConnectionManager` from `LiveSessionGrpcService`** — pull out connect / disconnect / backoff / auth+connectivity+resume listeners into a standalone class; expose `Stream<ConnectionState>` that other classes subscribe to; rename `SocketConnectionState` → `ConnectionState` (file + enum), scope it to `lib/Core/Grpc/`
+
+### 7.2 Create ModuleStateChannel
+
+- [ ] **Create `ModuleStateChannel` — activity lifecycle over live.proto** — owns the `LiveService/LiveSession` bidi stream; absorbs `LiveBreathSessionNotifier` pending-guard logic and Map→typed-state mapping; exposes typed `Stream<ModuleStateEvent>`; subscribes to `GrpcConnectionManager.connectionState`; receives typed proto `SessionStateEvent` directly (no `Map<String, dynamic>`)
+- [ ] **Delete `LiveBreathSessionNotifier`** — fully absorbed into `ModuleStateChannel`; update all usages
+
+### 7.3 Create ModuleInstructionStream
+
+- [ ] **Create `ModuleInstructionStream` — instruction samples over telemetry.proto** — owns the `TelemetryService/StreamTelemetry` bidi stream; subscribes to `GrpcConnectionManager.connectionState`; exposes `emit(InstructionSample)` and `Stream<InstructionAck>`
+- [ ] **Rename `TelemetryBuffer` → `InstructionBuffer`** — file + class rename; update all usages
+
+### 7.4 Delete LiveSessionGrpcService
+
+- [ ] **Delete `LiveSessionGrpcService`** — fully replaced by `GrpcConnectionManager` + `ModuleStateChannel` + `ModuleInstructionStream`; remove `ILiveSessionService` interface; update wiring in `App.dart`
+
+### 7.5 Create BreathModuleStateChannel
+
+- [ ] **Create `BreathModuleStateChannel` in `lib/BreathModule/Core/`** — injects `ModuleStateChannel`; subscribes to `BreathSessionState` stream; translates state transitions → `channel.start(ActivityType.breath, refId)` / `channel.pause()` / `channel.resume()` / `channel.end()`; reads `liveSessionId` from channel events and exposes it for the instruction stream
+- [ ] **Delete `LiveBreathSessionService` and `LiveBreathSessionCoordinator`** — absorbed into `BreathModuleStateChannel`; remove interface files; update `BreathModule.dart` wiring
+
+### 7.6 Create BreathModuleInstructionStream
+
+- [ ] **Rename `BreathTelemetryService` → `BreathModuleInstructionStream`** — file + class rename; injects `ModuleInstructionStream` instead of `ILiveSessionService`; on breath phase change emits `InstructionSample(phase, durationMs)`; rate limiting and `InstructionBuffer` stay as-is
+- [ ] **Remove `IBreathTelemetryService` interface** — replace with `BreathModuleInstructionStream` concrete class at the wiring point; update `BreathModule.dart`
+
+### 7.7 Update module boundary interfaces
+
+- [ ] **Update `ILiveBreathSessionService` → remove or replace** — `BreathModuleStateChannel` no longer needs this interface (it owns the channel directly); clean up `packages/breath_module` interface files that referenced live session service and telemetry service; update `BreathModule.dart` assembly point
+
+---
+
 ## Completed
 
 | Milestone | Date |
