@@ -44,7 +44,6 @@ import 'package:mind/Core/AppLifecycleService.dart';
 import 'package:mind/Core/Grpc/GrpcAuthInterceptor.dart';
 import 'package:mind/Core/Grpc/GrpcClient.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
-import 'package:mind/Core/Grpc/LiveSessionGrpcService.dart';
 import 'package:mind/Core/Grpc/ModuleInstructionStream.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
 import 'package:mind/Core/Sync/SyncEngine.dart';
@@ -75,7 +74,6 @@ class App {
   final GrpcConnectionManager connectionManager;
   final ModuleStateChannel moduleStateChannel;
   final ModuleInstructionStream instructionStream;
-  final LiveSessionGrpcService liveGrpcService;
   final LiveBreathSessionService liveSessionService;
   final BreathTelemetryService telemetryService;
   final TokenNotifier tokenNotifier;
@@ -99,7 +97,6 @@ class App {
     required this.connectionManager,
     required this.moduleStateChannel,
     required this.instructionStream,
-    required this.liveGrpcService,
     required this.liveSessionService,
     required this.telemetryService,
     required this.tokenNotifier,
@@ -165,11 +162,10 @@ class App {
     final connectionManager = GrpcConnectionManager(authStream: userNotifier.stream, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
     final moduleStateChannel = ModuleStateChannel(liveService: grpcClient.liveService, connectionManager: connectionManager, authStream: userNotifier.stream);
     final instructionStream = ModuleInstructionStream(connectionManager: connectionManager, telemetryService: grpcClient.telemetryService);
-    final liveGrpcService = LiveSessionGrpcService(connectionManager: connectionManager, channel: moduleStateChannel, telemetryService: grpcClient.telemetryService);
     final syncGrpcListener = SyncGrpcListener(syncService: grpcClient.syncService, syncEngine: syncEngine, syncStateDao: db.syncStateDao, authStream: userNotifier.stream);
 
     final liveSessionService = LiveBreathSessionService(channel: moduleStateChannel);
-    final telemetryService = BreathTelemetryService(liveSessionService: liveGrpcService);
+    final telemetryService = BreathTelemetryService(instructionStream: instructionStream);
     final tokenNotifier = TokenNotifier(api: tokenApi);
 
     shared = App._(
@@ -188,7 +184,6 @@ class App {
       connectionManager: connectionManager,
       moduleStateChannel: moduleStateChannel,
       instructionStream: instructionStream,
-      liveGrpcService: liveGrpcService,
       liveSessionService: liveSessionService,
       telemetryService: telemetryService,
       tokenNotifier: tokenNotifier,

@@ -4,6 +4,7 @@
     "40-create-modulestatechannel-activity-lifecycle-over-live-proto-review-1.md",
     "41-delete-livebreathsessionnotifier-review-1.md",
     "42-create-moduleinstructionstream-instruction-samples-over-telemetry-proto-review-1.md",
-    "43-rename-telemetrybuffer-instructionbuffer-review-1.md"
+    "43-rename-telemetrybuffer-instructionbuffer-review-1.md",
+    "44-delete-livesessiongrpcservice-review-1.md"
   ]
 }

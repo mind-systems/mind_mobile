@@ -138,7 +138,7 @@
 
 ### 7.4 Delete LiveSessionGrpcService
 
-- [ ] **Delete `LiveSessionGrpcService`** — fully replaced by `GrpcConnectionManager` + `ModuleStateChannel` + `ModuleInstructionStream`; remove `ILiveSessionService` interface; update wiring in `App.dart`
+- [x] **Delete `LiveSessionGrpcService`** — fully replaced by `GrpcConnectionManager` + `ModuleStateChannel` + `ModuleInstructionStream`; remove `ILiveSessionService` interface; update wiring in `App.dart`
 
 ### 7.5 Create BreathModuleStateChannel
 

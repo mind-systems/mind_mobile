@@ -26,6 +26,7 @@ class ModuleInstructionStream {
   StreamController<TelemetryData>? _telemetrySink;
 
   bool get isConnected => _telemetrySink != null;
+  bool get isGrpcConnected => _isGrpcConnected;
 
   // ── Output streams ────────────────────────────────────────────────────────
 

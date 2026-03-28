@@ -1,23 +1,25 @@
 import 'dart:async';
 
 import 'package:breath_module/breath_module.dart' show IBreathTelemetryService;
-import 'package:mind/Core/Grpc/LiveSessionGrpcService.dart';
+import 'package:mind/Core/Grpc/InstructionAck.dart';
 import 'package:mind/Core/Grpc/InstructionBuffer.dart';
+import 'package:mind/Core/Grpc/InstructionSample.dart';
+import 'package:mind/Core/Grpc/ModuleInstructionStream.dart';
 
 class BreathTelemetryService implements IBreathTelemetryService {
-  final LiveSessionGrpcService _liveSessionService;
+  final ModuleInstructionStream _instructionStream;
   final InstructionBuffer _buffer = InstructionBuffer();
 
   int _maxSamplesPerSecond = 10;
   DateTime? _lastSendTime;
 
   StreamSubscription<void>? _telemetryStateSub;
-  StreamSubscription<Map<String, dynamic>>? _dataAckSub;
+  StreamSubscription<InstructionAck>? _dataAckSub;
 
-  BreathTelemetryService({required LiveSessionGrpcService liveSessionService})
-      : _liveSessionService = liveSessionService {
-    _telemetryStateSub = _liveSessionService.telemetryStateEvents.listen((_) => flushBuffer());
-    _dataAckSub = _liveSessionService.dataAckEvents.listen(_onDataAck);
+  BreathTelemetryService({required ModuleInstructionStream instructionStream})
+      : _instructionStream = instructionStream {
+    _telemetryStateSub = _instructionStream.readyEvents.listen((_) => flushBuffer());
+    _dataAckSub = _instructionStream.acks.listen(_onDataAck);
   }
 
   @override
@@ -42,7 +44,13 @@ class BreathTelemetryService implements IBreathTelemetryService {
 
   void flushBuffer() {
     for (final sample in _buffer.flush()) {
-      _liveSessionService.emitTelemetry('data:stream', sample);
+      _instructionStream.emit(InstructionSample(
+        sessionId: sample['sessionId'] as String,
+        timestamp: sample['timestamp'] as int,
+        moduleId: sample['module_id'] as String,
+        instructionType: sample['instruction_type'] as String,
+        data: sample['data'] as Map<String, dynamic>,
+      ));
     }
   }
 
@@ -52,21 +60,26 @@ class BreathTelemetryService implements IBreathTelemetryService {
   }
 
   bool _canSendNow() {
-    if (!_liveSessionService.isConnected) return false;
+    if (!_instructionStream.isGrpcConnected) return false;
     if (_lastSendTime == null) return true;
     final minIntervalMs = 1000 ~/ _maxSamplesPerSecond;
     return DateTime.now().difference(_lastSendTime!).inMilliseconds >= minIntervalMs;
   }
 
   void _emit(Map<String, dynamic> payload) {
-    _liveSessionService.emitTelemetry('data:stream', payload);
+    _instructionStream.emit(InstructionSample(
+      sessionId: payload['sessionId'] as String,
+      timestamp: payload['timestamp'] as int,
+      moduleId: payload['module_id'] as String,
+      instructionType: payload['instruction_type'] as String,
+      data: payload['data'] as Map<String, dynamic>,
+    ));
     _lastSendTime = DateTime.now();
   }
 
-  void _onDataAck(Map<String, dynamic> data) {
-    final rate = data['maxSamplesPerSecond'];
-    if (rate is int && rate > 0) {
-      _maxSamplesPerSecond = rate;
+  void _onDataAck(InstructionAck ack) {
+    if (ack.maxSamplesPerSecond > 0) {
+      _maxSamplesPerSecond = ack.maxSamplesPerSecond;
     }
   }
 }

@@ -38,7 +38,7 @@ lib/
 │   ├── App.dart                    # Manual DI — initialization root
 │   ├── Database/                   # Drift schema + DAOs
 │   ├── Api/                        # API interfaces + request/response DTOs
-│   ├── Grpc/                       # GrpcClient, GrpcAuthInterceptor, LiveSessionGrpcService
+│   ├── Grpc/                       # GrpcClient, GrpcAuthInterceptor, GrpcConnectionManager, ModuleStateChannel, ModuleInstructionStream
 │   └── GlobalUI/                   # GlobalKeys, GlobalListeners
 │
 ├── <FeatureModule>/                 # One folder per feature (e.g. BreathModule, User)
