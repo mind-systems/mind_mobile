@@ -8,7 +8,6 @@ import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
 import 'package:mind/Core/Grpc/InstructionAck.dart';
 import 'package:mind/Core/Grpc/InstructionSample.dart';
-import 'package:mind/Core/Grpc/generated/telemetry.pb.dart';
 import 'package:mind/Core/Grpc/generated/telemetry.pbgrpc.dart';
 
 class ModuleInstructionStream {
