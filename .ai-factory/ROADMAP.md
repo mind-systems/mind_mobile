@@ -128,7 +128,7 @@
 
 ### 7.2 Create ModuleStateChannel
 
-- [ ] **Create `ModuleStateChannel` — activity lifecycle over live.proto** — owns the `LiveService/LiveSession` bidi stream; absorbs `LiveBreathSessionNotifier` pending-guard logic and Map→typed-state mapping; exposes typed `Stream<ModuleStateEvent>`; subscribes to `GrpcConnectionManager.connectionState`; receives typed proto `SessionStateEvent` directly (no `Map<String, dynamic>`)
+- [x] **Create `ModuleStateChannel` — activity lifecycle over live.proto** — owns the `LiveService/LiveSession` bidi stream; absorbs `LiveBreathSessionNotifier` pending-guard logic and Map→typed-state mapping; exposes typed `Stream<ModuleStateEvent>`; subscribes to `GrpcConnectionManager.connectionState`; receives typed proto `SessionStateEvent` directly (no `Map<String, dynamic>`)
 - [ ] **Delete `LiveBreathSessionNotifier`** — fully absorbed into `ModuleStateChannel`; update all usages
 
 ### 7.3 Create ModuleInstructionStream

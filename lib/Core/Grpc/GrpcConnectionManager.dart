@@ -9,10 +9,6 @@ import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
 import 'package:mind/User/Models/AuthState.dart';
 
 class GrpcConnectionManager {
-  final Future<void> Function() _onConnect;
-  final void Function() _onDisconnect;
-  final bool Function() _isConnected;
-
   // ── Connection state ──────────────────────────────────────────────────────
 
   final _connectionState = BehaviorSubject<GrpcConnectionState>.seeded(
@@ -48,12 +44,7 @@ class GrpcConnectionManager {
     required Stream<AuthState> authStream,
     required Stream<List<ConnectivityResult>> connectivityStream,
     required Stream<void> resumeStream,
-    required Future<void> Function() onConnect,
-    required void Function() onDisconnect,
-    required bool Function() isConnected,
-  })  : _onConnect = onConnect,
-        _onDisconnect = onDisconnect,
-        _isConnected = isConnected {
+  }) {
     _authSubscription = authStream.listen((state) {
       if (state is AuthenticatedState) {
         _isAuthenticated = true;
@@ -73,7 +64,7 @@ class GrpcConnectionManager {
       }
     });
     _resumeSubscription = resumeStream.listen((_) {
-      if (_isAuthenticated && !_isConnected()) {
+      if (_isAuthenticated && currentState != GrpcConnectionState.connected) {
         log('[GrpcConnectionManager] app resumed, not connected — reconnecting', name: 'GrpcConnectionManager');
         connect();
       }
@@ -82,10 +73,10 @@ class GrpcConnectionManager {
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-  Future<void> connect() async {
-    if (_isConnected() || _isConnecting) {
+  void connect() {
+    if (currentState == GrpcConnectionState.connected || _isConnecting) {
       log(
-        '[GrpcConnectionManager] connect() skipped: isConnected=${_isConnected()} _isConnecting=$_isConnecting',
+        '[GrpcConnectionManager] connect() skipped: currentState=$currentState _isConnecting=$_isConnecting',
         name: 'GrpcConnectionManager',
       );
       return;
@@ -93,19 +84,9 @@ class GrpcConnectionManager {
     _isConnecting = true;
     _connectionState.add(GrpcConnectionState.connecting);
     log('[GrpcConnectionManager] connect() start', name: 'GrpcConnectionManager');
-
-    try {
-      await _onConnect();
-      _resetBackoff();
-      _connectionState.add(GrpcConnectionState.connected);
-      log('[GrpcConnectionManager] connect() succeeded', name: 'GrpcConnectionManager');
-    } catch (e) {
-      log('[GrpcConnectionManager] connect() failed: $e', name: 'GrpcConnectionManager');
-      disconnect();
-      _scheduleReconnectInternal();
-    } finally {
-      _isConnecting = false;
-    }
+    _connectionState.add(GrpcConnectionState.connected);
+    log('[GrpcConnectionManager] connect() succeeded', name: 'GrpcConnectionManager');
+    _isConnecting = false;
   }
 
   void disconnect() {
@@ -113,8 +94,14 @@ class GrpcConnectionManager {
     _isConnecting = false;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
-    _onDisconnect();
     _connectionState.add(GrpcConnectionState.disconnected);
+  }
+
+  /// Call this once a stream is successfully established to reset the backoff
+  /// counter. Consumers (channel, service) each call this independently after
+  /// their own stream is open; the first call resets the counter.
+  void confirmConnected() {
+    _resetBackoff();
   }
 
   /// Public entry point so transport-level stream errors in the service can

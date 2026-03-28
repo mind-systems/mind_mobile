@@ -44,7 +44,9 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mind/Core/AppLifecycleService.dart';
 import 'package:mind/Core/Grpc/GrpcAuthInterceptor.dart';
 import 'package:mind/Core/Grpc/GrpcClient.dart';
+import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/LiveSessionGrpcService.dart';
+import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
 import 'package:mind/Core/Sync/SyncEngine.dart';
 import 'package:mind/Core/Sync/SyncGrpcListener.dart';
 import 'package:mind/McpModule/Core/TokenNotifier.dart';
@@ -70,6 +72,8 @@ class App {
   final BreathSessionNotifier breathSessionNotifier;
   final DeeplinkRouter deeplinkRouter;
   final AppSettingsNotifier appSettingsNotifier;
+  final GrpcConnectionManager connectionManager;
+  final ModuleStateChannel moduleStateChannel;
   final LiveSessionGrpcService liveGrpcService;
   final LiveBreathSessionNotifier liveSessionNotifier;
   final LiveBreathSessionService liveSessionService;
@@ -92,6 +96,8 @@ class App {
     required this.breathSessionNotifier,
     required this.deeplinkRouter,
     required this.appSettingsNotifier,
+    required this.connectionManager,
+    required this.moduleStateChannel,
     required this.liveGrpcService,
     required this.liveSessionNotifier,
     required this.liveSessionService,
@@ -156,7 +162,9 @@ class App {
     final sessionHandler = BreathSessionDeeplinkHandler(router: appRouter);
     final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler, sessionHandler: sessionHandler);
 
-    final liveGrpcService = LiveSessionGrpcService(liveService: grpcClient.liveService, telemetryService: grpcClient.telemetryService, authStream: userNotifier.stream, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
+    final connectionManager = GrpcConnectionManager(authStream: userNotifier.stream, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
+    final moduleStateChannel = ModuleStateChannel(liveService: grpcClient.liveService, connectionManager: connectionManager, authStream: userNotifier.stream);
+    final liveGrpcService = LiveSessionGrpcService(connectionManager: connectionManager, channel: moduleStateChannel, telemetryService: grpcClient.telemetryService);
     final syncGrpcListener = SyncGrpcListener(syncService: grpcClient.syncService, syncEngine: syncEngine, syncStateDao: db.syncStateDao, authStream: userNotifier.stream);
 
     final liveSessionNotifier = LiveBreathSessionNotifier(liveSessionService: liveGrpcService, authStream: userNotifier.stream);
@@ -177,6 +185,8 @@ class App {
       breathSessionNotifier: breathSessionNotifier,
       deeplinkRouter: deeplinkRouter,
       appSettingsNotifier: appSettingsNotifier,
+      connectionManager: connectionManager,
+      moduleStateChannel: moduleStateChannel,
       liveGrpcService: liveGrpcService,
       liveSessionNotifier: liveSessionNotifier,
       liveSessionService: liveSessionService,

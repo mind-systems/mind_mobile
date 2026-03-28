@@ -1,164 +1,78 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:protobuf/well_known_types/google/protobuf/struct.pb.dart';
 
 import 'package:mind/Core/Grpc/ActivityType.dart';
-import 'package:mind/Core/Grpc/generated/live.pbgrpc.dart' as proto;
-import 'package:mind/Core/Grpc/generated/telemetry.pbgrpc.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
 import 'package:mind/Core/Grpc/ILiveSessionService.dart';
-import 'package:mind/User/Models/AuthState.dart';
+import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
+import 'package:mind/Core/Grpc/generated/live.pbgrpc.dart' as proto;
+import 'package:mind/Core/Grpc/generated/telemetry.pbgrpc.dart';
 
 class LiveSessionGrpcService implements ILiveSessionService {
-  final proto.LiveServiceClient _liveService;
+  final GrpcConnectionManager _connectionManager;
+  final ModuleStateChannel _channel;
   final TelemetryServiceClient _telemetryService;
 
-  // ── Connection manager ────────────────────────────────────────────────────
-
-  late final GrpcConnectionManager _connectionManager;
+  // ── Connection state ──────────────────────────────────────────────────────
 
   Stream<GrpcConnectionState> get connectionState =>
       _connectionManager.connectionState;
 
-  // ── Session event streams ─────────────────────────────────────────────────
+  bool get isConnected => _channel.isConnected && _telemetrySub != null;
 
-  final _sessionStateController =
-      StreamController<Map<String, dynamic>>.broadcast();
+  // ── Telemetry stream ──────────────────────────────────────────────────────
+
   final _telemetryStateController = StreamController<void>.broadcast();
   final _dataAckController =
       StreamController<Map<String, dynamic>>.broadcast();
-
-  @override
-  Stream<Map<String, dynamic>> get sessionStateEvents =>
-      _sessionStateController.stream;
 
   Stream<void> get telemetryStateEvents => _telemetryStateController.stream;
 
   Stream<Map<String, dynamic>> get dataAckEvents => _dataAckController.stream;
 
-  // ── Stream handles ────────────────────────────────────────────────────────
-
-  StreamSubscription<proto.LiveResponse>? _liveSub;
   StreamSubscription<TelemetryResponse>? _telemetrySub;
-
-  StreamController<proto.LiveRequest>? _liveSink;
   StreamController<TelemetryData>? _telemetrySink;
 
-  bool get isConnected => _liveSub != null && _telemetrySub != null;
+  // ── Connection state subscription ─────────────────────────────────────────
+
+  late final StreamSubscription<GrpcConnectionState> _connectionStateSub;
 
   // ── Constructor ───────────────────────────────────────────────────────────
 
   LiveSessionGrpcService({
-    required proto.LiveServiceClient liveService,
+    required GrpcConnectionManager connectionManager,
+    required ModuleStateChannel channel,
     required TelemetryServiceClient telemetryService,
-    required Stream<AuthState> authStream,
-    required Stream<List<ConnectivityResult>> connectivityStream,
-    required Stream<void> resumeStream,
-  })  : _liveService = liveService,
+  })  : _connectionManager = connectionManager,
+        _channel = channel,
         _telemetryService = telemetryService {
-    _connectionManager = GrpcConnectionManager(
-      authStream: authStream,
-      connectivityStream: connectivityStream,
-      resumeStream: resumeStream,
-      onConnect: _connect,
-      onDisconnect: _disconnect,
-      isConnected: () => isConnected,
-    );
-  }
-
-  // ── Private connection callbacks ──────────────────────────────────────────
-
-  Future<void> _connect() async {
-    await Future.wait([_openLiveStream(), _openTelemetryStream()]);
-  }
-
-  void _disconnect() {
-    log('[LiveSessionGrpc] disconnect()', name: 'LiveSessionGrpcService');
-    _liveSub?.cancel();
-    _liveSub = null;
-    _telemetrySub?.cancel();
-    _telemetrySub = null;
-    _liveSink?.close();
-    _liveSink = null;
-    _telemetrySink?.close();
-    _telemetrySink = null;
+    _connectionStateSub = connectionManager.connectionState.listen((state) {
+      switch (state) {
+        case GrpcConnectionState.connected:
+          _openTelemetryStream();
+        case GrpcConnectionState.disconnected:
+          _telemetrySub?.cancel();
+          _telemetrySub = null;
+          _telemetrySink?.close();
+          _telemetrySink = null;
+        case GrpcConnectionState.connecting:
+          break;
+      }
+    });
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   void dispose() {
-    _connectionManager.dispose();
-    _sessionStateController.close();
+    _connectionStateSub.cancel();
+    _telemetrySub?.cancel();
+    _telemetrySink?.close();
     _telemetryStateController.close();
     _dataAckController.close();
-  }
-
-  // ── Live bidi stream ──────────────────────────────────────────────────────
-
-  Future<void> _openLiveStream() async {
-    _liveSink = StreamController<proto.LiveRequest>();
-    final response = _liveService.liveSession(_liveSink!.stream);
-    _liveSub = response.listen(
-      (proto.LiveResponse r) {
-        switch (r.whichEvent()) {
-          case proto.LiveResponse_Event.sessionState:
-            final event = r.sessionState;
-            // DISCONNECTED is a transport-level status — do not forward it as
-            // a session lifecycle event to avoid noise in LiveBreathSessionNotifier.
-            if (event.status == proto.SessionStatus.DISCONNECTED) return;
-            final data = <String, dynamic>{
-              'status': _mapSessionStatus(event.status),
-              'liveSessionId': event.liveSessionId,
-              'isPaused': event.isPaused,
-            };
-            _sessionStateController.add(data);
-          case proto.LiveResponse_Event.sessionError:
-            log(
-              '[LiveSessionGrpc] session error: ${r.sessionError.code} — ${r.sessionError.message}',
-              name: 'LiveSessionGrpcService',
-            );
-          case proto.LiveResponse_Event.notSet:
-            break;
-        }
-      },
-      onError: (Object e) {
-        log(
-          '[LiveSessionGrpc] live stream error: $e',
-          name: 'LiveSessionGrpcService',
-        );
-        _connectionManager.disconnect();
-        _connectionManager.scheduleReconnect();
-      },
-      onDone: () {
-        log(
-          '[LiveSessionGrpc] live stream done',
-          name: 'LiveSessionGrpcService',
-        );
-        _connectionManager.disconnect();
-        _connectionManager.scheduleReconnect();
-      },
-    );
-  }
-
-  String _mapSessionStatus(proto.SessionStatus status) {
-    switch (status) {
-      case proto.SessionStatus.ACTIVE:
-        return 'active';
-      case proto.SessionStatus.RESUMED:
-        return 'resumed';
-      case proto.SessionStatus.COMPLETED:
-        return 'completed';
-      case proto.SessionStatus.ABANDONED:
-        return 'abandoned';
-      case proto.SessionStatus.INTERRUPTED:
-        return 'interrupted';
-      default:
-        return 'unknown';
-    }
   }
 
   // ── Telemetry bidi stream ─────────────────────────────────────────────────
@@ -203,41 +117,47 @@ class LiveSessionGrpcService implements ILiveSessionService {
         _connectionManager.scheduleReconnect();
       },
     );
+    _connectionManager.confirmConnected();
     // Signal to BreathTelemetryService that the telemetry channel is ready
     _telemetryStateController.add(null);
   }
 
-  // ── Public API ────────────────────────────────────────────────────────────
+  // ── ILiveSessionService backward-compat delegation ────────────────────────
+
+  @override
+  Stream<Map<String, dynamic>> get sessionStateEvents =>
+      _channel.rawSessionEvents.map((e) => <String, dynamic>{
+            'status': _mapSessionStatus(e.status),
+            'liveSessionId': e.liveSessionId,
+            'isPaused': e.isPaused,
+          });
 
   @override
   void sendActivityStart({required ActivityType type, String? refId}) {
-    _sendLiveRequest(proto.LiveRequest(
-      activityStart: proto.ActivityStartCmd(
-        activityType: _mapActivityType(type),
-        refId: refId ?? '',
-      ),
-    ));
+    _channel.start(type: type, refId: refId);
   }
 
   @override
   void sendActivityEnd() {
-    _sendLiveRequest(proto.LiveRequest(activityEnd: proto.ActivityEndCmd()));
+    _channel.end();
   }
 
   @override
   void sendActivityStop() {
-    _sendLiveRequest(proto.LiveRequest(activityStop: proto.ActivityStopCmd()));
+    _channel.stop();
   }
 
   @override
   void sendActivityPause() {
-    _sendLiveRequest(proto.LiveRequest(activityPause: proto.ActivityPauseCmd()));
+    _channel.pause();
   }
 
   @override
   void sendActivityResume() {
-    _sendLiveRequest(proto.LiveRequest(activityResume: proto.ActivityResumeCmd()));
+    _channel.unpause();
   }
+
+  // ── Telemetry public API ──────────────────────────────────────────────────
 
   void emitTelemetry(String event, [dynamic data]) {
     if (_telemetrySink == null) {
@@ -270,21 +190,20 @@ class LiveSessionGrpcService implements ILiveSessionService {
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  void _sendLiveRequest(proto.LiveRequest request) {
-    if (_liveSink == null) {
-      log(
-        '[LiveSessionGrpc] not connected, dropping request',
-        name: 'LiveSessionGrpcService',
-      );
-      return;
-    }
-    _liveSink!.add(request);
-  }
-
-  proto.ActivityType _mapActivityType(ActivityType type) {
-    switch (type) {
-      case ActivityType.breath:
-        return proto.ActivityType.BREATH;
+  String _mapSessionStatus(proto.SessionStatus status) {
+    switch (status) {
+      case proto.SessionStatus.ACTIVE:
+        return 'active';
+      case proto.SessionStatus.RESUMED:
+        return 'resumed';
+      case proto.SessionStatus.COMPLETED:
+        return 'completed';
+      case proto.SessionStatus.ABANDONED:
+        return 'abandoned';
+      case proto.SessionStatus.INTERRUPTED:
+        return 'interrupted';
+      default:
+        return 'unknown';
     }
   }
 
