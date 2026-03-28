@@ -4,13 +4,13 @@ import 'package:mind/Core/Grpc/generated/auth.pbgrpc.dart';
 import 'package:mind/User/IAuthApi.dart';
 import 'package:mind/User/Models/User.dart';
 
-class AuthGrpcApi implements IAuthApi {
+class AuthApi implements IAuthApi {
   final AuthServiceClient _authService;
   final FlutterSecureStorage _storage;
 
   static const String _tokenKey = 'jwt_token';
 
-  AuthGrpcApi(this._authService, this._storage);
+  AuthApi(this._authService, this._storage);
 
   @override
   Future<void> sendCode({required String email, required String locale}) async {

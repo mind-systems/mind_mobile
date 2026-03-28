@@ -12,11 +12,11 @@ import 'package:mind/Core/Grpc/generated/breath_sessions.pbgrpc.dart' show Breat
 import 'package:mind/Core/Grpc/generated/sync.pb.dart' as syncProto;
 import 'package:mind/Core/Grpc/generated/sync.pbgrpc.dart' show SyncServiceClient;
 
-class SyncGrpcApi implements ISyncApi {
+class SyncApi implements ISyncApi {
   final SyncServiceClient _syncService;
   final BreathSessionServiceClient _breathSessionService;
 
-  SyncGrpcApi(this._syncService, this._breathSessionService);
+  SyncApi(this._syncService, this._breathSessionService);
 
   @override
   Future<SyncResponse> fetchChanges(int lastEventId) async {

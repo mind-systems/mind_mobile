@@ -3,10 +3,10 @@ import 'package:mind/Core/Grpc/generated/stats.pbgrpc.dart' show StatsServiceCli
 import 'package:mind/User/IStatsApi.dart';
 import 'package:mind/User/Models/UserStatsDTO.dart';
 
-class StatsGrpcApi implements IStatsApi {
+class StatsApi implements IStatsApi {
   final StatsServiceClient _statsService;
 
-  StatsGrpcApi(this._statsService);
+  StatsApi(this._statsService);
 
   @override
   Future<UserStatsDTO> fetchStats() async {

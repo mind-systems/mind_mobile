@@ -9,10 +9,10 @@ import 'package:mind/Core/Api/Models/StarSessionRequest.dart';
 import 'package:mind/Core/Grpc/generated/breath_sessions.pb.dart' as proto;
 import 'package:mind/Core/Grpc/generated/breath_sessions.pbgrpc.dart' show BreathSessionServiceClient;
 
-class BreathSessionGrpcApi implements IBreathSessionApi {
+class BreathSessionApi implements IBreathSessionApi {
   final BreathSessionServiceClient _service;
 
-  BreathSessionGrpcApi(this._service);
+  BreathSessionApi(this._service);
 
   @override
   Future<BreathSession> create(SaveBreathSessionRequest request) async {

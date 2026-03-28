@@ -6,11 +6,11 @@ import 'package:mind/Core/Grpc/generated/users.pbgrpc.dart' show UserServiceClie
 import 'package:mind/User/IUserApi.dart';
 import 'package:mind/User/Models/SuggestionDTO.dart';
 
-class UserGrpcApi implements IUserApi {
+class UserApi implements IUserApi {
   final UserServiceClient _userService;
   final BreathSessionServiceClient _breathSessionService;
 
-  UserGrpcApi(this._userService, this._breathSessionService);
+  UserApi(this._userService, this._breathSessionService);
 
   @override
   Future<void> updateUser(UpdateUserRequest request) async {

@@ -5,16 +5,16 @@ import 'package:flutter/widgets.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:uuid/uuid.dart';
 import 'package:mind/Core/Api/Models/DevicePingRequest.dart';
-import 'package:mind/Device/DeviceGrpcApi.dart';
+import 'package:mind/Device/DeviceApi.dart';
 import 'package:mind/User/Infrastructure/ISecureStorage.dart';
 
 class DeviceRepository {
   static const _installationIdKey = 'device_installation_id';
 
-  final DeviceGrpcApi _api;
+  final DeviceApi _api;
   final ISecureStorage _storage;
 
-  DeviceRepository({required DeviceGrpcApi api, required ISecureStorage storage})
+  DeviceRepository({required DeviceApi api, required ISecureStorage storage})
       : _api = api,
         _storage = storage;
 

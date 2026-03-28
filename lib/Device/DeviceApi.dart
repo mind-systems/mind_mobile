@@ -2,10 +2,10 @@ import 'package:mind/Core/Api/Models/DevicePingRequest.dart';
 import 'package:mind/Core/Grpc/generated/device.pb.dart' as proto;
 import 'package:mind/Core/Grpc/generated/device.pbgrpc.dart' show DeviceServiceClient;
 
-class DeviceGrpcApi {
+class DeviceApi {
   final DeviceServiceClient _deviceService;
 
-  DeviceGrpcApi(this._deviceService);
+  DeviceApi(this._deviceService);
 
   Future<void> ping(DevicePingRequest request) async {
     final protoRequest = proto.PingRequest(

@@ -4,10 +4,10 @@ import 'package:mind/Core/Api/Models/TokenDTO.dart';
 import 'package:mind/Core/Grpc/generated/auth.pb.dart' as proto;
 import 'package:mind/Core/Grpc/generated/auth.pbgrpc.dart' show AuthServiceClient;
 
-class PersonalAccessTokenGrpcApi implements IPersonalAccessTokenApi {
+class PersonalAccessTokenApi implements IPersonalAccessTokenApi {
   final AuthServiceClient _authService;
 
-  PersonalAccessTokenGrpcApi(this._authService);
+  PersonalAccessTokenApi(this._authService);
 
   @override
   Future<List<TokenDTO>> fetchTokens() async {

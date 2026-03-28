@@ -28,6 +28,6 @@ See `.ai-factory/ARCHITECTURE.md` for architecture decisions, folder structure, 
 | `lib/Core/Grpc/GrpcAuthInterceptor.dart` | JWT attach + UNAUTHENTICATED → logout flow |
 | `lib/Core/Sync/SyncEngine.dart` | Data sync pipeline: fetch changes → group → batch-refetch → apply to Drift |
 | `lib/Core/Sync/SyncGrpcListener.dart` | Bridges gRPC `WatchChanges` server-stream events to SyncEngine |
-| `lib/Core/Sync/SyncGrpcApi.dart` | gRPC client for sync changes and batch session fetching |
+| `lib/Core/Sync/SyncApi.dart` | gRPC client for sync changes and batch session fetching |
 | `lib/Core/Database/SyncStateDao.dart` | Drift DAO for sync cursor (`lastEventId`) persistence |
 | `lib/Core/Environment.example.dart` | Template for `Environment.dart` (gitignored, must be created on first setup) |
