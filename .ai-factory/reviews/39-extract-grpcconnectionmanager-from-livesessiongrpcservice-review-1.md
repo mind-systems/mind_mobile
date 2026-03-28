@@ -1,44 +1,30 @@
 # Code Review — Extract `GrpcConnectionManager` from `LiveSessionGrpcService`
 
 **Plan:** `39-extract-grpcconnectionmanager-from-livesessiongrpcservice.md`
-**Files changed:** 4 (1 new class, 1 new enum, 1 modified, 1 deleted)
-**Risk level:** Low
+**Files Reviewed:** 4 (1 new class, 1 new enum, 1 modified, 1 deleted)
+**Risk Level:** 🟢 Low
 
-## Static analysis
+### Context Gates
 
-`flutter analyze` passes with zero issues on all changed files.
+- **ARCHITECTURE.md** — WARN: `GrpcConnectionManager` sits in `lib/Core/Grpc/`, consistent with the Architecture's Core infrastructure layer for gRPC classes. No boundary violations.
+- **RULES.md** — WARN: "All dependencies must be injected via constructor" — `GrpcConnectionManager` receives `authStream`, `connectivityStream`, `resumeStream` via constructor. Compliant. The current version (evolved in commit 40) is a pure state machine with no callbacks; consumers receive the manager via their own constructors.
+- **ROADMAP.md** — Phase 7.1 is marked `[x]` complete. Linked correctly.
 
-## Behavioral equivalence
+### Critical Issues
 
-Traced all five critical flows against the original code:
+None.
 
-| Flow | Verdict |
-|------|---------|
-| `connect()` — guards, state emission, backoff reset, error→disconnect→reconnect | Identical |
-| `disconnect()` — cancel timer, cancel handles, emit `disconnected` | Identical (order preserved) |
-| Auth listener — authenticated→connect, guest→disconnect | Identical |
-| Connectivity listener — none→disconnect, restored→connect | Identical |
-| Resume listener — authenticated+disconnected→connect | Identical (`_isConnected()` callback equivalent to old `isConnected` getter) |
-| `dispose()` — disconnect, cancel subscriptions, close subjects/controllers | Identical (split across manager + service, same total work) |
+### Suggestions
 
-## Consumer verification
+None.
 
-| Consumer | Accesses | Impact |
-|----------|----------|--------|
-| `BreathTelemetryService` | `isConnected`, `telemetryStateEvents`, `dataAckEvents`, `emitTelemetry` | None — all remain on `LiveSessionGrpcService` unchanged |
-| `LiveBreathSessionNotifier` | `sessionStateEvents`, `sendActivity*` (via `ILiveSessionService`) | None — interface and concrete members unchanged |
-| `App.dart` | Constructor call | None — constructor signature unchanged, no import of old enum |
+### Positive Notes
 
-## No issues found
-
-The extraction is clean and mechanically correct. Some notes on things I verified are safe:
-
-1. **`late final _connectionManager` initialization timing.** The `GrpcConnectionManager` constructor subscribes to `authStream`, which (being a `BehaviorSubject`) fires synchronously during `listen()`. This triggers `connect()` on the manager, which calls `await _onConnect()`. The `await` yields to the microtask queue, so the `GrpcConnectionManager` constructor completes, `_connectionManager` assignment finishes, and the `LiveSessionGrpcService` constructor completes — all before the `_onConnect()` future resumes. The `onError`/`onDone` closures in `_openLiveStream()`/`_openTelemetryStream()` reference `_connectionManager` directly, but they only fire asynchronously (on stream errors), by which time the field is assigned.
-
-2. **Double-fire from concurrent stream errors.** If both the live and telemetry streams error at the same time, both `onError` handlers call `_connectionManager.disconnect()` + `_connectionManager.scheduleReconnect()`. The second `disconnect()` is a no-op (handles already null) except for a redundant `disconnected` emission. The second `scheduleReconnect()` replaces the timer (after `disconnect()` cancelled it). This matches the pre-refactor behavior exactly.
-
-3. **`SocketConnectionState` fully removed.** Grep confirms zero references to `SocketConnectionState` remain across the entire repo.
-
-4. **All imports valid.** No unused imports in either changed file. `connectivity_plus` and `AuthState` remain needed in `LiveSessionGrpcService.dart` for the constructor parameter types. `rxdart` correctly moved to `GrpcConnectionManager.dart` only.
+- **Clean separation of concerns.** The manager owns exactly connection lifecycle (connect / disconnect / backoff / auth+connectivity+resume listeners) and nothing else. Consumers subscribe to `connectionState` and manage their own stream handles independently.
+- **Correct `late final` initialization timing.** The `GrpcConnectionManager` constructor subscribes to `authStream` (a `BehaviorSubject`), which fires synchronously during `listen()`. In the original commit this triggered `async connect()` which yields at `await`, so the assignment completes before the callback's future resumes. In the current evolved version, `connect()` is synchronous — consumers react to `connected` state synchronously during the same event loop turn, but gRPC stream setup doesn't throw synchronously, so `onError`/`onDone` closures that reference `_connectionManager` only fire later, after the field is assigned.
+- **`SocketConnectionState` fully removed.** Zero references remain in `lib/` — confirmed via grep.
+- **Correct backoff semantics.** `confirmConnected()` resets the backoff counter; `scheduleReconnect()` is public so transport-level stream errors can trigger reconnection without the consumer needing backoff internals. Double-fire from concurrent stream errors (both ModuleStateChannel and ModuleInstructionStream calling `disconnect()` + `scheduleReconnect()`) is harmless — second `disconnect()` is a no-op for already-closed handles, second `scheduleReconnect()` replaces the timer.
+- **No unused imports.** `connectivity_plus` and `AuthState` remain needed in consumer files for constructor parameter types. `rxdart` is correctly scoped to `GrpcConnectionManager.dart` only.
+- **Consumer wiring in `App.dart` is clean.** `GrpcConnectionManager` is created first, then passed to `ModuleStateChannel` and `ModuleInstructionStream` — correct initialization order.
 
 REVIEW_PASS

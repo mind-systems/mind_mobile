@@ -1,16 +1,4 @@
 {
   "implement_reviews": [
-    "39-extract-grpcconnectionmanager-from-livesessiongrpcservice-review-1.md",
-    "40-create-modulestatechannel-activity-lifecycle-over-live-proto-review-1.md",
-    "41-delete-livebreathsessionnotifier-review-1.md",
-    "42-create-moduleinstructionstream-instruction-samples-over-telemetry-proto-review-1.md",
-    "43-rename-telemetrybuffer-instructionbuffer-review-1.md",
-    "44-delete-livesessiongrpcservice-review-1.md",
-    "45-create-breathmodulestatechannel-in-lib-breathmodule-core-review-1.md",
-    "46-delete-livebreathsessionservice-and-livebreathsessioncoordinator-review-1.md",
-    "47-rename-breathtelemetryservice-breathmoduleinstructionstream-review-1.md",
-    "48-remove-ibreathtelemetryservice-interface-review-1.md",
-    "49-update-ilivebreathsessionservice-remove-or-replace-review-1.md",
-    "49-update-ilivebreathsessionservice-remove-or-replace-review-2.md"
   ]
 }
