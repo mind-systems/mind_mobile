@@ -4,9 +4,9 @@
 
 Когда BreathSessionStateMachine отрабатывает последнее упражнение и вызывает complete, происходит несколько вещей одновременно. Подписка на тики отменяется, поэтому дальнейшие сигналы от TickService не попадают в стейт-машину. Внутреннее состояние фиксируется со статусом complete, и это состояние выбрасывается в stateStream.
 
-ViewModel подписан на stateStream и немедленно получает это финальное состояние. Через _onEngineState он транслирует его вовне как BreathSessionState с тем же статусом complete. Riverpod-нотификация разлетается по всем подписчикам — в первую очередь до BreathAnimationCoordinator, OrbAnimationCoordinator, LiveSessionCoordinator и Screen.
+ViewModel подписан на stateStream и немедленно получает это финальное состояние. Через _onEngineState он транслирует его вовне как BreathSessionState с тем же статусом complete. Riverpod-нотификация разлетается по всем подписчикам — в первую очередь до BreathAnimationCoordinator, OrbAnimationCoordinator и Screen.
 
-LiveSessionCoordinator получает состояние со статусом complete и вызывает liveSessionService.endSession(), фиксируя момент завершения на сервере.
+BreathModuleStateChannel подписан на BreathViewModel.stream напрямую (не через Riverpod-слушатель) — он создаётся в BreathModule.buildSession() и получает vm.stream в конструкторе. Он обнаруживает статус complete из потока состояний и вызывает channel.end() на ModuleStateChannel, который отправляет событие activity:end на сервер через gRPC, фиксируя момент завершения.
 
 Coordinator получает состояние в _onStateChanged. shouldBeActive вычисляется как false, потому что статус complete — не breath. Если до этого motionEngine был активен, условие shouldBeActive != motionEngine.isActive выполняется, и coordinator вызывает motionEngine.setActive(false). Тикер анимации останавливается. Визуальная точка замирает в том положении, где застала её последняя итерация тикера.
 

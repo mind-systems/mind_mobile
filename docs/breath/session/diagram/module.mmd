@@ -56,17 +56,21 @@ flowchart TB
 
         OrbCoordinator["<b>OrbAnimationCoordinator</b><br/>═══════════════<br/><b>Оркестрация:</b><br/>Слушает BreathSessionState (Riverpod)<br/>Читает resetReason из state<br/>═══════════════<br/><b>Прогресс:</b><br/>inhale → lerp(min, max, phaseRaw)<br/>exhale → lerp(min, max, 1-phaseRaw)<br/>hold/rest/pause → frozen<br/>═══════════════<br/><b>maxProgress по форме:</b><br/>circle → 0.8, остальные → 1.0<br/>═══════════════<br/><b>По resetReason в state:</b><br/>обновляет maxProgress<br/>сбрасывает orbProgress → min<br/>═══════════════<br/><b>Выход:</b><br/>ValueNotifier&lt;double&gt; orbProgress"]:::animation
 
-        LiveSessionCoordinator["<b>LiveSessionCoordinator</b><br/>═══════════════<br/><b>Lifecycle:</b><br/>первый resume → startSession()<br/>pause → pauseSession()<br/>resume из паузы → resumeSession()<br/>complete → endSession()<br/>═══════════════<br/><b>Телеметрия:</b><br/>phase/exerciseIndex changed<br/>→ _handleTelemetry(state)<br/>→ sendSample(phase, durationMs)"]:::animation
-
         Coordinator -->|"управляет"| BreathMotionEngine
         Coordinator -->|"управляет"| BreathShapeShifter
+    end
+
+    %% === СЛОЙ СБОРКИ МОДУЛЯ ===
+    subgraph ModuleAssemblyLayer["🔌 Module Assembly Layer (BreathModule.buildSession)"]
+        direction TB
+        BreathModuleStateChannel["<b>BreathModuleStateChannel</b><br/>═══════════════<br/><b>Создаётся в BreathModule.buildSession()</b><br/>Подписан на BreathViewModel.stream напрямую<br/>═══════════════<br/><b>Lifecycle (→ ModuleStateChannel):</b><br/>первый pause→breath → channel.start()<br/>breath→pause → channel.pause()<br/>pause→breath (повторно) → channel.unpause()<br/>complete → channel.end()<br/>═══════════════<br/><b>Телеметрия (→ BreathModuleInstructionStream):</b><br/>phase/exerciseIndex changed<br/>→ sendSample(liveId, phase, durationMs)<br/>если liveSessionId не пришёл → stash pending"]:::service
     end
 
     %% === СЛОЙ UI ===
     subgraph UILayer["🖼️ UI Layer"]
         direction TB
 
-        BreathSessionScreen["<b>BreathSessionScreen</b><br/>═══════════════<br/><b>Создаёт (initState):</b><br/>BreathMotionEngine<br/>BreathShapeShifter<br/>BreathAnimationCoordinator<br/>OrbAnimationCoordinator<br/>LiveSessionCoordinator<br/>═══════════════<br/><b>Post-frame callback:</b><br/>coordinator.initialize(state)<br/>orbCoordinator.initialize(state)<br/>viewModel.initState() [async]<br/>═══════════════<br/><b>Управление:</b><br/>pause() / resume() / restartEngine()<br/>═══════════════<br/><b>Отображает:</b><br/>BreathShapeWidget<br/>EclipseOrb (ValueListenableBuilder)<br/>BreathTimelineWidget<br/>Кнопки управления"]:::ui
+        BreathSessionScreen["<b>BreathSessionScreen</b><br/>═══════════════<br/><b>Создаёт (initState):</b><br/>BreathMotionEngine<br/>BreathShapeShifter<br/>BreathAnimationCoordinator<br/>OrbAnimationCoordinator<br/>═══════════════<br/><b>Post-frame callback:</b><br/>coordinator.initialize(state)<br/>orbCoordinator.initialize(state)<br/>viewModel.initState() [async]<br/>═══════════════<br/><b>Управление:</b><br/>pause() / resume() / restartEngine()<br/>═══════════════<br/><b>Отображает:</b><br/>BreathShapeWidget<br/>EclipseOrb (ValueListenableBuilder)<br/>BreathTimelineWidget<br/>Кнопки управления"]:::ui
 
         BreathWidget["<b>BreathShapeWidget</b><br/>───<br/>ListenableBuilder:<br/>motionController + shapeController<br/>───<br/>LayoutBuilder:<br/>updateBounds() при resize<br/>───<br/>CustomPaint:<br/>BreathShapePainter"]:::ui
 
@@ -88,7 +92,7 @@ flowchart TB
     %% ViewModel → Coordinators
     BreathViewModel -->|"Riverpod state"| Coordinator
     BreathViewModel -->|"Riverpod state"| OrbCoordinator
-    BreathViewModel -->|"Riverpod state"| LiveSessionCoordinator
+    BreathViewModel -->|"vm.stream (direct)"| BreathModuleStateChannel
 
     %% Coordinator → Animation
     Coordinator -->|"синхронизирует"| BreathMotionEngine

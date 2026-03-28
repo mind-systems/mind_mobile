@@ -9,6 +9,8 @@
     "45-create-breathmodulestatechannel-in-lib-breathmodule-core-review-1.md",
     "46-delete-livebreathsessionservice-and-livebreathsessioncoordinator-review-1.md",
     "47-rename-breathtelemetryservice-breathmoduleinstructionstream-review-1.md",
-    "48-remove-ibreathtelemetryservice-interface-review-1.md"
+    "48-remove-ibreathtelemetryservice-interface-review-1.md",
+    "49-update-ilivebreathsessionservice-remove-or-replace-review-1.md",
+    "49-update-ilivebreathsessionservice-remove-or-replace-review-2.md"
   ]
 }

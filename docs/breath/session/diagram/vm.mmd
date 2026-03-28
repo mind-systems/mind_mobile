@@ -35,7 +35,7 @@ flowchart TD
     %% === Потребители ===
     Coordinator["<b>BreathAnimationCoordinator</b><br/>Слушает Riverpod state<br/>Читает resetReason из state"]:::consumer
     OrbCoordinator["<b>OrbAnimationCoordinator</b><br/>Слушает Riverpod state<br/>Читает resetReason из state"]:::consumer
-    LiveCoordinator["<b>LiveSessionCoordinator</b><br/>Слушает Riverpod state<br/>lifecycle + телеметрия"]:::consumer
+    StateChannel["<b>BreathModuleStateChannel</b><br/>Подписан на vm.stream напрямую<br/>(не через Riverpod listener)<br/>Создаётся в BreathModule.buildSession()<br/>lifecycle + телеметрия"]:::consumer
 
     %% === Потоки данных ===
 
@@ -55,7 +55,7 @@ flowchart TD
     %% Riverpod state → потребители
     RiverpodState -->|"Riverpod listener"| Coordinator
     RiverpodState -->|"Riverpod listener"| OrbCoordinator
-    RiverpodState -->|"Riverpod listener"| LiveCoordinator
+    VM -->|"vm.stream (direct)"| StateChannel
 
     %% Управление
     Screen -->|"pause() / resume() / complete()"| SM

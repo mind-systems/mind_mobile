@@ -23,16 +23,17 @@ idle ──(activity:start)──▶ active ──(activity:pause)──▶ paus
 
 ## Слои реализации
 
-Вызов проходит через всю цепочку от UI до Socket.io:
+Вызов проходит через всю цепочку от UI до gRPC live stream:
 
 ```
-LiveSessionCoordinator
-  └─▶ ILiveBreathSessionService
-        └─▶ LiveBreathSessionService
-              └─▶ ModuleStateChannel  ──▶  gRPC live stream
+BreathModuleStateChannel
+  ├─▶ ModuleStateChannel  ──▶  gRPC live stream  (lifecycle-команды)
+  └─▶ BreathModuleInstructionStream              (телеметрия фаз)
 ```
 
-`LiveSessionCoordinator` подписывается на `BreathSessionState` и следит за переходами состояния движка. При первом Resume, если сессия ещё не запущена, он вызывает `liveSessionService.startSession(sessionId)`. При паузе — `pauseSession()`, при Resume из паузы — `resumeSession()`, при `complete` — `endSession()`. Внутренние флаги гарантируют идемпотентность: каждый lifecycle-переход отправляется ровно один раз. `BreathSessionViewModel` не содержит никакой логики работы с `ILiveBreathSessionService`.
+`BreathModuleStateChannel` подписывается на `BreathViewModel.stream` напрямую в своём конструкторе — не через Riverpod-слушатель. Он создаётся в `BreathModule.buildSession()` в момент сборки провайдера ViewModel, получает `vm.stream` и `App.shared.moduleStateChannel` при создании, и держит их в течение всего жизненного цикла экрана. `BreathViewModel` не содержит никакой логики работы с lifecycle или телеметрией.
+
+При первом переходе из паузы в `breath`/`rest` (если сессия ещё не запускалась) `BreathModuleStateChannel` вызывает `channel.start(type: breath, refId: sessionId)`. При последующих переходах `pause → breath/rest` он вызывает `channel.unpause()`. При переходе `breath/rest → pause` — `channel.pause()`. При статусе `complete` — `channel.end()`. Все переходы идемпотентны: флаги `_started` и `_ended` гарантируют, что каждая lifecycle-команда отправляется ровно один раз.
 
 `ModuleStateChannel` — это доменная стейт-машина, которая хранит `ModuleState` (`status: idle | active`, `isPaused`, `liveSessionId`). Он держит pending-флаги (`_isPendingStart`, `_isPendingPause`) — защита от двойного emit при случайном двойном вызове. Канал эмитирует типизированные события: `ModuleSessionStarted`, `ModuleSessionPaused`, `ModuleSessionUnpaused`, `ModuleSessionEnded`, `ModuleSessionAbandoned`. При логауте он автоматически сбрасывается в idle.
 
@@ -51,13 +52,15 @@ LiveSessionCoordinator
 }
 ```
 
-`LiveSessionCoordinator` перехватывает обновления `BreathSessionState`. Если `state.phase` или `state.exerciseIndex` изменились и сессия активна, он вызывает `_handleTelemetry(state)`, который отправляет сэмпл через `telemetryService.sendSample(sessionId, phase, durationMs)`. Timestamp выставляется на клиенте — это момент выдачи инструкции, то есть когда движок перешёл в эту фазу.
+`BreathModuleStateChannel._handleTelemetry` перехватывает обновления `BreathSessionState`. Если `state.phase` или `state.exerciseIndex` изменились и сессия активна, он вызывает `_instructionStream.sendSample(liveId, phase, durationMs)`. Timestamp выставляется на клиенте — это момент выдачи инструкции, то есть когда движок перешёл в эту фазу.
+
+Если `liveSessionId` ещё не пришёл от сервера (ответ на `activity:start` не вернулся), сэмпл сохраняется в `_pendingTelemetry`. Как только `ModuleStateChannel` получает `liveSessionId` от сервера, `BreathModuleStateChannel` сбрасывает накопленный pending-сэмпл через `_flushPending`.
 
 Когда сессия поставлена на паузу, `TelemetryGateway` на сервере блокирует входящие сэмплы `breath_phase` и возвращает `data:ack { error: 'session_paused' }`. Lifecycle-события (`paused`, `resumed`) при этом проходят всегда — они пишутся сервером самостоятельно при обработке `activity:pause` и `activity:resume`. В результате за маркером `paused` возникает чистый пробел в сэмплах, а маркер `resumed` его закрывает. Когда придут биометрические данные, этот пробел будет точно соответствовать времени паузы.
 
 ## Буферизация и обратное давление
 
-`TelemetryService` не отправляет сэмплы напрямую — между ним и сокетом стоит `InstructionBuffer`, кольцевой буфер на 500 сэмплов. Если соединение оборвалось, сэмплы накапливаются в буфере. Когда сокет восстанавливается, буфер сбрасывается полностью. Если буфер переполнился до переподключения, новые сэмплы вытесняют старые, а счётчик `droppedCount` фиксирует потери.
+`BreathModuleInstructionStream` не отправляет сэмплы напрямую — между ним и gRPC-каналом стоит `InstructionBuffer`, кольцевой буфер на 500 сэмплов. Если соединение оборвалось, сэмплы накапливаются в буфере. Когда сокет восстанавливается, буфер сбрасывается полностью. Если буфер переполнился до переподключения, новые сэмплы вытесняют старые, а счётчик `droppedCount` фиксирует потери.
 
 Сервер управляет частотой через `data:ack`:
 
@@ -73,9 +76,9 @@ LiveSessionCoordinator
 
 ## Подключение и переподключение
 
-`SocketConnectionCoordinator` управляет жизненным циклом соединения. Он подписан на `UserNotifier`: когда пользователь аутентифицирован, соединение устанавливается; при логауте — разрывается. Параллельно он слушает состояние сети через Connectivity plugin и автоматически переподключается при восстановлении интернета.
+`GrpcConnectionManager` управляет жизненным циклом gRPC-канала. Он подписан на `UserNotifier`: когда пользователь аутентифицирован, соединение устанавливается; при логауте — разрывается. Параллельно он слушает состояние сети через Connectivity plugin и автоматически переподключается при восстановлении интернета.
 
-Сервер держит grace period (по умолчанию 30 секунд) после обрыва соединения. Если переподключение произошло в этом окне, сессия продолжается — сервер отвечает `session:state { resumed: true }` и возвращает тот же `liveSessionId`. Приложение не предпринимает никаких действий: `LiveSessionNotifier` получает обновлённое состояние и продолжает работу. Если grace period истёк, сервер закрывает сессию со статусом `abandoned`, и при следующем `activity:start` создаётся новая.
+Сервер держит grace period (по умолчанию 30 секунд) после обрыва соединения. Если переподключение произошло в этом окне, сессия продолжается — сервер отвечает `session:state { resumed: true }` и возвращает тот же `liveSessionId`. `ModuleStateChannel` получает обновлённое состояние и продолжает работу. Если grace period истёк, сервер закрывает сессию со статусом `abandoned`, и при следующем `activity:start` создаётся новая.
 
 ## Связь с биометрическими данными
 
@@ -102,7 +105,7 @@ T+6000–T+12000ms: биосигнал дыхания → совпадает л�
 
 ## See Also
 
-- [Sync Engine](../core/sync-engine.md) — синхронизация данных через `sync:changed` события того же `LiveSocketService`
+- [Sync Engine](../core/sync-engine.md) — синхронизация данных через `sync:changed` события
 - [session-lifecycle.md](../breath/session/session-lifecycle.md) — завершение сессии, рестарт и режим ожидания
 - [view-model.md](../breath/session/view-model.md) — BreathSessionStateMachine и BreathViewModel
 - [notifier-pattern.md](../core/notifier-pattern.md) — паттерн нотификатора и типизированные события

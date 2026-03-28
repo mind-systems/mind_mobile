@@ -61,6 +61,6 @@ BreathSessionState (Riverpod) зеркально транслирует все �
 
 Методы pause и resume делегируют вызовы в стейт-машину. Метод complete тоже делегируется. Метод restartEngine пересоздаёт стейт-машину через _setupEngine, используя кэшированный DTO, загруженный при первом вызове initState.
 
-## LiveSessionCoordinator
+## BreathModuleStateChannel
 
-Жизненный цикл активности и телеметрия фаз вынесены в отдельный LiveSessionCoordinator, который подписывается на BreathSessionState наравне с анимационными координаторами. ViewModel не содержит никакой логики работы с ILiveBreathSessionService — вся она сосредоточена в LiveSessionCoordinator.
+Жизненный цикл активности и телеметрия фаз вынесены в отдельный BreathModuleStateChannel. Он создаётся в BreathModule.buildSession() в момент сборки провайдера ViewModel и подписывается на BreathViewModel.stream напрямую в своём конструкторе — не через Riverpod-слушатель. ViewModel не содержит никакой логики работы с lifecycle или телеметрией — вся она сосредоточена в BreathModuleStateChannel.
