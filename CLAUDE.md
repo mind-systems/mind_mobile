@@ -86,12 +86,11 @@ The breathing session feature is split across the domain layer (`lib/BreathModul
 
 **Presentation package** (`packages/breath_module/`):
 - **`BreathSessionsList/`** — list screen with ViewModel, service/coordinator interfaces, DTOs
-- **`BreathSession/`** — active session screen with 5-component system:
+- **`BreathSession/`** — active session screen with 4-component system:
   - `BreathSessionStateMachine` — state machine for breathing phases (inhale / hold / exhale / rest); emits enriched state with `resetReason`, phase metadata, and shape fields
   - `BreathMotionEngine` — physics-based position animation
   - `BreathShapeShifter` — path morphing between shapes (circle / square / triangle)
   - `BreathAnimationCoordinator` — orchestrates motion + shape components; reads enriched state fields directly from `BreathSessionState`
-  - `LiveSessionCoordinator` — session lifecycle and telemetry dispatch; subscribes to `BreathSessionState` stream
 - **`BreathSessionConstructor/`** — session editor screen with ViewModel, interfaces, DTOs
 
 ### Routing

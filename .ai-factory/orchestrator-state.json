@@ -6,6 +6,7 @@
     "42-create-moduleinstructionstream-instruction-samples-over-telemetry-proto-review-1.md",
     "43-rename-telemetrybuffer-instructionbuffer-review-1.md",
     "44-delete-livesessiongrpcservice-review-1.md",
-    "45-create-breathmodulestatechannel-in-lib-breathmodule-core-review-1.md"
+    "45-create-breathmodulestatechannel-in-lib-breathmodule-core-review-1.md",
+    "46-delete-livebreathsessionservice-and-livebreathsessioncoordinator-review-1.md"
   ]
 }

@@ -34,7 +34,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
 
   final _stateController = StreamController<BreathSessionState>.broadcast();
 
-  /// Stream of state updates — used by LiveSessionCoordinator.
+  /// Stream of state updates — consumed by BreathModuleStateChannel.
   Stream<BreathSessionState> get stream => _stateController.stream;
 
   /// Subscribe to state changes. Returns a cancel function (drop-in for the

@@ -143,7 +143,7 @@
 ### 7.5 Create BreathModuleStateChannel
 
 - [x] **Create `BreathModuleStateChannel` in `lib/BreathModule/Core/`** — injects `ModuleStateChannel`; subscribes to `BreathSessionState` stream; translates state transitions → `channel.start(ActivityType.breath, refId)` / `channel.pause()` / `channel.resume()` / `channel.end()`; reads `liveSessionId` from channel events and exposes it for the instruction stream
-- [ ] **Delete `LiveBreathSessionService` and `LiveBreathSessionCoordinator`** — absorbed into `BreathModuleStateChannel`; remove interface files; update `BreathModule.dart` wiring
+- [x] **Delete `LiveBreathSessionService` and `LiveBreathSessionCoordinator`** — absorbed into `BreathModuleStateChannel`; remove interface files; update `BreathModule.dart` wiring
 
 ### 7.6 Create BreathModuleInstructionStream
 
@@ -152,7 +152,7 @@
 
 ### 7.7 Update module boundary interfaces
 
-- [ ] **Update `ILiveBreathSessionService` → remove or replace** — `BreathModuleStateChannel` no longer needs this interface (it owns the channel directly); clean up `packages/breath_module` interface files that referenced live session service and telemetry service; update `BreathModule.dart` assembly point
+- [x] **Update `ILiveBreathSessionService` → remove or replace** — `BreathModuleStateChannel` no longer needs this interface (it owns the channel directly); clean up `packages/breath_module` interface files that referenced live session service and telemetry service; update `BreathModule.dart` assembly point
 
 ---
 
@@ -160,3 +160,4 @@
 
 | Milestone | Date |
 |-----------|------|
+| 7.7 Update module boundary interfaces (`ILiveBreathSessionService` removed, `BreathModuleStateChannel` owns channel directly) | 2026-03-28 |
