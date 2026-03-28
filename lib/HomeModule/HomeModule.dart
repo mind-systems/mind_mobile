@@ -11,7 +11,7 @@ class HomeModule {
     final service = HomeService(
       userApi: App.shared.userApi,
       statsApi: App.shared.statsApi,
-      liveSessionNotifier: App.shared.liveSessionNotifier,
+      moduleStateChannel: App.shared.moduleStateChannel,
       userNotifier: App.shared.userNotifier,
       resumeStream: App.shared.appLifecycleService.onResume,
     );

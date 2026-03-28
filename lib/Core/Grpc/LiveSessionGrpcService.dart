@@ -4,15 +4,12 @@ import 'dart:developer';
 import 'package:fixnum/fixnum.dart';
 import 'package:protobuf/well_known_types/google/protobuf/struct.pb.dart';
 
-import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
-import 'package:mind/Core/Grpc/ILiveSessionService.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
-import 'package:mind/Core/Grpc/generated/live.pbgrpc.dart' as proto;
 import 'package:mind/Core/Grpc/generated/telemetry.pbgrpc.dart';
 
-class LiveSessionGrpcService implements ILiveSessionService {
+class LiveSessionGrpcService {
   final GrpcConnectionManager _connectionManager;
   final ModuleStateChannel _channel;
   final TelemetryServiceClient _telemetryService;
@@ -122,41 +119,6 @@ class LiveSessionGrpcService implements ILiveSessionService {
     _telemetryStateController.add(null);
   }
 
-  // ── ILiveSessionService backward-compat delegation ────────────────────────
-
-  @override
-  Stream<Map<String, dynamic>> get sessionStateEvents =>
-      _channel.rawSessionEvents.map((e) => <String, dynamic>{
-            'status': _mapSessionStatus(e.status),
-            'liveSessionId': e.liveSessionId,
-            'isPaused': e.isPaused,
-          });
-
-  @override
-  void sendActivityStart({required ActivityType type, String? refId}) {
-    _channel.start(type: type, refId: refId);
-  }
-
-  @override
-  void sendActivityEnd() {
-    _channel.end();
-  }
-
-  @override
-  void sendActivityStop() {
-    _channel.stop();
-  }
-
-  @override
-  void sendActivityPause() {
-    _channel.pause();
-  }
-
-  @override
-  void sendActivityResume() {
-    _channel.unpause();
-  }
-
   // ── Telemetry public API ──────────────────────────────────────────────────
 
   void emitTelemetry(String event, [dynamic data]) {
@@ -189,23 +151,6 @@ class LiveSessionGrpcService implements ILiveSessionService {
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────
-
-  String _mapSessionStatus(proto.SessionStatus status) {
-    switch (status) {
-      case proto.SessionStatus.ACTIVE:
-        return 'active';
-      case proto.SessionStatus.RESUMED:
-        return 'resumed';
-      case proto.SessionStatus.COMPLETED:
-        return 'completed';
-      case proto.SessionStatus.ABANDONED:
-        return 'abandoned';
-      case proto.SessionStatus.INTERRUPTED:
-        return 'interrupted';
-      default:
-        return 'unknown';
-    }
-  }
 
   Struct _mapToStruct(Map<String, dynamic> map) {
     return Struct(

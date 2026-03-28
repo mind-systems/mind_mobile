@@ -63,4 +63,4 @@ BreathSessionState (Riverpod) зеркально транслирует все �
 
 ## LiveSessionCoordinator
 
-Жизненный цикл активности и телеметрия фаз вынесены в отдельный LiveSessionCoordinator, который подписывается на BreathSessionState наравне с анимационными координаторами. ViewModel не содержит никакой логики работы с ILiveSessionService — вся она сосредоточена в LiveSessionCoordinator.
+Жизненный цикл активности и телеметрия фаз вынесены в отдельный LiveSessionCoordinator, который подписывается на BreathSessionState наравне с анимационными координаторами. ViewModel не содержит никакой логики работы с ILiveBreathSessionService — вся она сосредоточена в LiveSessionCoordinator.

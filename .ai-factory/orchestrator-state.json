@@ -1,6 +1,7 @@
 {
   "implement_reviews": [
     "39-extract-grpcconnectionmanager-from-livesessiongrpcservice-review-1.md",
-    "40-create-modulestatechannel-activity-lifecycle-over-live-proto-review-1.md"
+    "40-create-modulestatechannel-activity-lifecycle-over-live-proto-review-1.md",
+    "41-delete-livebreathsessionnotifier-review-1.md"
   ]
 }

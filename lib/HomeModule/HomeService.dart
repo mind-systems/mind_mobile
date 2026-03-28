@@ -1,7 +1,7 @@
 import 'package:breath_module/breath_module.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:mind/BreathModule/Core/LiveBreathSessionEvent.dart';
-import 'package:mind/BreathModule/Core/LiveBreathSessionNotifier.dart';
+import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
+import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
 import 'package:mind/Core/TimeOfDayHelper.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/IHomeService.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Models/HomeDTOs.dart';
@@ -13,14 +13,14 @@ import 'package:mind/User/UserNotifier.dart';
 class HomeService implements IHomeService {
   final IUserApi userApi;
   final IStatsApi statsApi;
-  final LiveBreathSessionNotifier liveSessionNotifier;
+  final ModuleStateChannel moduleStateChannel;
   final UserNotifier userNotifier;
   final Stream<void> resumeStream;
 
   HomeService({
     required this.userApi,
     required this.statsApi,
-    required this.liveSessionNotifier,
+    required this.moduleStateChannel,
     required this.userNotifier,
     required this.resumeStream,
   });
@@ -53,8 +53,8 @@ class HomeService implements IHomeService {
 
   @override
   Stream<HomeEvent> observeChanges() {
-    final statsInvalidated = liveSessionNotifier.events
-        .where((e) => e is LiveBreathSessionEnded)
+    final statsInvalidated = moduleStateChannel.events
+        .where((e) => e is ModuleSessionEnded)
         .map((_) => StatsInvalidated() as HomeEvent);
     final userChanges = userNotifier.stream.skip(1);
     final sessionExpired = userChanges

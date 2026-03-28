@@ -24,11 +24,6 @@ class ModuleStateChannel {
   Stream<ModuleStateEvent> get events => _events.stream;
   ModuleState get currentState => _state.value;
 
-  // ── Backward-compat raw events (for LiveSessionGrpcService bridge) ────────
-
-  final _rawSessionEvents = StreamController<proto.SessionStateEvent>.broadcast();
-  Stream<proto.SessionStateEvent> get rawSessionEvents => _rawSessionEvents.stream;
-
   // ── Pending guards ────────────────────────────────────────────────────────
 
   bool _isPendingStart = false;
@@ -80,7 +75,6 @@ class ModuleStateChannel {
           case proto.LiveResponse_Event.sessionState:
             final event = r.sessionState;
             if (event.status == proto.SessionStatus.DISCONNECTED) return;
-            _rawSessionEvents.add(event);
             _processProtoEvent(event);
           case proto.LiveResponse_Event.sessionError:
             log(
@@ -213,6 +207,5 @@ class ModuleStateChannel {
     _closeLiveStream();
     _state.close();
     _events.close();
-    _rawSessionEvents.close();
   }
 }

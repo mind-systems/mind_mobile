@@ -27,17 +27,16 @@ idle ──(activity:start)──▶ active ──(activity:pause)──▶ paus
 
 ```
 LiveSessionCoordinator
-  └─▶ ILiveSessionService
-        └─▶ LiveSessionService
-              └─▶ LiveSessionNotifier
-                    └─▶ LiveSocketService  ──▶  /live namespace
+  └─▶ ILiveBreathSessionService
+        └─▶ LiveBreathSessionService
+              └─▶ ModuleStateChannel  ──▶  gRPC live stream
 ```
 
-`LiveSessionCoordinator` подписывается на `BreathSessionState` и следит за переходами состояния движка. При первом Resume, если сессия ещё не запущена, он вызывает `liveSessionService.startSession(sessionId)`. При паузе — `pauseSession()`, при Resume из паузы — `resumeSession()`, при `complete` — `endSession()`. Внутренние флаги гарантируют идемпотентность: каждый lifecycle-переход отправляется ровно один раз. `BreathSessionViewModel` не содержит никакой логики работы с `ILiveSessionService`.
+`LiveSessionCoordinator` подписывается на `BreathSessionState` и следит за переходами состояния движка. При первом Resume, если сессия ещё не запущена, он вызывает `liveSessionService.startSession(sessionId)`. При паузе — `pauseSession()`, при Resume из паузы — `resumeSession()`, при `complete` — `endSession()`. Внутренние флаги гарантируют идемпотентность: каждый lifecycle-переход отправляется ровно один раз. `BreathSessionViewModel` не содержит никакой логики работы с `ILiveBreathSessionService`.
 
-`LiveSessionNotifier` — это доменная стейт-машина, которая хранит `LiveSessionState` (`status: idle | active`, `isPaused`, `liveSessionId`). Он держит pending-флаги (`_isPendingStart`, `_isPendingPause`) — защита от двойного emit при случайном двойном вызове. Нотификатор эмитирует типизированные события: `LiveSessionStarted`, `LiveSessionPaused`, `LiveSessionUnpaused`, `LiveSessionEnded`, `LiveSessionAbandoned`. При логауте он автоматически сбрасывается в idle.
+`ModuleStateChannel` — это доменная стейт-машина, которая хранит `ModuleState` (`status: idle | active`, `isPaused`, `liveSessionId`). Он держит pending-флаги (`_isPendingStart`, `_isPendingPause`) — защита от двойного emit при случайном двойном вызове. Канал эмитирует типизированные события: `ModuleSessionStarted`, `ModuleSessionPaused`, `ModuleSessionUnpaused`, `ModuleSessionEnded`, `ModuleSessionAbandoned`. При логауте он автоматически сбрасывается в idle.
 
-`LiveSocketService` управляет Socket.io-соединением с namespace `/live`. Он отправляет `activity:*`-события и слушает ответ `session:state` — в нём сервер возвращает `liveSessionId`, который нотификатор сохраняет в своём состоянии. Именно `liveSessionId` используется как ключ для всех последующих обращений: телеметрия, переподключение, будущая биометрия.
+`ModuleStateChannel` управляет gRPC-соединением с live stream. Он отправляет `activity:*`-команды и получает ответ `session:state` — в нём сервер возвращает `liveSessionId`, который канал сохраняет в своём состоянии. Именно `liveSessionId` используется как ключ для всех последующих обращений: телеметрия, переподключение, будущая биометрия.
 
 ## Телеметрия фаз дыхания
 

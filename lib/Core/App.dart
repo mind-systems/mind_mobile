@@ -37,7 +37,6 @@ import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
 import 'package:mind/Core/Handlers/BreathSessionDeeplinkHandler.dart';
 import 'package:mind/User/Infrastructure/GoogleAuthProvider.dart';
 import 'package:mind/User/Infrastructure/SecureStorage.dart';
-import 'package:mind/BreathModule/Core/LiveBreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionService.dart';
 import 'package:mind/BreathModule/Core/BreathTelemetryService.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -75,7 +74,6 @@ class App {
   final GrpcConnectionManager connectionManager;
   final ModuleStateChannel moduleStateChannel;
   final LiveSessionGrpcService liveGrpcService;
-  final LiveBreathSessionNotifier liveSessionNotifier;
   final LiveBreathSessionService liveSessionService;
   final BreathTelemetryService telemetryService;
   final TokenNotifier tokenNotifier;
@@ -99,7 +97,6 @@ class App {
     required this.connectionManager,
     required this.moduleStateChannel,
     required this.liveGrpcService,
-    required this.liveSessionNotifier,
     required this.liveSessionService,
     required this.telemetryService,
     required this.tokenNotifier,
@@ -167,8 +164,7 @@ class App {
     final liveGrpcService = LiveSessionGrpcService(connectionManager: connectionManager, channel: moduleStateChannel, telemetryService: grpcClient.telemetryService);
     final syncGrpcListener = SyncGrpcListener(syncService: grpcClient.syncService, syncEngine: syncEngine, syncStateDao: db.syncStateDao, authStream: userNotifier.stream);
 
-    final liveSessionNotifier = LiveBreathSessionNotifier(liveSessionService: liveGrpcService, authStream: userNotifier.stream);
-    final liveSessionService = LiveBreathSessionService(notifier: liveSessionNotifier);
+    final liveSessionService = LiveBreathSessionService(channel: moduleStateChannel);
     final telemetryService = BreathTelemetryService(liveSessionService: liveGrpcService);
     final tokenNotifier = TokenNotifier(api: tokenApi);
 
@@ -188,7 +184,6 @@ class App {
       connectionManager: connectionManager,
       moduleStateChannel: moduleStateChannel,
       liveGrpcService: liveGrpcService,
-      liveSessionNotifier: liveSessionNotifier,
       liveSessionService: liveSessionService,
       telemetryService: telemetryService,
       tokenNotifier: tokenNotifier,
