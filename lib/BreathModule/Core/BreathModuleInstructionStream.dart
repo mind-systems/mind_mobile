@@ -1,12 +1,11 @@
 import 'dart:async';
 
-import 'package:breath_module/breath_module.dart' show IBreathTelemetryService;
 import 'package:mind/Core/Grpc/InstructionAck.dart';
 import 'package:mind/Core/Grpc/InstructionBuffer.dart';
 import 'package:mind/Core/Grpc/InstructionSample.dart';
 import 'package:mind/Core/Grpc/ModuleInstructionStream.dart';
 
-class BreathTelemetryService implements IBreathTelemetryService {
+class BreathModuleInstructionStream {
   final ModuleInstructionStream _instructionStream;
   final InstructionBuffer _buffer = InstructionBuffer();
 
@@ -16,13 +15,12 @@ class BreathTelemetryService implements IBreathTelemetryService {
   StreamSubscription<void>? _telemetryStateSub;
   StreamSubscription<InstructionAck>? _dataAckSub;
 
-  BreathTelemetryService({required ModuleInstructionStream instructionStream})
+  BreathModuleInstructionStream({required ModuleInstructionStream instructionStream})
       : _instructionStream = instructionStream {
     _telemetryStateSub = _instructionStream.readyEvents.listen((_) => flushBuffer());
     _dataAckSub = _instructionStream.acks.listen(_onDataAck);
   }
 
-  @override
   void sendSample(String sessionId, String phase, int durationMs) {
     final payload = {
       'sessionId': sessionId,

@@ -11,7 +11,6 @@ export 'src/BreathSessionsList/IBreathSessionListService.dart';
 export 'src/BreathSessionsList/IBreathSessionListCoordinator.dart';
 export 'src/BreathSession/IBreathSessionService.dart';
 export 'src/BreathSession/IBreathSessionCoordinator.dart';
-export 'src/BreathSession/IBreathTelemetryService.dart';
 export 'src/BreathSessionConstructor/IBreathSessionConstructorService.dart';
 export 'src/BreathSessionConstructor/IBreathSessionConstructorCoordinator.dart';
 // Other public symbols

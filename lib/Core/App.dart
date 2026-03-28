@@ -37,7 +37,7 @@ import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
 import 'package:mind/Core/Handlers/BreathSessionDeeplinkHandler.dart';
 import 'package:mind/User/Infrastructure/GoogleAuthProvider.dart';
 import 'package:mind/User/Infrastructure/SecureStorage.dart';
-import 'package:mind/BreathModule/Core/BreathTelemetryService.dart';
+import 'package:mind/BreathModule/Core/BreathModuleInstructionStream.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mind/Core/AppLifecycleService.dart';
 import 'package:mind/Core/Grpc/GrpcAuthInterceptor.dart';
@@ -73,7 +73,7 @@ class App {
   final GrpcConnectionManager connectionManager;
   final ModuleStateChannel moduleStateChannel;
   final ModuleInstructionStream instructionStream;
-  final BreathTelemetryService telemetryService;
+  final BreathModuleInstructionStream breathInstructionStream;
   final TokenNotifier tokenNotifier;
   final SyncEngine syncEngine;
   final SyncGrpcListener syncGrpcListener;
@@ -95,7 +95,7 @@ class App {
     required this.connectionManager,
     required this.moduleStateChannel,
     required this.instructionStream,
-    required this.telemetryService,
+    required this.breathInstructionStream,
     required this.tokenNotifier,
     required this.syncEngine,
     required this.syncGrpcListener,
@@ -161,7 +161,7 @@ class App {
     final instructionStream = ModuleInstructionStream(connectionManager: connectionManager, telemetryService: grpcClient.telemetryService);
     final syncGrpcListener = SyncGrpcListener(syncService: grpcClient.syncService, syncEngine: syncEngine, syncStateDao: db.syncStateDao, authStream: userNotifier.stream);
 
-    final telemetryService = BreathTelemetryService(instructionStream: instructionStream);
+    final breathInstructionStream = BreathModuleInstructionStream(instructionStream: instructionStream);
     final tokenNotifier = TokenNotifier(api: tokenApi);
 
     shared = App._(
@@ -180,7 +180,7 @@ class App {
       connectionManager: connectionManager,
       moduleStateChannel: moduleStateChannel,
       instructionStream: instructionStream,
-      telemetryService: telemetryService,
+      breathInstructionStream: breathInstructionStream,
       tokenNotifier: tokenNotifier,
       syncEngine: syncEngine,
       syncGrpcListener: syncGrpcListener,

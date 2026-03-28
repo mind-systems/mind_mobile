@@ -4,12 +4,12 @@ import 'dart:developer' as dev;
 import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Core/Grpc/ModuleState.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
-import 'package:mind/BreathModule/Core/BreathTelemetryService.dart';
+import 'package:mind/BreathModule/Core/BreathModuleInstructionStream.dart';
 import 'package:breath_module/breath_module.dart' show BreathSessionState, BreathSessionStatus, BreathPhase, SessionLoadState;
 
 class BreathModuleStateChannel {
   final ModuleStateChannel _channel;
-  final BreathTelemetryService _telemetryService;
+  final BreathModuleInstructionStream _instructionStream;
   final String _sessionId;
 
   bool _started = false;
@@ -26,10 +26,10 @@ class BreathModuleStateChannel {
   BreathModuleStateChannel({
     required ModuleStateChannel channel,
     required Stream<BreathSessionState> stateStream,
-    required BreathTelemetryService telemetryService,
+    required BreathModuleInstructionStream instructionStream,
     required String sessionId,
   })  : _channel = channel,
-        _telemetryService = telemetryService,
+        _instructionStream = instructionStream,
         _sessionId = sessionId {
     _stateSub = stateStream.listen(_onState);
     _channelSub = channel.state.listen((moduleState) {
@@ -97,14 +97,14 @@ class BreathModuleStateChannel {
       _pendingTelemetry = state;
       return;
     }
-    _telemetryService.sendSample(liveId, state.phase.name, state.currentIntervalMs);
+    _instructionStream.sendSample(liveId, state.phase.name, state.currentIntervalMs);
   }
 
   void _flushPending(String liveId) {
     final pending = _pendingTelemetry;
     if (pending == null) return;
     _pendingTelemetry = null;
-    _telemetryService.sendSample(liveId, pending.phase.name, pending.currentIntervalMs);
+    _instructionStream.sendSample(liveId, pending.phase.name, pending.currentIntervalMs);
   }
 
   void reset() {

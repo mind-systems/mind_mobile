@@ -40,7 +40,7 @@ class BreathModule {
           stateChannel = BreathModuleStateChannel(
             channel: App.shared.moduleStateChannel,
             stateStream: vm.stream,
-            telemetryService: App.shared.telemetryService,
+            instructionStream: App.shared.breathInstructionStream,
             sessionId: sessionId,
           );
           return vm;
