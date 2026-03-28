@@ -111,7 +111,7 @@
 
 ### 6.2 Replace `emitLive(String)` with typed gRPC commands
 
-- [ ] **Replace `emitLive(String event, Map?)` with typed methods in `ILiveSocketService`** — the string-event API is a Socket.io leftover; replace with explicit methods: `sendActivityStart({required ActivityType type, String? refId})`, `sendActivityEnd()`, `sendActivityStop()`, `sendActivityPause()`, `sendActivityResume()`; update `LiveSessionGrpcService` to implement typed methods (remove the string-switch); update `LiveBreathSessionNotifier` to call typed methods
+- [x] **Replace `emitLive(String event, Map?)` with typed methods in `ILiveSocketService`** — the string-event API is a Socket.io leftover; replace with explicit methods: `sendActivityStart({required ActivityType type, String? refId})`, `sendActivityEnd()`, `sendActivityStop()`, `sendActivityPause()`, `sendActivityResume()`; update `LiveSessionGrpcService` to implement typed methods (remove the string-switch); update `LiveBreathSessionNotifier` to call typed methods
 
 ### 6.3 Strip all Socket.io naming leftovers
 

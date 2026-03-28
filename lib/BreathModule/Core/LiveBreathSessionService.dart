@@ -1,5 +1,6 @@
 import 'package:mind/BreathModule/Core/LiveBreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionState.dart';
+import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:breath_module/breath_module.dart' show ILiveBreathSessionService, LiveBreathSessionDto;
 
 class LiveBreathSessionService implements ILiveBreathSessionService {
@@ -9,7 +10,7 @@ class LiveBreathSessionService implements ILiveBreathSessionService {
 
   @override
   void startSession(String sessionId) {
-    _notifier.start('breath_session', 'breath_session', sessionId);
+    _notifier.start(type: ActivityType.breath, refId: sessionId);
   }
 
   @override

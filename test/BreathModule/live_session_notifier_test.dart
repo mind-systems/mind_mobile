@@ -6,6 +6,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionEvent.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionState.dart';
+import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Core/Grpc/ILiveSocketService.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Models/User.dart';
@@ -20,11 +21,43 @@ class FakeLiveSocketService implements ILiveSocketService {
   @override
   Stream<Map<String, dynamic>> get sessionStateEvents => _controller.stream;
 
-  final List<(String, Map<String, dynamic>?)> emitted = [];
+  final List<({ActivityType type, String? refId})> activityStartCalls = [];
+  int activityEndCount = 0;
+  int activityStopCount = 0;
+  int activityPauseCount = 0;
+  int activityResumeCount = 0;
 
   @override
-  void emitLive(String event, [Map<String, dynamic>? data]) {
-    emitted.add((event, data));
+  void sendActivityStart({required ActivityType type, String? refId}) {
+    activityStartCalls.add((type: type, refId: refId));
+  }
+
+  @override
+  void sendActivityEnd() {
+    activityEndCount++;
+  }
+
+  @override
+  void sendActivityStop() {
+    activityStopCount++;
+  }
+
+  @override
+  void sendActivityPause() {
+    activityPauseCount++;
+  }
+
+  @override
+  void sendActivityResume() {
+    activityResumeCount++;
+  }
+
+  void resetCounts() {
+    activityStartCalls.clear();
+    activityEndCount = 0;
+    activityStopCount = 0;
+    activityPauseCount = 0;
+    activityResumeCount = 0;
   }
 
   void injectServerMessage(Map<String, dynamic> data) => _controller.add(data);
@@ -57,14 +90,14 @@ final _user = User(id: 'user-1', email: 'a@b.com', name: 'A', language: '', isGu
 
 void main() {
   group('start()', () {
-    test('emits activity:start to socket with correct payload', () {
+    test('emits sendActivityStart to socket with correct payload', () {
       final (:notifier, :socket, :authSubject) = _make();
 
-      notifier.start('breath_session', 'breath', 'session-abc');
+      notifier.start(type: ActivityType.breath, refId: 'session-abc');
 
-      expect(socket.emitted, hasLength(1));
-      expect(socket.emitted.first.$1, 'activity:start');
-      expect(socket.emitted.first.$2, {'activityType': 'breath_session', 'activityRefType': 'breath', 'activityRefId': 'session-abc'});
+      expect(socket.activityStartCalls, hasLength(1));
+      expect(socket.activityStartCalls.first.type, ActivityType.breath);
+      expect(socket.activityStartCalls.first.refId, 'session-abc');
 
       notifier.dispose();
       socket.dispose();
@@ -74,10 +107,10 @@ void main() {
     test('second start() before server ACK does not emit again', () {
       final (:notifier, :socket, :authSubject) = _make();
 
-      notifier.start('breath_session', 'breath', 'session-abc');
-      notifier.start('breath_session', 'breath', 'session-abc');
+      notifier.start(type: ActivityType.breath, refId: 'session-abc');
+      notifier.start(type: ActivityType.breath, refId: 'session-abc');
 
-      expect(socket.emitted, hasLength(1));
+      expect(socket.activityStartCalls, hasLength(1));
 
       notifier.dispose();
       socket.dispose();
@@ -89,10 +122,10 @@ void main() {
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
       await Future.delayed(Duration.zero);
 
-      socket.emitted.clear();
-      notifier.start('breath_session', 'breath', 'session-abc');
+      socket.resetCounts();
+      notifier.start(type: ActivityType.breath, refId: 'session-abc');
 
-      expect(socket.emitted, isEmpty);
+      expect(socket.activityStartCalls, isEmpty);
 
       notifier.dispose();
       socket.dispose();
@@ -117,18 +150,18 @@ void main() {
 
     test('clears _isPendingStart', () async {
       final (:notifier, :socket, :authSubject) = _make();
-      notifier.start('breath_session', 'breath', 'session-abc');
+      notifier.start(type: ActivityType.breath, refId: 'session-abc');
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
       await Future.delayed(Duration.zero);
 
       // After ACK, a new start() should be allowed (pending cleared)
-      socket.emitted.clear();
+      socket.resetCounts();
       // Can't start again while active, but pending flag is cleared — verify by resetting
       // to idle first then trying
       socket.injectServerMessage({'status': 'idle'});
       await Future.delayed(Duration.zero);
-      notifier.start('breath_session', 'breath', 'session-abc');
-      expect(socket.emitted, hasLength(1));
+      notifier.start(type: ActivityType.breath, refId: 'session-abc');
+      expect(socket.activityStartCalls, hasLength(1));
 
       notifier.dispose();
       socket.dispose();
@@ -194,15 +227,15 @@ void main() {
   });
 
   group('pause()', () {
-    test('emits activity:pause to socket', () async {
+    test('calls sendActivityPause on socket', () async {
       final (:notifier, :socket, :authSubject) = _make();
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
       await Future.delayed(Duration.zero);
 
-      socket.emitted.clear();
+      socket.resetCounts();
       notifier.pause();
 
-      expect(socket.emitted.first.$1, 'activity:pause');
+      expect(socket.activityPauseCount, 1);
 
       notifier.dispose();
       socket.dispose();
@@ -214,11 +247,11 @@ void main() {
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
       await Future.delayed(Duration.zero);
 
-      socket.emitted.clear();
+      socket.resetCounts();
       notifier.pause();
       notifier.pause();
 
-      expect(socket.emitted, hasLength(1));
+      expect(socket.activityPauseCount, 1);
 
       notifier.dispose();
       socket.dispose();
@@ -230,10 +263,10 @@ void main() {
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': true});
       await Future.delayed(Duration.zero);
 
-      socket.emitted.clear();
+      socket.resetCounts();
       notifier.pause();
 
-      expect(socket.emitted, isEmpty);
+      expect(socket.activityPauseCount, 0);
 
       notifier.dispose();
       socket.dispose();
@@ -245,7 +278,7 @@ void main() {
 
       notifier.pause();
 
-      expect(socket.emitted, isEmpty);
+      expect(socket.activityPauseCount, 0);
 
       notifier.dispose();
       socket.dispose();
@@ -254,15 +287,15 @@ void main() {
   });
 
   group('unpause()', () {
-    test('emits activity:resume to socket', () async {
+    test('calls sendActivityResume on socket', () async {
       final (:notifier, :socket, :authSubject) = _make();
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': true});
       await Future.delayed(Duration.zero);
 
-      socket.emitted.clear();
+      socket.resetCounts();
       notifier.unpause();
 
-      expect(socket.emitted.first.$1, 'activity:resume');
+      expect(socket.activityResumeCount, 1);
 
       notifier.dispose();
       socket.dispose();
@@ -274,10 +307,10 @@ void main() {
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
       await Future.delayed(Duration.zero);
 
-      socket.emitted.clear();
+      socket.resetCounts();
       notifier.unpause();
 
-      expect(socket.emitted, isEmpty);
+      expect(socket.activityResumeCount, 0);
 
       notifier.dispose();
       socket.dispose();
@@ -286,15 +319,15 @@ void main() {
   });
 
   group('end()', () {
-    test('emits activity:end to socket', () async {
+    test('calls sendActivityEnd on socket', () async {
       final (:notifier, :socket, :authSubject) = _make();
       socket.injectServerMessage({'status': 'active', 'liveSessionId': 'live-1', 'isPaused': false});
       await Future.delayed(Duration.zero);
 
-      socket.emitted.clear();
+      socket.resetCounts();
       notifier.end();
 
-      expect(socket.emitted.first.$1, 'activity:end');
+      expect(socket.activityEndCount, 1);
 
       notifier.dispose();
       socket.dispose();
@@ -306,7 +339,7 @@ void main() {
 
       notifier.end();
 
-      expect(socket.emitted, isEmpty);
+      expect(socket.activityEndCount, 0);
 
       notifier.dispose();
       socket.dispose();
@@ -404,16 +437,16 @@ void main() {
       final events = <LiveBreathSessionEvent>[];
       notifier.events.listen(events.add);
 
-      notifier.start('breath_session', 'breath', 'session-abc');
+      notifier.start(type: ActivityType.breath, refId: 'session-abc');
       socket.injectServerMessage({'status': 'idle'});
       await Future.delayed(Duration.zero);
 
       // No events emitted (idle does not produce an event)
       expect(events, isEmpty);
       // Pending cleared — another start() should now emit
-      socket.emitted.clear();
-      notifier.start('breath_session', 'breath', 'session-abc');
-      expect(socket.emitted, hasLength(1));
+      socket.resetCounts();
+      notifier.start(type: ActivityType.breath, refId: 'session-abc');
+      expect(socket.activityStartCalls, hasLength(1));
 
       notifier.dispose();
       socket.dispose();

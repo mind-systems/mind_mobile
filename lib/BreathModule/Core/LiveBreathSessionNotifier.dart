@@ -5,6 +5,7 @@ import 'package:rxdart/rxdart.dart';
 
 import 'package:mind/BreathModule/Core/LiveBreathSessionEvent.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionState.dart';
+import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Core/Grpc/ILiveSocketService.dart';
 import 'package:mind/User/Models/AuthState.dart';
 
@@ -36,36 +37,32 @@ class LiveBreathSessionNotifier {
     _state.add(LiveBreathSessionState.initial());
   }
 
-  void start(String activityType, String activityRefType, String activityRefId) {
+  void start({required ActivityType type, required String refId}) {
     if (currentState.status == LiveBreathSessionStatus.active || _isPendingStart) return;
     _isPendingStart = true;
-    _liveSocketService.emitLive('activity:start', {
-      'activityType': activityType,
-      'activityRefType': activityRefType,
-      'activityRefId': activityRefId,
-    });
+    _liveSocketService.sendActivityStart(type: type, refId: refId);
   }
 
   void pause() {
     if (currentState.status != LiveBreathSessionStatus.active || currentState.isPaused || _isPendingPause) return;
     _isPendingPause = true;
-    _liveSocketService.emitLive('activity:pause');
+    _liveSocketService.sendActivityPause();
   }
 
   void unpause() {
     if (!currentState.isPaused) return;
     _isPendingPause = false;
-    _liveSocketService.emitLive('activity:resume');
+    _liveSocketService.sendActivityResume();
   }
 
   void end() {
     if (currentState.status == LiveBreathSessionStatus.idle) return;
-    _liveSocketService.emitLive('activity:end');
+    _liveSocketService.sendActivityEnd();
   }
 
   void stop() {
     if (currentState.status == LiveBreathSessionStatus.idle) return;
-    _liveSocketService.emitLive('activity:stop');
+    _liveSocketService.sendActivityStop();
   }
 
   void _onSessionState(Map<String, dynamic> data) {
