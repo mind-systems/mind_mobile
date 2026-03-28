@@ -1,6 +1,6 @@
 import 'package:mind/Core/Grpc/ActivityType.dart';
 
-abstract interface class ILiveSocketService {
+abstract interface class ILiveSessionService {
   Stream<Map<String, dynamic>> get sessionStateEvents;
   void sendActivityStart({required ActivityType type, String? refId});
   void sendActivityEnd();

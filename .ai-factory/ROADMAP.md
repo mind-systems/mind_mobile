@@ -116,7 +116,7 @@
 ### 6.3 Strip all Socket.io naming leftovers
 
 - [x] **Rename `*GrpcApi` → `*Api` classes and files** — `AuthGrpcApi`, `UserGrpcApi`, `BreathSessionGrpcApi`, `SyncGrpcApi`, `DeviceGrpcApi`, `PersonalAccessTokenGrpcApi`, `StatsGrpcApi`; update wiring in `App.dart` and `BreathModule.dart`
-- [ ] **Rename `ILiveSocketService` → `ILiveSessionService` and all `liveSocket*` variables** — rename class and file; update imports in `LiveSessionGrpcService.dart`, `LiveBreathSessionNotifier.dart`, test file; rename field `_liveSocketService` → `_liveSessionService` and param `liveSocketService` → `liveSessionService` in `App.dart`, `LiveBreathSessionNotifier.dart`, `BreathTelemetryService.dart`; rename `FakeLiveSocketService` → `FakeLiveSessionService` in test
+- [x] **Rename `ILiveSocketService` → `ILiveSessionService` and all `liveSocket*` variables** — rename class and file; update imports in `LiveSessionGrpcService.dart`, `LiveBreathSessionNotifier.dart`, test file; rename field `_liveSocketService` → `_liveSessionService` and param `liveSocketService` → `liveSessionService` in `App.dart`, `LiveBreathSessionNotifier.dart`, `BreathTelemetryService.dart`; rename `FakeLiveSocketService` → `FakeLiveSessionService` in test
 
 ---
 

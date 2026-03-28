@@ -10,11 +10,11 @@ import 'package:rxdart/rxdart.dart';
 import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Core/Grpc/generated/live.pbgrpc.dart' as proto;
 import 'package:mind/Core/Grpc/generated/telemetry.pbgrpc.dart';
-import 'package:mind/Core/Grpc/ILiveSocketService.dart';
+import 'package:mind/Core/Grpc/ILiveSessionService.dart';
 import 'package:mind/Core/Grpc/SocketConnectionState.dart';
 import 'package:mind/User/Models/AuthState.dart';
 
-class LiveSessionGrpcService implements ILiveSocketService {
+class LiveSessionGrpcService implements ILiveSessionService {
   final proto.LiveServiceClient _liveService;
   final TelemetryServiceClient _telemetryService;
 
@@ -302,8 +302,7 @@ class LiveSessionGrpcService implements ILiveSocketService {
         _scheduleReconnect();
       },
     );
-    // Signal to BreathTelemetryService that the telemetry channel is open,
-    // matching the _telemetrySocket!.onConnect behaviour in LiveSocketService.
+    // Signal to BreathTelemetryService that the telemetry channel is ready
     _telemetryStateController.add(null);
   }
 

@@ -70,7 +70,7 @@ class App {
   final BreathSessionNotifier breathSessionNotifier;
   final DeeplinkRouter deeplinkRouter;
   final AppSettingsNotifier appSettingsNotifier;
-  final LiveSessionGrpcService liveSocketService;
+  final LiveSessionGrpcService liveGrpcService;
   final LiveBreathSessionNotifier liveSessionNotifier;
   final LiveBreathSessionService liveSessionService;
   final BreathTelemetryService telemetryService;
@@ -92,7 +92,7 @@ class App {
     required this.breathSessionNotifier,
     required this.deeplinkRouter,
     required this.appSettingsNotifier,
-    required this.liveSocketService,
+    required this.liveGrpcService,
     required this.liveSessionNotifier,
     required this.liveSessionService,
     required this.telemetryService,
@@ -156,12 +156,12 @@ class App {
     final sessionHandler = BreathSessionDeeplinkHandler(router: appRouter);
     final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler, sessionHandler: sessionHandler);
 
-    final liveSocketService = LiveSessionGrpcService(liveService: grpcClient.liveService, telemetryService: grpcClient.telemetryService, authStream: userNotifier.stream, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
+    final liveGrpcService = LiveSessionGrpcService(liveService: grpcClient.liveService, telemetryService: grpcClient.telemetryService, authStream: userNotifier.stream, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
     final syncGrpcListener = SyncGrpcListener(syncService: grpcClient.syncService, syncEngine: syncEngine, syncStateDao: db.syncStateDao, authStream: userNotifier.stream);
 
-    final liveSessionNotifier = LiveBreathSessionNotifier(liveSocketService: liveSocketService, authStream: userNotifier.stream);
+    final liveSessionNotifier = LiveBreathSessionNotifier(liveSessionService: liveGrpcService, authStream: userNotifier.stream);
     final liveSessionService = LiveBreathSessionService(notifier: liveSessionNotifier);
-    final telemetryService = BreathTelemetryService(liveSocketService: liveSocketService);
+    final telemetryService = BreathTelemetryService(liveSessionService: liveGrpcService);
     final tokenNotifier = TokenNotifier(api: tokenApi);
 
     shared = App._(
@@ -177,7 +177,7 @@ class App {
       breathSessionNotifier: breathSessionNotifier,
       deeplinkRouter: deeplinkRouter,
       appSettingsNotifier: appSettingsNotifier,
-      liveSocketService: liveSocketService,
+      liveGrpcService: liveGrpcService,
       liveSessionNotifier: liveSessionNotifier,
       liveSessionService: liveSessionService,
       telemetryService: telemetryService,

@@ -5,7 +5,7 @@ import 'package:mind/Core/Grpc/LiveSessionGrpcService.dart';
 import 'package:mind/Core/Grpc/TelemetryBuffer.dart';
 
 class BreathTelemetryService implements IBreathTelemetryService {
-  final LiveSessionGrpcService _liveSocketService;
+  final LiveSessionGrpcService _liveSessionService;
   final TelemetryBuffer _buffer = TelemetryBuffer();
 
   int _maxSamplesPerSecond = 10;
@@ -14,10 +14,10 @@ class BreathTelemetryService implements IBreathTelemetryService {
   StreamSubscription<void>? _telemetryStateSub;
   StreamSubscription<Map<String, dynamic>>? _dataAckSub;
 
-  BreathTelemetryService({required LiveSessionGrpcService liveSocketService})
-      : _liveSocketService = liveSocketService {
-    _telemetryStateSub = _liveSocketService.telemetryStateEvents.listen((_) => flushBuffer());
-    _dataAckSub = _liveSocketService.dataAckEvents.listen(_onDataAck);
+  BreathTelemetryService({required LiveSessionGrpcService liveSessionService})
+      : _liveSessionService = liveSessionService {
+    _telemetryStateSub = _liveSessionService.telemetryStateEvents.listen((_) => flushBuffer());
+    _dataAckSub = _liveSessionService.dataAckEvents.listen(_onDataAck);
   }
 
   @override
@@ -42,7 +42,7 @@ class BreathTelemetryService implements IBreathTelemetryService {
 
   void flushBuffer() {
     for (final sample in _buffer.flush()) {
-      _liveSocketService.emitTelemetry('data:stream', sample);
+      _liveSessionService.emitTelemetry('data:stream', sample);
     }
   }
 
@@ -52,14 +52,14 @@ class BreathTelemetryService implements IBreathTelemetryService {
   }
 
   bool _canSendNow() {
-    if (!_liveSocketService.isConnected) return false;
+    if (!_liveSessionService.isConnected) return false;
     if (_lastSendTime == null) return true;
     final minIntervalMs = 1000 ~/ _maxSamplesPerSecond;
     return DateTime.now().difference(_lastSendTime!).inMilliseconds >= minIntervalMs;
   }
 
   void _emit(Map<String, dynamic> payload) {
-    _liveSocketService.emitTelemetry('data:stream', payload);
+    _liveSessionService.emitTelemetry('data:stream', payload);
     _lastSendTime = DateTime.now();
   }
 

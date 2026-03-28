@@ -7,7 +7,7 @@ import 'package:mind/BreathModule/Core/LiveBreathSessionNotifier.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionEvent.dart';
 import 'package:mind/BreathModule/Core/LiveBreathSessionState.dart';
 import 'package:mind/Core/Grpc/ActivityType.dart';
-import 'package:mind/Core/Grpc/ILiveSocketService.dart';
+import 'package:mind/Core/Grpc/ILiveSessionService.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Models/User.dart';
 
@@ -15,7 +15,7 @@ import 'package:mind/User/Models/User.dart';
 // Fake socket service
 // ---------------------------------------------------------------------------
 
-class FakeLiveSocketService implements ILiveSocketService {
+class FakeLiveSessionService implements ILiveSessionService {
   final _controller = StreamController<Map<String, dynamic>>.broadcast();
 
   @override
@@ -76,11 +76,11 @@ final _user = User(id: 'user-1', email: 'a@b.com', name: 'A', language: '', isGu
 // Factory
 // ---------------------------------------------------------------------------
 
-({LiveBreathSessionNotifier notifier, FakeLiveSocketService socket, BehaviorSubject<AuthState> authSubject})
+({LiveBreathSessionNotifier notifier, FakeLiveSessionService socket, BehaviorSubject<AuthState> authSubject})
     _make() {
-  final socket = FakeLiveSocketService();
+  final socket = FakeLiveSessionService();
   final authSubject = BehaviorSubject<AuthState>.seeded(AuthenticatedState(_user));
-  final notifier = LiveBreathSessionNotifier(liveSocketService: socket, authStream: authSubject.stream);
+  final notifier = LiveBreathSessionNotifier(liveSessionService: socket, authStream: authSubject.stream);
   return (notifier: notifier, socket: socket, authSubject: authSubject);
 }
 
