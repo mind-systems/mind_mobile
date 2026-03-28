@@ -7,6 +7,7 @@ import 'package:mind/BreathModule/BreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/BreathSessionListService.dart';
 import 'package:mind/BreathModule/BreathSessionService.dart';
 import 'package:mind/BreathModule/ClockTickService.dart';
+import 'package:mind/BreathModule/Core/BreathModuleStateChannel.dart';
 import 'package:breath_module/breath_module.dart';
 import 'package:mind/Core/App.dart';
 
@@ -30,19 +31,24 @@ class BreathModule {
     final service = BreathSessionService(notifier: App.shared.breathSessionNotifier, userNotifier: App.shared.userNotifier);
     final coordinator = BreathSessionCoordinator(context, userNotifier: App.shared.userNotifier);
 
-    final liveCoordinator = LiveBreathSessionCoordinator(liveSessionService: App.shared.liveSessionService, telemetryService: App.shared.telemetryService, sessionId: sessionId);
+    late final BreathModuleStateChannel stateChannel;
 
     return ProviderScope(
       overrides: [
         breathViewModelProvider.overrideWith(() {
           final vm = BreathViewModel(tickService: tickService, service: service, coordinator: coordinator, sessionId: sessionId);
-          liveCoordinator.start(vm.stream);
+          stateChannel = BreathModuleStateChannel(
+            channel: App.shared.moduleStateChannel,
+            stateStream: vm.stream,
+            telemetryService: App.shared.telemetryService,
+            sessionId: sessionId,
+          );
           return vm;
         }),
       ],
       child: BreathSessionScreen(
-        onRestart: liveCoordinator.reset,
-        onDispose: liveCoordinator.dispose,
+        onRestart: () => stateChannel.reset(),
+        onDispose: () => stateChannel.dispose(),
       ),
     );
   }

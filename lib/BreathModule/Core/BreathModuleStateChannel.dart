@@ -1,40 +1,45 @@
 import 'dart:async';
 import 'dart:developer' as dev;
 
-import 'ILiveBreathSessionService.dart';
-import 'IBreathTelemetryService.dart';
-import 'Models/BreathSessionState.dart';
+import 'package:mind/Core/Grpc/ActivityType.dart';
+import 'package:mind/Core/Grpc/ModuleState.dart';
+import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
+import 'package:mind/BreathModule/Core/BreathTelemetryService.dart';
+import 'package:breath_module/breath_module.dart' show BreathSessionState, BreathSessionStatus, BreathPhase, SessionLoadState;
 
-class LiveBreathSessionCoordinator {
-  final ILiveBreathSessionService liveSessionService;
-  final IBreathTelemetryService telemetryService;
-  final String sessionId;
+class BreathModuleStateChannel {
+  final ModuleStateChannel _channel;
+  final BreathTelemetryService _telemetryService;
+  final String _sessionId;
 
-  StreamSubscription<BreathSessionState>? _subscription;
-  StreamSubscription<LiveBreathSessionDto>? _liveSessionSub;
-  String? _liveSessionId;
   bool _started = false;
   bool _ended = false;
   BreathSessionStatus? _previousStatus;
   BreathPhase? _previousPhase;
   int? _previousExerciseIndex;
+  String? _liveSessionId;
   BreathSessionState? _pendingTelemetry;
 
-  LiveBreathSessionCoordinator({
-    required this.liveSessionService,
-    required this.telemetryService,
-    required this.sessionId,
-  });
+  late final StreamSubscription<BreathSessionState> _stateSub;
+  late final StreamSubscription<ModuleState> _channelSub;
 
-  void start(Stream<BreathSessionState> stateStream) {
-    assert(_subscription == null, 'LiveBreathSessionCoordinator.start() called twice');
-    _subscription = stateStream.listen(_onState);
-    _liveSessionSub = liveSessionService.sessionStateStream.listen((dto) {
-      _liveSessionId = dto.liveSessionId;
-      final liveId = dto.liveSessionId;
+  BreathModuleStateChannel({
+    required ModuleStateChannel channel,
+    required Stream<BreathSessionState> stateStream,
+    required BreathTelemetryService telemetryService,
+    required String sessionId,
+  })  : _channel = channel,
+        _telemetryService = telemetryService,
+        _sessionId = sessionId {
+    _stateSub = stateStream.listen(_onState);
+    _channelSub = channel.state.listen((moduleState) {
+      _liveSessionId = moduleState.liveSessionId;
+      final liveId = moduleState.liveSessionId;
       if (liveId != null) _flushPending(liveId);
     });
   }
+
+  String? get liveSessionId => _liveSessionId;
 
   void _onState(BreathSessionState state) {
     if (state.loadState != SessionLoadState.ready) return;
@@ -57,22 +62,22 @@ class LiveBreathSessionCoordinator {
 
     if (wasPaused && isActive) {
       if (!_started) {
-        dev.log('LiveBreathSessionCoordinator: session start [$sessionId]', name: 'LiveSession');
-        liveSessionService.startSession(sessionId);
+        dev.log('BreathModuleStateChannel: session start [$_sessionId]', name: 'LiveSession');
+        _channel.start(type: ActivityType.breath, refId: _sessionId);
         _started = true;
       } else {
-        dev.log('LiveBreathSessionCoordinator: session resume [$sessionId]', name: 'LiveSession');
-        liveSessionService.resumeSession();
+        dev.log('BreathModuleStateChannel: session resume [$_sessionId]', name: 'LiveSession');
+        _channel.unpause();
       }
     } else if (wasActive && status == BreathSessionStatus.pause) {
       if (_started && !_ended) {
-        dev.log('LiveBreathSessionCoordinator: session pause [$sessionId]', name: 'LiveSession');
-        liveSessionService.pauseSession();
+        dev.log('BreathModuleStateChannel: session pause [$_sessionId]', name: 'LiveSession');
+        _channel.pause();
       }
     } else if (status == BreathSessionStatus.complete) {
       if (_started && !_ended) {
-        dev.log('LiveBreathSessionCoordinator: session end [$sessionId]', name: 'LiveSession');
-        liveSessionService.endSession();
+        dev.log('BreathModuleStateChannel: session end [$_sessionId]', name: 'LiveSession');
+        _channel.end();
         _ended = true;
       }
     }
@@ -92,34 +97,33 @@ class LiveBreathSessionCoordinator {
       _pendingTelemetry = state;
       return;
     }
-    telemetryService.sendSample(liveId, state.phase.name, state.currentIntervalMs);
+    _telemetryService.sendSample(liveId, state.phase.name, state.currentIntervalMs);
   }
 
   void _flushPending(String liveId) {
     final pending = _pendingTelemetry;
     if (pending == null) return;
     _pendingTelemetry = null;
-    telemetryService.sendSample(liveId, pending.phase.name, pending.currentIntervalMs);
+    _telemetryService.sendSample(liveId, pending.phase.name, pending.currentIntervalMs);
   }
 
   void reset() {
     _liveSessionId = null;
-    _pendingTelemetry = null;
     _started = false;
     _ended = false;
     _previousStatus = null;
     _previousPhase = null;
     _previousExerciseIndex = null;
-    // subscription stays alive — stream is reused across restart
+    _pendingTelemetry = null;
+    // Subscriptions stay alive — the stream is reused across restarts.
   }
 
   void dispose() {
     if (_started && !_ended) {
-      dev.log('LiveBreathSessionCoordinator: dispose — stopping session [$sessionId]', name: 'LiveSession');
-      liveSessionService.stopSession();
+      dev.log('BreathModuleStateChannel: dispose — stopping session [$_sessionId]', name: 'LiveSession');
+      _channel.stop();
     }
-    _pendingTelemetry = null;
-    _subscription?.cancel();
-    _liveSessionSub?.cancel();
+    _stateSub.cancel();
+    _channelSub.cancel();
   }
 }

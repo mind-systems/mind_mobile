@@ -11,12 +11,10 @@ export 'src/BreathSessionsList/IBreathSessionListService.dart';
 export 'src/BreathSessionsList/IBreathSessionListCoordinator.dart';
 export 'src/BreathSession/IBreathSessionService.dart';
 export 'src/BreathSession/IBreathSessionCoordinator.dart';
-export 'src/BreathSession/ILiveBreathSessionService.dart';
 export 'src/BreathSession/IBreathTelemetryService.dart';
 export 'src/BreathSessionConstructor/IBreathSessionConstructorService.dart';
 export 'src/BreathSessionConstructor/IBreathSessionConstructorCoordinator.dart';
 // Other public symbols
-export 'src/BreathSession/LiveBreathSessionCoordinator.dart';
 export 'src/BreathSessionsList/Models/BreathSessionListItem.dart';
 export 'src/BreathSessionsList/Models/BreathSessionListItemDTO.dart';
 export 'src/BreathSessionsList/Models/BreathSessionListState.dart';

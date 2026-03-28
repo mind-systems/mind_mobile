@@ -142,7 +142,7 @@
 
 ### 7.5 Create BreathModuleStateChannel
 
-- [ ] **Create `BreathModuleStateChannel` in `lib/BreathModule/Core/`** — injects `ModuleStateChannel`; subscribes to `BreathSessionState` stream; translates state transitions → `channel.start(ActivityType.breath, refId)` / `channel.pause()` / `channel.resume()` / `channel.end()`; reads `liveSessionId` from channel events and exposes it for the instruction stream
+- [x] **Create `BreathModuleStateChannel` in `lib/BreathModule/Core/`** — injects `ModuleStateChannel`; subscribes to `BreathSessionState` stream; translates state transitions → `channel.start(ActivityType.breath, refId)` / `channel.pause()` / `channel.resume()` / `channel.end()`; reads `liveSessionId` from channel events and exposes it for the instruction stream
 - [ ] **Delete `LiveBreathSessionService` and `LiveBreathSessionCoordinator`** — absorbed into `BreathModuleStateChannel`; remove interface files; update `BreathModule.dart` wiring
 
 ### 7.6 Create BreathModuleInstructionStream

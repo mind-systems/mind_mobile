@@ -37,7 +37,6 @@ import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
 import 'package:mind/Core/Handlers/BreathSessionDeeplinkHandler.dart';
 import 'package:mind/User/Infrastructure/GoogleAuthProvider.dart';
 import 'package:mind/User/Infrastructure/SecureStorage.dart';
-import 'package:mind/BreathModule/Core/LiveBreathSessionService.dart';
 import 'package:mind/BreathModule/Core/BreathTelemetryService.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mind/Core/AppLifecycleService.dart';
@@ -74,7 +73,6 @@ class App {
   final GrpcConnectionManager connectionManager;
   final ModuleStateChannel moduleStateChannel;
   final ModuleInstructionStream instructionStream;
-  final LiveBreathSessionService liveSessionService;
   final BreathTelemetryService telemetryService;
   final TokenNotifier tokenNotifier;
   final SyncEngine syncEngine;
@@ -97,7 +95,6 @@ class App {
     required this.connectionManager,
     required this.moduleStateChannel,
     required this.instructionStream,
-    required this.liveSessionService,
     required this.telemetryService,
     required this.tokenNotifier,
     required this.syncEngine,
@@ -164,7 +161,6 @@ class App {
     final instructionStream = ModuleInstructionStream(connectionManager: connectionManager, telemetryService: grpcClient.telemetryService);
     final syncGrpcListener = SyncGrpcListener(syncService: grpcClient.syncService, syncEngine: syncEngine, syncStateDao: db.syncStateDao, authStream: userNotifier.stream);
 
-    final liveSessionService = LiveBreathSessionService(channel: moduleStateChannel);
     final telemetryService = BreathTelemetryService(instructionStream: instructionStream);
     final tokenNotifier = TokenNotifier(api: tokenApi);
 
@@ -184,7 +180,6 @@ class App {
       connectionManager: connectionManager,
       moduleStateChannel: moduleStateChannel,
       instructionStream: instructionStream,
-      liveSessionService: liveSessionService,
       telemetryService: telemetryService,
       tokenNotifier: tokenNotifier,
       syncEngine: syncEngine,
