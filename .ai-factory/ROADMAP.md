@@ -175,6 +175,19 @@
 
 ---
 
+## Phase 9 — Sync Proto & Remove Presence _(requires mind_api Phase 10.1 — all proto changes done)_
+
+### 9.1 Sync proto and regenerate stubs
+
+- [ ] **Copy all proto files and regenerate** — copy entire `mind_api/proto/` to `mind_mobile/proto/` (overwrite all); run `bash scripts/gen_proto.sh` from `mind_mobile/` root; verify `module_state.pb.dart` no longer contains `PresenceCmd`, `PresenceState` and uses new type names `StateRequest`, `StateResponse`, `ActivityStatus`, `StateEvent`, `StateErrorEvent`
+
+### 9.2 Update Dart code
+
+- [ ] **Remove presence sending from `lib/Core/Grpc/ModuleStateChannel.dart`** — delete any calls that send a `PresenceCmd`; remove imports of `PresenceCmd` or `PresenceState` from generated proto
+- [ ] **Update type references** — replace `SessionRequest`, `SessionResponse`, `SessionStatus`, `SessionStateEvent`, `SessionErrorEvent` with new names in all files that use generated stubs (`ModuleStateChannel.dart`, `ModuleInstructionStream.dart`, and any other files importing from generated proto)
+
+---
+
 ## Completed
 
 | Milestone | Date |
