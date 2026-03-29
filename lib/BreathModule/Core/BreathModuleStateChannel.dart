@@ -62,21 +62,21 @@ class BreathModuleStateChannel {
 
     if (wasPaused && isActive) {
       if (!_started) {
-        dev.log('BreathModuleStateChannel: session start [$_sessionId]', name: 'LiveSession');
+        dev.log('BreathModuleStateChannel: session start [$_sessionId]', name: 'BreathModuleState');
         _channel.start(type: ActivityType.breath, refId: _sessionId);
         _started = true;
       } else {
-        dev.log('BreathModuleStateChannel: session resume [$_sessionId]', name: 'LiveSession');
+        dev.log('BreathModuleStateChannel: session resume [$_sessionId]', name: 'BreathModuleState');
         _channel.unpause();
       }
     } else if (wasActive && status == BreathSessionStatus.pause) {
       if (_started && !_ended) {
-        dev.log('BreathModuleStateChannel: session pause [$_sessionId]', name: 'LiveSession');
+        dev.log('BreathModuleStateChannel: session pause [$_sessionId]', name: 'BreathModuleState');
         _channel.pause();
       }
     } else if (status == BreathSessionStatus.complete) {
       if (_started && !_ended) {
-        dev.log('BreathModuleStateChannel: session end [$_sessionId]', name: 'LiveSession');
+        dev.log('BreathModuleStateChannel: session end [$_sessionId]', name: 'BreathModuleState');
         _channel.end();
         _ended = true;
       }
@@ -120,7 +120,7 @@ class BreathModuleStateChannel {
 
   void dispose() {
     if (_started && !_ended) {
-      dev.log('BreathModuleStateChannel: dispose — stopping session [$_sessionId]', name: 'LiveSession');
+      dev.log('BreathModuleStateChannel: dispose — stopping session [$_sessionId]', name: 'BreathModuleState');
       _channel.stop();
     }
     _stateSub.cancel();
