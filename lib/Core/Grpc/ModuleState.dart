@@ -1,12 +1,12 @@
 enum ModuleStateStatus { idle, active }
 
 class ModuleState {
-  final String? liveSessionId;
+  final String? moduleSessionId;
   final ModuleStateStatus status;
   final bool isPaused;
 
-  const ModuleState({required this.liveSessionId, required this.status, this.isPaused = false});
+  const ModuleState({required this.moduleSessionId, required this.status, this.isPaused = false});
 
   factory ModuleState.initial() =>
-      const ModuleState(liveSessionId: null, status: ModuleStateStatus.idle);
+      const ModuleState(moduleSessionId: null, status: ModuleStateStatus.idle);
 }

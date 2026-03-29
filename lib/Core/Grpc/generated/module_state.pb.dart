@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from live.proto.
+// Generated from module_state.proto.
 
 // @dart = 3.3
 
@@ -15,11 +15,11 @@ import 'dart:core' as $core;
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
-import 'live.pbenum.dart';
+import 'module_state.pbenum.dart';
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
-export 'live.pbenum.dart';
+export 'module_state.pbenum.dart';
 
 /// Maps to ActivityStartDto in src/realtime/dto/activity-start.dto.ts.
 /// ref_id is the optional breath-session ID (activityRefId in the entity).
@@ -303,12 +303,12 @@ class PresenceCmd extends $pb.GeneratedMessage {
 /// Maps to SessionStateDto in src/realtime/dto/session-state.dto.ts.
 class SessionStateEvent extends $pb.GeneratedMessage {
   factory SessionStateEvent({
-    $core.String? liveSessionId,
+    $core.String? moduleSessionId,
     SessionStatus? status,
     $core.bool? isPaused,
   }) {
     final result = create();
-    if (liveSessionId != null) result.liveSessionId = liveSessionId;
+    if (moduleSessionId != null) result.moduleSessionId = moduleSessionId;
     if (status != null) result.status = status;
     if (isPaused != null) result.isPaused = isPaused;
     return result;
@@ -327,7 +327,7 @@ class SessionStateEvent extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'SessionStateEvent',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
-    ..aOS(1, _omitFieldNames ? '' : 'liveSessionId')
+    ..aOS(1, _omitFieldNames ? '' : 'moduleSessionId')
     ..aE<SessionStatus>(2, _omitFieldNames ? '' : 'status',
         enumValues: SessionStatus.values)
     ..aOB(3, _omitFieldNames ? '' : 'isPaused')
@@ -353,13 +353,13 @@ class SessionStateEvent extends $pb.GeneratedMessage {
   static SessionStateEvent? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.String get liveSessionId => $_getSZ(0);
+  $core.String get moduleSessionId => $_getSZ(0);
   @$pb.TagNumber(1)
-  set liveSessionId($core.String value) => $_setString(0, value);
+  set moduleSessionId($core.String value) => $_setString(0, value);
   @$pb.TagNumber(1)
-  $core.bool hasLiveSessionId() => $_has(0);
+  $core.bool hasModuleSessionId() => $_has(0);
   @$pb.TagNumber(1)
-  void clearLiveSessionId() => $_clearField(1);
+  void clearModuleSessionId() => $_clearField(1);
 
   @$pb.TagNumber(2)
   SessionStatus get status => $_getN(1);
@@ -383,7 +383,7 @@ class SessionStateEvent extends $pb.GeneratedMessage {
 /// Maps to SessionErrorDto in src/realtime/dto/session-error.dto.ts.
 /// timestamp is int64 Unix millis — not ISO-8601 — because error events are
 /// high-frequency and don't need human-readable timestamps.
-/// This message is top-level so telemetry.proto can import it later.
+/// This message is top-level so module_instruction_stream.proto can import it later.
 class SessionErrorEvent extends $pb.GeneratedMessage {
   factory SessionErrorEvent({
     $core.String? code,
@@ -462,7 +462,7 @@ class SessionErrorEvent extends $pb.GeneratedMessage {
   void clearTimestamp() => $_clearField(3);
 }
 
-enum LiveRequest_Command {
+enum SessionRequest_Command {
   activityStart,
   activityEnd,
   activityStop,
@@ -472,10 +472,10 @@ enum LiveRequest_Command {
   notSet
 }
 
-/// LiveRequest is the client-to-server stream envelope.
+/// SessionRequest is the client-to-server stream envelope.
 /// Each message carries exactly one command via the oneof.
-class LiveRequest extends $pb.GeneratedMessage {
-  factory LiveRequest({
+class SessionRequest extends $pb.GeneratedMessage {
+  factory SessionRequest({
     ActivityStartCmd? activityStart,
     ActivityEndCmd? activityEnd,
     ActivityStopCmd? activityStop,
@@ -493,27 +493,27 @@ class LiveRequest extends $pb.GeneratedMessage {
     return result;
   }
 
-  LiveRequest._();
+  SessionRequest._();
 
-  factory LiveRequest.fromBuffer($core.List<$core.int> data,
+  factory SessionRequest.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory LiveRequest.fromJson($core.String json,
+  factory SessionRequest.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
-  static const $core.Map<$core.int, LiveRequest_Command>
-      _LiveRequest_CommandByTag = {
-    1: LiveRequest_Command.activityStart,
-    2: LiveRequest_Command.activityEnd,
-    3: LiveRequest_Command.activityStop,
-    4: LiveRequest_Command.activityPause,
-    5: LiveRequest_Command.activityResume,
-    6: LiveRequest_Command.presence,
-    0: LiveRequest_Command.notSet
+  static const $core.Map<$core.int, SessionRequest_Command>
+      _SessionRequest_CommandByTag = {
+    1: SessionRequest_Command.activityStart,
+    2: SessionRequest_Command.activityEnd,
+    3: SessionRequest_Command.activityStop,
+    4: SessionRequest_Command.activityPause,
+    5: SessionRequest_Command.activityResume,
+    6: SessionRequest_Command.presence,
+    0: SessionRequest_Command.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'LiveRequest',
+      _omitMessageNames ? '' : 'SessionRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
     ..oo(0, [1, 2, 3, 4, 5, 6])
@@ -532,23 +532,23 @@ class LiveRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LiveRequest clone() => deepCopy();
+  SessionRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LiveRequest copyWith(void Function(LiveRequest) updates) =>
-      super.copyWith((message) => updates(message as LiveRequest))
-          as LiveRequest;
+  SessionRequest copyWith(void Function(SessionRequest) updates) =>
+      super.copyWith((message) => updates(message as SessionRequest))
+          as SessionRequest;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static LiveRequest create() => LiveRequest._();
+  static SessionRequest create() => SessionRequest._();
   @$core.override
-  LiveRequest createEmptyInstance() => create();
+  SessionRequest createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static LiveRequest getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<LiveRequest>(create);
-  static LiveRequest? _defaultInstance;
+  static SessionRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SessionRequest>(create);
+  static SessionRequest? _defaultInstance;
 
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
@@ -556,8 +556,8 @@ class LiveRequest extends $pb.GeneratedMessage {
   @$pb.TagNumber(4)
   @$pb.TagNumber(5)
   @$pb.TagNumber(6)
-  LiveRequest_Command whichCommand() =>
-      _LiveRequest_CommandByTag[$_whichOneof(0)]!;
+  SessionRequest_Command whichCommand() =>
+      _SessionRequest_CommandByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
   @$pb.TagNumber(3)
@@ -633,12 +633,12 @@ class LiveRequest extends $pb.GeneratedMessage {
   PresenceCmd ensurePresence() => $_ensure(5);
 }
 
-enum LiveResponse_Event { sessionState, sessionError, notSet }
+enum SessionResponse_Event { sessionState, sessionError, notSet }
 
-/// LiveResponse is the server-to-client stream envelope.
+/// SessionResponse is the server-to-client stream envelope.
 /// Each message carries exactly one event via the oneof.
-class LiveResponse extends $pb.GeneratedMessage {
-  factory LiveResponse({
+class SessionResponse extends $pb.GeneratedMessage {
+  factory SessionResponse({
     SessionStateEvent? sessionState,
     SessionErrorEvent? sessionError,
   }) {
@@ -648,23 +648,23 @@ class LiveResponse extends $pb.GeneratedMessage {
     return result;
   }
 
-  LiveResponse._();
+  SessionResponse._();
 
-  factory LiveResponse.fromBuffer($core.List<$core.int> data,
+  factory SessionResponse.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory LiveResponse.fromJson($core.String json,
+  factory SessionResponse.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
-  static const $core.Map<$core.int, LiveResponse_Event>
-      _LiveResponse_EventByTag = {
-    1: LiveResponse_Event.sessionState,
-    2: LiveResponse_Event.sessionError,
-    0: LiveResponse_Event.notSet
+  static const $core.Map<$core.int, SessionResponse_Event>
+      _SessionResponse_EventByTag = {
+    1: SessionResponse_Event.sessionState,
+    2: SessionResponse_Event.sessionError,
+    0: SessionResponse_Event.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'LiveResponse',
+      _omitMessageNames ? '' : 'SessionResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
     ..oo(0, [1, 2])
@@ -675,27 +675,28 @@ class LiveResponse extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LiveResponse clone() => deepCopy();
+  SessionResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LiveResponse copyWith(void Function(LiveResponse) updates) =>
-      super.copyWith((message) => updates(message as LiveResponse))
-          as LiveResponse;
+  SessionResponse copyWith(void Function(SessionResponse) updates) =>
+      super.copyWith((message) => updates(message as SessionResponse))
+          as SessionResponse;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static LiveResponse create() => LiveResponse._();
+  static SessionResponse create() => SessionResponse._();
   @$core.override
-  LiveResponse createEmptyInstance() => create();
+  SessionResponse createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static LiveResponse getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<LiveResponse>(create);
-  static LiveResponse? _defaultInstance;
+  static SessionResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SessionResponse>(create);
+  static SessionResponse? _defaultInstance;
 
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
-  LiveResponse_Event whichEvent() => _LiveResponse_EventByTag[$_whichOneof(0)]!;
+  SessionResponse_Event whichEvent() =>
+      _SessionResponse_EventByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
   void clearEvent() => $_clearField($_whichOneof(0));

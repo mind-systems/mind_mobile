@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from live.proto.
+// Generated from module_state.proto.
 
 // @dart = 3.3
 
@@ -152,7 +152,7 @@ final $typed_data.Uint8List presenceCmdDescriptor = $convert.base64Decode(
 const SessionStateEvent$json = {
   '1': 'SessionStateEvent',
   '2': [
-    {'1': 'live_session_id', '3': 1, '4': 1, '5': 9, '10': 'liveSessionId'},
+    {'1': 'module_session_id', '3': 1, '4': 1, '5': 9, '10': 'moduleSessionId'},
     {
       '1': 'status',
       '3': 2,
@@ -178,9 +178,9 @@ const SessionStateEvent$json = {
 
 /// Descriptor for `SessionStateEvent`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List sessionStateEventDescriptor = $convert.base64Decode(
-    'ChFTZXNzaW9uU3RhdGVFdmVudBImCg9saXZlX3Nlc3Npb25faWQYASABKAlSDWxpdmVTZXNzaW'
-    '9uSWQSKwoGc3RhdHVzGAIgASgOMhMubWluZC5TZXNzaW9uU3RhdHVzUgZzdGF0dXMSIAoJaXNf'
-    'cGF1c2VkGAMgASgISABSCGlzUGF1c2VkiAEBQgwKCl9pc19wYXVzZWQ=');
+    'ChFTZXNzaW9uU3RhdGVFdmVudBIqChFtb2R1bGVfc2Vzc2lvbl9pZBgBIAEoCVIPbW9kdWxlU2'
+    'Vzc2lvbklkEisKBnN0YXR1cxgCIAEoDjITLm1pbmQuU2Vzc2lvblN0YXR1c1IGc3RhdHVzEiAK'
+    'CWlzX3BhdXNlZBgDIAEoCEgAUghpc1BhdXNlZIgBAUIMCgpfaXNfcGF1c2Vk');
 
 @$core.Deprecated('Use sessionErrorEventDescriptor instead')
 const SessionErrorEvent$json = {
@@ -197,9 +197,9 @@ final $typed_data.Uint8List sessionErrorEventDescriptor = $convert.base64Decode(
     'ChFTZXNzaW9uRXJyb3JFdmVudBISCgRjb2RlGAEgASgJUgRjb2RlEhgKB21lc3NhZ2UYAiABKA'
     'lSB21lc3NhZ2USHAoJdGltZXN0YW1wGAMgASgDUgl0aW1lc3RhbXA=');
 
-@$core.Deprecated('Use liveRequestDescriptor instead')
-const LiveRequest$json = {
-  '1': 'LiveRequest',
+@$core.Deprecated('Use sessionRequestDescriptor instead')
+const SessionRequest$json = {
+  '1': 'SessionRequest',
   '2': [
     {
       '1': 'activity_start',
@@ -261,20 +261,20 @@ const LiveRequest$json = {
   ],
 };
 
-/// Descriptor for `LiveRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List liveRequestDescriptor = $convert.base64Decode(
-    'CgtMaXZlUmVxdWVzdBI/Cg5hY3Rpdml0eV9zdGFydBgBIAEoCzIWLm1pbmQuQWN0aXZpdHlTdG'
-    'FydENtZEgAUg1hY3Rpdml0eVN0YXJ0EjkKDGFjdGl2aXR5X2VuZBgCIAEoCzIULm1pbmQuQWN0'
-    'aXZpdHlFbmRDbWRIAFILYWN0aXZpdHlFbmQSPAoNYWN0aXZpdHlfc3RvcBgDIAEoCzIVLm1pbm'
-    'QuQWN0aXZpdHlTdG9wQ21kSABSDGFjdGl2aXR5U3RvcBI/Cg5hY3Rpdml0eV9wYXVzZRgEIAEo'
-    'CzIWLm1pbmQuQWN0aXZpdHlQYXVzZUNtZEgAUg1hY3Rpdml0eVBhdXNlEkIKD2FjdGl2aXR5X3'
-    'Jlc3VtZRgFIAEoCzIXLm1pbmQuQWN0aXZpdHlSZXN1bWVDbWRIAFIOYWN0aXZpdHlSZXN1bWUS'
-    'LwoIcHJlc2VuY2UYBiABKAsyES5taW5kLlByZXNlbmNlQ21kSABSCHByZXNlbmNlQgkKB2NvbW'
-    '1hbmQ=');
+/// Descriptor for `SessionRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List sessionRequestDescriptor = $convert.base64Decode(
+    'Cg5TZXNzaW9uUmVxdWVzdBI/Cg5hY3Rpdml0eV9zdGFydBgBIAEoCzIWLm1pbmQuQWN0aXZpdH'
+    'lTdGFydENtZEgAUg1hY3Rpdml0eVN0YXJ0EjkKDGFjdGl2aXR5X2VuZBgCIAEoCzIULm1pbmQu'
+    'QWN0aXZpdHlFbmRDbWRIAFILYWN0aXZpdHlFbmQSPAoNYWN0aXZpdHlfc3RvcBgDIAEoCzIVLm'
+    '1pbmQuQWN0aXZpdHlTdG9wQ21kSABSDGFjdGl2aXR5U3RvcBI/Cg5hY3Rpdml0eV9wYXVzZRgE'
+    'IAEoCzIWLm1pbmQuQWN0aXZpdHlQYXVzZUNtZEgAUg1hY3Rpdml0eVBhdXNlEkIKD2FjdGl2aX'
+    'R5X3Jlc3VtZRgFIAEoCzIXLm1pbmQuQWN0aXZpdHlSZXN1bWVDbWRIAFIOYWN0aXZpdHlSZXN1'
+    'bWUSLwoIcHJlc2VuY2UYBiABKAsyES5taW5kLlByZXNlbmNlQ21kSABSCHByZXNlbmNlQgkKB2'
+    'NvbW1hbmQ=');
 
-@$core.Deprecated('Use liveResponseDescriptor instead')
-const LiveResponse$json = {
-  '1': 'LiveResponse',
+@$core.Deprecated('Use sessionResponseDescriptor instead')
+const SessionResponse$json = {
+  '1': 'SessionResponse',
   '2': [
     {
       '1': 'session_state',
@@ -300,8 +300,8 @@ const LiveResponse$json = {
   ],
 };
 
-/// Descriptor for `LiveResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List liveResponseDescriptor = $convert.base64Decode(
-    'CgxMaXZlUmVzcG9uc2USPgoNc2Vzc2lvbl9zdGF0ZRgBIAEoCzIXLm1pbmQuU2Vzc2lvblN0YX'
-    'RlRXZlbnRIAFIMc2Vzc2lvblN0YXRlEj4KDXNlc3Npb25fZXJyb3IYAiABKAsyFy5taW5kLlNl'
-    'c3Npb25FcnJvckV2ZW50SABSDHNlc3Npb25FcnJvckIHCgVldmVudA==');
+/// Descriptor for `SessionResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List sessionResponseDescriptor = $convert.base64Decode(
+    'Cg9TZXNzaW9uUmVzcG9uc2USPgoNc2Vzc2lvbl9zdGF0ZRgBIAEoCzIXLm1pbmQuU2Vzc2lvbl'
+    'N0YXRlRXZlbnRIAFIMc2Vzc2lvblN0YXRlEj4KDXNlc3Npb25fZXJyb3IYAiABKAsyFy5taW5k'
+    'LlNlc3Npb25FcnJvckV2ZW50SABSDHNlc3Npb25FcnJvckIHCgVldmVudA==');

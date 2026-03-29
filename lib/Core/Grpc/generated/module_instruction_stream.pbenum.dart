@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from telemetry.proto.
+// Generated from module_instruction_stream.proto.
 
 // @dart = 3.3
 

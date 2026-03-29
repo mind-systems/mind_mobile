@@ -17,7 +17,7 @@ class BreathModuleStateChannel {
   BreathSessionStatus? _previousStatus;
   BreathPhase? _previousPhase;
   int? _previousExerciseIndex;
-  String? _liveSessionId;
+  String? _moduleSessionId;
   BreathSessionState? _pendingTelemetry;
 
   late final StreamSubscription<BreathSessionState> _stateSub;
@@ -33,13 +33,13 @@ class BreathModuleStateChannel {
         _sessionId = sessionId {
     _stateSub = stateStream.listen(_onState);
     _channelSub = channel.state.listen((moduleState) {
-      _liveSessionId = moduleState.liveSessionId;
-      final liveId = moduleState.liveSessionId;
-      if (liveId != null) _flushPending(liveId);
+      _moduleSessionId = moduleState.moduleSessionId;
+      final sessionId = moduleState.moduleSessionId;
+      if (sessionId != null) _flushPending(sessionId);
     });
   }
 
-  String? get liveSessionId => _liveSessionId;
+  String? get moduleSessionId => _moduleSessionId;
 
   void _onState(BreathSessionState state) {
     if (state.loadState != SessionLoadState.ready) return;
@@ -84,7 +84,7 @@ class BreathModuleStateChannel {
   }
 
   void _handleTelemetry(BreathSessionState state) {
-    final liveId = _liveSessionId;
+    final sessionId = _moduleSessionId;
     final isActive = state.status == BreathSessionStatus.breath ||
         state.status == BreathSessionStatus.rest;
     if (!isActive || !_started || _ended) return;
@@ -93,22 +93,22 @@ class BreathModuleStateChannel {
         state.exerciseIndex != _previousExerciseIndex;
     if (!phaseChanged) return;
 
-    if (liveId == null) {
+    if (sessionId == null) {
       _pendingTelemetry = state;
       return;
     }
-    _instructionStream.sendSample(liveId, state.phase.name, state.currentIntervalMs);
+    _instructionStream.sendSample(sessionId, state.phase.name, state.currentIntervalMs);
   }
 
-  void _flushPending(String liveId) {
+  void _flushPending(String sessionId) {
     final pending = _pendingTelemetry;
     if (pending == null) return;
     _pendingTelemetry = null;
-    _instructionStream.sendSample(liveId, pending.phase.name, pending.currentIntervalMs);
+    _instructionStream.sendSample(sessionId, pending.phase.name, pending.currentIntervalMs);
   }
 
   void reset() {
-    _liveSessionId = null;
+    _moduleSessionId = null;
     _started = false;
     _ended = false;
     _previousStatus = null;

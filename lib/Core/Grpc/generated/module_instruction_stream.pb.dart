@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from telemetry.proto.
+// Generated from module_instruction_stream.proto.
 
 // @dart = 3.3
 
@@ -16,20 +16,20 @@ import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 import 'package:protobuf/well_known_types/google/protobuf/struct.pb.dart' as $1;
 
-import 'live.pb.dart' as $2;
+import 'module_state.pb.dart' as $2;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
-/// TelemetryData is one instrumentation sample sent by the client.
-/// session_id ties the sample to an active live session.
+/// StreamSample is one instrumentation sample sent by the client.
+/// session_id ties the sample to an active module session.
 /// timestamp is int64 Unix millis — same convention as SessionErrorEvent.timestamp.
 /// module_id identifies the producer module (e.g. "breath").
 /// instruction_type is module-defined and names the specific measurement
 /// (e.g. "breath_phase").
 /// data carries the untyped payload so individual modules can evolve their
 /// schemas independently without a proto change.
-class TelemetryData extends $pb.GeneratedMessage {
-  factory TelemetryData({
+class StreamSample extends $pb.GeneratedMessage {
+  factory StreamSample({
     $core.String? sessionId,
     $fixnum.Int64? timestamp,
     $core.String? moduleId,
@@ -45,17 +45,17 @@ class TelemetryData extends $pb.GeneratedMessage {
     return result;
   }
 
-  TelemetryData._();
+  StreamSample._();
 
-  factory TelemetryData.fromBuffer($core.List<$core.int> data,
+  factory StreamSample.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory TelemetryData.fromJson($core.String json,
+  factory StreamSample.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'TelemetryData',
+      _omitMessageNames ? '' : 'StreamSample',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'sessionId')
@@ -67,23 +67,23 @@ class TelemetryData extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  TelemetryData clone() => deepCopy();
+  StreamSample clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  TelemetryData copyWith(void Function(TelemetryData) updates) =>
-      super.copyWith((message) => updates(message as TelemetryData))
-          as TelemetryData;
+  StreamSample copyWith(void Function(StreamSample) updates) =>
+      super.copyWith((message) => updates(message as StreamSample))
+          as StreamSample;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static TelemetryData create() => TelemetryData._();
+  static StreamSample create() => StreamSample._();
   @$core.override
-  TelemetryData createEmptyInstance() => create();
+  StreamSample createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static TelemetryData getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<TelemetryData>(create);
-  static TelemetryData? _defaultInstance;
+  static StreamSample getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StreamSample>(create);
+  static StreamSample? _defaultInstance;
 
   @$pb.TagNumber(1)
   $core.String get sessionId => $_getSZ(0);
@@ -133,14 +133,14 @@ class TelemetryData extends $pb.GeneratedMessage {
   $1.Struct ensureData() => $_ensure(4);
 }
 
-/// TelemetryAck is the server acknowledgement for a batch of received samples.
+/// StreamAck is the server acknowledgement for a batch of received samples.
 /// received_count is the cumulative number of samples accepted in this stream.
 /// dropped_count is the cumulative number of samples discarded (e.g. rate-limited).
 /// max_samples_per_second is the server-side rate limit hint the client should
 /// respect to avoid further drops.
 /// timestamp is int64 Unix millis when the ack was produced.
-class TelemetryAck extends $pb.GeneratedMessage {
-  factory TelemetryAck({
+class StreamAck extends $pb.GeneratedMessage {
+  factory StreamAck({
     $core.String? sessionId,
     $fixnum.Int64? receivedCount,
     $fixnum.Int64? droppedCount,
@@ -157,17 +157,17 @@ class TelemetryAck extends $pb.GeneratedMessage {
     return result;
   }
 
-  TelemetryAck._();
+  StreamAck._();
 
-  factory TelemetryAck.fromBuffer($core.List<$core.int> data,
+  factory StreamAck.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory TelemetryAck.fromJson($core.String json,
+  factory StreamAck.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'TelemetryAck',
+      _omitMessageNames ? '' : 'StreamAck',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'sessionId')
@@ -178,23 +178,22 @@ class TelemetryAck extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  TelemetryAck clone() => deepCopy();
+  StreamAck clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  TelemetryAck copyWith(void Function(TelemetryAck) updates) =>
-      super.copyWith((message) => updates(message as TelemetryAck))
-          as TelemetryAck;
+  StreamAck copyWith(void Function(StreamAck) updates) =>
+      super.copyWith((message) => updates(message as StreamAck)) as StreamAck;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static TelemetryAck create() => TelemetryAck._();
+  static StreamAck create() => StreamAck._();
   @$core.override
-  TelemetryAck createEmptyInstance() => create();
+  StreamAck createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static TelemetryAck getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<TelemetryAck>(create);
-  static TelemetryAck? _defaultInstance;
+  static StreamAck getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<StreamAck>(create);
+  static StreamAck? _defaultInstance;
 
   @$pb.TagNumber(1)
   $core.String get sessionId => $_getSZ(0);
@@ -242,14 +241,14 @@ class TelemetryAck extends $pb.GeneratedMessage {
   void clearTimestamp() => $_clearField(5);
 }
 
-enum TelemetryResponse_Event { ack, error, notSet }
+enum StreamResponse_Event { ack, error, notSet }
 
-/// TelemetryResponse is the server-to-client stream envelope.
+/// StreamResponse is the server-to-client stream envelope.
 /// Each message carries exactly one event via the oneof.
-/// SessionErrorEvent is imported from live.proto and reused for error reporting.
-class TelemetryResponse extends $pb.GeneratedMessage {
-  factory TelemetryResponse({
-    TelemetryAck? ack,
+/// SessionErrorEvent is imported from module_state.proto and reused for error reporting.
+class StreamResponse extends $pb.GeneratedMessage {
+  factory StreamResponse({
+    StreamAck? ack,
     $2.SessionErrorEvent? error,
   }) {
     final result = create();
@@ -258,69 +257,69 @@ class TelemetryResponse extends $pb.GeneratedMessage {
     return result;
   }
 
-  TelemetryResponse._();
+  StreamResponse._();
 
-  factory TelemetryResponse.fromBuffer($core.List<$core.int> data,
+  factory StreamResponse.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory TelemetryResponse.fromJson($core.String json,
+  factory StreamResponse.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
-  static const $core.Map<$core.int, TelemetryResponse_Event>
-      _TelemetryResponse_EventByTag = {
-    1: TelemetryResponse_Event.ack,
-    2: TelemetryResponse_Event.error,
-    0: TelemetryResponse_Event.notSet
+  static const $core.Map<$core.int, StreamResponse_Event>
+      _StreamResponse_EventByTag = {
+    1: StreamResponse_Event.ack,
+    2: StreamResponse_Event.error,
+    0: StreamResponse_Event.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'TelemetryResponse',
+      _omitMessageNames ? '' : 'StreamResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
     ..oo(0, [1, 2])
-    ..aOM<TelemetryAck>(1, _omitFieldNames ? '' : 'ack',
-        subBuilder: TelemetryAck.create)
+    ..aOM<StreamAck>(1, _omitFieldNames ? '' : 'ack',
+        subBuilder: StreamAck.create)
     ..aOM<$2.SessionErrorEvent>(2, _omitFieldNames ? '' : 'error',
         subBuilder: $2.SessionErrorEvent.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  TelemetryResponse clone() => deepCopy();
+  StreamResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  TelemetryResponse copyWith(void Function(TelemetryResponse) updates) =>
-      super.copyWith((message) => updates(message as TelemetryResponse))
-          as TelemetryResponse;
+  StreamResponse copyWith(void Function(StreamResponse) updates) =>
+      super.copyWith((message) => updates(message as StreamResponse))
+          as StreamResponse;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static TelemetryResponse create() => TelemetryResponse._();
+  static StreamResponse create() => StreamResponse._();
   @$core.override
-  TelemetryResponse createEmptyInstance() => create();
+  StreamResponse createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static TelemetryResponse getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<TelemetryResponse>(create);
-  static TelemetryResponse? _defaultInstance;
+  static StreamResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StreamResponse>(create);
+  static StreamResponse? _defaultInstance;
 
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
-  TelemetryResponse_Event whichEvent() =>
-      _TelemetryResponse_EventByTag[$_whichOneof(0)]!;
+  StreamResponse_Event whichEvent() =>
+      _StreamResponse_EventByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
   void clearEvent() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
-  TelemetryAck get ack => $_getN(0);
+  StreamAck get ack => $_getN(0);
   @$pb.TagNumber(1)
-  set ack(TelemetryAck value) => $_setField(1, value);
+  set ack(StreamAck value) => $_setField(1, value);
   @$pb.TagNumber(1)
   $core.bool hasAck() => $_has(0);
   @$pb.TagNumber(1)
   void clearAck() => $_clearField(1);
   @$pb.TagNumber(1)
-  TelemetryAck ensureAck() => $_ensure(0);
+  StreamAck ensureAck() => $_ensure(0);
 
   @$pb.TagNumber(2)
   $2.SessionErrorEvent get error => $_getN(1);

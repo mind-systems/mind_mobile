@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from live.proto.
+// Generated from module_state.proto.
 
 // @dart = 3.3
 

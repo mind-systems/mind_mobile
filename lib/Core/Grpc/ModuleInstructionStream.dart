@@ -8,11 +8,11 @@ import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
 import 'package:mind/Core/Grpc/InstructionAck.dart';
 import 'package:mind/Core/Grpc/InstructionSample.dart';
-import 'package:mind/Core/Grpc/generated/telemetry.pbgrpc.dart';
+import 'package:mind/Core/Grpc/generated/module_instruction_stream.pbgrpc.dart';
 
 class ModuleInstructionStream {
   final GrpcConnectionManager _connectionManager;
-  final TelemetryServiceClient _telemetryService;
+  final ModuleInstructionStreamServiceClient _instructionStreamService;
 
   // ── Lazy-connect flags ────────────────────────────────────────────────────
 
@@ -21,10 +21,10 @@ class ModuleInstructionStream {
 
   // ── Stream handles ────────────────────────────────────────────────────────
 
-  StreamSubscription<TelemetryResponse>? _telemetrySub;
-  StreamController<TelemetryData>? _telemetrySink;
+  StreamSubscription<StreamResponse>? _streamSub;
+  StreamController<StreamSample>? _streamSink;
 
-  bool get isConnected => _telemetrySink != null;
+  bool get isConnected => _streamSink != null;
   bool get isGrpcConnected => _isGrpcConnected;
 
   // ── Output streams ────────────────────────────────────────────────────────
@@ -43,9 +43,9 @@ class ModuleInstructionStream {
 
   ModuleInstructionStream({
     required GrpcConnectionManager connectionManager,
-    required TelemetryServiceClient telemetryService,
+    required ModuleInstructionStreamServiceClient instructionStreamService,
   })  : _connectionManager = connectionManager,
-        _telemetryService = telemetryService {
+        _instructionStreamService = instructionStreamService {
     _connectionSub = connectionManager.connectionState.listen((state) {
       switch (state) {
         case GrpcConnectionState.connected:
@@ -53,10 +53,10 @@ class ModuleInstructionStream {
           if (_streamRequested) _openStream();
         case GrpcConnectionState.disconnected:
           _isGrpcConnected = false;
-          _telemetrySub?.cancel();
-          _telemetrySub = null;
-          _telemetrySink?.close();
-          _telemetrySink = null;
+          _streamSub?.cancel();
+          _streamSub = null;
+          _streamSink?.close();
+          _streamSink = null;
         case GrpcConnectionState.connecting:
           break;
       }
@@ -66,7 +66,7 @@ class ModuleInstructionStream {
   // ── Public API ────────────────────────────────────────────────────────────
 
   void emit(InstructionSample sample) {
-    if (_telemetrySink == null) {
+    if (_streamSink == null) {
       if (!_isGrpcConnected) {
         log(
           '[ModuleInstructionStream] not connected, dropping sample',
@@ -77,13 +77,13 @@ class ModuleInstructionStream {
       _streamRequested = true;
       _openStream();
     }
-    _telemetrySink!.add(_toProto(sample));
+    _streamSink!.add(_toProto(sample));
   }
 
   void dispose() {
     _connectionSub.cancel();
-    _telemetrySub?.cancel();
-    _telemetrySink?.close();
+    _streamSub?.cancel();
+    _streamSink?.close();
     _ackController.close();
     _readyController.close();
   }
@@ -91,12 +91,12 @@ class ModuleInstructionStream {
   // ── Stream lifecycle ──────────────────────────────────────────────────────
 
   void _openStream() {
-    _telemetrySink = StreamController<TelemetryData>();
-    final response = _telemetryService.streamTelemetry(_telemetrySink!.stream);
-    _telemetrySub = response.listen(
-      (TelemetryResponse r) {
+    _streamSink = StreamController<StreamSample>();
+    final response = _instructionStreamService.streamData(_streamSink!.stream);
+    _streamSub = response.listen(
+      (StreamResponse r) {
         switch (r.whichEvent()) {
-          case TelemetryResponse_Event.ack:
+          case StreamResponse_Event.ack:
             final ack = r.ack;
             _ackController.add(InstructionAck(
               sessionId: ack.sessionId,
@@ -105,12 +105,12 @@ class ModuleInstructionStream {
               maxSamplesPerSecond: ack.maxSamplesPerSecond,
               timestamp: ack.timestamp.toInt(),
             ));
-          case TelemetryResponse_Event.error:
+          case StreamResponse_Event.error:
             log(
               '[ModuleInstructionStream] error: ${r.error.code} — ${r.error.message}',
               name: 'ModuleInstructionStream',
             );
-          case TelemetryResponse_Event.notSet:
+          case StreamResponse_Event.notSet:
             break;
         }
       },
@@ -139,8 +139,8 @@ class ModuleInstructionStream {
 
   // ── Proto conversion helpers ──────────────────────────────────────────────
 
-  TelemetryData _toProto(InstructionSample sample) {
-    return TelemetryData(
+  StreamSample _toProto(InstructionSample sample) {
+    return StreamSample(
       sessionId: sample.sessionId,
       timestamp: Int64(sample.timestamp),
       moduleId: sample.moduleId,

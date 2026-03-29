@@ -5,10 +5,10 @@ import 'package:grpc/grpc.dart';
 import 'package:mind/Core/Grpc/generated/auth.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/breath_sessions.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/device.pbgrpc.dart';
-import 'package:mind/Core/Grpc/generated/live.pbgrpc.dart';
+import 'package:mind/Core/Grpc/generated/module_instruction_stream.pbgrpc.dart';
+import 'package:mind/Core/Grpc/generated/module_state.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/stats.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/sync.pbgrpc.dart';
-import 'package:mind/Core/Grpc/generated/telemetry.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/users.pbgrpc.dart';
 
 class GrpcClient {
@@ -30,10 +30,10 @@ class GrpcClient {
   late final authService = AuthServiceClient(_channel, interceptors: _interceptors);
   late final breathSessionService = BreathSessionServiceClient(_channel, interceptors: _interceptors);
   late final deviceService = DeviceServiceClient(_channel, interceptors: _interceptors);
-  late final liveService = LiveServiceClient(_channel, interceptors: _interceptors);
+  late final moduleStateService = ModuleStateServiceClient(_channel, interceptors: _interceptors);
+  late final instructionStreamService = ModuleInstructionStreamServiceClient(_channel, interceptors: _interceptors);
   late final statsService = StatsServiceClient(_channel, interceptors: _interceptors);
   late final syncService = SyncServiceClient(_channel, interceptors: _interceptors);
-  late final telemetryService = TelemetryServiceClient(_channel, interceptors: _interceptors);
   late final userService = UserServiceClient(_channel, interceptors: _interceptors);
 
   Future<void> shutdown() async {

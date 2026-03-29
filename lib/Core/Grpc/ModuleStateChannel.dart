@@ -8,11 +8,11 @@ import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
 import 'package:mind/Core/Grpc/ModuleState.dart';
 import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
-import 'package:mind/Core/Grpc/generated/live.pbgrpc.dart' as proto;
+import 'package:mind/Core/Grpc/generated/module_state.pbgrpc.dart' as proto;
 import 'package:mind/User/Models/AuthState.dart';
 
 class ModuleStateChannel {
-  final proto.LiveServiceClient _liveService;
+  final proto.ModuleStateServiceClient _moduleStateService;
   final GrpcConnectionManager _connectionManager;
 
   // ── State and events ──────────────────────────────────────────────────────
@@ -31,10 +31,10 @@ class ModuleStateChannel {
 
   // ── Stream handles ────────────────────────────────────────────────────────
 
-  StreamSubscription<proto.LiveResponse>? _liveSub;
-  StreamController<proto.LiveRequest>? _liveSink;
+  StreamSubscription<proto.SessionResponse>? _sessionSub;
+  StreamController<proto.SessionRequest>? _sessionSink;
 
-  bool get isConnected => _liveSub != null;
+  bool get isConnected => _sessionSub != null;
 
   // ── Subscriptions ─────────────────────────────────────────────────────────
 
@@ -44,17 +44,17 @@ class ModuleStateChannel {
   // ── Constructor ───────────────────────────────────────────────────────────
 
   ModuleStateChannel({
-    required proto.LiveServiceClient liveService,
+    required proto.ModuleStateServiceClient moduleStateService,
     required GrpcConnectionManager connectionManager,
     required Stream<AuthState> authStream,
-  })  : _liveService = liveService,
+  })  : _moduleStateService = moduleStateService,
         _connectionManager = connectionManager {
     _connectionSub = connectionManager.connectionState.listen((state) {
       switch (state) {
         case GrpcConnectionState.connected:
-          _openLiveStream();
+          _openSessionStream();
         case GrpcConnectionState.disconnected:
-          _closeLiveStream();
+          _closeSessionStream();
         case GrpcConnectionState.connecting:
           break;
       }
@@ -64,36 +64,36 @@ class ModuleStateChannel {
     });
   }
 
-  // ── Live stream management ────────────────────────────────────────────────
+  // ── Session stream management ─────────────────────────────────────────────
 
-  void _openLiveStream() {
-    _liveSink = StreamController<proto.LiveRequest>();
-    final response = _liveService.liveSession(_liveSink!.stream);
-    _liveSub = response.listen(
-      (proto.LiveResponse r) {
+  void _openSessionStream() {
+    _sessionSink = StreamController<proto.SessionRequest>();
+    final response = _moduleStateService.trackActivity(_sessionSink!.stream);
+    _sessionSub = response.listen(
+      (proto.SessionResponse r) {
         switch (r.whichEvent()) {
-          case proto.LiveResponse_Event.sessionState:
+          case proto.SessionResponse_Event.sessionState:
             final event = r.sessionState;
             if (event.status == proto.SessionStatus.DISCONNECTED) return;
             _processProtoEvent(event);
-          case proto.LiveResponse_Event.sessionError:
+          case proto.SessionResponse_Event.sessionError:
             log(
               '[ModuleStateChannel] session error: ${r.sessionError.code} — ${r.sessionError.message}',
               name: 'ModuleStateChannel',
             );
-          case proto.LiveResponse_Event.notSet:
+          case proto.SessionResponse_Event.notSet:
             break;
         }
       },
       onError: (Object e) {
-        log('[ModuleStateChannel] live stream error: $e', name: 'ModuleStateChannel');
-        _closeLiveStream();
+        log('[ModuleStateChannel] session stream error: $e', name: 'ModuleStateChannel');
+        _closeSessionStream();
         _connectionManager.disconnect();
         _connectionManager.scheduleReconnect();
       },
       onDone: () {
-        log('[ModuleStateChannel] live stream done', name: 'ModuleStateChannel');
-        _closeLiveStream();
+        log('[ModuleStateChannel] session stream done', name: 'ModuleStateChannel');
+        _closeSessionStream();
         _connectionManager.disconnect();
         _connectionManager.scheduleReconnect();
       },
@@ -101,11 +101,11 @@ class ModuleStateChannel {
     _connectionManager.confirmConnected();
   }
 
-  void _closeLiveStream() {
-    _liveSub?.cancel();
-    _liveSub = null;
-    _liveSink?.close();
-    _liveSink = null;
+  void _closeSessionStream() {
+    _sessionSub?.cancel();
+    _sessionSub = null;
+    _sessionSink?.close();
+    _sessionSink = null;
   }
 
   // ── Proto → typed mapping ─────────────────────────────────────────────────
@@ -114,14 +114,14 @@ class ModuleStateChannel {
     final status = event.status;
     if (status == proto.SessionStatus.ACTIVE || status == proto.SessionStatus.RESUMED) {
       final isPaused = event.isPaused;
-      final liveSessionId = event.liveSessionId;
+      final moduleSessionId = event.moduleSessionId;
       final wasPaused = currentState.isPaused;
       final isNew = currentState.status != ModuleStateStatus.active;
       _isPendingStart = false;
       _isPendingPause = false;
-      _state.add(ModuleState(liveSessionId: liveSessionId, status: ModuleStateStatus.active, isPaused: isPaused));
+      _state.add(ModuleState(moduleSessionId: moduleSessionId, status: ModuleStateStatus.active, isPaused: isPaused));
       if (isNew) {
-        _events.add(ModuleSessionStarted(liveSessionId: liveSessionId));
+        _events.add(ModuleSessionStarted(moduleSessionId: moduleSessionId));
       } else if (!wasPaused && isPaused) {
         _events.add(ModuleSessionPaused());
       } else if (wasPaused && !isPaused) {
@@ -146,7 +146,7 @@ class ModuleStateChannel {
   void start({required ActivityType type, String? refId}) {
     if (currentState.status == ModuleStateStatus.active || _isPendingStart) return;
     _isPendingStart = true;
-    _sendLiveRequest(proto.LiveRequest(
+    _sendSessionRequest(proto.SessionRequest(
       activityStart: proto.ActivityStartCmd(
         activityType: _mapActivityType(type),
         refId: refId ?? '',
@@ -157,33 +157,33 @@ class ModuleStateChannel {
   void pause() {
     if (currentState.status != ModuleStateStatus.active || currentState.isPaused || _isPendingPause) return;
     _isPendingPause = true;
-    _sendLiveRequest(proto.LiveRequest(activityPause: proto.ActivityPauseCmd()));
+    _sendSessionRequest(proto.SessionRequest(activityPause: proto.ActivityPauseCmd()));
   }
 
   void unpause() {
     if (!currentState.isPaused) return;
     _isPendingPause = false;
-    _sendLiveRequest(proto.LiveRequest(activityResume: proto.ActivityResumeCmd()));
+    _sendSessionRequest(proto.SessionRequest(activityResume: proto.ActivityResumeCmd()));
   }
 
   void end() {
     if (currentState.status == ModuleStateStatus.idle) return;
-    _sendLiveRequest(proto.LiveRequest(activityEnd: proto.ActivityEndCmd()));
+    _sendSessionRequest(proto.SessionRequest(activityEnd: proto.ActivityEndCmd()));
   }
 
   void stop() {
     if (currentState.status == ModuleStateStatus.idle) return;
-    _sendLiveRequest(proto.LiveRequest(activityStop: proto.ActivityStopCmd()));
+    _sendSessionRequest(proto.SessionRequest(activityStop: proto.ActivityStopCmd()));
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  void _sendLiveRequest(proto.LiveRequest request) {
-    if (_liveSink == null) {
+  void _sendSessionRequest(proto.SessionRequest request) {
+    if (_sessionSink == null) {
       log('[ModuleStateChannel] not connected, dropping request', name: 'ModuleStateChannel');
       return;
     }
-    _liveSink!.add(request);
+    _sessionSink!.add(request);
   }
 
   proto.ActivityType _mapActivityType(ActivityType type) {
@@ -204,7 +204,7 @@ class ModuleStateChannel {
   void dispose() {
     _connectionSub.cancel();
     _authSub.cancel();
-    _closeLiveStream();
+    _closeSessionStream();
     _state.close();
     _events.close();
   }

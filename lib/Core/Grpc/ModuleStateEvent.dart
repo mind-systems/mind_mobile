@@ -1,8 +1,8 @@
 sealed class ModuleStateEvent {}
 
 class ModuleSessionStarted extends ModuleStateEvent {
-  final String? liveSessionId;
-  ModuleSessionStarted({this.liveSessionId});
+  final String? moduleSessionId;
+  ModuleSessionStarted({this.moduleSessionId});
 }
 
 class ModuleSessionPaused extends ModuleStateEvent {}

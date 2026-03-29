@@ -157,8 +157,8 @@ class App {
     final deeplinkRouter = DeeplinkRouter(authCodeHandler: authCodeHandler, sessionHandler: sessionHandler);
 
     final connectionManager = GrpcConnectionManager(authStream: userNotifier.stream, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
-    final moduleStateChannel = ModuleStateChannel(liveService: grpcClient.liveService, connectionManager: connectionManager, authStream: userNotifier.stream);
-    final instructionStream = ModuleInstructionStream(connectionManager: connectionManager, telemetryService: grpcClient.telemetryService);
+    final moduleStateChannel = ModuleStateChannel(moduleStateService: grpcClient.moduleStateService, connectionManager: connectionManager, authStream: userNotifier.stream);
+    final instructionStream = ModuleInstructionStream(connectionManager: connectionManager, instructionStreamService: grpcClient.instructionStreamService);
     final syncGrpcListener = SyncGrpcListener(syncService: grpcClient.syncService, syncEngine: syncEngine, syncStateDao: db.syncStateDao, authStream: userNotifier.stream);
 
     final breathInstructionStream = BreathModuleInstructionStream(instructionStream: instructionStream);

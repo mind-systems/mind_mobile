@@ -8,10 +8,10 @@ set -euo pipefail
 #   brew install protobuf           # protoc (libprotoc 34.0)
 #   dart pub global activate protoc_plugin 25.0.0
 #
-# Note: telemetry.proto imports google/protobuf/struct.proto (a well-known
-# type). Standard protoc installations via Homebrew include these on the
-# default include path. If you see "Import not found" errors, ensure protoc
-# was installed via `brew install protobuf` and not a stripped-down binary.
+# Note: module_instruction_stream.proto imports google/protobuf/struct.proto and module_state.proto
+# (well-known and local types). Standard protoc installations via Homebrew include
+# google/protobuf on the default include path. If you see "Import not found" errors,
+# ensure protoc was installed via `brew install protobuf` and not a stripped-down binary.
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

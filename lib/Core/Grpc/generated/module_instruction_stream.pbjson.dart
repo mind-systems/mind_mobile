@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from telemetry.proto.
+// Generated from module_instruction_stream.proto.
 
 // @dart = 3.3
 
@@ -15,9 +15,9 @@ import 'dart:convert' as $convert;
 import 'dart:core' as $core;
 import 'dart:typed_data' as $typed_data;
 
-@$core.Deprecated('Use telemetryDataDescriptor instead')
-const TelemetryData$json = {
-  '1': 'TelemetryData',
+@$core.Deprecated('Use streamSampleDescriptor instead')
+const StreamSample$json = {
+  '1': 'StreamSample',
   '2': [
     {'1': 'session_id', '3': 1, '4': 1, '5': 9, '10': 'sessionId'},
     {'1': 'timestamp', '3': 2, '4': 1, '5': 3, '10': 'timestamp'},
@@ -34,16 +34,16 @@ const TelemetryData$json = {
   ],
 };
 
-/// Descriptor for `TelemetryData`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List telemetryDataDescriptor = $convert.base64Decode(
-    'Cg1UZWxlbWV0cnlEYXRhEh0KCnNlc3Npb25faWQYASABKAlSCXNlc3Npb25JZBIcCgl0aW1lc3'
-    'RhbXAYAiABKANSCXRpbWVzdGFtcBIbCgltb2R1bGVfaWQYAyABKAlSCG1vZHVsZUlkEikKEGlu'
-    'c3RydWN0aW9uX3R5cGUYBCABKAlSD2luc3RydWN0aW9uVHlwZRIrCgRkYXRhGAUgASgLMhcuZ2'
-    '9vZ2xlLnByb3RvYnVmLlN0cnVjdFIEZGF0YQ==');
+/// Descriptor for `StreamSample`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List streamSampleDescriptor = $convert.base64Decode(
+    'CgxTdHJlYW1TYW1wbGUSHQoKc2Vzc2lvbl9pZBgBIAEoCVIJc2Vzc2lvbklkEhwKCXRpbWVzdG'
+    'FtcBgCIAEoA1IJdGltZXN0YW1wEhsKCW1vZHVsZV9pZBgDIAEoCVIIbW9kdWxlSWQSKQoQaW5z'
+    'dHJ1Y3Rpb25fdHlwZRgEIAEoCVIPaW5zdHJ1Y3Rpb25UeXBlEisKBGRhdGEYBSABKAsyFy5nb2'
+    '9nbGUucHJvdG9idWYuU3RydWN0UgRkYXRh');
 
-@$core.Deprecated('Use telemetryAckDescriptor instead')
-const TelemetryAck$json = {
-  '1': 'TelemetryAck',
+@$core.Deprecated('Use streamAckDescriptor instead')
+const StreamAck$json = {
+  '1': 'StreamAck',
   '2': [
     {'1': 'session_id', '3': 1, '4': 1, '5': 9, '10': 'sessionId'},
     {'1': 'received_count', '3': 2, '4': 1, '5': 3, '10': 'receivedCount'},
@@ -59,23 +59,23 @@ const TelemetryAck$json = {
   ],
 };
 
-/// Descriptor for `TelemetryAck`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List telemetryAckDescriptor = $convert.base64Decode(
-    'CgxUZWxlbWV0cnlBY2sSHQoKc2Vzc2lvbl9pZBgBIAEoCVIJc2Vzc2lvbklkEiUKDnJlY2Vpdm'
-    'VkX2NvdW50GAIgASgDUg1yZWNlaXZlZENvdW50EiMKDWRyb3BwZWRfY291bnQYAyABKANSDGRy'
-    'b3BwZWRDb3VudBIzChZtYXhfc2FtcGxlc19wZXJfc2Vjb25kGAQgASgFUhNtYXhTYW1wbGVzUG'
-    'VyU2Vjb25kEhwKCXRpbWVzdGFtcBgFIAEoA1IJdGltZXN0YW1w');
+/// Descriptor for `StreamAck`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List streamAckDescriptor = $convert.base64Decode(
+    'CglTdHJlYW1BY2sSHQoKc2Vzc2lvbl9pZBgBIAEoCVIJc2Vzc2lvbklkEiUKDnJlY2VpdmVkX2'
+    'NvdW50GAIgASgDUg1yZWNlaXZlZENvdW50EiMKDWRyb3BwZWRfY291bnQYAyABKANSDGRyb3Bw'
+    'ZWRDb3VudBIzChZtYXhfc2FtcGxlc19wZXJfc2Vjb25kGAQgASgFUhNtYXhTYW1wbGVzUGVyU2'
+    'Vjb25kEhwKCXRpbWVzdGFtcBgFIAEoA1IJdGltZXN0YW1w');
 
-@$core.Deprecated('Use telemetryResponseDescriptor instead')
-const TelemetryResponse$json = {
-  '1': 'TelemetryResponse',
+@$core.Deprecated('Use streamResponseDescriptor instead')
+const StreamResponse$json = {
+  '1': 'StreamResponse',
   '2': [
     {
       '1': 'ack',
       '3': 1,
       '4': 1,
       '5': 11,
-      '6': '.mind.TelemetryAck',
+      '6': '.mind.StreamAck',
       '9': 0,
       '10': 'ack'
     },
@@ -94,8 +94,7 @@ const TelemetryResponse$json = {
   ],
 };
 
-/// Descriptor for `TelemetryResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List telemetryResponseDescriptor = $convert.base64Decode(
-    'ChFUZWxlbWV0cnlSZXNwb25zZRImCgNhY2sYASABKAsyEi5taW5kLlRlbGVtZXRyeUFja0gAUg'
-    'NhY2sSLwoFZXJyb3IYAiABKAsyFy5taW5kLlNlc3Npb25FcnJvckV2ZW50SABSBWVycm9yQgcK'
-    'BWV2ZW50');
+/// Descriptor for `StreamResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List streamResponseDescriptor = $convert.base64Decode(
+    'Cg5TdHJlYW1SZXNwb25zZRIjCgNhY2sYASABKAsyDy5taW5kLlN0cmVhbUFja0gAUgNhY2sSLw'
+    'oFZXJyb3IYAiABKAsyFy5taW5kLlNlc3Npb25FcnJvckV2ZW50SABSBWVycm9yQgcKBWV2ZW50');
