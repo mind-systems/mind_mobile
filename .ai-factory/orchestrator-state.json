@@ -1,6 +1,7 @@
 {
   "implement_reviews": [
     "58-copy-all-proto-files-and-regenerate-review-1.md",
-    "59-remove-presence-sending-from-lib-core-grpc-modulestatechannel-dart-review-1.md"
+    "59-remove-presence-sending-from-lib-core-grpc-modulestatechannel-dart-review-1.md",
+    "60-update-type-references-review-1.md"
   ]
 }

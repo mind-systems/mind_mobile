@@ -245,10 +245,10 @@ class ActivityResumeCmd extends $pb.GeneratedMessage {
 }
 
 /// Maps to SessionStateDto in src/realtime/dto/session-state.dto.ts.
-class SessionStateEvent extends $pb.GeneratedMessage {
-  factory SessionStateEvent({
+class StateEvent extends $pb.GeneratedMessage {
+  factory StateEvent({
     $core.String? moduleSessionId,
-    SessionStatus? status,
+    ActivityStatus? status,
     $core.bool? isPaused,
   }) {
     final result = create();
@@ -258,43 +258,42 @@ class SessionStateEvent extends $pb.GeneratedMessage {
     return result;
   }
 
-  SessionStateEvent._();
+  StateEvent._();
 
-  factory SessionStateEvent.fromBuffer($core.List<$core.int> data,
+  factory StateEvent.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory SessionStateEvent.fromJson($core.String json,
+  factory StateEvent.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SessionStateEvent',
+      _omitMessageNames ? '' : 'StateEvent',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'moduleSessionId')
-    ..aE<SessionStatus>(2, _omitFieldNames ? '' : 'status',
-        enumValues: SessionStatus.values)
+    ..aE<ActivityStatus>(2, _omitFieldNames ? '' : 'status',
+        enumValues: ActivityStatus.values)
     ..aOB(3, _omitFieldNames ? '' : 'isPaused')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SessionStateEvent clone() => deepCopy();
+  StateEvent clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SessionStateEvent copyWith(void Function(SessionStateEvent) updates) =>
-      super.copyWith((message) => updates(message as SessionStateEvent))
-          as SessionStateEvent;
+  StateEvent copyWith(void Function(StateEvent) updates) =>
+      super.copyWith((message) => updates(message as StateEvent)) as StateEvent;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static SessionStateEvent create() => SessionStateEvent._();
+  static StateEvent create() => StateEvent._();
   @$core.override
-  SessionStateEvent createEmptyInstance() => create();
+  StateEvent createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static SessionStateEvent getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<SessionStateEvent>(create);
-  static SessionStateEvent? _defaultInstance;
+  static StateEvent getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StateEvent>(create);
+  static StateEvent? _defaultInstance;
 
   @$pb.TagNumber(1)
   $core.String get moduleSessionId => $_getSZ(0);
@@ -306,9 +305,9 @@ class SessionStateEvent extends $pb.GeneratedMessage {
   void clearModuleSessionId() => $_clearField(1);
 
   @$pb.TagNumber(2)
-  SessionStatus get status => $_getN(1);
+  ActivityStatus get status => $_getN(1);
   @$pb.TagNumber(2)
-  set status(SessionStatus value) => $_setField(2, value);
+  set status(ActivityStatus value) => $_setField(2, value);
   @$pb.TagNumber(2)
   $core.bool hasStatus() => $_has(1);
   @$pb.TagNumber(2)
@@ -328,8 +327,8 @@ class SessionStateEvent extends $pb.GeneratedMessage {
 /// timestamp is int64 Unix millis — not ISO-8601 — because error events are
 /// high-frequency and don't need human-readable timestamps.
 /// This message is top-level so module_instruction_stream.proto can import it later.
-class SessionErrorEvent extends $pb.GeneratedMessage {
-  factory SessionErrorEvent({
+class StateErrorEvent extends $pb.GeneratedMessage {
+  factory StateErrorEvent({
     $core.String? code,
     $core.String? message,
     $fixnum.Int64? timestamp,
@@ -341,17 +340,17 @@ class SessionErrorEvent extends $pb.GeneratedMessage {
     return result;
   }
 
-  SessionErrorEvent._();
+  StateErrorEvent._();
 
-  factory SessionErrorEvent.fromBuffer($core.List<$core.int> data,
+  factory StateErrorEvent.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory SessionErrorEvent.fromJson($core.String json,
+  factory StateErrorEvent.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SessionErrorEvent',
+      _omitMessageNames ? '' : 'StateErrorEvent',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'code')
@@ -360,23 +359,23 @@ class SessionErrorEvent extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SessionErrorEvent clone() => deepCopy();
+  StateErrorEvent clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SessionErrorEvent copyWith(void Function(SessionErrorEvent) updates) =>
-      super.copyWith((message) => updates(message as SessionErrorEvent))
-          as SessionErrorEvent;
+  StateErrorEvent copyWith(void Function(StateErrorEvent) updates) =>
+      super.copyWith((message) => updates(message as StateErrorEvent))
+          as StateErrorEvent;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static SessionErrorEvent create() => SessionErrorEvent._();
+  static StateErrorEvent create() => StateErrorEvent._();
   @$core.override
-  SessionErrorEvent createEmptyInstance() => create();
+  StateErrorEvent createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static SessionErrorEvent getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<SessionErrorEvent>(create);
-  static SessionErrorEvent? _defaultInstance;
+  static StateErrorEvent getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StateErrorEvent>(create);
+  static StateErrorEvent? _defaultInstance;
 
   @$pb.TagNumber(1)
   $core.String get code => $_getSZ(0);
@@ -406,7 +405,7 @@ class SessionErrorEvent extends $pb.GeneratedMessage {
   void clearTimestamp() => $_clearField(3);
 }
 
-enum SessionRequest_Command {
+enum StateRequest_Command {
   activityStart,
   activityEnd,
   activityStop,
@@ -415,10 +414,10 @@ enum SessionRequest_Command {
   notSet
 }
 
-/// SessionRequest is the client-to-server stream envelope.
+/// StateRequest is the client-to-server stream envelope.
 /// Each message carries exactly one command via the oneof.
-class SessionRequest extends $pb.GeneratedMessage {
-  factory SessionRequest({
+class StateRequest extends $pb.GeneratedMessage {
+  factory StateRequest({
     ActivityStartCmd? activityStart,
     ActivityEndCmd? activityEnd,
     ActivityStopCmd? activityStop,
@@ -434,26 +433,26 @@ class SessionRequest extends $pb.GeneratedMessage {
     return result;
   }
 
-  SessionRequest._();
+  StateRequest._();
 
-  factory SessionRequest.fromBuffer($core.List<$core.int> data,
+  factory StateRequest.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory SessionRequest.fromJson($core.String json,
+  factory StateRequest.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
-  static const $core.Map<$core.int, SessionRequest_Command>
-      _SessionRequest_CommandByTag = {
-    1: SessionRequest_Command.activityStart,
-    2: SessionRequest_Command.activityEnd,
-    3: SessionRequest_Command.activityStop,
-    4: SessionRequest_Command.activityPause,
-    5: SessionRequest_Command.activityResume,
-    0: SessionRequest_Command.notSet
+  static const $core.Map<$core.int, StateRequest_Command>
+      _StateRequest_CommandByTag = {
+    1: StateRequest_Command.activityStart,
+    2: StateRequest_Command.activityEnd,
+    3: StateRequest_Command.activityStop,
+    4: StateRequest_Command.activityPause,
+    5: StateRequest_Command.activityResume,
+    0: StateRequest_Command.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SessionRequest',
+      _omitMessageNames ? '' : 'StateRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
     ..oo(0, [1, 2, 3, 4, 5])
@@ -470,31 +469,31 @@ class SessionRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SessionRequest clone() => deepCopy();
+  StateRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SessionRequest copyWith(void Function(SessionRequest) updates) =>
-      super.copyWith((message) => updates(message as SessionRequest))
-          as SessionRequest;
+  StateRequest copyWith(void Function(StateRequest) updates) =>
+      super.copyWith((message) => updates(message as StateRequest))
+          as StateRequest;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static SessionRequest create() => SessionRequest._();
+  static StateRequest create() => StateRequest._();
   @$core.override
-  SessionRequest createEmptyInstance() => create();
+  StateRequest createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static SessionRequest getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<SessionRequest>(create);
-  static SessionRequest? _defaultInstance;
+  static StateRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StateRequest>(create);
+  static StateRequest? _defaultInstance;
 
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
   @$pb.TagNumber(3)
   @$pb.TagNumber(4)
   @$pb.TagNumber(5)
-  SessionRequest_Command whichCommand() =>
-      _SessionRequest_CommandByTag[$_whichOneof(0)]!;
+  StateRequest_Command whichCommand() =>
+      _StateRequest_CommandByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
   @$pb.TagNumber(3)
@@ -558,14 +557,14 @@ class SessionRequest extends $pb.GeneratedMessage {
   ActivityResumeCmd ensureActivityResume() => $_ensure(4);
 }
 
-enum SessionResponse_Event { sessionState, sessionError, notSet }
+enum StateResponse_Event { sessionState, sessionError, notSet }
 
-/// SessionResponse is the server-to-client stream envelope.
+/// StateResponse is the server-to-client stream envelope.
 /// Each message carries exactly one event via the oneof.
-class SessionResponse extends $pb.GeneratedMessage {
-  factory SessionResponse({
-    SessionStateEvent? sessionState,
-    SessionErrorEvent? sessionError,
+class StateResponse extends $pb.GeneratedMessage {
+  factory StateResponse({
+    StateEvent? sessionState,
+    StateErrorEvent? sessionError,
   }) {
     final result = create();
     if (sessionState != null) result.sessionState = sessionState;
@@ -573,80 +572,80 @@ class SessionResponse extends $pb.GeneratedMessage {
     return result;
   }
 
-  SessionResponse._();
+  StateResponse._();
 
-  factory SessionResponse.fromBuffer($core.List<$core.int> data,
+  factory StateResponse.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory SessionResponse.fromJson($core.String json,
+  factory StateResponse.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
-  static const $core.Map<$core.int, SessionResponse_Event>
-      _SessionResponse_EventByTag = {
-    1: SessionResponse_Event.sessionState,
-    2: SessionResponse_Event.sessionError,
-    0: SessionResponse_Event.notSet
+  static const $core.Map<$core.int, StateResponse_Event>
+      _StateResponse_EventByTag = {
+    1: StateResponse_Event.sessionState,
+    2: StateResponse_Event.sessionError,
+    0: StateResponse_Event.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SessionResponse',
+      _omitMessageNames ? '' : 'StateResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
     ..oo(0, [1, 2])
-    ..aOM<SessionStateEvent>(1, _omitFieldNames ? '' : 'sessionState',
-        subBuilder: SessionStateEvent.create)
-    ..aOM<SessionErrorEvent>(2, _omitFieldNames ? '' : 'sessionError',
-        subBuilder: SessionErrorEvent.create)
+    ..aOM<StateEvent>(1, _omitFieldNames ? '' : 'sessionState',
+        subBuilder: StateEvent.create)
+    ..aOM<StateErrorEvent>(2, _omitFieldNames ? '' : 'sessionError',
+        subBuilder: StateErrorEvent.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SessionResponse clone() => deepCopy();
+  StateResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SessionResponse copyWith(void Function(SessionResponse) updates) =>
-      super.copyWith((message) => updates(message as SessionResponse))
-          as SessionResponse;
+  StateResponse copyWith(void Function(StateResponse) updates) =>
+      super.copyWith((message) => updates(message as StateResponse))
+          as StateResponse;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static SessionResponse create() => SessionResponse._();
+  static StateResponse create() => StateResponse._();
   @$core.override
-  SessionResponse createEmptyInstance() => create();
+  StateResponse createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static SessionResponse getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<SessionResponse>(create);
-  static SessionResponse? _defaultInstance;
+  static StateResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StateResponse>(create);
+  static StateResponse? _defaultInstance;
 
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
-  SessionResponse_Event whichEvent() =>
-      _SessionResponse_EventByTag[$_whichOneof(0)]!;
+  StateResponse_Event whichEvent() =>
+      _StateResponse_EventByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
   void clearEvent() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
-  SessionStateEvent get sessionState => $_getN(0);
+  StateEvent get sessionState => $_getN(0);
   @$pb.TagNumber(1)
-  set sessionState(SessionStateEvent value) => $_setField(1, value);
+  set sessionState(StateEvent value) => $_setField(1, value);
   @$pb.TagNumber(1)
   $core.bool hasSessionState() => $_has(0);
   @$pb.TagNumber(1)
   void clearSessionState() => $_clearField(1);
   @$pb.TagNumber(1)
-  SessionStateEvent ensureSessionState() => $_ensure(0);
+  StateEvent ensureSessionState() => $_ensure(0);
 
   @$pb.TagNumber(2)
-  SessionErrorEvent get sessionError => $_getN(1);
+  StateErrorEvent get sessionError => $_getN(1);
   @$pb.TagNumber(2)
-  set sessionError(SessionErrorEvent value) => $_setField(2, value);
+  set sessionError(StateErrorEvent value) => $_setField(2, value);
   @$pb.TagNumber(2)
   $core.bool hasSessionError() => $_has(1);
   @$pb.TagNumber(2)
   void clearSessionError() => $_clearField(2);
   @$pb.TagNumber(2)
-  SessionErrorEvent ensureSessionError() => $_ensure(1);
+  StateErrorEvent ensureSessionError() => $_ensure(1);
 }
 
 const $core.bool _omitFieldNames =

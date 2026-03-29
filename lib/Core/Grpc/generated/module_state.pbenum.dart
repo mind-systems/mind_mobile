@@ -38,26 +38,26 @@ class ActivityType extends $pb.ProtobufEnum {
 }
 
 /// Maps to SessionStatus enum in src/realtime/enums/session-status.enum.ts.
-/// SESSION_STATUS_UNSPECIFIED = 0 is the sentinel — a silent default ACTIVE
+/// ACTIVITY_STATUS_UNSPECIFIED = 0 is the sentinel — a silent default ACTIVE
 /// could mask bugs where status was never set.
-class SessionStatus extends $pb.ProtobufEnum {
-  static const SessionStatus SESSION_STATUS_UNSPECIFIED =
-      SessionStatus._(0, _omitEnumNames ? '' : 'SESSION_STATUS_UNSPECIFIED');
-  static const SessionStatus ACTIVE =
-      SessionStatus._(1, _omitEnumNames ? '' : 'ACTIVE');
-  static const SessionStatus DISCONNECTED =
-      SessionStatus._(2, _omitEnumNames ? '' : 'DISCONNECTED');
-  static const SessionStatus COMPLETED =
-      SessionStatus._(3, _omitEnumNames ? '' : 'COMPLETED');
-  static const SessionStatus ABANDONED =
-      SessionStatus._(4, _omitEnumNames ? '' : 'ABANDONED');
-  static const SessionStatus INTERRUPTED =
-      SessionStatus._(5, _omitEnumNames ? '' : 'INTERRUPTED');
-  static const SessionStatus RESUMED =
-      SessionStatus._(6, _omitEnumNames ? '' : 'RESUMED');
+class ActivityStatus extends $pb.ProtobufEnum {
+  static const ActivityStatus ACTIVITY_STATUS_UNSPECIFIED =
+      ActivityStatus._(0, _omitEnumNames ? '' : 'ACTIVITY_STATUS_UNSPECIFIED');
+  static const ActivityStatus ACTIVE =
+      ActivityStatus._(1, _omitEnumNames ? '' : 'ACTIVE');
+  static const ActivityStatus DISCONNECTED =
+      ActivityStatus._(2, _omitEnumNames ? '' : 'DISCONNECTED');
+  static const ActivityStatus COMPLETED =
+      ActivityStatus._(3, _omitEnumNames ? '' : 'COMPLETED');
+  static const ActivityStatus ABANDONED =
+      ActivityStatus._(4, _omitEnumNames ? '' : 'ABANDONED');
+  static const ActivityStatus INTERRUPTED =
+      ActivityStatus._(5, _omitEnumNames ? '' : 'INTERRUPTED');
+  static const ActivityStatus RESUMED =
+      ActivityStatus._(6, _omitEnumNames ? '' : 'RESUMED');
 
-  static const $core.List<SessionStatus> values = <SessionStatus>[
-    SESSION_STATUS_UNSPECIFIED,
+  static const $core.List<ActivityStatus> values = <ActivityStatus>[
+    ACTIVITY_STATUS_UNSPECIFIED,
     ACTIVE,
     DISCONNECTED,
     COMPLETED,
@@ -66,12 +66,12 @@ class SessionStatus extends $pb.ProtobufEnum {
     RESUMED,
   ];
 
-  static final $core.List<SessionStatus?> _byValue =
+  static final $core.List<ActivityStatus?> _byValue =
       $pb.ProtobufEnum.$_initByValueList(values, 6);
-  static SessionStatus? valueOf($core.int value) =>
+  static ActivityStatus? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
-  const SessionStatus._(super.value, super.name);
+  const ActivityStatus._(super.value, super.name);
 }
 
 const $core.bool _omitEnumNames =

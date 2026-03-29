@@ -22,7 +22,7 @@ export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
 /// StreamSample is one instrumentation sample sent by the client.
 /// session_id ties the sample to an active module session.
-/// timestamp is int64 Unix millis — same convention as SessionErrorEvent.timestamp.
+/// timestamp is int64 Unix millis — same convention as StateErrorEvent.timestamp.
 /// module_id identifies the producer module (e.g. "breath").
 /// instruction_type is module-defined and names the specific measurement
 /// (e.g. "breath_phase").
@@ -245,11 +245,11 @@ enum StreamResponse_Event { ack, error, notSet }
 
 /// StreamResponse is the server-to-client stream envelope.
 /// Each message carries exactly one event via the oneof.
-/// SessionErrorEvent is imported from module_state.proto and reused for error reporting.
+/// StateErrorEvent is imported from module_state.proto and reused for error reporting.
 class StreamResponse extends $pb.GeneratedMessage {
   factory StreamResponse({
     StreamAck? ack,
-    $2.SessionErrorEvent? error,
+    $2.StateErrorEvent? error,
   }) {
     final result = create();
     if (ack != null) result.ack = ack;
@@ -279,8 +279,8 @@ class StreamResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 2])
     ..aOM<StreamAck>(1, _omitFieldNames ? '' : 'ack',
         subBuilder: StreamAck.create)
-    ..aOM<$2.SessionErrorEvent>(2, _omitFieldNames ? '' : 'error',
-        subBuilder: $2.SessionErrorEvent.create)
+    ..aOM<$2.StateErrorEvent>(2, _omitFieldNames ? '' : 'error',
+        subBuilder: $2.StateErrorEvent.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -322,15 +322,15 @@ class StreamResponse extends $pb.GeneratedMessage {
   StreamAck ensureAck() => $_ensure(0);
 
   @$pb.TagNumber(2)
-  $2.SessionErrorEvent get error => $_getN(1);
+  $2.StateErrorEvent get error => $_getN(1);
   @$pb.TagNumber(2)
-  set error($2.SessionErrorEvent value) => $_setField(2, value);
+  set error($2.StateErrorEvent value) => $_setField(2, value);
   @$pb.TagNumber(2)
   $core.bool hasError() => $_has(1);
   @$pb.TagNumber(2)
   void clearError() => $_clearField(2);
   @$pb.TagNumber(2)
-  $2.SessionErrorEvent ensureError() => $_ensure(1);
+  $2.StateErrorEvent ensureError() => $_ensure(1);
 }
 
 const $core.bool _omitFieldNames =

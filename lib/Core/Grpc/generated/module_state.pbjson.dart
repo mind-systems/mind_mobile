@@ -29,11 +29,11 @@ final $typed_data.Uint8List activityTypeDescriptor = $convert.base64Decode(
     'CgxBY3Rpdml0eVR5cGUSHQoZQUNUSVZJVFlfVFlQRV9VTlNQRUNJRklFRBAAEgoKBkJSRUFUSB'
     'AB');
 
-@$core.Deprecated('Use sessionStatusDescriptor instead')
-const SessionStatus$json = {
-  '1': 'SessionStatus',
+@$core.Deprecated('Use activityStatusDescriptor instead')
+const ActivityStatus$json = {
+  '1': 'ActivityStatus',
   '2': [
-    {'1': 'SESSION_STATUS_UNSPECIFIED', '2': 0},
+    {'1': 'ACTIVITY_STATUS_UNSPECIFIED', '2': 0},
     {'1': 'ACTIVE', '2': 1},
     {'1': 'DISCONNECTED', '2': 2},
     {'1': 'COMPLETED', '2': 3},
@@ -43,11 +43,11 @@ const SessionStatus$json = {
   ],
 };
 
-/// Descriptor for `SessionStatus`. Decode as a `google.protobuf.EnumDescriptorProto`.
-final $typed_data.Uint8List sessionStatusDescriptor = $convert.base64Decode(
-    'Cg1TZXNzaW9uU3RhdHVzEh4KGlNFU1NJT05fU1RBVFVTX1VOU1BFQ0lGSUVEEAASCgoGQUNUSV'
-    'ZFEAESEAoMRElTQ09OTkVDVEVEEAISDQoJQ09NUExFVEVEEAMSDQoJQUJBTkRPTkVEEAQSDwoL'
-    'SU5URVJSVVBURUQQBRILCgdSRVNVTUVEEAY=');
+/// Descriptor for `ActivityStatus`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List activityStatusDescriptor = $convert.base64Decode(
+    'Cg5BY3Rpdml0eVN0YXR1cxIfChtBQ1RJVklUWV9TVEFUVVNfVU5TUEVDSUZJRUQQABIKCgZBQ1'
+    'RJVkUQARIQCgxESVNDT05ORUNURUQQAhINCglDT01QTEVURUQQAxINCglBQkFORE9ORUQQBBIP'
+    'CgtJTlRFUlJVUFRFRBAFEgsKB1JFU1VNRUQQBg==');
 
 @$core.Deprecated('Use activityStartCmdDescriptor instead')
 const ActivityStartCmd$json = {
@@ -113,9 +113,9 @@ const ActivityResumeCmd$json = {
 final $typed_data.Uint8List activityResumeCmdDescriptor =
     $convert.base64Decode('ChFBY3Rpdml0eVJlc3VtZUNtZA==');
 
-@$core.Deprecated('Use sessionStateEventDescriptor instead')
-const SessionStateEvent$json = {
-  '1': 'SessionStateEvent',
+@$core.Deprecated('Use stateEventDescriptor instead')
+const StateEvent$json = {
+  '1': 'StateEvent',
   '2': [
     {'1': 'module_session_id', '3': 1, '4': 1, '5': 9, '10': 'moduleSessionId'},
     {
@@ -123,7 +123,7 @@ const SessionStateEvent$json = {
       '3': 2,
       '4': 1,
       '5': 14,
-      '6': '.mind.SessionStatus',
+      '6': '.mind.ActivityStatus',
       '10': 'status'
     },
     {
@@ -141,15 +141,15 @@ const SessionStateEvent$json = {
   ],
 };
 
-/// Descriptor for `SessionStateEvent`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List sessionStateEventDescriptor = $convert.base64Decode(
-    'ChFTZXNzaW9uU3RhdGVFdmVudBIqChFtb2R1bGVfc2Vzc2lvbl9pZBgBIAEoCVIPbW9kdWxlU2'
-    'Vzc2lvbklkEisKBnN0YXR1cxgCIAEoDjITLm1pbmQuU2Vzc2lvblN0YXR1c1IGc3RhdHVzEiAK'
-    'CWlzX3BhdXNlZBgDIAEoCEgAUghpc1BhdXNlZIgBAUIMCgpfaXNfcGF1c2Vk');
+/// Descriptor for `StateEvent`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List stateEventDescriptor = $convert.base64Decode(
+    'CgpTdGF0ZUV2ZW50EioKEW1vZHVsZV9zZXNzaW9uX2lkGAEgASgJUg9tb2R1bGVTZXNzaW9uSW'
+    'QSLAoGc3RhdHVzGAIgASgOMhQubWluZC5BY3Rpdml0eVN0YXR1c1IGc3RhdHVzEiAKCWlzX3Bh'
+    'dXNlZBgDIAEoCEgAUghpc1BhdXNlZIgBAUIMCgpfaXNfcGF1c2Vk');
 
-@$core.Deprecated('Use sessionErrorEventDescriptor instead')
-const SessionErrorEvent$json = {
-  '1': 'SessionErrorEvent',
+@$core.Deprecated('Use stateErrorEventDescriptor instead')
+const StateErrorEvent$json = {
+  '1': 'StateErrorEvent',
   '2': [
     {'1': 'code', '3': 1, '4': 1, '5': 9, '10': 'code'},
     {'1': 'message', '3': 2, '4': 1, '5': 9, '10': 'message'},
@@ -157,14 +157,14 @@ const SessionErrorEvent$json = {
   ],
 };
 
-/// Descriptor for `SessionErrorEvent`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List sessionErrorEventDescriptor = $convert.base64Decode(
-    'ChFTZXNzaW9uRXJyb3JFdmVudBISCgRjb2RlGAEgASgJUgRjb2RlEhgKB21lc3NhZ2UYAiABKA'
-    'lSB21lc3NhZ2USHAoJdGltZXN0YW1wGAMgASgDUgl0aW1lc3RhbXA=');
+/// Descriptor for `StateErrorEvent`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List stateErrorEventDescriptor = $convert.base64Decode(
+    'Cg9TdGF0ZUVycm9yRXZlbnQSEgoEY29kZRgBIAEoCVIEY29kZRIYCgdtZXNzYWdlGAIgASgJUg'
+    'dtZXNzYWdlEhwKCXRpbWVzdGFtcBgDIAEoA1IJdGltZXN0YW1w');
 
-@$core.Deprecated('Use sessionRequestDescriptor instead')
-const SessionRequest$json = {
-  '1': 'SessionRequest',
+@$core.Deprecated('Use stateRequestDescriptor instead')
+const StateRequest$json = {
+  '1': 'StateRequest',
   '2': [
     {
       '1': 'activity_start',
@@ -217,26 +217,26 @@ const SessionRequest$json = {
   ],
 };
 
-/// Descriptor for `SessionRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List sessionRequestDescriptor = $convert.base64Decode(
-    'Cg5TZXNzaW9uUmVxdWVzdBI/Cg5hY3Rpdml0eV9zdGFydBgBIAEoCzIWLm1pbmQuQWN0aXZpdH'
-    'lTdGFydENtZEgAUg1hY3Rpdml0eVN0YXJ0EjkKDGFjdGl2aXR5X2VuZBgCIAEoCzIULm1pbmQu'
-    'QWN0aXZpdHlFbmRDbWRIAFILYWN0aXZpdHlFbmQSPAoNYWN0aXZpdHlfc3RvcBgDIAEoCzIVLm'
-    '1pbmQuQWN0aXZpdHlTdG9wQ21kSABSDGFjdGl2aXR5U3RvcBI/Cg5hY3Rpdml0eV9wYXVzZRgE'
-    'IAEoCzIWLm1pbmQuQWN0aXZpdHlQYXVzZUNtZEgAUg1hY3Rpdml0eVBhdXNlEkIKD2FjdGl2aX'
-    'R5X3Jlc3VtZRgFIAEoCzIXLm1pbmQuQWN0aXZpdHlSZXN1bWVDbWRIAFIOYWN0aXZpdHlSZXN1'
-    'bWVCCQoHY29tbWFuZA==');
+/// Descriptor for `StateRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List stateRequestDescriptor = $convert.base64Decode(
+    'CgxTdGF0ZVJlcXVlc3QSPwoOYWN0aXZpdHlfc3RhcnQYASABKAsyFi5taW5kLkFjdGl2aXR5U3'
+    'RhcnRDbWRIAFINYWN0aXZpdHlTdGFydBI5CgxhY3Rpdml0eV9lbmQYAiABKAsyFC5taW5kLkFj'
+    'dGl2aXR5RW5kQ21kSABSC2FjdGl2aXR5RW5kEjwKDWFjdGl2aXR5X3N0b3AYAyABKAsyFS5taW'
+    '5kLkFjdGl2aXR5U3RvcENtZEgAUgxhY3Rpdml0eVN0b3ASPwoOYWN0aXZpdHlfcGF1c2UYBCAB'
+    'KAsyFi5taW5kLkFjdGl2aXR5UGF1c2VDbWRIAFINYWN0aXZpdHlQYXVzZRJCCg9hY3Rpdml0eV'
+    '9yZXN1bWUYBSABKAsyFy5taW5kLkFjdGl2aXR5UmVzdW1lQ21kSABSDmFjdGl2aXR5UmVzdW1l'
+    'QgkKB2NvbW1hbmQ=');
 
-@$core.Deprecated('Use sessionResponseDescriptor instead')
-const SessionResponse$json = {
-  '1': 'SessionResponse',
+@$core.Deprecated('Use stateResponseDescriptor instead')
+const StateResponse$json = {
+  '1': 'StateResponse',
   '2': [
     {
       '1': 'session_state',
       '3': 1,
       '4': 1,
       '5': 11,
-      '6': '.mind.SessionStateEvent',
+      '6': '.mind.StateEvent',
       '9': 0,
       '10': 'sessionState'
     },
@@ -245,7 +245,7 @@ const SessionResponse$json = {
       '3': 2,
       '4': 1,
       '5': 11,
-      '6': '.mind.SessionErrorEvent',
+      '6': '.mind.StateErrorEvent',
       '9': 0,
       '10': 'sessionError'
     },
@@ -255,8 +255,8 @@ const SessionResponse$json = {
   ],
 };
 
-/// Descriptor for `SessionResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List sessionResponseDescriptor = $convert.base64Decode(
-    'Cg9TZXNzaW9uUmVzcG9uc2USPgoNc2Vzc2lvbl9zdGF0ZRgBIAEoCzIXLm1pbmQuU2Vzc2lvbl'
-    'N0YXRlRXZlbnRIAFIMc2Vzc2lvblN0YXRlEj4KDXNlc3Npb25fZXJyb3IYAiABKAsyFy5taW5k'
-    'LlNlc3Npb25FcnJvckV2ZW50SABSDHNlc3Npb25FcnJvckIHCgVldmVudA==');
+/// Descriptor for `StateResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List stateResponseDescriptor = $convert.base64Decode(
+    'Cg1TdGF0ZVJlc3BvbnNlEjcKDXNlc3Npb25fc3RhdGUYASABKAsyEC5taW5kLlN0YXRlRXZlbn'
+    'RIAFIMc2Vzc2lvblN0YXRlEjwKDXNlc3Npb25fZXJyb3IYAiABKAsyFS5taW5kLlN0YXRlRXJy'
+    'b3JFdmVudEgAUgxzZXNzaW9uRXJyb3JCBwoFZXZlbnQ=');

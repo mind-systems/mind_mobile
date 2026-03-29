@@ -31,8 +31,8 @@ class ModuleStateChannel {
 
   // ── Stream handles ────────────────────────────────────────────────────────
 
-  StreamSubscription<proto.SessionResponse>? _sessionSub;
-  StreamController<proto.SessionRequest>? _sessionSink;
+  StreamSubscription<proto.StateResponse>? _sessionSub;
+  StreamController<proto.StateRequest>? _sessionSink;
 
   bool get isConnected => _sessionSub != null;
 
@@ -67,21 +67,21 @@ class ModuleStateChannel {
   // ── Session stream management ─────────────────────────────────────────────
 
   void _openSessionStream() {
-    _sessionSink = StreamController<proto.SessionRequest>();
+    _sessionSink = StreamController<proto.StateRequest>();
     final response = _moduleStateService.trackActivity(_sessionSink!.stream);
     _sessionSub = response.listen(
-      (proto.SessionResponse r) {
+      (proto.StateResponse r) {
         switch (r.whichEvent()) {
-          case proto.SessionResponse_Event.sessionState:
+          case proto.StateResponse_Event.sessionState:
             final event = r.sessionState;
-            if (event.status == proto.SessionStatus.DISCONNECTED) return;
+            if (event.status == proto.ActivityStatus.DISCONNECTED) return;
             _processProtoEvent(event);
-          case proto.SessionResponse_Event.sessionError:
+          case proto.StateResponse_Event.sessionError:
             log(
               '[ModuleStateChannel] session error: ${r.sessionError.code} — ${r.sessionError.message}',
               name: 'ModuleStateChannel',
             );
-          case proto.SessionResponse_Event.notSet:
+          case proto.StateResponse_Event.notSet:
             break;
         }
       },
@@ -110,9 +110,9 @@ class ModuleStateChannel {
 
   // ── Proto → typed mapping ─────────────────────────────────────────────────
 
-  void _processProtoEvent(proto.SessionStateEvent event) {
+  void _processProtoEvent(proto.StateEvent event) {
     final status = event.status;
-    if (status == proto.SessionStatus.ACTIVE || status == proto.SessionStatus.RESUMED) {
+    if (status == proto.ActivityStatus.ACTIVE || status == proto.ActivityStatus.RESUMED) {
       final isPaused = event.isPaused;
       final moduleSessionId = event.moduleSessionId;
       final wasPaused = currentState.isPaused;
@@ -127,13 +127,13 @@ class ModuleStateChannel {
       } else if (wasPaused && !isPaused) {
         _events.add(ModuleSessionUnpaused());
       }
-    } else if (status == proto.SessionStatus.COMPLETED || status == proto.SessionStatus.INTERRUPTED) {
+    } else if (status == proto.ActivityStatus.COMPLETED || status == proto.ActivityStatus.INTERRUPTED) {
       _state.add(ModuleState.initial());
       _events.add(ModuleSessionEnded());
-    } else if (status == proto.SessionStatus.ABANDONED) {
+    } else if (status == proto.ActivityStatus.ABANDONED) {
       _state.add(ModuleState.initial());
       _events.add(ModuleSessionAbandoned());
-    } else if (status == proto.SessionStatus.SESSION_STATUS_UNSPECIFIED) {
+    } else if (status == proto.ActivityStatus.ACTIVITY_STATUS_UNSPECIFIED) {
       _isPendingStart = false;
       _state.add(ModuleState.initial());
     } else {
@@ -146,7 +146,7 @@ class ModuleStateChannel {
   void start({required ActivityType type, String? refId}) {
     if (currentState.status == ModuleStateStatus.active || _isPendingStart) return;
     _isPendingStart = true;
-    _sendSessionRequest(proto.SessionRequest(
+    _sendSessionRequest(proto.StateRequest(
       activityStart: proto.ActivityStartCmd(
         activityType: _mapActivityType(type),
         refId: refId ?? '',
@@ -157,28 +157,28 @@ class ModuleStateChannel {
   void pause() {
     if (currentState.status != ModuleStateStatus.active || currentState.isPaused || _isPendingPause) return;
     _isPendingPause = true;
-    _sendSessionRequest(proto.SessionRequest(activityPause: proto.ActivityPauseCmd()));
+    _sendSessionRequest(proto.StateRequest(activityPause: proto.ActivityPauseCmd()));
   }
 
   void unpause() {
     if (!currentState.isPaused) return;
     _isPendingPause = false;
-    _sendSessionRequest(proto.SessionRequest(activityResume: proto.ActivityResumeCmd()));
+    _sendSessionRequest(proto.StateRequest(activityResume: proto.ActivityResumeCmd()));
   }
 
   void end() {
     if (currentState.status == ModuleStateStatus.idle) return;
-    _sendSessionRequest(proto.SessionRequest(activityEnd: proto.ActivityEndCmd()));
+    _sendSessionRequest(proto.StateRequest(activityEnd: proto.ActivityEndCmd()));
   }
 
   void stop() {
     if (currentState.status == ModuleStateStatus.idle) return;
-    _sendSessionRequest(proto.SessionRequest(activityStop: proto.ActivityStopCmd()));
+    _sendSessionRequest(proto.StateRequest(activityStop: proto.ActivityStopCmd()));
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  void _sendSessionRequest(proto.SessionRequest request) {
+  void _sendSessionRequest(proto.StateRequest request) {
     if (_sessionSink == null) {
       log('[ModuleStateChannel] not connected, dropping request', name: 'ModuleStateChannel');
       return;

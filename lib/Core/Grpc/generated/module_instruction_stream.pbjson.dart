@@ -84,7 +84,7 @@ const StreamResponse$json = {
       '3': 2,
       '4': 1,
       '5': 11,
-      '6': '.mind.SessionErrorEvent',
+      '6': '.mind.StateErrorEvent',
       '9': 0,
       '10': 'error'
     },
@@ -96,5 +96,5 @@ const StreamResponse$json = {
 
 /// Descriptor for `StreamResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List streamResponseDescriptor = $convert.base64Decode(
-    'Cg5TdHJlYW1SZXNwb25zZRIjCgNhY2sYASABKAsyDy5taW5kLlN0cmVhbUFja0gAUgNhY2sSLw'
-    'oFZXJyb3IYAiABKAsyFy5taW5kLlNlc3Npb25FcnJvckV2ZW50SABSBWVycm9yQgcKBWV2ZW50');
+    'Cg5TdHJlYW1SZXNwb25zZRIjCgNhY2sYASABKAsyDy5taW5kLlN0cmVhbUFja0gAUgNhY2sSLQ'
+    'oFZXJyb3IYAiABKAsyFS5taW5kLlN0YXRlRXJyb3JFdmVudEgAUgVlcnJvckIHCgVldmVudA==');

@@ -32,8 +32,8 @@ class ModuleStateServiceClient extends $grpc.Client {
 
   ModuleStateServiceClient(super.channel, {super.options, super.interceptors});
 
-  $grpc.ResponseStream<$0.SessionResponse> trackActivity(
-    $async.Stream<$0.SessionRequest> request, {
+  $grpc.ResponseStream<$0.StateResponse> trackActivity(
+    $async.Stream<$0.StateRequest> request, {
     $grpc.CallOptions? options,
   }) {
     return $createStreamingCall(_$trackActivity, request, options: options);
@@ -42,10 +42,10 @@ class ModuleStateServiceClient extends $grpc.Client {
   // method descriptors
 
   static final _$trackActivity =
-      $grpc.ClientMethod<$0.SessionRequest, $0.SessionResponse>(
+      $grpc.ClientMethod<$0.StateRequest, $0.StateResponse>(
           '/mind.ModuleStateService/TrackActivity',
-          ($0.SessionRequest value) => value.writeToBuffer(),
-          $0.SessionResponse.fromBuffer);
+          ($0.StateRequest value) => value.writeToBuffer(),
+          $0.StateResponse.fromBuffer);
 }
 
 @$pb.GrpcServiceName('mind.ModuleStateService')
@@ -53,15 +53,15 @@ abstract class ModuleStateServiceBase extends $grpc.Service {
   $core.String get $name => 'mind.ModuleStateService';
 
   ModuleStateServiceBase() {
-    $addMethod($grpc.ServiceMethod<$0.SessionRequest, $0.SessionResponse>(
+    $addMethod($grpc.ServiceMethod<$0.StateRequest, $0.StateResponse>(
         'TrackActivity',
         trackActivity,
         true,
         true,
-        ($core.List<$core.int> value) => $0.SessionRequest.fromBuffer(value),
-        ($0.SessionResponse value) => value.writeToBuffer()));
+        ($core.List<$core.int> value) => $0.StateRequest.fromBuffer(value),
+        ($0.StateResponse value) => value.writeToBuffer()));
   }
 
-  $async.Stream<$0.SessionResponse> trackActivity(
-      $grpc.ServiceCall call, $async.Stream<$0.SessionRequest> request);
+  $async.Stream<$0.StateResponse> trackActivity(
+      $grpc.ServiceCall call, $async.Stream<$0.StateRequest> request);
 }
