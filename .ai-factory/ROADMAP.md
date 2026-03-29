@@ -183,7 +183,7 @@
 
 ### 9.2 Update Dart code
 
-- [ ] **Remove presence sending from `lib/Core/Grpc/ModuleStateChannel.dart`** — delete any calls that send a `PresenceCmd`; remove imports of `PresenceCmd` or `PresenceState` from generated proto
+- [x] **Remove presence sending from `lib/Core/Grpc/ModuleStateChannel.dart`** — delete any calls that send a `PresenceCmd`; remove imports of `PresenceCmd` or `PresenceState` from generated proto
 - [ ] **Update type references** — replace `SessionRequest`, `SessionResponse`, `SessionStatus`, `SessionStateEvent`, `SessionErrorEvent` with new names in all files that use generated stubs (`ModuleStateChannel.dart`, `ModuleInstructionStream.dart`, and any other files importing from generated proto)
 
 ---
