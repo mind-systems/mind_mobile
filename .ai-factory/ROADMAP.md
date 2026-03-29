@@ -163,7 +163,7 @@
 ### 8.1 Copy updated proto files and regenerate stubs
 
 - [x] **Copy proto files to mind_mobile** — copy `mind_api/proto/module_state.proto` to `mind_mobile/proto/` replacing `mind_mobile/proto/live.proto`; copy `mind_api/proto/module_instruction_stream.proto` to `mind_mobile/proto/` replacing `mind_mobile/proto/telemetry.proto`; delete the old `live.proto` and `telemetry.proto` from `mind_mobile/proto/`
-- [ ] **Regenerate Dart stubs in mind_mobile** — run `bash scripts/gen_proto.sh` from the `mind_mobile/` root; verify that `lib/Core/Grpc/generated/` contains new `module_state.pb.dart`, `module_state.pbgrpc.dart`, `module_instruction_stream.pb.dart`, `module_instruction_stream.pbgrpc.dart` and that the old `live.pb.dart`, `live.pbgrpc.dart`, `telemetry.pb.dart`, `telemetry.pbgrpc.dart` are gone (the script wipes and recreates the output directory)
+- [x] **Regenerate Dart stubs in mind_mobile** — run `bash scripts/gen_proto.sh` from the `mind_mobile/` root; verify that `lib/Core/Grpc/generated/` contains new `module_state.pb.dart`, `module_state.pbgrpc.dart`, `module_instruction_stream.pb.dart`, `module_instruction_stream.pbgrpc.dart` and that the old `live.pb.dart`, `live.pbgrpc.dart`, `telemetry.pb.dart`, `telemetry.pbgrpc.dart` are gone (the script wipes and recreates the output directory)
 
 ### 8.2 Update Dart code in mind_mobile
 
