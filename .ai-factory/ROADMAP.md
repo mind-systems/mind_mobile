@@ -156,6 +156,25 @@
 
 ---
 
+---
+
+## Phase 8 — Rename: Proto Contract Update
+
+### 8.1 Copy updated proto files and regenerate stubs
+
+- [ ] **Copy proto files to mind_mobile** — copy `mind_api/proto/module_state.proto` to `mind_mobile/proto/` replacing `mind_mobile/proto/live.proto`; copy `mind_api/proto/module_instruction_stream.proto` to `mind_mobile/proto/` replacing `mind_mobile/proto/telemetry.proto`; delete the old `live.proto` and `telemetry.proto` from `mind_mobile/proto/`
+- [ ] **Regenerate Dart stubs in mind_mobile** — run `bash scripts/gen_proto.sh` from the `mind_mobile/` root; verify that `lib/Core/Grpc/generated/` contains new `module_state.pb.dart`, `module_state.pbgrpc.dart`, `module_instruction_stream.pb.dart`, `module_instruction_stream.pbgrpc.dart` and that the old `live.pb.dart`, `live.pbgrpc.dart`, `telemetry.pb.dart`, `telemetry.pbgrpc.dart` are gone (the script wipes and recreates the output directory)
+
+### 8.2 Update Dart code in mind_mobile
+
+- [ ] **Update `lib/Core/Grpc/ModuleStateChannel.dart`** — replace `import 'package:mind/Core/Grpc/generated/live.pbgrpc.dart' as proto` with the import for the new `module_state.pbgrpc.dart`; replace `proto.LiveServiceClient` with `proto.ModuleStateServiceClient`; replace the `liveSession` RPC call with the renamed RPC on the new client; replace all references to `proto.LiveRequest`, `proto.LiveResponse`, `proto.LiveResponse_Event` with the equivalents from the new generated file; replace `event.liveSessionId` with `event.moduleSessionId` (field renamed in `SessionStateEvent`)
+- [ ] **Update `lib/Core/Grpc/ModuleState.dart`** — rename field `liveSessionId` → `moduleSessionId` in the `ModuleState` class definition, constructor parameter, `ModuleState.initial()` factory, and the `_state.add(ModuleState(liveSessionId: ...))` call sites in `ModuleStateChannel`
+- [ ] **Update `lib/Core/Grpc/ModuleStateEvent.dart`** — rename field `liveSessionId` → `moduleSessionId` in `ModuleSessionStarted` and its constructor parameter
+- [ ] **Update `lib/Core/Grpc/ModuleInstructionStream.dart`** — replace `import 'package:mind/Core/Grpc/generated/telemetry.pbgrpc.dart'` with the import for `module_instruction_stream.pbgrpc.dart`; replace `TelemetryServiceClient` with `ModuleInstructionStreamServiceClient`; replace `TelemetryData`, `TelemetryResponse`, `TelemetryResponse_Event`, `TelemetryAck` with the equivalents from the new generated file
+- [ ] **Update `lib/BreathModule/Core/BreathModuleStateChannel.dart`** — rename private field `_liveSessionId` → `_moduleSessionId` and its getter `liveSessionId` → `moduleSessionId`; update the `_channelSub` listener that reads `moduleState.liveSessionId` → `moduleState.moduleSessionId`; update the `_flushPending` and `_handleTelemetry` call sites that pass `liveId` (derived from `_liveSessionId`)
+
+---
+
 ## Completed
 
 | Milestone | Date |
