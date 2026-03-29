@@ -244,62 +244,6 @@ class ActivityResumeCmd extends $pb.GeneratedMessage {
   static ActivityResumeCmd? _defaultInstance;
 }
 
-/// Maps presence state change from the client.
-class PresenceCmd extends $pb.GeneratedMessage {
-  factory PresenceCmd({
-    PresenceState? state,
-  }) {
-    final result = create();
-    if (state != null) result.state = state;
-    return result;
-  }
-
-  PresenceCmd._();
-
-  factory PresenceCmd.fromBuffer($core.List<$core.int> data,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromBuffer(data, registry);
-  factory PresenceCmd.fromJson($core.String json,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
-
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'PresenceCmd',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
-      createEmptyInstance: create)
-    ..aE<PresenceState>(1, _omitFieldNames ? '' : 'state',
-        enumValues: PresenceState.values)
-    ..hasRequiredFields = false;
-
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  PresenceCmd clone() => deepCopy();
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  PresenceCmd copyWith(void Function(PresenceCmd) updates) =>
-      super.copyWith((message) => updates(message as PresenceCmd))
-          as PresenceCmd;
-
-  @$core.override
-  $pb.BuilderInfo get info_ => _i;
-
-  @$core.pragma('dart2js:noInline')
-  static PresenceCmd create() => PresenceCmd._();
-  @$core.override
-  PresenceCmd createEmptyInstance() => create();
-  @$core.pragma('dart2js:noInline')
-  static PresenceCmd getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<PresenceCmd>(create);
-  static PresenceCmd? _defaultInstance;
-
-  @$pb.TagNumber(1)
-  PresenceState get state => $_getN(0);
-  @$pb.TagNumber(1)
-  set state(PresenceState value) => $_setField(1, value);
-  @$pb.TagNumber(1)
-  $core.bool hasState() => $_has(0);
-  @$pb.TagNumber(1)
-  void clearState() => $_clearField(1);
-}
-
 /// Maps to SessionStateDto in src/realtime/dto/session-state.dto.ts.
 class SessionStateEvent extends $pb.GeneratedMessage {
   factory SessionStateEvent({
@@ -468,7 +412,6 @@ enum SessionRequest_Command {
   activityStop,
   activityPause,
   activityResume,
-  presence,
   notSet
 }
 
@@ -481,7 +424,6 @@ class SessionRequest extends $pb.GeneratedMessage {
     ActivityStopCmd? activityStop,
     ActivityPauseCmd? activityPause,
     ActivityResumeCmd? activityResume,
-    PresenceCmd? presence,
   }) {
     final result = create();
     if (activityStart != null) result.activityStart = activityStart;
@@ -489,7 +431,6 @@ class SessionRequest extends $pb.GeneratedMessage {
     if (activityStop != null) result.activityStop = activityStop;
     if (activityPause != null) result.activityPause = activityPause;
     if (activityResume != null) result.activityResume = activityResume;
-    if (presence != null) result.presence = presence;
     return result;
   }
 
@@ -509,14 +450,13 @@ class SessionRequest extends $pb.GeneratedMessage {
     3: SessionRequest_Command.activityStop,
     4: SessionRequest_Command.activityPause,
     5: SessionRequest_Command.activityResume,
-    6: SessionRequest_Command.presence,
     0: SessionRequest_Command.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'SessionRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
-    ..oo(0, [1, 2, 3, 4, 5, 6])
+    ..oo(0, [1, 2, 3, 4, 5])
     ..aOM<ActivityStartCmd>(1, _omitFieldNames ? '' : 'activityStart',
         subBuilder: ActivityStartCmd.create)
     ..aOM<ActivityEndCmd>(2, _omitFieldNames ? '' : 'activityEnd',
@@ -527,8 +467,6 @@ class SessionRequest extends $pb.GeneratedMessage {
         subBuilder: ActivityPauseCmd.create)
     ..aOM<ActivityResumeCmd>(5, _omitFieldNames ? '' : 'activityResume',
         subBuilder: ActivityResumeCmd.create)
-    ..aOM<PresenceCmd>(6, _omitFieldNames ? '' : 'presence',
-        subBuilder: PresenceCmd.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -555,7 +493,6 @@ class SessionRequest extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   @$pb.TagNumber(4)
   @$pb.TagNumber(5)
-  @$pb.TagNumber(6)
   SessionRequest_Command whichCommand() =>
       _SessionRequest_CommandByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
@@ -563,7 +500,6 @@ class SessionRequest extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   @$pb.TagNumber(4)
   @$pb.TagNumber(5)
-  @$pb.TagNumber(6)
   void clearCommand() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -620,17 +556,6 @@ class SessionRequest extends $pb.GeneratedMessage {
   void clearActivityResume() => $_clearField(5);
   @$pb.TagNumber(5)
   ActivityResumeCmd ensureActivityResume() => $_ensure(4);
-
-  @$pb.TagNumber(6)
-  PresenceCmd get presence => $_getN(5);
-  @$pb.TagNumber(6)
-  set presence(PresenceCmd value) => $_setField(6, value);
-  @$pb.TagNumber(6)
-  $core.bool hasPresence() => $_has(5);
-  @$pb.TagNumber(6)
-  void clearPresence() => $_clearField(6);
-  @$pb.TagNumber(6)
-  PresenceCmd ensurePresence() => $_ensure(5);
 }
 
 enum SessionResponse_Event { sessionState, sessionError, notSet }

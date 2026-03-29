@@ -272,7 +272,7 @@ enum GetChangesResponse_Result { payload, fullResync, notSet }
 /// GetChangesResponse uses oneof result to return either cursor-paginated events
 /// or a full_resync flag, matching the REST GET /sync/changes behavior.
 /// oneof is named "result" to describe the branching nature (not "event" or "command"
-/// which are stream-specific conventions in live.proto / telemetry.proto).
+/// which are stream-specific conventions in module_session.proto / module_stream.proto).
 class GetChangesResponse extends $pb.GeneratedMessage {
   factory GetChangesResponse({
     SyncChangesPayload? payload,

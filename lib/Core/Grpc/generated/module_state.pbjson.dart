@@ -29,21 +29,6 @@ final $typed_data.Uint8List activityTypeDescriptor = $convert.base64Decode(
     'CgxBY3Rpdml0eVR5cGUSHQoZQUNUSVZJVFlfVFlQRV9VTlNQRUNJRklFRBAAEgoKBkJSRUFUSB'
     'AB');
 
-@$core.Deprecated('Use presenceStateDescriptor instead')
-const PresenceState$json = {
-  '1': 'PresenceState',
-  '2': [
-    {'1': 'PRESENCE_STATE_UNSPECIFIED', '2': 0},
-    {'1': 'FOREGROUND', '2': 1},
-    {'1': 'BACKGROUND', '2': 2},
-  ],
-};
-
-/// Descriptor for `PresenceState`. Decode as a `google.protobuf.EnumDescriptorProto`.
-final $typed_data.Uint8List presenceStateDescriptor = $convert.base64Decode(
-    'Cg1QcmVzZW5jZVN0YXRlEh4KGlBSRVNFTkNFX1NUQVRFX1VOU1BFQ0lGSUVEEAASDgoKRk9SRU'
-    'dST1VORBABEg4KCkJBQ0tHUk9VTkQQAg==');
-
 @$core.Deprecated('Use sessionStatusDescriptor instead')
 const SessionStatus$json = {
   '1': 'SessionStatus',
@@ -127,26 +112,6 @@ const ActivityResumeCmd$json = {
 /// Descriptor for `ActivityResumeCmd`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List activityResumeCmdDescriptor =
     $convert.base64Decode('ChFBY3Rpdml0eVJlc3VtZUNtZA==');
-
-@$core.Deprecated('Use presenceCmdDescriptor instead')
-const PresenceCmd$json = {
-  '1': 'PresenceCmd',
-  '2': [
-    {
-      '1': 'state',
-      '3': 1,
-      '4': 1,
-      '5': 14,
-      '6': '.mind.PresenceState',
-      '10': 'state'
-    },
-  ],
-};
-
-/// Descriptor for `PresenceCmd`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List presenceCmdDescriptor = $convert.base64Decode(
-    'CgtQcmVzZW5jZUNtZBIpCgVzdGF0ZRgBIAEoDjITLm1pbmQuUHJlc2VuY2VTdGF0ZVIFc3RhdG'
-    'U=');
 
 @$core.Deprecated('Use sessionStateEventDescriptor instead')
 const SessionStateEvent$json = {
@@ -246,15 +211,6 @@ const SessionRequest$json = {
       '9': 0,
       '10': 'activityResume'
     },
-    {
-      '1': 'presence',
-      '3': 6,
-      '4': 1,
-      '5': 11,
-      '6': '.mind.PresenceCmd',
-      '9': 0,
-      '10': 'presence'
-    },
   ],
   '8': [
     {'1': 'command'},
@@ -269,8 +225,7 @@ final $typed_data.Uint8List sessionRequestDescriptor = $convert.base64Decode(
     '1pbmQuQWN0aXZpdHlTdG9wQ21kSABSDGFjdGl2aXR5U3RvcBI/Cg5hY3Rpdml0eV9wYXVzZRgE'
     'IAEoCzIWLm1pbmQuQWN0aXZpdHlQYXVzZUNtZEgAUg1hY3Rpdml0eVBhdXNlEkIKD2FjdGl2aX'
     'R5X3Jlc3VtZRgFIAEoCzIXLm1pbmQuQWN0aXZpdHlSZXN1bWVDbWRIAFIOYWN0aXZpdHlSZXN1'
-    'bWUSLwoIcHJlc2VuY2UYBiABKAsyES5taW5kLlByZXNlbmNlQ21kSABSCHByZXNlbmNlQgkKB2'
-    'NvbW1hbmQ=');
+    'bWVCCQoHY29tbWFuZA==');
 
 @$core.Deprecated('Use sessionResponseDescriptor instead')
 const SessionResponse$json = {

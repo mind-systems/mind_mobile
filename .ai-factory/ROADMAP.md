@@ -179,7 +179,7 @@
 
 ### 9.1 Sync proto and regenerate stubs
 
-- [ ] **Copy all proto files and regenerate** — copy entire `mind_api/proto/` to `mind_mobile/proto/` (overwrite all); run `bash scripts/gen_proto.sh` from `mind_mobile/` root; verify `module_state.pb.dart` no longer contains `PresenceCmd`, `PresenceState` and uses new type names `StateRequest`, `StateResponse`, `ActivityStatus`, `StateEvent`, `StateErrorEvent`
+- [x] **Copy all proto files and regenerate** — copy entire `mind_api/proto/` to `mind_mobile/proto/` (overwrite all); run `bash scripts/gen_proto.sh` from `mind_mobile/` root; verify `module_state.pb.dart` no longer contains `PresenceCmd`, `PresenceState` and uses new type names `StateRequest`, `StateResponse`, `ActivityStatus`, `StateEvent`, `StateErrorEvent`
 
 ### 9.2 Update Dart code
 

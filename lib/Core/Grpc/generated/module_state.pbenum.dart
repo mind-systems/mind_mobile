@@ -37,31 +37,6 @@ class ActivityType extends $pb.ProtobufEnum {
   const ActivityType._(super.value, super.name);
 }
 
-/// Maps to PresenceState interface in src/realtime/interfaces/presence-state.interface.ts.
-/// The existing code uses 'online' | 'background' strings; proto uses the canonical
-/// FOREGROUND/BACKGROUND names from the roadmap.
-class PresenceState extends $pb.ProtobufEnum {
-  static const PresenceState PRESENCE_STATE_UNSPECIFIED =
-      PresenceState._(0, _omitEnumNames ? '' : 'PRESENCE_STATE_UNSPECIFIED');
-  static const PresenceState FOREGROUND =
-      PresenceState._(1, _omitEnumNames ? '' : 'FOREGROUND');
-  static const PresenceState BACKGROUND =
-      PresenceState._(2, _omitEnumNames ? '' : 'BACKGROUND');
-
-  static const $core.List<PresenceState> values = <PresenceState>[
-    PRESENCE_STATE_UNSPECIFIED,
-    FOREGROUND,
-    BACKGROUND,
-  ];
-
-  static final $core.List<PresenceState?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 2);
-  static PresenceState? valueOf($core.int value) =>
-      value < 0 || value >= _byValue.length ? null : _byValue[value];
-
-  const PresenceState._(super.value, super.name);
-}
-
 /// Maps to SessionStatus enum in src/realtime/enums/session-status.enum.ts.
 /// SESSION_STATUS_UNSPECIFIED = 0 is the sentinel — a silent default ACTIVE
 /// could mask bugs where status was never set.
