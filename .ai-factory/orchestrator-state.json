@@ -2,6 +2,7 @@
   "implement_reviews": [
     "50-copy-proto-files-to-mind-mobile-review-1.md",
     "51-regenerate-dart-stubs-in-mind-mobile-review-1.md",
-    "52-update-lib-core-grpc-modulestatechannel-dart-review-1.md"
+    "52-update-lib-core-grpc-modulestatechannel-dart-review-1.md",
+    "53-update-lib-core-grpc-modulestate-dart-review-1.md"
   ]
 }
