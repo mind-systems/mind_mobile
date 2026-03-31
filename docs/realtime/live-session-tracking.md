@@ -27,6 +27,8 @@ BreathModuleStateChannel
   └─▶ BreathModuleInstructionStream ──▶  gRPC ModuleInstructionService  (инструкции фаз)
 ```
 
+Полная цепь от нажатия Play до записи в базу — [e2e-flow.mmd](e2e-flow.mmd).
+
 `BreathModuleStateChannel` подписывается на `BreathViewModel.stream` напрямую в конструкторе — не через Riverpod-слушатель. Создаётся в `BreathModule.buildSession()`, получает `vm.stream` и `App.shared.moduleStateChannel` при создании и держит их весь жизненный цикл экрана. `BreathViewModel` не содержит никакой логики работы с lifecycle или инструкциями.
 
 При первом переходе из паузы в `breath`/`rest` (если сессия ещё не запускалась) `BreathModuleStateChannel` вызывает `channel.start(type: breath, refId: sessionId)`. При последующих `pause → breath/rest` — `channel.unpause()`. При `breath/rest → pause` — `channel.pause()`. При статусе `complete` — `channel.end()`. Флаги `_started` и `_ended` гарантируют, что каждая команда отправляется ровно один раз.
@@ -89,9 +91,3 @@ T+6000–T+12000ms: биосигнал дыхания → совпадает л�
 ```
 
 Биометрические потоки пойдут через отдельный gRPC-сервис и отдельную таблицу, но привязываться к той же `ModuleSession` по `moduleSessionId`.
-
-## See Also
-
-- [Sync Engine](../core/sync-engine.md) — синхронизация данных
-- [session-lifecycle.md](../breath/session/session-lifecycle.md) — завершение сессии, рестарт
-- [view-model.md](../breath/session/view-model.md) — BreathSessionStateMachine и BreathViewModel

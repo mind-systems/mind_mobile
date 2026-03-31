@@ -189,6 +189,44 @@
 
 ---
 
+## Phase 10 — Cleanup: Remove Residual "Telemetry" Naming
+
+> The rename Telemetry → Instruction was done at the public class/file level (Phase 7.3, 7.6) but
+> several private fields, method names, and a backend interface were missed. This phase finishes the job.
+>
+> **Why it was missed:** Phase 7 renamed classes and files but didn't sweep private members inside
+> those classes. Private fields (`_telemetryStateSub`, `_pendingTelemetry`, `_handleTelemetry`) are
+> invisible from the outside — no interface change, no compile error, easy to overlook in review.
+> The backend `TelemetrySample` interface was never in scope of the mobile rename tasks at all.
+
+### 10.1 Clean up `BreathModuleInstructionStream.dart` (mobile)
+
+- [ ] **Rename `_telemetryStateSub` → `_instructionReadySub`** — in `lib/BreathModule/Core/BreathModuleInstructionStream.dart` (lines 15, 20, 56); this subscription listens to `_instructionStream.readyEvents`, so `_instructionReadySub` matches the actual purpose
+
+### 10.2 Clean up `BreathModuleStateChannel.dart` (mobile)
+
+- [ ] **Rename private members in `lib/BreathModule/Core/BreathModuleStateChannel.dart`** — `_pendingTelemetry` → `_pendingInstruction` (lines 21, 97, 104, 106, 107) holds a pending `BreathSessionState` sample waiting for `moduleSessionId`; `_handleTelemetry()` → `_handleInstruction()` (lines 47, 86) method that processes phase changes and calls `_instructionStream.sendSample()`
+
+---
+
+## Phase 11 — Documentation Update (post-gRPC refactor)
+
+> Bring all docs into sync with the gRPC architecture. Socket.IO and REST references removed.
+
+### 11.1 Rewrite sync-engine.md
+
+- [ ] **Rewrite `docs/core/sync-engine.md`** — replace Socket.IO/REST architecture (SyncSocketListener, SocketConnectionCoordinator, LiveSocketService) with gRPC reality: `SyncGrpcListener` subscribes to `SyncServiceClient.watchChanges()` server-streaming call; authenticates via `authStream`; reconnects with 3s fixed delay on stream error/done; maps `syncProto.SyncEventDto` → `ChangeEvent` → `syncEngine.processEvents()`. Update wiring diagram: `SyncApi(grpcClient) → SyncEngine → SyncGrpcListener(syncService, syncEngine, syncStateDao, authStream)`. Remove all Socket.IO terminology and the `SyncSocketListener` section. Remove REST references from the optimization table (push is now gRPC server-streaming, not Socket.IO).
+
+### 11.2 Fix suggestions-widget.md event source
+
+- [ ] **Fix `docs/home/suggestions-widget.md` line 27** — replace `LiveBreathSessionEnded` with `ModuleSessionEnded`: the `StatsInvalidated` event is now triggered by `moduleStateChannel.events.where((e) => e is ModuleSessionEnded)` in `HomeService.observeChanges()`, not by a `LiveBreathSessionNotifier` event (which no longer exists).
+
+### 11.3 Fix docs reference to `_handleTelemetry` (docs)
+
+- [ ] **Update `docs/realtime/live-session-tracking.md` line 52 and 54** — replace `_handleTelemetry` with `_handleInstruction` and `_pendingTelemetry` with `_pendingInstruction` to match the renamed private members after 10.2 is done
+
+---
+
 ## Completed
 
 | Milestone | Date |
