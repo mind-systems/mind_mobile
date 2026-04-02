@@ -15,10 +15,10 @@ class Environment {
   final String googleServerClientIdPlain;
   final String googleOAuthCallbackScheme;
   final String deeplinkScheme;
-  final String grpcHost;
-  final int grpcPort;
-  final bool grpcSecure;
-  final String apiBaseUrl;
+  String grpcHost;
+  int grpcPort;
+  bool grpcSecure;
+  String apiBaseUrl;
 
   Environment._({
     required this.name,
@@ -62,8 +62,16 @@ class Environment {
       grpcHost: 'YOUR_DEV_GRPC_HOST',
       grpcPort: 443,
       grpcSecure: true,
-      apiBaseUrl: 'http://localhost:3000',
+      apiBaseUrl: 'https://YOUR_DEV_API_URL',
     );
+    // overrideForLocal();
+  }
+
+  static void overrideForLocal() {
+    _instance.grpcHost = 'YOUR_LOCAL_IP';
+    _instance.grpcPort = 50051;
+    _instance.grpcSecure = false;
+    _instance.apiBaseUrl = 'http://YOUR_LOCAL_IP:3001';
   }
 
   static void initProd() {
