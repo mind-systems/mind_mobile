@@ -205,7 +205,7 @@
 
 ### 10.2 Clean up `BreathModuleStateChannel.dart` (mobile)
 
-- [ ] **Rename private members in `lib/BreathModule/Core/BreathModuleStateChannel.dart`** — `_pendingTelemetry` → `_pendingInstruction` (lines 21, 97, 104, 106, 107) holds a pending `BreathSessionState` sample waiting for `moduleSessionId`; `_handleTelemetry()` → `_handleInstruction()` (lines 47, 86) method that processes phase changes and calls `_instructionStream.sendSample()`
+- [x] **Rename private members in `lib/BreathModule/Core/BreathModuleStateChannel.dart`** — `_pendingTelemetry` → `_pendingInstruction` (lines 21, 97, 104, 106, 107) holds a pending `BreathSessionState` sample waiting for `moduleSessionId`; `_handleTelemetry()` → `_handleInstruction()` (lines 47, 86) method that processes phase changes and calls `_instructionStream.sendSample()`
 
 ---
 

@@ -18,7 +18,7 @@ class BreathModuleStateChannel {
   BreathPhase? _previousPhase;
   int? _previousExerciseIndex;
   String? _moduleSessionId;
-  BreathSessionState? _pendingTelemetry;
+  BreathSessionState? _pendingInstruction;
 
   late final StreamSubscription<BreathSessionState> _stateSub;
   late final StreamSubscription<ModuleState> _channelSub;
@@ -44,7 +44,7 @@ class BreathModuleStateChannel {
   void _onState(BreathSessionState state) {
     if (state.loadState != SessionLoadState.ready) return;
     _handleLifecycle(state.status);
-    _handleTelemetry(state);
+    _handleInstruction(state);
     _previousStatus = state.status;
     _previousPhase = state.phase;
     _previousExerciseIndex = state.exerciseIndex;
@@ -83,7 +83,7 @@ class BreathModuleStateChannel {
     }
   }
 
-  void _handleTelemetry(BreathSessionState state) {
+  void _handleInstruction(BreathSessionState state) {
     final sessionId = _moduleSessionId;
     final isActive = state.status == BreathSessionStatus.breath ||
         state.status == BreathSessionStatus.rest;
@@ -94,16 +94,16 @@ class BreathModuleStateChannel {
     if (!phaseChanged) return;
 
     if (sessionId == null) {
-      _pendingTelemetry = state;
+      _pendingInstruction = state;
       return;
     }
     _instructionStream.sendSample(sessionId, state.phase.name, state.currentIntervalMs);
   }
 
   void _flushPending(String sessionId) {
-    final pending = _pendingTelemetry;
+    final pending = _pendingInstruction;
     if (pending == null) return;
-    _pendingTelemetry = null;
+    _pendingInstruction = null;
     _instructionStream.sendSample(sessionId, pending.phase.name, pending.currentIntervalMs);
   }
 
@@ -114,7 +114,7 @@ class BreathModuleStateChannel {
     _previousStatus = null;
     _previousPhase = null;
     _previousExerciseIndex = null;
-    _pendingTelemetry = null;
+    _pendingInstruction = null;
     // Subscriptions stay alive — the stream is reused across restarts.
   }
 
