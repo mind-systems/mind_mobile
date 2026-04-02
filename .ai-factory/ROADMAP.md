@@ -215,7 +215,7 @@
 
 ### 11.1 Rewrite sync-engine.md
 
-- [ ] **Rewrite `docs/core/sync-engine.md`** — replace Socket.IO/REST architecture (SyncSocketListener, SocketConnectionCoordinator, LiveSocketService) with gRPC reality: `SyncGrpcListener` subscribes to `SyncServiceClient.watchChanges()` server-streaming call; authenticates via `authStream`; reconnects with 3s fixed delay on stream error/done; maps `syncProto.SyncEventDto` → `ChangeEvent` → `syncEngine.processEvents()`. Update wiring diagram: `SyncApi(grpcClient) → SyncEngine → SyncGrpcListener(syncService, syncEngine, syncStateDao, authStream)`. Remove all Socket.IO terminology and the `SyncSocketListener` section. Remove REST references from the optimization table (push is now gRPC server-streaming, not Socket.IO).
+- [x] **Rewrite `docs/core/sync-engine.md`** — replace Socket.IO/REST architecture (SyncSocketListener, SocketConnectionCoordinator, LiveSocketService) with gRPC reality: `SyncGrpcListener` subscribes to `SyncServiceClient.watchChanges()` server-streaming call; authenticates via `authStream`; reconnects with 3s fixed delay on stream error/done; maps `syncProto.SyncEventDto` → `ChangeEvent` → `syncEngine.processEvents()`. Update wiring diagram: `SyncApi(grpcClient) → SyncEngine → SyncGrpcListener(syncService, syncEngine, syncStateDao, authStream)`. Remove all Socket.IO terminology and the `SyncSocketListener` section. Remove REST references from the optimization table (push is now gRPC server-streaming, not Socket.IO).
 
 ### 11.2 Fix suggestions-widget.md event source
 

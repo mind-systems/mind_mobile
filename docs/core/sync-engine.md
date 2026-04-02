@@ -1,149 +1,92 @@
-[← Module System](module-system.md) · [Back to README](../../README.md) · [Testing →](testing.md)
-
 # Синхронизация данных
 
-Приложение синхронизирует данные с сервером через два канала: REST-поллинг при запуске (cold start) и WebSocket-события в реальном времени. Оба канала проходят через единый пайплайн `SyncEngine`, который гарантирует консистентность локального кэша Drift с серверным состоянием.
+Приложение синхронизирует данные с сервером через два gRPC-пути: унарный вызов на старте (cold start) и серверный стриминг для получения изменений в реальном времени. Оба пути сходятся в `SyncEngine`, который поддерживает локальный кэш Drift в согласованном состоянии с сервером.
 
 ## Общая схема
 
 ```
-SyncApi (REST)                    LiveSocketService (Socket.IO)
-  GET /sync/changes                  sync:changed event
-  GET /breath_sessions/batch              │
-        │                                 ▼
-        │                        SyncSocketListener
-        │                          (десериализация)
-        │                                 │
-        ▼                                 ▼
-      ┌─────────────────────────────────────┐
-      │            SyncEngine               │
-      │  fetchChanges → group → batch → DB  │
-      └─────────────────────────────────────┘
-                      │
-                      ▼
-          BreathSessionNotifier.invalidate()
-          (ViewModels перечитывают из Drift)
+SyncApi (gRPC unary)              SyncGrpcListener (gRPC server-streaming)
+  SyncService/GetChanges            SyncService/WatchChanges
+         │                                 │
+         │                          maps SyncEventDto → ChangeEvent
+         │                                 │
+         ▼                                 ▼
+       ┌─────────────────────────────────────┐
+       │            SyncEngine               │
+       │  fetchChanges → group → batch → DB  │
+       └─────────────────────────────────────┘
+                       │
+                       ▼
+           BreathSessionNotifier.invalidate()
 ```
 
 ## SyncEngine
 
-`SyncEngine` — чистый Dart-класс без Flutter-зависимостей. Две точки входа:
+`SyncEngine` — чистый Dart-класс без Flutter-зависимостей. У него две точки входа.
 
-| Метод | Когда вызывается | REST-запросы |
-|-------|-------------------|-------------|
-| `sync()` | Cold start, логин | `/sync/changes` + `/batch` |
-| `processEvents(events)` | Socket-событие | только `/batch` |
+`sync()` запускается при cold start или логине. Он обращается к `syncApi.fetchChanges(lastEventId)`, который оборачивает унарный вызов `SyncService/GetChanges`. Если сервер вернул флаг `fullResync`, движок переходит в режим полного сброса (см. ниже). Иначе — события уходят в общий пайплайн обработки.
 
-Оба пути сходятся в общую `_processEvents()` логику:
+`processEvents(events)` вызывается из `SyncGrpcListener`. Перед обработкой он проверяет, не выполняется ли в данный момент `sync()`: если да — ждёт его завершения, чтобы записи не пересеклись в Drift. Это поведение контролируется полем `_activeSyncOp`.
 
-1. **Группировка** — события сортируются по `entity` типу (например, `breath_session`)
-2. **Разделение** — для каждого типа выделяются upserts (`created`/`updated`) и deletes (`deleted`). Если элемент есть в обоих списках — побеждает удаление
-3. **Batch-рефетч** — upserts загружаются пакетом: `GET /breath_sessions/batch?ids=id1,id2,id3`
-4. **Применение к Drift** — загруженные записи upsert'ятся, удалённые — удаляются
-5. **Курсор** — `lastEventId` обновляется до максимального `id` из обработанных событий
-6. **Инвалидация** — `breathSessionNotifier.invalidate()` сбрасывает in-memory кэш, ViewModels перечитывают данные из Drift
+Общий пайплайн работает одинаково для обоих путей:
 
-Защита от параллельных синков: `_activeSyncOp` гарантирует, что одновременно выполняется только одна операция. Socket-события ждут завершения REST-поллинга.
+1. **Сортировка и группировка** — события сортируются по `id` и группируются по типу сущности (`entity`).
+2. **Разделение на upserts и deletes** — если одна и та же сущность фигурирует в обоих списках, побеждает удаление.
+3. **Batch-рефетч** — upserts загружаются пачками по 50 через `SyncApi.fetchSessionsBatch()`, который вызывает `BreathSessionService/BatchGetSessions`.
+4. **Запись в Drift** — загруженные записи upsert'ятся, удалённые — удаляются.
+5. **Курсор** — `lastEventId` обновляется до максимального `id` среди обработанных событий (только если он больше текущего).
+6. **Инвалидация** — `breathSessionNotifier.invalidate()` сигнализирует ViewModels о необходимости перечитать данные из Drift.
 
 ## Cold Start Sync
 
-При запуске приложения, если пользователь аутентифицирован:
+При запуске приложения вызывается `syncEngine.waitForColdStart(isAuthenticated)`. Если пользователь аутентифицирован, метод запускает `sync()` с таймаутом 5 секунд — приложение стартует даже при отсутствии сети.
 
-```dart
-await syncEngine.sync().timeout(const Duration(seconds: 5), onTimeout: () {});
-```
-
-- Запрашивает `lastEventId` из Drift (0, если первый запуск)
-- `GET /sync/changes?after=lastEventId` — получает пропущенные события
-- Применяет через общий пайплайн
-- Таймаут 5 секунд — приложение запускается даже без сети
-
-Дополнительно, при переходе в `AuthenticatedState` (логин) автоматически триггерится `syncEngine.sync()` через подписку на `userNotifier.stream`.
+Помимо этого, `SyncEngine` подписывается на `authStream` в конструкторе: каждый раз, когда поток переходит в `AuthenticatedState` (то есть при логине), автоматически вызывается `sync()`. Первое событие потока пропускается через `.skip(1)` — чтобы не дублировать cold-start синк, уже запущенный при инициализации.
 
 ## Full Resync
 
-Если сервер отвечает `fullResync: true`, SyncEngine:
+Иногда сервер отвечает на `GetChanges` флагом `fullResync: true`. Это означает, что курсор клиента устарел и локальный кэш нужно сбросить. `SyncEngine` при этом:
 
-1. Проверяет, что `lastEventId != 0` (защита от бесконечного цикла при первом запуске)
-2. Очищает весь кэш Drift (`deleteAllSessions()`)
-3. Сбрасывает `lastEventId` в 0
-4. Не рефетчит повторно — обычная пагинация подгрузит данные по мере необходимости
+1. Проверяет, что `lastEventId != 0` — если курсор равен нулю, сброс был бы бесконечным циклом, и движок просто выходит.
+2. Удаляет все сессии из Drift.
+3. Сбрасывает курсор до нуля.
+4. Инвалидирует `breathSessionNotifier`.
 
-## SyncSocketListener
+Повторный рефетч не запускается — обычная пагинация подгружает данные по мере того, как пользователь просматривает список.
 
-Мост между WebSocket-инфраструктурой и доменным SyncEngine:
+## SyncGrpcListener
 
-- Подписывается на `liveSocketService.syncChangedEvents`
-- Слушает событие `sync:changed` с payload `{ events: [...] }`
-- Десериализует `ChangeEvent` из JSON
-- Вызывает `syncEngine.processEvents(events)` напрямую — без REST-запроса к `/sync/changes`
+`SyncGrpcListener` — мост между gRPC-стримингом и доменным `SyncEngine`. Он принимает `SyncServiceClient`, `SyncEngine`, `ISyncStateDao` и `Stream<AuthState>` и подписывается на поток аутентификации в конструкторе. При переходе в `AuthenticatedState` запускается `_startWatching()`, при `GuestState` — `_stopWatching()`.
 
-Вынесен в отдельный класс, потому что связан с Socket.IO-инфраструктурой, а SyncEngine остаётся чистым доменным кодом.
+`_startWatching()` считывает `lastEventId` из DAO и открывает серверный стрим: `syncService.watchChanges(WatchChangesRequest(afterId: lastEventId))`. Сервер сначала отдаёт догоняющий пакет — все события после сохранённого курсора, — а затем продолжает стримить новые события по мере их появления. Каждое сообщение стрима — это proto-конверт `ChangeEvent`, содержащий `repeated SyncEventDto`. Листенер преобразует каждый `SyncEventDto` в доменный `ChangeEvent` (поле `createdAt` при этом отбрасывается) и передаёт список в `syncEngine.processEvents()`.
 
-## Переподключение при возобновлении приложения
+Между чтением `lastEventId` и открытием стрима существует асинхронный зазор. Чтобы закрыть окно гонки при быстром логауте, `_startWatching()` проверяет флаг `_isAuthenticated` до и после `await`.
 
-`SocketConnectionCoordinator` подписывается на `AppLifecycleState.resumed` через `AppLifecycleListener`. При каждом возобновлении приложения, если пользователь аутентифицирован и сокет не подключён, вызывается `connect()`.
-
-Это дополняет существующий слушатель connectivity (который обрабатывает сетевые флапы, пока приложение активно). Переподключение по lifecycle необходимо, потому что `connectivity_plus` может не сгенерировать событие "сеть восстановлена" после сна Mac или долгого фонового режима — оставляя сокет мёртвым до перезапуска приложения.
+Если стрим завершается — с ошибкой или штатно — вызывается `_scheduleReconnect()`. Он ставит таймер на 3 секунды и снова вызывает `_startWatching()`, если пользователь всё ещё аутентифицирован. `_stopWatching()` отменяет как активную подписку на стрим, так и любой ожидающий таймер переподключения.
 
 ## Модели данных
 
-**ChangeEvent** — единица синхронизации:
+**ChangeEvent** — доменная единица синхронизации. Содержит монотонно растущий `id` события, строковый тип сущности `entity` (например, `breath_session`), UUID сущности `refId` и строковое действие `action` (`created`, `updated`, `deleted`). Модель маппится из proto-типа `SyncEventDto`, который дополнительно несёт поле `createdAt` — оно не используется в доменном слое и отбрасывается при конвертации.
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `id` | `int` | Глобальный ID события (монотонно растущий) |
-| `entity` | `String` | Тип сущности (`breath_session`) |
-| `refId` | `String` | ID сущности (UUID) |
-| `action` | `String` | `created`, `updated`, `deleted` |
+На стороне стриминга сервер может коалесцировать несколько быстро следующих друг за другом изменений в один proto-конверт `ChangeEvent` с полем `repeated SyncEventDto`. Листенер разворачивает конверт в список доменных событий перед передачей в движок.
 
-**SyncResponse** — ответ `/sync/changes`:
-
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `events` | `List<ChangeEvent>` | Список событий после указанного курсора |
-| `fullResync` | `bool` | Клиент должен сбросить кэш и начать заново |
-
-**BatchSessionsResponse** — ответ `/breath_sessions/batch`:
-
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `data` | `List<BreathSession>` | Полные объекты сессий |
-
-## Хранение курсора
-
-Таблица `SyncState` в Drift (singleton-паттерн):
-
-| Столбец | Тип | Описание |
-|---------|-----|----------|
-| `key` | `TEXT PK` | Всегда `"lastEventId"` |
-| `value` | `TEXT` | Строковое представление числа (например, `"130"`) |
-
-`ISyncStateDao` предоставляет три метода: `getLastEventId()` (возвращает 0, если нет записи), `setLastEventId(id)` (upsert), `reset()` (удаление для full resync).
+**Курсор** хранится в таблице `SyncState` в Drift (singleton-запись). `ISyncStateDao` предоставляет три операции: прочитать курсор (возвращает 0 при отсутствии записи), обновить его (upsert) и сбросить (удаление строки для full resync).
 
 ## Оптимизация запросов
 
-| Сценарий | HTTP-запросов | Детали |
-|----------|---------------|--------|
-| Online (socket) | 1 | Только batch-рефетч |
-| Cold start | 2 | `/sync/changes` + batch-рефетч |
-| Нет изменений | 1 (cold start) / 0 (socket) | Пустой список событий — нет рефетча |
+| Сценарий | gRPC-вызовы | Детали |
+|----------|-------------|--------|
+| Реальное время (стриминг) | 1 | Только batch-рефетч (unary) |
+| Cold start | 2 | `GetChanges` (unary) + batch-рефетч (unary) |
+| Нет изменений | 1 (cold start) / 0 (стриминг) | Пустой список событий — рефетч не запускается |
 
 ## Wiring в App.dart
 
 ```
-SyncApi(httpClient)
-  → SyncEngine(syncApi, syncStateDao, breathSessionDao, breathSessionNotifier)
-    → cold-start sync (если не гость)
-    → подписка на AuthenticatedState → sync()
-  → SyncSocketListener(liveSocketService, syncEngine)
-    → подписка на syncChangedEvents (в конструкторе)
+SyncApi(grpcClient.syncService, grpcClient.breathSessionService)
+  → SyncEngine(syncApi, syncStateDao, breathSessionDao, breathSessionNotifier, authStream: userNotifier.stream)
+    → waitForColdStart (блокирует до 5 сек, если аутентифицирован)
+  → SyncGrpcListener(syncService, syncEngine, syncStateDao, authStream: userNotifier.stream)
 ```
 
-Оба объекта живут всё время жизни приложения — explicit dispose не требуется.
-
-## See Also
-
-- [Live Session Tracking](../socket/live-session-tracking.md) — WebSocket-инфраструктура, на которой работает sync:changed
-- [Notifier Pattern](notifier-pattern.md) — паттерн типизированных событий, используемый для инвалидации
-- [Global Listeners](global-listeners.md) — координация глобальных событий, включая реакцию на логин
+`SyncGrpcListener` создаётся после завершения cold-start, поэтому стриминговая подписка открывается только тогда, когда начальный курсор уже установлен. Оба объекта живут всё время жизни приложения — явный dispose не требуется.

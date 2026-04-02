@@ -60,8 +60,8 @@ class Environment {
       googleOAuthCallbackScheme: 'com.googleusercontent.apps.YOUR_DEV_IOS_CLIENT_ID',
       deeplinkScheme: 'mind-dev',
       grpcHost: 'YOUR_DEV_GRPC_HOST',
-      grpcPort: 50051,
-      grpcSecure: false,
+      grpcPort: 443,
+      grpcSecure: true,
       apiBaseUrl: 'http://localhost:3000',
     );
   }
