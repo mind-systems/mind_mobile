@@ -12,12 +12,12 @@ class BreathModuleInstructionStream {
   int _maxSamplesPerSecond = 10;
   DateTime? _lastSendTime;
 
-  StreamSubscription<void>? _telemetryStateSub;
+  StreamSubscription<void>? _instructionReadySub;
   StreamSubscription<InstructionAck>? _dataAckSub;
 
   BreathModuleInstructionStream({required ModuleInstructionStream instructionStream})
       : _instructionStream = instructionStream {
-    _telemetryStateSub = _instructionStream.readyEvents.listen((_) => flushBuffer());
+    _instructionReadySub = _instructionStream.readyEvents.listen((_) => flushBuffer());
     _dataAckSub = _instructionStream.acks.listen(_onDataAck);
   }
 
@@ -53,7 +53,7 @@ class BreathModuleInstructionStream {
   }
 
   void dispose() {
-    _telemetryStateSub?.cancel();
+    _instructionReadySub?.cancel();
     _dataAckSub?.cancel();
   }
 

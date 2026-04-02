@@ -201,7 +201,7 @@
 
 ### 10.1 Clean up `BreathModuleInstructionStream.dart` (mobile)
 
-- [ ] **Rename `_telemetryStateSub` → `_instructionReadySub`** — in `lib/BreathModule/Core/BreathModuleInstructionStream.dart` (lines 15, 20, 56); this subscription listens to `_instructionStream.readyEvents`, so `_instructionReadySub` matches the actual purpose
+- [x] **Rename `_telemetryStateSub` → `_instructionReadySub`** — in `lib/BreathModule/Core/BreathModuleInstructionStream.dart` (lines 15, 20, 56); this subscription listens to `_instructionStream.readyEvents`, so `_instructionReadySub` matches the actual purpose
 
 ### 10.2 Clean up `BreathModuleStateChannel.dart` (mobile)
 
