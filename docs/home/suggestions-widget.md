@@ -24,7 +24,7 @@ Enum `DayPeriod` — чистый Dart, без зависимости от Flutt
 
 | Событие | Источник | Реакция ViewModel |
 |---------|----------|-------------------|
-| `StatsInvalidated` | Завершение живой сессии (`LiveBreathSessionEnded`) | Перезагрузка статистики |
+| `StatsInvalidated` | Завершение сессии модуля (`ModuleSessionEnded` из `moduleStateChannel`) | Перезагрузка статистики |
 | `HomeSessionExpired` | `UserNotifier` перешёл в `GuestState` | Сброс состояния в начальное |
 | `HomeAuthenticated` | `UserNotifier` перешёл в `AuthenticatedState` | Загрузка рекомендаций и статистики |
 

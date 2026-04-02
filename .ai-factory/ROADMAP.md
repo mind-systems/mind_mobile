@@ -219,7 +219,7 @@
 
 ### 11.2 Fix suggestions-widget.md event source
 
-- [ ] **Fix `docs/home/suggestions-widget.md` line 27** — replace `LiveBreathSessionEnded` with `ModuleSessionEnded`: the `StatsInvalidated` event is now triggered by `moduleStateChannel.events.where((e) => e is ModuleSessionEnded)` in `HomeService.observeChanges()`, not by a `LiveBreathSessionNotifier` event (which no longer exists).
+- [x] **Fix `docs/home/suggestions-widget.md` line 27** — replace `LiveBreathSessionEnded` with `ModuleSessionEnded`: the `StatsInvalidated` event is now triggered by `moduleStateChannel.events.where((e) => e is ModuleSessionEnded)` in `HomeService.observeChanges()`, not by a `LiveBreathSessionNotifier` event (which no longer exists).
 
 ### 11.3 Fix docs reference to `_handleTelemetry` (docs)
 
