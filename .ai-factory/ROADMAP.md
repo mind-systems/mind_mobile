@@ -223,7 +223,7 @@
 
 ### 11.3 Fix docs reference to `_handleTelemetry` (docs)
 
-- [ ] **Update `docs/realtime/live-session-tracking.md` line 52 and 54** — replace `_handleTelemetry` with `_handleInstruction` and `_pendingTelemetry` with `_pendingInstruction` to match the renamed private members after 10.2 is done
+- [x] **Update `docs/realtime/live-session-tracking.md` line 52 and 54** — replace `_handleTelemetry` with `_handleInstruction` and `_pendingTelemetry` with `_pendingInstruction` to match the renamed private members after 10.2 is done
 
 ---
 

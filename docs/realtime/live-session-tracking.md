@@ -51,9 +51,9 @@ BreathModuleStateChannel
 }
 ```
 
-`BreathModuleStateChannel._handleTelemetry` перехватывает обновления `BreathSessionState`. Если `state.phase` или `state.exerciseIndex` изменились и сессия активна — вызывает `_instructionStream.sendSample(liveId, phase, durationMs)`. Timestamp выставляется на клиенте: это момент перехода движка в эту фазу.
+`BreathModuleStateChannel._handleInstruction` перехватывает обновления `BreathSessionState`. Если `state.phase` или `state.exerciseIndex` изменились и сессия активна — вызывает `_instructionStream.sendSample(sessionId, phase, durationMs)`. Timestamp выставляется на клиенте: это момент перехода движка в эту фазу.
 
-Если `moduleSessionId` ещё не пришёл (ответ на `activity:start` не вернулся), сэмпл сохраняется в `_pendingTelemetry`. Как только канал получает `moduleSessionId`, `BreathModuleStateChannel` сбрасывает pending-сэмпл через `_flushPending`.
+Если `moduleSessionId` ещё не пришёл (ответ на `activity:start` не вернулся), сэмпл сохраняется в `_pendingInstruction`. Как только канал получает `moduleSessionId`, `BreathModuleStateChannel` сбрасывает pending-сэмпл через `_flushPending`.
 
 Когда сессия на паузе, сервер блокирует входящие сэмплы `breath_phase`. Lifecycle-события (`paused`, `resumed`) сервер пишет самостоятельно — они проходят всегда. За маркером `paused` возникает чистый пробел в сэмплах, `resumed` его закрывает.
 
