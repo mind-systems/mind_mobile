@@ -41,6 +41,7 @@ import 'package:mind/BreathModule/Core/BreathModuleInstructionStream.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mind/Core/AppLifecycleService.dart';
 import 'package:mind/Core/Grpc/GrpcAuthInterceptor.dart';
+import 'package:mind/Core/Grpc/GrpcLoggingInterceptor.dart';
 import 'package:mind/Core/Grpc/GrpcClient.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/ModuleInstructionStream.dart';
@@ -117,7 +118,7 @@ class App {
 
     final appLifecycleService = AppLifecycleService();
     final grpcAuthInterceptor = GrpcAuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
-    final grpcClient = GrpcClient(host: Environment.instance.grpcHost, port: Environment.instance.grpcPort, isSecure: Environment.instance.grpcSecure, detachStream: appLifecycleService.onDetach, interceptors: [grpcAuthInterceptor]);
+    final grpcClient = GrpcClient(host: Environment.instance.grpcHost, port: Environment.instance.grpcPort, isSecure: Environment.instance.grpcSecure, detachStream: appLifecycleService.onDetach, interceptors: [grpcAuthInterceptor, GrpcLoggingInterceptor()]);
     final authApi = AuthApi(grpcClient.authService, const FlutterSecureStorage());
     final statsApi = StatsApi(grpcClient.statsService);
     final userApi = UserApi(grpcClient.userService, grpcClient.breathSessionService);
@@ -146,11 +147,7 @@ class App {
     // listens for AuthenticatedState and overwrites the local language with
     // the value returned by the server. This ensures the language set during
     // registration propagates back to the device on first sign-in.
-    final appSettingsNotifier = AppSettingsNotifier(
-      repository: appSettingsRepository,
-      initialState: AppSettingsState(theme: initialTheme, language: initialLanguage),
-      authStateStream: userNotifier.stream,
-    );
+    final appSettingsNotifier = AppSettingsNotifier(repository: appSettingsRepository, initialState: AppSettingsState(theme: initialTheme, language: initialLanguage), authStateStream: userNotifier.stream,);
 
     final authCodeHandler = AuthCodeDeeplinkHandler(userNotifier: userNotifier);
     final sessionHandler = BreathSessionDeeplinkHandler(router: appRouter);
