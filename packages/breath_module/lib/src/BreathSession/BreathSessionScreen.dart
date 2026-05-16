@@ -9,6 +9,7 @@ import 'Animation/BreathMotionEngine.dart';
 import 'Animation/BreathShapeShifter.dart';
 import 'Animation/BreathAnimationCoordinator.dart';
 import 'Animation/OrbAnimationCoordinator.dart';
+import 'Audio/BreathSoundCoordinator.dart';
 import 'Views/BreathShapeWidget.dart';
 import 'Views/BreathTimelineWidget.dart';
 import 'Views/EclipseOrb.dart';
@@ -33,6 +34,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
   late final BreathShapeShifter _shapeShifter;
   late final BreathAnimationCoordinator _coordinator;
   late final OrbAnimationCoordinator _orbCoordinator;
+  late final BreathSoundCoordinator _soundCoordinator;
   late final ScrollController _scrollController;
 
   // GlobalKey для доступа к методам BreathTimelineWidget
@@ -59,6 +61,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
     );
 
     _orbCoordinator = OrbAnimationCoordinator(viewModel: viewModel, vsync: this);
+    _soundCoordinator = BreathSoundCoordinator(viewModel: viewModel);
 
     _scrollController = ScrollController();
 
@@ -67,6 +70,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
       final initialState = ref.read(breathViewModelProvider);
       _coordinator.initialize(initialState);
       _orbCoordinator.initialize(initialState);
+      _soundCoordinator.initialize(initialState);
 
       // Запускаем загрузку сессии
       viewModel.initState();
@@ -93,6 +97,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
     widget.onDispose?.call();
     _coordinator.dispose();
     _orbCoordinator.dispose();
+    _soundCoordinator.dispose();
     _motionEngine.dispose();
     _shapeShifter.dispose();
     _scrollController.dispose();
@@ -250,6 +255,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
             widget.onRestart?.call();
             _coordinator.reset();
             _orbCoordinator.reset();
+            _soundCoordinator.reset();
             viewModel.restartEngine();
           },
           iconSize: 40,
