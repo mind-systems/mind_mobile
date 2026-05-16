@@ -227,6 +227,34 @@
 
 ---
 
+## Phase 12 — Breath Sound
+
+### 12.1 Add `just_audio` to `packages/breath_module`
+
+- [x] **Add `just_audio` to breath_module** — run `flutter pub add just_audio` from inside `packages/breath_module/` (not from the repo root); the dependency must appear in `packages/breath_module/pubspec.yaml`, not in the root `pubspec.yaml`
+
+### 12.2 Add audio assets to the main app
+
+- [x] **Copy WAV files and declare assets** — create `assets/audio/` in the project root; copy `ohm_inhale.wav`, `ohm_exhale.wav`, `ohm_hold.wav` from `~/Downloads/breath_sounds/` into it; add `- assets/audio/` to the `flutter: > assets:` section in the root `pubspec.yaml` (currently only `assets/images/` and `assets/images/modules/home/` are listed); do not touch `packages/breath_module/pubspec.yaml` for assets — the package reads main-app assets by path directly
+
+### 12.3 Create `BreathSoundCoordinator`
+
+- [ ] **Create `packages/breath_module/lib/src/BreathSession/Audio/BreathSoundCoordinator.dart`** — follows the same lifecycle pattern as `BreathAnimationCoordinator`: constructor `({required BreathViewModel viewModel})`; fields: `late AudioPlayer _player`, `void Function()? _stateListener`, `BreathPhase? _currentPhase`, `BreathSessionStatus? _currentStatus`, `Timer? _fadeTimer`; static asset map: `inhale → 'assets/audio/ohm_inhale.wav'`, `exhale → 'assets/audio/ohm_exhale.wav'`, `hold → 'assets/audio/ohm_hold.wav'` (rest has no entry — silence); `initialize(BreathSessionState initialState)`: create `_player = AudioPlayer()`, call `_player.setLoopMode(LoopMode.one)` fire-and-forget, then `_stateListener = viewModel.listen(_onStateChanged)` (no `_syncInitialState` — session always opens in pause, so there is no state to sync at init time); `_onStateChanged`: guard `loadState != ready`; check status first — if changed, update `_currentStatus`, call `_fadeTo(0.0, 200ms)` on pause, `_fadeTo(1.0, 200ms)` on breath-resume, `_fadeTo(0.0, 500ms)` on complete/rest, then return; check phase next — if changed, update `_currentPhase`, call `_switchToPhase(phase)` if phase has an asset, else `_fadeTo(0.0, 500ms)` for rest, then return; finally check fade-out trigger — if status is breath and phase has an asset and `0 < remainingTicks <= 3`, call `_fadeTo(0.0, Duration(milliseconds: remainingTicks * (currentIntervalMs > 0 ? currentIntervalMs : 1000)))`; `_switchToPhase(phase)` is async fire-and-forget: `await _player.stop()`, `await _player.setAsset(asset)`, `await _player.setVolume(0.0)`, `await _player.play()`, then `_fadeTo(1.0, Duration(seconds: 2))`; `_fadeTo(target, duration)`: cancel active `_fadeTimer`, capture `startVolume = _player.volume`, compute `steps = max(1, duration.inMilliseconds ~/ 16)`, run `Timer.periodic(16ms)` that interpolates volume linearly from `startVolume` to `target` over `steps` ticks then cancels itself; `reset()`: cancel `_fadeTimer`, call `_player.stop()` and `_player.setVolume(0.0)` fire-and-forget, null out `_currentPhase`, `_currentStatus`; `dispose()`: cancel `_fadeTimer`, call `_stateListener?.call()`, call `_player.dispose()`
+
+### 12.4 Wire `BreathSoundCoordinator` into `BreathSessionScreen`
+
+- [ ] **Wire in `packages/breath_module/lib/src/BreathSession/BreathSessionScreen.dart`** — add `late final BreathSoundCoordinator _soundCoordinator` field alongside `_coordinator` and `_orbCoordinator`; in `initState()` after creating `_orbCoordinator`, add `_soundCoordinator = BreathSoundCoordinator(viewModel: viewModel)`; in the existing `addPostFrameCallback` block after `_orbCoordinator.initialize(initialState)` and before `viewModel.initState()`, add `_soundCoordinator.initialize(initialState)`; in `dispose()` after `_orbCoordinator.dispose()`, add `_soundCoordinator.dispose()`; in `_buildControlButton` in the restart-button `onPressed` where `_coordinator.reset()` and `_orbCoordinator.reset()` are called, add `_soundCoordinator.reset()`; add `import 'Audio/BreathSoundCoordinator.dart'` alongside the existing Animation imports
+
+### 12.5 Expose tick source through state
+
+- [ ] **Add `tickSource: TickSource` to `BreathSessionState` via `ITickService.source`** — `BreathSessionState` currently has no tick-source field, but `BreathSoundCoordinator` (12.6) needs it to choose the correct one-shot sound. Four files change: (1) `packages/breath_module/lib/src/ITickService.dart` — add `import 'CommonModels/TickSource.dart'` and add `TickSource get source` to the abstract interface; (2) `lib/BreathModule/ClockTickService.dart` — implement `source` returning `TickSource.timer`; (3) `packages/breath_module/lib/src/BreathSession/Models/BreathSessionState.dart` — add `final TickSource tickSource` with default `TickSource.timer`, add to constructor and `copyWith`; (4) `packages/breath_module/lib/src/BreathSession/BreathSessionViewModel.dart` — in `_setupEngine()` pass `tickSource: tickService.source` in the full `BreathSessionState(...)` constructor call; in `_onEngineState()` carry forward `tickSource: state.tickSource` in the second full constructor call (engine state does not emit tick source — it is stable per session and changes only when `_setupEngine` is called again)
+
+### 12.6 Extend `BreathSoundCoordinator` with per-tick sounds
+
+- [ ] **Add tick one-shot sounds to `BreathSoundCoordinator`** — requires 12.5 (tickSource on state) and two new audio files in `assets/audio/`: `tick_clock.wav` (timer source) and `tick_heartbeat.wav` (heartbeat source); no `pubspec.yaml` change needed — `assets/audio/` is already declared. Add fields: `late AudioPlayer _tickPlayer`, `StreamSubscription<void>? _tickSub`, `TickSource _currentTickSource = TickSource.timer`; add static tick asset map `{TickSource.timer: 'assets/audio/tick_clock.wav', TickSource.heartbeat: 'assets/audio/tick_heartbeat.wav'}`; `initialize()`: after creating `_loopPlayer` (rename `_player` → `_loopPlayer` for clarity), create `_tickPlayer = AudioPlayer()`, call `_loadTickAsset(_currentTickSource)` fire-and-forget, then attach `_tickSub = viewModel.tickStream.listen((_) => _onTick())`; `_syncInitialState(state)`: add `_currentTickSource = state.tickSource`; `_onStateChanged`: immediately after the `loadState` guard, if `state.tickSource != _currentTickSource` update `_currentTickSource` and call `_loadTickAsset(_currentTickSource)` fire-and-forget; `_loadTickAsset(source)` async fire-and-forget: `await _tickPlayer.setAsset(_tickAssets[source]!)` (pre-buffers the asset so each tick only needs seek+play); `_onTick()`: guard — return if NOT (`_currentStatus == BreathSessionStatus.pause` OR `(_currentStatus == BreathSessionStatus.breath && _currentPhase == BreathPhase.rest)`); otherwise fire-and-forget `await _tickPlayer.seek(Duration.zero)` then `_tickPlayer.play()`; `reset()`: add `_tickPlayer.stop()` fire-and-forget (subscription stays — ticks continue after restart); `dispose()`: add `_tickSub?.cancel()`, `_tickPlayer.dispose()`
+
+---
+
 ## Completed
 
 | Milestone | Date |
