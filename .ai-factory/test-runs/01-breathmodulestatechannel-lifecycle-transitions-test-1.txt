@@ -1,0 +1,112 @@
+$ /usr/local/bin/flutter test test/BreathModule/breath_module_state_channel_test.dart
+exit code: 0
+elapsed: 28.8s
+
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 89.0.0 (100.0.0 available)
+  analyzer 8.2.0 (13.0.0 available)
+  app_links 6.4.1 (7.0.0 available)
+  async 2.13.0 (2.13.1 available)
+  build 4.0.1 (4.0.6 available)
+  build_config 1.2.0 (1.3.0 available)
+  build_daemon 4.0.4 (4.1.1 available)
+  build_runner 2.9.0 (2.15.0 available)
+  built_value 8.12.0 (8.12.6 available)
+  cli_util 0.4.2 (0.5.1 available)
+  code_builder 4.11.0 (4.11.1 available)
+  connectivity_plus 7.0.0 (7.1.1 available)
+  connectivity_plus_platform_interface 2.0.1 (2.1.0 available)
+  crypto 3.0.6 (3.0.7 available)
+  cupertino_icons 1.0.8 (1.0.9 available)
+  dart_style 3.1.2 (3.1.9 available)
+  device_info_plus 12.3.0 (13.1.0 available)
+  device_info_plus_platform_interface 7.0.3 (8.1.0 available)
+  drift 2.28.2 (2.33.0 available)
+  drift_dev 2.28.3 (2.33.0 available)
+  drift_flutter 0.2.7 (0.3.0 available)
+  ffi 2.1.4 (2.2.0 available)
+  flutter_secure_storage 10.0.0 (10.2.0 available)
+  flutter_secure_storage_darwin 0.2.0 (0.3.1 available)
+  flutter_secure_storage_web 2.1.0 (2.1.1 available)
+  flutter_secure_storage_windows 4.1.0 (4.2.1 available)
+  flutter_web_auth_2 5.0.1 (5.0.2 available)
+  go_router 17.0.0 (17.2.3 available)
+  google_sign_in_android 7.2.2 (7.2.10 available)
+  google_sign_in_ios 6.2.2 (6.3.0 available)
+  google_sign_in_web 1.1.0 (1.1.3 available)
+  googleapis_auth 2.0.0 (2.3.1 available)
+  gtk 2.1.0 (2.2.0 available)
+  http 1.5.0 (1.6.0 available)
+  json_annotation 4.9.0 (4.12.0 available)
+  lints 6.0.0 (6.1.0 available)
+  matcher 0.12.18 (0.12.20 available)
+  meta 1.17.0 (1.18.2 available)
+  package_info_plus 9.0.0 (10.1.0 available)
+  package_info_plus_platform_interface 3.2.1 (4.1.0 available)
+  path_provider_android 2.2.18 (2.3.1 available)
+  path_provider_foundation 2.4.2 (2.6.0 available)
+  share_plus 12.0.1 (13.1.0 available)
+  share_plus_platform_interface 6.1.0 (7.1.0 available)
+  shared_preferences 2.5.3 (2.5.5 available)
+  shared_preferences_android 2.4.17 (2.4.23 available)
+  shared_preferences_platform_interface 2.4.1 (2.4.2 available)
+  source_gen 4.0.1 (4.2.3 available)
+  source_span 1.10.1 (1.10.2 available)
+  sqlite3 2.9.1 (3.3.1 available)
+  sqlite3_flutter_libs 0.5.40 (0.6.0+eol available)
+  sqlparser 0.41.2 (0.44.4 available)
+  test 1.29.0 (1.31.1 available)
+  test_api 0.7.9 (0.7.12 available)
+  test_core 0.6.15 (0.6.18 available)
+  url_launcher_android 6.3.28 (6.3.29 available)
+  url_launcher_web 2.4.2 (2.4.3 available)
+  vector_math 2.2.0 (2.3.0 available)
+  vm_service 15.0.2 (15.2.0 available)
+  watcher 1.1.4 (1.2.1 available)
+  win32 5.15.0 (6.2.0 available)
+  win32_registry 2.1.0 (3.0.3 available)
+  xml 6.6.1 (7.0.1 available)
+Got dependencies!
+63 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading /Users/max/projects/mind/mind_mobile/test/BreathModule/breath_module_state_channel_test.dart
+00:00 +0: BreathModuleStateChannel — scaffolding should construct without throwing
+00:00 +1: BreathModuleStateChannel — start transitions should call channel.start with ActivityType.breath and the constructor sessionId when the first emitted state has status=breath
+00:00 +2: BreathModuleStateChannel — start transitions should call channel.start with ActivityType.breath and the constructor sessionId when transitioning from pause to breath for the first time
+00:00 +3: BreathModuleStateChannel — start transitions should not call unpause or pause when start is dispatched on the first active transition
+00:00 +4: BreathModuleStateChannel — start transitions should not re-invoke start when the same breath state is emitted twice in a row
+00:00 +5: BreathModuleStateChannel — unpause transitions should call unpause exactly once when transitioning pause -> breath after start has already happened
+00:00 +6: BreathModuleStateChannel — unpause transitions should call unpause exactly once when transitioning pause -> rest after start has already happened
+00:00 +7: BreathModuleStateChannel — unpause transitions should not call start again on a pause -> breath transition once a session has already been started
+00:00 +8: BreathModuleStateChannel — unpause transitions should call start (not unpause) when the very first emission is status=rest with no prior emission
+00:00 +9: BreathModuleStateChannel — unpause transitions should not call start, unpause, or pause when transitioning breath -> rest while active
+00:00 +10: BreathModuleStateChannel — unpause transitions should not call start, unpause, or pause when transitioning rest -> breath while active
+00:00 +11: BreathModuleStateChannel — pause transitions should call channel.pause exactly once when transitioning breath -> pause
+00:00 +12: BreathModuleStateChannel — pause transitions should call channel.pause exactly once when transitioning rest -> pause
+00:00 +13: BreathModuleStateChannel — pause transitions should not call pause when the very first emission is status=pause (wasActive=false short-circuits the pause branch)
+00:00 +14: BreathModuleStateChannel — pause transitions should not call pause when transitioning pause -> pause (status-unchanged short-circuit at the top of _handleLifecycle)
+00:00 +15: BreathModuleStateChannel — end transitions should call channel.end exactly once when transitioning breath -> complete
+00:00 +16: BreathModuleStateChannel — end transitions should call channel.end exactly once when transitioning rest -> complete
+00:00 +17: BreathModuleStateChannel — end transitions should call channel.end exactly once when transitioning pause -> complete after the session was started
+00:00 +18: BreathModuleStateChannel — end transitions should not call channel.end on a second complete emission (status-unchanged short-circuit)
+00:00 +19: BreathModuleStateChannel — end transitions should not call channel.end when complete is emitted before any start (the _started guard in the complete branch suppresses end)
+00:00 +20: BreathModuleStateChannel — end transitions should not call channel.end a second time when a complete -> pause -> complete sequence is emitted (the _ended guard prevents duplicate end)
+00:00 +21: BreathModuleStateChannel — loadState filter should not call start when a state with status=breath and loadState=loading is emitted
+00:00 +22: BreathModuleStateChannel — loadState filter should not call pause when a state with status=pause and loadState=loading is emitted between two ready breath states
+00:00 +23: BreathModuleStateChannel — loadState filter should not call end when a state with status=complete and loadState=error is emitted
+00:00 +24: BreathModuleStateChannel — loadState filter should not update _previousStatus when a non-ready emission is filtered, verified by emitting ready breath -> non-ready pause -> ready breath and asserting no unpause call was dispatched between the two breath emissions
+00:00 +25: BreathModuleStateChannel — loadState filter should resume dispatching lifecycle calls correctly once a ready emission follows a filtered one, verified by ready breath -> non-ready breath -> ready pause emitting exactly one pause
+00:00 +26: BreathModuleStateChannel — dispose() / stop() should not call channel.stop when dispose is invoked before any state has been emitted
+00:00 +27: BreathModuleStateChannel — dispose() / stop() should not call channel.stop when dispose is invoked after only non-ready emissions have arrived
+00:00 +28: BreathModuleStateChannel — dispose() / stop() should call channel.stop exactly once when dispose is invoked while the session is started and not yet ended (breath -> dispose)
+00:00 +29: BreathModuleStateChannel — dispose() / stop() should call channel.stop exactly once when dispose is invoked while the session is paused after being started (breath -> pause -> dispose)
+00:00 +30: BreathModuleStateChannel — dispose() / stop() should not call channel.stop when dispose is invoked after the session has already completed (breath -> complete -> dispose)
+00:00 +31: BreathModuleStateChannel — dispose() / stop() should not dispatch any further lifecycle calls when state emissions arrive after dispose has run
+00:00 +32: BreathModuleStateChannel — reset() should call channel.start (not unpause) on the next breath emission after reset, even if the session had previously been started
+00:00 +33: BreathModuleStateChannel — reset() should call channel.start (not unpause) on the next rest emission after reset, exercising the wasPaused=null branch
+00:00 +34: BreathModuleStateChannel — reset() should not call channel.end when complete is emitted after reset with no fresh start in between
+00:00 +35: BreathModuleStateChannel — reset() should keep the stateStream subscription alive across reset, verified by driving a ready breath on the same stateCtrl after reset and observing a second start call
+00:00 +36: All tests passed!
+
+TEST_PASS
