@@ -239,3 +239,23 @@ When adding a new feature `FooModule`:
 - ❌ Adding Riverpod `ref` or Flutter imports to a Notifier or Repository
 - ❌ Skipping the DTO conversion and passing domain models directly to the ViewModel
 - ❌ Passing inline maps/primitives as API request bodies — always use a typed DTO from `lib/Core/Api/Models/` with `toJson()`; the API method receives the DTO, the Repository constructs it (see `SaveBreathSessionRequest`, `StarSessionRequest`, `DevicePingRequest`).
+
+## Features
+
+| Feature | Hashes |
+|---------|--------|
+| Authentication (Google Sign-In + passwordless email OTP) | |
+| Breathing session (phase state machine, pause/resume/restart) | |
+| Session constructor (create and edit custom exercises) | |
+| Session list and library (pagination, starred, grouping) | b19b90a |
+| Session complexity indicator | 688c732 |
+| Heart rate tick source (BLE-driven session timing) | |
+| Time-of-day suggestions carousel | 95c5d6a |
+| App settings (theme, language, server sync) | 62a360f |
+| Personal access tokens (MCP / API integrations) | 3bc36cb |
+| Session statistics | bdc8455 |
+| gRPC API | 7a71587 |
+| Real-time data sync | 48fab6a |
+| Live module session | 7199841 |
+| Breath session audio | d73bd27 |
+| Roadmap drop history | d73bd27 |
