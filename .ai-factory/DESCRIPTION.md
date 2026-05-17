@@ -21,7 +21,7 @@ A Flutter mindfulness app for iOS and Android. Users create and run guided breat
 - **Flavors:** `dev` and `prod`
 - **Local Database:** Drift 2.x (SQLite ORM with code generation)
 - **gRPC Client:** grpc 5.x + protobuf 6.x for Protocol Buffer messaging
-- **Presentation State:** Riverpod 2.x (`StateNotifier` + `ProviderScope`)
+- **Presentation State:** Riverpod 2.x (`Notifier` class-based API + `NotifierProvider` + `ProviderScope`)
 - **Domain State:** RxDart 0.28 (`BehaviorSubject`, typed event streams)
 - **Navigation:** GoRouter 17.x with coordinator pattern for side-effects
 - **Authentication:** Google Sign-In 7.x (server auth code → backend JWT exchange) + passwordless email OTP
@@ -59,10 +59,16 @@ Screen + Coordinator (UI + navigation/side-effects)
 
 | Path | Purpose |
 |------|---------|
-| `lib/Core/` | `App` singleton, Drift database, GrpcClient, routing, Google Sign-In init, gRPC auth interceptor |
+| `lib/Core/` | `App` singleton, Drift database, GrpcClient, routing, Google Sign-In init, gRPC auth interceptor, sync engine |
 | `lib/User/` | Auth state, login/logout, `UserNotifier`, `UserRepository`, login/onboarding screens |
-| `lib/BreathModule/` | Full breathing feature — domain, repositories, notifiers, all presentation screens |
-| `lib/Views/` | Shared UI components (snackbar, buttons, text fields) |
+| `lib/BreathModule/` | Breathing feature domain layer — notifiers, repositories, concrete services/coordinators that bridge domain → `packages/breath_module` |
+| `lib/HomeModule/` | Home screen — module grid, suggestions carousel, session stats card |
+| `lib/McpModule/` | Personal Access Tokens — `TokenNotifier`, token CRUD, MCP screen |
+| `lib/ProfileModule/` | Profile screen — settings, theme/language, account management |
+| `lib/Device/` | Device ping — `DeviceApi`, `DeviceRepository` |
+| `packages/breath_module/` | Standalone package — all breathing presentation screens, ViewModels, service/coordinator interfaces, DTOs |
+| `packages/mind_ui/` | Standalone package — shared UI components (buttons, snackbar, theme tokens) |
+| `packages/mind_l10n/` | Standalone package — ARB files and generated `AppLocalizations` |
 
 ## Non-Functional Requirements
 

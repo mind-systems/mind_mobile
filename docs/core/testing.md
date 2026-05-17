@@ -20,7 +20,7 @@ The internals of the box (private fields, internal loops, helper methods) are no
 
 | Layer | Why |
 |-------|-----|
-| **Domain Notifiers** (`BreathSessionNotifier`, `UserNotifier`, `LiveSessionNotifier`) | Complex state machines with pagination, event emission, race condition guards — high regression risk |
+| **Domain Notifiers** (`BreathSessionNotifier`, `UserNotifier`) | Complex state machines with pagination, event emission, race condition guards — high regression risk |
 | **Repositories** (`BreathSessionRepository`, `UserRepository`, `AppSettingsRepository`) | Cache/fallback logic, data mapping — behaviour is non-obvious from reading the code |
 | **Pure calculators / data structures** (`ComplexityCalculator`, `InstructionBuffer`) | Deterministic functions with non-trivial formulas — cheap to test, high value |
 | **State machines** (`BreathSessionStateMachine`) | Phase transitions driven by external ticks — core UX logic |

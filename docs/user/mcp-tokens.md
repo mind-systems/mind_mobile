@@ -32,7 +32,7 @@ McpScreen ← McpViewModel ← IMcpService / IMcpCoordinator
 
 ## API
 
-Клиент работает с тремя эндпоинтами `/auth/tokens` (создание, список, отзыв), все требуют JWT. Интерфейс `ITokenApi` реализован в `TokenApi` через `HttpClient`. Подробная документация эндпоинтов — в `docs/auth/personal-access-tokens.md` репозитория API.
+Клиент работает через gRPC (`AuthServiceClient`): `listTokens`, `createToken`, `deleteToken`. Интерфейс `IPersonalAccessTokenApi` реализован в `PersonalAccessTokenApi`. Подробная документация — в `docs/auth/personal-access-tokens.md` репозитория API.
 
 ## See Also
 
