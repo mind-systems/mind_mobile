@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:breath_module/breath_module.dart' show ITickService, TickData, BreathViewModel, breathViewModelProvider, IBreathSessionCoordinator, IBreathSessionService, BreathExerciseDTO, BreathSessionDTO, BreathStepDTO, BreathPhase;
+import 'package:breath_module/breath_module.dart' show ITickService, TickData, TickSource, BreathViewModel, breathViewModelProvider, IBreathSessionCoordinator, IBreathSessionService, BreathExerciseDTO, BreathSessionDTO, BreathStepDTO, BreathPhase;
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -13,6 +13,9 @@ class _FakeTickService implements ITickService {
 
   @override
   Stream<TickData> get tickStream => _controller.stream;
+
+  @override
+  TickSource get source => TickSource.timer;
 
   void tick([int intervalMs = 1000]) => _controller.add(TickData(intervalMs));
   @override

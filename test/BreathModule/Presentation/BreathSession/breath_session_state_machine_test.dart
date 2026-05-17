@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:breath_module/breath_module.dart' show ITickService, TickData, BreathSessionStateMachine, BreathSessionStateMachineState, BreathExerciseDTO, BreathSessionDTO, BreathSessionStatus, BreathStepDTO, BreathPhase;
+import 'package:breath_module/breath_module.dart' show ITickService, TickData, TickSource, BreathSessionStateMachine, BreathSessionStateMachineState, BreathExerciseDTO, BreathSessionDTO, BreathSessionStatus, BreathStepDTO, BreathPhase;
 
 // ---------------------------------------------------------------------------
 // Fake tick service — emits ticks on demand
@@ -12,6 +12,9 @@ class FakeTickService implements ITickService {
 
   @override
   Stream<TickData> get tickStream => _controller.stream;
+
+  @override
+  TickSource get source => TickSource.timer;
 
   void tick([int intervalMs = 1000]) => _controller.add(TickData(intervalMs));
 

@@ -1,4 +1,5 @@
 import '../../CommonModels/SetShape.dart';
+import '../../CommonModels/TickSource.dart';
 import 'TimelineStep.dart';
 
 enum BreathSessionStatus { pause, breath, rest, complete }
@@ -34,6 +35,7 @@ class BreathSessionState {
   final int currentPhaseTotalDuration;
   final SetShape? currentExerciseShape;
   final SetShape? nextExerciseShape;
+  final TickSource tickSource;
 
   const BreathSessionState({
     required this.loadState,
@@ -52,6 +54,7 @@ class BreathSessionState {
     this.currentPhaseTotalDuration = 0,
     this.currentExerciseShape,
     this.nextExerciseShape,
+    this.tickSource = TickSource.timer,
   });
 
   factory BreathSessionState.initial() => const BreathSessionState(
@@ -84,6 +87,7 @@ class BreathSessionState {
     int? currentPhaseTotalDuration,
     SetShape? currentExerciseShape,
     SetShape? nextExerciseShape,
+    TickSource? tickSource,
   }) {
     return BreathSessionState(
       loadState: loadState ?? this.loadState,
@@ -102,6 +106,7 @@ class BreathSessionState {
       currentPhaseTotalDuration: currentPhaseTotalDuration ?? this.currentPhaseTotalDuration,
       currentExerciseShape: currentExerciseShape ?? this.currentExerciseShape,
       nextExerciseShape: nextExerciseShape ?? this.nextExerciseShape,
+      tickSource: tickSource ?? this.tickSource,
     );
   }
 }

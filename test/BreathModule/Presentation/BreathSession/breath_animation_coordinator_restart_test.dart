@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:breath_module/breath_module.dart' show ITickService, TickData, SetShape, BreathAnimationCoordinator, BreathMotionEngine, BreathShapeShifter, BreathViewModel, breathViewModelProvider, IBreathSessionCoordinator, IBreathSessionService, BreathExerciseDTO, BreathSessionDTO, BreathStepDTO, BreathPhase;
+import 'package:breath_module/breath_module.dart' show ITickService, TickData, TickSource, SetShape, BreathAnimationCoordinator, BreathMotionEngine, BreathShapeShifter, BreathViewModel, breathViewModelProvider, IBreathSessionCoordinator, IBreathSessionService, BreathExerciseDTO, BreathSessionDTO, BreathStepDTO, BreathPhase;
 
 // ---------------------------------------------------------------------------
 // Fake TickerProvider
@@ -23,6 +23,9 @@ class _FakeTickService implements ITickService {
 
   @override
   Stream<TickData> get tickStream => _controller.stream;
+
+  @override
+  TickSource get source => TickSource.timer;
 
   @override
   void dispose() => _controller.close();
