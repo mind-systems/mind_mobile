@@ -725,4 +725,510 @@ void main() {
       },
     );
   });
+
+  // ── Phase 9: instruction dispatch ────────────────────────────────────────
+
+  group('BreathModuleStateChannel — instruction dispatch', () {
+    test(
+      'should call instructionStream.sendSample with the moduleSessionId, phase name, and currentIntervalMs when phase changes while status=breath and a moduleSessionId is available',
+      () async {
+        final f = _make();
+        // Seed moduleSessionId
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // Prime _previousPhase and _previousExerciseIndex
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        // Phase change: inhale → exhale
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 5000));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should call instructionStream.sendSample when exerciseIndex changes while phase stays the same, status=breath, and a moduleSessionId is available',
+      () async {
+        final f = _make();
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'inhale', 5000));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should call instructionStream.sendSample exactly once when phase and exerciseIndex change simultaneously',
+      () async {
+        final f = _make();
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 1, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should not call instructionStream.sendSample when a state emission keeps phase and exerciseIndex unchanged',
+      () async {
+        final f = _make();
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // First emission — dispatches (first-emission phase change is implicit: inhale != null)
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        // Same phase and exerciseIndex, different currentIntervalMs — no second dispatch
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should not call instructionStream.sendSample when a state emission has status=pause regardless of phase change',
+      () async {
+        final f = _make();
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // First breath emission — dispatches
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        // Pause with different phase — !isActive guard prevents dispatch
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should not call instructionStream.sendSample when a phase change occurs after the session has ended',
+      () async {
+        final f = _make();
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // First breath emission — dispatches
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        // Complete — lifecycle calls end(), sets _ended=true
+        f.stateCtrl.add(_state(status: BreathSessionStatus.complete));
+        await Future<void>.delayed(Duration.zero);
+        // Post-complete breath with phase change — _ended guard prevents dispatch
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        // No spurious second start call after complete (Note 8)
+        expect(f.channel.startCalls, hasLength(1));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should call instructionStream.sendSample when status=rest and phase changes while a moduleSessionId is available',
+      () async {
+        final f = _make();
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // Prime _previousPhase=inhale, _previousExerciseIndex=0
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        // Breath to start lifecycle; no dispatch because phase is unchanged (inhale == inhale from prime)
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        // Rest with phase change — active check covers both breath and rest
+        f.stateCtrl.add(_state(status: BreathSessionStatus.rest, phase: BreathPhase.exhale, currentIntervalMs: 6000));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        expect(f.instructionStream.sendSampleCalls.last, ('sid', 'exhale', 6000));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should pass currentIntervalMs through unchanged when it equals -1 (the real initial-state value)',
+      () async {
+        final f = _make();
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // Prime
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        // Phase change with currentIntervalMs=-1 — no defensive normalisation expected
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: -1));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', -1));
+
+        f.target.dispose();
+      },
+    );
+  });
+
+  // ── Phase 10: pending flush ───────────────────────────────────────────────
+
+  group('BreathModuleStateChannel — pending flush', () {
+    test(
+      'should not call instructionStream.sendSample immediately when a phase change occurs while moduleSessionId is null',
+      () async {
+        final f = _make();
+        // No ModuleState seeded — _moduleSessionId stays null
+        // Prime _previousPhase so the next emission is a genuine phase change
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
+        await Future<void>.delayed(Duration.zero);
+        // Phase change — sessionId null → buffered, not dispatched
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, isEmpty);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should call instructionStream.sendSample exactly once with the buffered phase and currentIntervalMs when a ModuleState with a non-null moduleSessionId arrives after a buffered phase change',
+      () async {
+        final f = _make();
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
+        await Future<void>.delayed(Duration.zero);
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+        // moduleSessionId becomes available — triggers _flushPending
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 5000));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should not call instructionStream.sendSample again when a second ModuleState with the same moduleSessionId arrives after a buffered phase change has already been flushed',
+      () async {
+        final f = _make();
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
+        await Future<void>.delayed(Duration.zero);
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // Second ModuleState — buffer already cleared on first flush
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should not call instructionStream.sendSample when a ModuleState with a non-null moduleSessionId arrives before any phase change has occurred',
+      () async {
+        final f = _make();
+        // Push ModuleState immediately after construction — no BreathSessionState emitted yet
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, isEmpty);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should overwrite the pending instruction with the latest state when multiple phase changes occur before moduleSessionId becomes available, flushing only the most recent one',
+      () async {
+        final f = _make();
+        // Prime
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
+        await Future<void>.delayed(Duration.zero);
+        // First phase change — buffered
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+        // Second phase change — lifecycle short-circuits (same status=breath), but _handleInstruction
+        // still runs from _onState and overwrites _pendingInstruction with the latest state
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 6000));
+        await Future<void>.delayed(Duration.zero);
+        // Flush
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, [('sid', 'inhale', 6000)]);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should call instructionStream.sendSample with the arguments derived from the buffered state, not from any non-ready state emitted between buffering and flush',
+      () async {
+        final f = _make();
+        // Prime
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
+        await Future<void>.delayed(Duration.zero);
+        // Phase change — buffered
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+        // Non-ready state — _onState returns early, _pendingInstruction is not touched
+        f.stateCtrl.add(_state(
+          status: BreathSessionStatus.breath,
+          loadState: SessionLoadState.loading,
+          phase: BreathPhase.hold,
+          currentIntervalMs: 9000,
+        ));
+        await Future<void>.delayed(Duration.zero);
+        // Flush
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 5000));
+
+        f.target.dispose();
+      },
+    );
+  });
+
+  // ── Phase 11: reset() clears instruction state ────────────────────────────
+
+  group('BreathModuleStateChannel — reset() clears instruction state', () {
+    test(
+      'should clear moduleSessionId on reset, verified by emitting a phase change after reset and then pushing a new ModuleState — the new sessionId must appear in the dispatched instruction args',
+      () async {
+        final f = _make();
+        // Seed sid-A
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid-A', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // First phase change — dispatches with sid-A
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        // Reset — clears _moduleSessionId
+        f.target.reset();
+        // Post-reset phase change — _moduleSessionId=null → buffered (not dispatched immediately)
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        // Push sid-B — flushed with the new sessionId, proving sid-A was cleared
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid-B', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(2));
+        expect(f.instructionStream.sendSampleCalls.last.$1, 'sid-B');
+        expect(f.channel.startCalls, hasLength(2));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should clear _pendingInstruction on reset, verified by buffering a phase change, calling reset, then pushing a ModuleState and observing no sendSample call',
+      () async {
+        final f = _make();
+        // Prime (no ModuleState seeded)
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
+        await Future<void>.delayed(Duration.zero);
+        // Phase change — buffered
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+        // Reset — clears _pendingInstruction
+        f.target.reset();
+        // Push ModuleState — _flushPending finds nothing (buffer cleared by reset)
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, isEmpty);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should clear _previousPhase on reset, verified by emitting the same phase before and after reset while moduleSessionId is available and observing a fresh sendSample call after reset',
+      () async {
+        final f = _make();
+        // Seed moduleSessionId
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // Prime
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        // First dispatch (inhale → exhale)
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 4000));
+        await Future<void>.delayed(Duration.zero);
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        // Reset — clears _previousPhase (and _moduleSessionId)
+        f.target.reset();
+        // Re-seed: restore _moduleSessionId (reset() cleared it; needed before phase-change emission)
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // Prime again (same starting phase as before reset)
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        // Second dispatch — same phase transition as before, but _previousPhase was cleared → phaseChanged=true
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(2));
+        expect(f.instructionStream.sendSampleCalls.last, ('sid', 'exhale', 5000));
+        expect(f.channel.startCalls, hasLength(2));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should clear _previousExerciseIndex on reset, verified by emitting the same exerciseIndex pattern before and after reset and observing a fresh sendSample call after reset',
+      () async {
+        final f = _make();
+        // Seed moduleSessionId
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // Prime
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        // First dispatch (exerciseIndex 0 → 1)
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 4000));
+        await Future<void>.delayed(Duration.zero);
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        // Reset — clears _previousExerciseIndex (and _moduleSessionId)
+        f.target.reset();
+        // Re-seed: restore _moduleSessionId
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // Prime again
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        // Second dispatch — same exerciseIndex transition, but _previousExerciseIndex was cleared → phaseChanged=true
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(2));
+        expect(f.instructionStream.sendSampleCalls.last, ('sid', 'inhale', 5000));
+        expect(f.channel.startCalls, hasLength(2));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should keep the channel.state subscription alive across reset, verified by pushing a new ModuleState after reset and observing the updated moduleSessionId is used on the next phase-change instruction dispatch',
+      () async {
+        final f = _make();
+        // Reset immediately — no pre-reset start
+        f.target.reset();
+        // Push new ModuleState — subscription must still be alive after reset
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid-new', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+        // Prime
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        // Phase change — uses sid-new from the live subscription
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        expect(f.instructionStream.sendSampleCalls.first.$1, 'sid-new');
+        expect(f.channel.startCalls, hasLength(1));
+
+        f.target.dispose();
+      },
+    );
+  });
+
+  // ── Phase 12: dispose() subscription bookkeeping ─────────────────────────
+
+  group('BreathModuleStateChannel — dispose() subscription bookkeeping', () {
+    test(
+      'should cancel the channel.state subscription on dispose, verified by reading the moduleSessionId getter after pushing a ModuleState post-dispose',
+      () async {
+        final f = _make();
+        f.target.dispose();
+        // Post-dispose: push a ModuleState — _channelSub must be cancelled so this has no effect
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid-after-dispose', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // moduleSessionId stays null — listener did not fire
+        expect(f.target.moduleSessionId, isNull);
+        expect(f.instructionStream.sendSampleCalls, isEmpty);
+      },
+    );
+  });
 }
