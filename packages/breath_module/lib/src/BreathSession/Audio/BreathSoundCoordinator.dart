@@ -51,7 +51,32 @@ class BreathSoundCoordinator {
     TickSource.heartbeat: 'assets/audio/tick_heartbeat.ogg',
   };
 
+  // Adaptive crossfade formula: fadeMs = (_kFadeCoeff * pow(nextPhaseMs, 0.65)).clamp(_kMinFadeMs, _kMaxFadeMs)
+  // Reference table (actual values produced by these constants):
+  //   1s phase  → 341ms
+  //   2s phase  → 536ms
+  //   3s phase  → 706ms
+  //   4s phase  → 843ms
+  //   8s phase  → 1320ms
+  //   ~10.5s+   → 1500ms (capped)
+  static const double _kFadeCoeff = 3.83;
+  static const int _kMinFadeMs = 150;
+  static const int _kMaxFadeMs = 1500;
+
   BreathSoundCoordinator({required this.viewModel});
+
+  Duration _computeFadeDuration(BreathSessionState state) {
+    final intervalMs = state.currentIntervalMs > 0 ? state.currentIntervalMs : 1000;
+    final phaseTicks = state.currentPhaseTotalDuration;
+    // Guard: if phase length is unknown/non-positive, fall back to one tick interval.
+    if (phaseTicks <= 0) {
+      return Duration(milliseconds: intervalMs.clamp(_kMinFadeMs, _kMaxFadeMs));
+    }
+    final nextPhaseMs = phaseTicks * intervalMs;
+    final raw = _kFadeCoeff * pow(nextPhaseMs.toDouble(), 0.65);
+    final clamped = raw.clamp(_kMinFadeMs.toDouble(), _kMaxFadeMs.toDouble()).toInt();
+    return Duration(milliseconds: clamped);
+  }
 
   void initialize(BreathSessionState initialState) {
     if (_loopPlayerA != null) return;
@@ -152,8 +177,9 @@ class BreathSoundCoordinator {
         case BreathSessionStatus.breath:
           if (_phaseAssets.containsKey(state.phase) && state.phase != _currentPhase) {
             _currentPhase = state.phase;
-            final intervalMs = state.currentIntervalMs > 0 ? state.currentIntervalMs : 1000;
-            unawaited(_switchToPhase(state.phase, Duration(milliseconds: intervalMs)));
+            final fadeDuration = _computeFadeDuration(state);
+            if (kDebugMode) debugPrint('${_ts()} [Sound] status→breath switchToPhase  phase=${state.phase}  fade=${fadeDuration.inMilliseconds}ms');
+            unawaited(_switchToPhase(state.phase, fadeDuration));
           } else {
             if (_activeLoop != null) _fadePlayer(_activeLoop!, 1.0, const Duration(milliseconds: 200));
           }
@@ -170,8 +196,9 @@ class BreathSoundCoordinator {
       _currentPhase = state.phase;
       if (kDebugMode) debugPrint('${_ts()} [Sound] phase: $prev → ${state.phase}  remaining=${state.remainingTicks}  active=${_activeLoop == _loopPlayerA ? "A" : "B"}  volA=${_loopPlayerA?.volume.toStringAsFixed(2)}  volB=${_loopPlayerB?.volume.toStringAsFixed(2)}');
       if (_phaseAssets.containsKey(state.phase)) {
-        final intervalMs = state.currentIntervalMs > 0 ? state.currentIntervalMs : 1000;
-        unawaited(_switchToPhase(state.phase, Duration(milliseconds: intervalMs)));
+        final fadeDuration = _computeFadeDuration(state);
+        if (kDebugMode) debugPrint('${_ts()} [Sound] phase change switchToPhase  phase=${state.phase}  fade=${fadeDuration.inMilliseconds}ms');
+        unawaited(_switchToPhase(state.phase, fadeDuration));
       } else {
         if (_activeLoop != null) _fadePlayer(_activeLoop!, 0.0, const Duration(milliseconds: 500));
       }
