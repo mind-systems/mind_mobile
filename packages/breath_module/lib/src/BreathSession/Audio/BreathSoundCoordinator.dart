@@ -20,15 +20,15 @@ class BreathSoundCoordinator {
   int _switchGen = 0;
 
   static const Map<BreathPhase, String> _phaseAssets = {
-    BreathPhase.inhale: 'assets/audio/ohm_inhale.wav',
-    BreathPhase.exhale: 'assets/audio/ohm_exhale.wav',
-    BreathPhase.hold:   'assets/audio/ohm_hold.wav',
+    BreathPhase.inhale: 'assets/audio/ohm_inhale.ogg',
+    BreathPhase.exhale: 'assets/audio/ohm_exhale.ogg',
+    BreathPhase.hold:   'assets/audio/ohm_hold.ogg',
     // rest → silence (no entry)
   };
 
   static const Map<TickSource, String> _tickAssets = {
-    TickSource.timer:     'assets/audio/tick_clock.wav',
-    TickSource.heartbeat: 'assets/audio/tick_heartbeat.wav',
+    TickSource.timer:     'assets/audio/tick_clock.ogg',
+    TickSource.heartbeat: 'assets/audio/tick_heartbeat.ogg',
   };
 
   BreathSoundCoordinator({required this.viewModel});
@@ -98,8 +98,6 @@ class BreathSoundCoordinator {
         case BreathSessionStatus.pause:
           _fadeTo(0.0, const Duration(milliseconds: 200));
         case BreathSessionStatus.breath:
-          // Also load the phase asset if it hasn't been loaded yet (e.g. very
-          // first breath transition — phase branch never fired while paused).
           if (_phaseAssets.containsKey(state.phase) && state.phase != _currentPhase) {
             _currentPhase = state.phase;
             unawaited(_switchToPhase(state.phase));

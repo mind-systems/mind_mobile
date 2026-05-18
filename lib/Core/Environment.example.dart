@@ -1,6 +1,8 @@
 // Скопируйте этот файл в Environment.dart и заполните своими значениями
 // cp lib/Core/Environment.example.dart lib/Core/Environment.dart
 
+import 'package:flutter/foundation.dart';
+
 class Environment {
   final String name;
   final String deeplinkUrl;
@@ -64,7 +66,7 @@ class Environment {
       grpcSecure: true,
       apiBaseUrl: 'https://YOUR_DEV_API_URL',
     );
-    // overrideForLocal();
+    if (kDebugMode) overrideForLocal();
   }
 
   static void overrideForLocal() {
