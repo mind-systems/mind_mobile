@@ -18,6 +18,7 @@ class BreathSoundCoordinator {
   BreathSessionStatus? _currentStatus;
   Timer? _fadeTimer;
   int _switchGen = 0;
+  Future<void>? _loadFuture;
 
   static const Map<BreathPhase, String> _phaseAssets = {
     BreathPhase.inhale: 'assets/audio/ohm_inhale.ogg',
@@ -25,6 +26,14 @@ class BreathSoundCoordinator {
     BreathPhase.hold:   'assets/audio/ohm_hold.ogg',
     // rest → silence (no entry)
   };
+
+  // Fixed order for the preloaded playlist — index 0=inhale, 1=exhale, 2=hold.
+  // rest is intentionally absent (silence, no loop needed).
+  static const List<BreathPhase> _phaseOrder = [
+    BreathPhase.inhale,
+    BreathPhase.exhale,
+    BreathPhase.hold,
+  ];
 
   static const Map<TickSource, String> _tickAssets = {
     TickSource.timer:     'assets/audio/tick_clock.ogg',
@@ -37,6 +46,10 @@ class BreathSoundCoordinator {
     if (_loopPlayer != null) return;
     _loopPlayer = AudioPlayer();
     unawaited(_loopPlayer!.setLoopMode(LoopMode.one));
+    unawaited(_loopPlayer!.setVolume(0.0));
+    final sources = _phaseOrder.map((p) => AudioSource.asset(_phaseAssets[p]!)).toList();
+    _loadFuture = _loopPlayer!.setAudioSources(sources, preload: true);
+    unawaited(_loadFuture!);
 
     _currentTickSource = initialState.tickSource;
     _tickPlayer = AudioPlayer();
@@ -139,10 +152,11 @@ class BreathSoundCoordinator {
   }
 
   void _onTick() {
-    final isInPause = _currentStatus == BreathSessionStatus.pause;
-    final isRestPhase = _currentStatus == BreathSessionStatus.breath &&
-        _currentPhase == BreathPhase.rest;
-    if (!isInPause && !isRestPhase) return;
+    final allowTick = _currentStatus == BreathSessionStatus.pause ||
+        _currentStatus == BreathSessionStatus.rest ||
+        (_currentStatus == BreathSessionStatus.breath &&
+            _currentPhase == BreathPhase.rest);
+    if (!allowTick) return;
     final player = _tickPlayer;
     if (player == null) return;
     unawaited(player.seek(Duration.zero).then((_) => player.play()));
@@ -150,15 +164,23 @@ class BreathSoundCoordinator {
 
   Future<void> _switchToPhase(BreathPhase phase) async {
     final gen = ++_switchGen;
-    final asset = _phaseAssets[phase];
-    if (asset == null) return;
+    if (_phaseAssets[phase] == null) return;
     final player = _loopPlayer;
     if (player == null) return;
-    await player.stop();
-    await player.setAsset(asset);
-    await player.setVolume(0.0);
-    await player.play();
+    final index = _phaseOrder.indexOf(phase);
+    if (index == -1) return;
+    // Wait for the initial playlist load before issuing seek — guards against
+    // cold-start and resume paths on slow Android devices where setAudioSources
+    // may still be in progress.
+    if (_loadFuture != null) {
+      await _loadFuture;
+    }
     // Bail out if a newer switch arrived, or if the session is no longer active.
+    if (gen != _switchGen) return;
+    if (_currentStatus != BreathSessionStatus.breath) return;
+    await player.setVolume(0.0);
+    await player.seek(Duration.zero, index: index);
+    await player.play();
     if (gen != _switchGen) return;
     if (_currentStatus != BreathSessionStatus.breath) return;
     _fadeTo(1.0, const Duration(seconds: 2));
