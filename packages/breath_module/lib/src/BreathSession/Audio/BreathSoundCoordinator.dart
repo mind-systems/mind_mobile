@@ -1,9 +1,16 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../CommonModels/TickSource.dart';
 import '../Models/BreathSessionState.dart';
 import '../BreathSessionViewModel.dart';
+
+String _ts() {
+  final now = DateTime.now();
+  final ms = now.millisecond.toString().padLeft(3, '0');
+  return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}.$ms';
+}
 
 class BreathSoundCoordinator {
   final BreathViewModel viewModel;
@@ -48,6 +55,7 @@ class BreathSoundCoordinator {
 
   void initialize(BreathSessionState initialState) {
     if (_loopPlayerA != null) return;
+    if (kDebugMode) debugPrint('${_ts()} [Sound] initialize start');
     _loopPlayerA = AudioPlayer();
     _loopPlayerB = AudioPlayer();
     unawaited(_loopPlayerA!.setLoopMode(LoopMode.one));
@@ -58,10 +66,13 @@ class BreathSoundCoordinator {
     _loadFuture = Future.wait<void>([
       _loopPlayerA!.setAudioSources(sources, preload: true),
       _loopPlayerB!.setAudioSources(sources, preload: true),
-    ]).then((_) {});
+    ]).then((_) {
+      if (kDebugMode) debugPrint('${_ts()} [Sound] loadFuture resolved — both players ready');
+    });
     unawaited(_loadFuture!);
     _activeLoop = _loopPlayerA;
     _inactiveLoop = _loopPlayerB;
+    if (kDebugMode) debugPrint('${_ts()} [Sound] initialize: activeLoop=A inactiveLoop=B loadFuture started');
 
     _currentTickSource = initialState.tickSource;
     _tickPlayer = AudioPlayer();
@@ -132,7 +143,9 @@ class BreathSoundCoordinator {
 
     // 3. Status changes
     if (state.status != _currentStatus) {
+      final prev = _currentStatus;
       _currentStatus = state.status;
+      if (kDebugMode) debugPrint('${_ts()} [Sound] status: $prev → ${state.status}  phase=${state.phase}  active=${_activeLoop == _loopPlayerA ? "A" : "B"}  volA=${_loopPlayerA?.volume.toStringAsFixed(2)}  volB=${_loopPlayerB?.volume.toStringAsFixed(2)}');
       switch (state.status) {
         case BreathSessionStatus.pause:
           if (_activeLoop != null) _fadePlayer(_activeLoop!, 0.0, const Duration(milliseconds: 200));
@@ -153,7 +166,9 @@ class BreathSoundCoordinator {
 
     // 4. Phase changes
     if (state.phase != _currentPhase) {
+      final prev = _currentPhase;
       _currentPhase = state.phase;
+      if (kDebugMode) debugPrint('${_ts()} [Sound] phase: $prev → ${state.phase}  remaining=${state.remainingTicks}  active=${_activeLoop == _loopPlayerA ? "A" : "B"}  volA=${_loopPlayerA?.volume.toStringAsFixed(2)}  volB=${_loopPlayerB?.volume.toStringAsFixed(2)}');
       if (_phaseAssets.containsKey(state.phase)) {
         final intervalMs = state.currentIntervalMs > 0 ? state.currentIntervalMs : 1000;
         unawaited(_switchToPhase(state.phase, Duration(milliseconds: intervalMs)));
@@ -175,6 +190,7 @@ class BreathSoundCoordinator {
         _currentStatus == BreathSessionStatus.rest ||
         (_currentStatus == BreathSessionStatus.breath &&
             _currentPhase == BreathPhase.rest);
+    if (kDebugMode) debugPrint('${_ts()} [Sound] _onTick  status=$_currentStatus  phase=$_currentPhase  allowed=$allowTick');
     if (!allowTick) return;
     final player = _tickPlayer;
     if (player == null) return;
@@ -183,31 +199,43 @@ class BreathSoundCoordinator {
 
   Future<void> _switchToPhase(BreathPhase phase, Duration fadeDuration) async {
     final gen = ++_switchGen;
+    final inactiveName = _inactiveLoop == _loopPlayerA ? 'A' : 'B';
+    if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  inactive=$inactiveName  fadeDuration=${fadeDuration.inMilliseconds}ms');
     if (_phaseAssets[phase] == null) return;
     final active = _activeLoop;
     final inactive = _inactiveLoop;
     if (active == null || inactive == null) return;
     final index = _phaseOrder.indexOf(phase);
     if (index == -1) return;
+    // Start fading out the outgoing player immediately, before any async await,
+    // so the crossfade begins at the phase boundary rather than after seek latency.
+    _fadePlayer(active, 0.0, fadeDuration);
+    if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  fading old-active=${active == _loopPlayerA ? "A" : "B"} → 0.0 (early)  dur=${fadeDuration.inMilliseconds}ms');
     // Wait for the initial playlist load before issuing seek — guards against
     // cold-start and resume paths on slow Android devices where setAudioSources
     // may still be in progress.
     if (_loadFuture != null) {
+      if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  awaiting loadFuture...');
       await _loadFuture;
+      if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  loadFuture done');
     }
     // Bail out if a newer switch arrived, or if the session is no longer active.
-    if (gen != _switchGen) return;
-    if (_currentStatus != BreathSessionStatus.breath) return;
+    if (gen != _switchGen) { if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  BAIL gen mismatch'); return; }
+    if (_currentStatus != BreathSessionStatus.breath) { if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  BAIL status=$_currentStatus'); return; }
     _cancelFadeFor(inactive);
+    if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  setVolume(0) on $inactiveName');
     await inactive.setVolume(0.0);
+    if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  seek(index=$index) on $inactiveName');
     await inactive.seek(Duration.zero, index: index);
-    await inactive.play();
+    if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  play() on $inactiveName');
+    unawaited(inactive.play());
+    if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  play() dispatched — swapping active↔inactive');
     _activeLoop = inactive;
     _inactiveLoop = active;
-    if (gen != _switchGen) return;
-    if (_currentStatus != BreathSessionStatus.breath) return;
+    if (gen != _switchGen) { if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  BAIL gen mismatch after play'); return; }
+    if (_currentStatus != BreathSessionStatus.breath) { if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  BAIL status=$_currentStatus after play'); return; }
+    if (kDebugMode) debugPrint('${_ts()} [Sound] _switchToPhase($phase) gen=$gen  fading new-active=${_activeLoop == _loopPlayerA ? "A" : "B"} → 1.0  dur=${fadeDuration.inMilliseconds}ms');
     _fadePlayer(_activeLoop!, 1.0, fadeDuration);
-    _fadePlayer(_inactiveLoop!, 0.0, fadeDuration);
   }
 
   void _cancelFadeFor(AudioPlayer player) {
