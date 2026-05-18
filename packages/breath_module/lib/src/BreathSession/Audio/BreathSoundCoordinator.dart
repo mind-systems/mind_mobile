@@ -138,10 +138,9 @@ class BreathSoundCoordinator {
     // 5. End-of-phase fade-out trigger
     if (_currentStatus == BreathSessionStatus.breath &&
         _phaseAssets.containsKey(state.phase) &&
-        state.remainingTicks > 0 &&
-        state.remainingTicks <= 3) {
+        state.remainingTicks == 1) {
       final intervalMs = state.currentIntervalMs > 0 ? state.currentIntervalMs : 1000;
-      _fadeTo(0.0, Duration(milliseconds: state.remainingTicks * intervalMs));
+      _fadeTo(0.0, Duration(milliseconds: intervalMs));
     }
   }
 
