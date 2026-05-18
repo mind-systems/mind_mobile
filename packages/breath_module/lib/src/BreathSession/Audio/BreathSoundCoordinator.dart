@@ -8,7 +8,10 @@ import '../BreathSessionViewModel.dart';
 class BreathSoundCoordinator {
   final BreathViewModel viewModel;
 
-  AudioPlayer? _loopPlayer;
+  AudioPlayer? _loopPlayerA;
+  AudioPlayer? _loopPlayerB;
+  AudioPlayer? _activeLoop;
+  AudioPlayer? _inactiveLoop;
   AudioPlayer? _tickPlayer;
   StreamSubscription<void>? _tickSub;
   TickSource _currentTickSource = TickSource.timer;
@@ -16,7 +19,8 @@ class BreathSoundCoordinator {
   void Function()? _stateListener;
   BreathPhase? _currentPhase;
   BreathSessionStatus? _currentStatus;
-  Timer? _fadeTimer;
+  Timer? _fadeTimerA;
+  Timer? _fadeTimerB;
   int _switchGen = 0;
   Future<void>? _loadFuture;
 
@@ -43,13 +47,21 @@ class BreathSoundCoordinator {
   BreathSoundCoordinator({required this.viewModel});
 
   void initialize(BreathSessionState initialState) {
-    if (_loopPlayer != null) return;
-    _loopPlayer = AudioPlayer();
-    unawaited(_loopPlayer!.setLoopMode(LoopMode.one));
-    unawaited(_loopPlayer!.setVolume(0.0));
+    if (_loopPlayerA != null) return;
+    _loopPlayerA = AudioPlayer();
+    _loopPlayerB = AudioPlayer();
+    unawaited(_loopPlayerA!.setLoopMode(LoopMode.one));
+    unawaited(_loopPlayerA!.setVolume(0.0));
+    unawaited(_loopPlayerB!.setLoopMode(LoopMode.one));
+    unawaited(_loopPlayerB!.setVolume(0.0));
     final sources = _phaseOrder.map((p) => AudioSource.asset(_phaseAssets[p]!)).toList();
-    _loadFuture = _loopPlayer!.setAudioSources(sources, preload: true);
+    _loadFuture = Future.wait<void>([
+      _loopPlayerA!.setAudioSources(sources, preload: true),
+      _loopPlayerB!.setAudioSources(sources, preload: true),
+    ]).then((_) {});
     unawaited(_loadFuture!);
+    _activeLoop = _loopPlayerA;
+    _inactiveLoop = _loopPlayerB;
 
     _currentTickSource = initialState.tickSource;
     _tickPlayer = AudioPlayer();
@@ -60,13 +72,18 @@ class BreathSoundCoordinator {
   }
 
   void reset() {
-    _fadeTimer?.cancel();
-    _fadeTimer = null;
-    final player = _loopPlayer;
-    if (player != null) {
-      unawaited(player.stop());
-      unawaited(player.setVolume(0.0));
+    _fadeTimerA?.cancel();
+    _fadeTimerA = null;
+    _fadeTimerB?.cancel();
+    _fadeTimerB = null;
+    for (final player in [_loopPlayerA, _loopPlayerB]) {
+      if (player != null) {
+        unawaited(player.stop());
+        unawaited(player.setVolume(0.0));
+      }
     }
+    _activeLoop = _loopPlayerA;
+    _inactiveLoop = _loopPlayerB;
     final tickPlayer = _tickPlayer;
     if (tickPlayer != null) {
       unawaited(tickPlayer.stop());
@@ -78,14 +95,23 @@ class BreathSoundCoordinator {
   void dispose() {
     _tickSub?.cancel();
     _tickSub = null;
-    _fadeTimer?.cancel();
-    _fadeTimer = null;
+    _fadeTimerA?.cancel();
+    _fadeTimerA = null;
+    _fadeTimerB?.cancel();
+    _fadeTimerB = null;
     _stateListener?.call();
     _stateListener = null;
-    final player = _loopPlayer;
-    _loopPlayer = null;
-    if (player != null) {
-      unawaited(player.dispose());
+    final playerA = _loopPlayerA;
+    final playerB = _loopPlayerB;
+    _loopPlayerA = null;
+    _loopPlayerB = null;
+    _activeLoop = null;
+    _inactiveLoop = null;
+    if (playerA != null) {
+      unawaited(playerA.dispose());
+    }
+    if (playerB != null) {
+      unawaited(playerB.dispose());
     }
     final tickPlayer = _tickPlayer;
     _tickPlayer = null;
@@ -109,17 +135,17 @@ class BreathSoundCoordinator {
       _currentStatus = state.status;
       switch (state.status) {
         case BreathSessionStatus.pause:
-          _fadeTo(0.0, const Duration(milliseconds: 200));
+          if (_activeLoop != null) _fadePlayer(_activeLoop!, 0.0, const Duration(milliseconds: 200));
         case BreathSessionStatus.breath:
           if (_phaseAssets.containsKey(state.phase) && state.phase != _currentPhase) {
             _currentPhase = state.phase;
             unawaited(_switchToPhase(state.phase));
           } else {
-            _fadeTo(1.0, const Duration(milliseconds: 200));
+            if (_activeLoop != null) _fadePlayer(_activeLoop!, 1.0, const Duration(milliseconds: 200));
           }
         case BreathSessionStatus.complete:
         case BreathSessionStatus.rest:
-          _fadeTo(0.0, const Duration(milliseconds: 500));
+          if (_activeLoop != null) _fadePlayer(_activeLoop!, 0.0, const Duration(milliseconds: 500));
       }
       return;
     }
@@ -130,7 +156,7 @@ class BreathSoundCoordinator {
       if (_phaseAssets.containsKey(state.phase)) {
         unawaited(_switchToPhase(state.phase));
       } else {
-        _fadeTo(0.0, const Duration(milliseconds: 500));
+        if (_activeLoop != null) _fadePlayer(_activeLoop!, 0.0, const Duration(milliseconds: 500));
       }
       return;
     }
@@ -140,7 +166,7 @@ class BreathSoundCoordinator {
         _phaseAssets.containsKey(state.phase) &&
         state.remainingTicks == 1) {
       final intervalMs = state.currentIntervalMs > 0 ? state.currentIntervalMs : 1000;
-      _fadeTo(0.0, Duration(milliseconds: intervalMs));
+      if (_activeLoop != null) _fadePlayer(_activeLoop!, 0.0, Duration(milliseconds: intervalMs));
     }
   }
 
@@ -164,8 +190,9 @@ class BreathSoundCoordinator {
   Future<void> _switchToPhase(BreathPhase phase) async {
     final gen = ++_switchGen;
     if (_phaseAssets[phase] == null) return;
-    final player = _loopPlayer;
-    if (player == null) return;
+    final active = _activeLoop;
+    final inactive = _inactiveLoop;
+    if (active == null || inactive == null) return;
     final index = _phaseOrder.indexOf(phase);
     if (index == -1) return;
     // Wait for the initial playlist load before issuing seek — guards against
@@ -177,30 +204,52 @@ class BreathSoundCoordinator {
     // Bail out if a newer switch arrived, or if the session is no longer active.
     if (gen != _switchGen) return;
     if (_currentStatus != BreathSessionStatus.breath) return;
-    await player.setVolume(0.0);
-    await player.seek(Duration.zero, index: index);
-    await player.play();
+    _cancelFadeFor(inactive);
+    await inactive.setVolume(0.0);
+    await inactive.seek(Duration.zero, index: index);
+    await inactive.play();
+    _activeLoop = inactive;
+    _inactiveLoop = active;
     if (gen != _switchGen) return;
     if (_currentStatus != BreathSessionStatus.breath) return;
-    _fadeTo(1.0, const Duration(seconds: 2));
+    const duration = Duration(seconds: 2);
+    _fadePlayer(_activeLoop!, 1.0, duration);
+    _fadePlayer(_inactiveLoop!, 0.0, duration);
   }
 
-  void _fadeTo(double target, Duration duration) {
-    _fadeTimer?.cancel();
-    final player = _loopPlayer;
-    if (player == null) return;
+  void _cancelFadeFor(AudioPlayer player) {
+    if (player == _loopPlayerA) {
+      _fadeTimerA?.cancel();
+      _fadeTimerA = null;
+    } else {
+      _fadeTimerB?.cancel();
+      _fadeTimerB = null;
+    }
+  }
+
+  void _fadePlayer(AudioPlayer player, double target, Duration duration) {
+    _cancelFadeFor(player);
     final startVolume = player.volume;
     final steps = max(1, duration.inMilliseconds ~/ 16);
     var tick = 0;
-    _fadeTimer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
+    final timer = Timer.periodic(const Duration(milliseconds: 16), (t) {
       tick++;
-      final t = (tick / steps).clamp(0.0, 1.0);
-      final v = startVolume + (target - startVolume) * t;
+      final progress = (tick / steps).clamp(0.0, 1.0);
+      final v = startVolume + (target - startVolume) * progress;
       unawaited(player.setVolume(v));
       if (tick >= steps) {
-        timer.cancel();
-        _fadeTimer = null;
+        t.cancel();
+        if (player == _loopPlayerA) {
+          _fadeTimerA = null;
+        } else {
+          _fadeTimerB = null;
+        }
       }
     });
+    if (player == _loopPlayerA) {
+      _fadeTimerA = timer;
+    } else {
+      _fadeTimerB = timer;
+    }
   }
 }
