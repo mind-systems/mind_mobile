@@ -139,7 +139,8 @@ class BreathSoundCoordinator {
         case BreathSessionStatus.breath:
           if (_phaseAssets.containsKey(state.phase) && state.phase != _currentPhase) {
             _currentPhase = state.phase;
-            unawaited(_switchToPhase(state.phase));
+            final intervalMs = state.currentIntervalMs > 0 ? state.currentIntervalMs : 1000;
+            unawaited(_switchToPhase(state.phase, Duration(milliseconds: intervalMs)));
           } else {
             if (_activeLoop != null) _fadePlayer(_activeLoop!, 1.0, const Duration(milliseconds: 200));
           }
@@ -154,19 +155,12 @@ class BreathSoundCoordinator {
     if (state.phase != _currentPhase) {
       _currentPhase = state.phase;
       if (_phaseAssets.containsKey(state.phase)) {
-        unawaited(_switchToPhase(state.phase));
+        final intervalMs = state.currentIntervalMs > 0 ? state.currentIntervalMs : 1000;
+        unawaited(_switchToPhase(state.phase, Duration(milliseconds: intervalMs)));
       } else {
         if (_activeLoop != null) _fadePlayer(_activeLoop!, 0.0, const Duration(milliseconds: 500));
       }
       return;
-    }
-
-    // 5. End-of-phase fade-out trigger
-    if (_currentStatus == BreathSessionStatus.breath &&
-        _phaseAssets.containsKey(state.phase) &&
-        state.remainingTicks == 1) {
-      final intervalMs = state.currentIntervalMs > 0 ? state.currentIntervalMs : 1000;
-      if (_activeLoop != null) _fadePlayer(_activeLoop!, 0.0, Duration(milliseconds: intervalMs));
     }
   }
 
@@ -187,7 +181,7 @@ class BreathSoundCoordinator {
     unawaited(player.seek(Duration.zero).then((_) => player.play()));
   }
 
-  Future<void> _switchToPhase(BreathPhase phase) async {
+  Future<void> _switchToPhase(BreathPhase phase, Duration fadeDuration) async {
     final gen = ++_switchGen;
     if (_phaseAssets[phase] == null) return;
     final active = _activeLoop;
@@ -212,9 +206,8 @@ class BreathSoundCoordinator {
     _inactiveLoop = active;
     if (gen != _switchGen) return;
     if (_currentStatus != BreathSessionStatus.breath) return;
-    const duration = Duration(seconds: 2);
-    _fadePlayer(_activeLoop!, 1.0, duration);
-    _fadePlayer(_inactiveLoop!, 0.0, duration);
+    _fadePlayer(_activeLoop!, 1.0, fadeDuration);
+    _fadePlayer(_inactiveLoop!, 0.0, fadeDuration);
   }
 
   void _cancelFadeFor(AudioPlayer player) {
