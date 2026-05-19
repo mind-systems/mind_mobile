@@ -10,8 +10,6 @@ class GrpcAuthInterceptor extends ClientInterceptor {
 
   static const String _tokenKey = 'jwt_token';
 
-  String? _cachedToken;
-
   GrpcAuthInterceptor({
     required FlutterSecureStorage storage,
     required LogoutNotifier logoutNotifier,
@@ -20,7 +18,6 @@ class GrpcAuthInterceptor extends ClientInterceptor {
 
   Future<void> _addAuthMetadata(Map<String, String> metadata, String uri) async {
     final token = await _storage.read(key: _tokenKey);
-    _cachedToken = token;
     if (token != null) {
       metadata['authorization'] = 'Bearer $token';
     }
@@ -54,11 +51,7 @@ class GrpcAuthInterceptor extends ClientInterceptor {
     CallOptions options,
     ClientStreamingInvoker<Q, R> invoker,
   ) {
-    final mergedOptions = options.mergedWith(
-      CallOptions(metadata: {
-        if (_cachedToken != null) 'authorization': 'Bearer $_cachedToken',
-      }),
-    );
+    final mergedOptions = options.mergedWith(CallOptions(providers: [_addAuthMetadata]));
     final response = invoker(method, requests, mergedOptions);
     unawaited(response.trailers.then<void>((_) {}, onError: (Object e) {
       _onUnauthenticatedError(e);
