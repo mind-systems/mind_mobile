@@ -28,6 +28,7 @@ class BreathSoundCoordinator {
   BreathSessionStatus? _currentStatus;
   Timer? _fadeTimerA;
   Timer? _fadeTimerB;
+  bool _isSuspended = false;
   int _switchGen = 0;
   Future<void>? _loadFuture;
 
@@ -156,6 +157,15 @@ class BreathSoundCoordinator {
     }
   }
 
+  void suspend() {
+    _isSuspended = true;
+    unawaited(_tickPlayer?.stop());
+  }
+
+  void resume() {
+    _isSuspended = false;
+  }
+
   void _onStateChanged(BreathSessionState state) {
     // 1. Load gate
     if (state.loadState != SessionLoadState.ready) return;
@@ -213,6 +223,7 @@ class BreathSoundCoordinator {
   }
 
   void _onTick() {
+    if (_isSuspended) return;
     final allowTick = _currentStatus == BreathSessionStatus.pause ||
         _currentStatus == BreathSessionStatus.rest ||
         (_currentStatus == BreathSessionStatus.breath &&
