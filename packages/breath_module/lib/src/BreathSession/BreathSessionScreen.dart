@@ -4,6 +4,7 @@ import 'package:mind_l10n/mind_l10n.dart';
 import 'package:mind_ui/mind_ui.dart';
 import '../CommonModels/SetShape.dart';
 import 'Models/BreathSessionState.dart';
+import 'BreathSessionLayout.dart';
 import 'BreathSessionViewModel.dart';
 import 'Animation/BreathMotionEngine.dart';
 import 'Animation/BreathShapeShifter.dart';
@@ -130,125 +131,131 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
 
   @override
   Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final screenWidth = mq.size.width;
+    final bottomBarHeight =
+        BreathSessionLayout.kBottomBarBaseHeight + mq.padding.bottom;
+    final availableHeight = mq.size.height - mq.padding.top - bottomBarHeight;
+    final layout = BreathSessionLayout.compute(screenWidth, availableHeight);
+
     final viewModel = ref.read(breathViewModelProvider.notifier);
     final state = ref.watch(breathViewModelProvider);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final shapeDimension = screenWidth * 0.7;
-        const itemHeight = 48.0; // todo copypaste from BreathTimelineWidget!
-        final timelineHeight = itemHeight * 4.5;
-
-        return Scaffold(
-          resizeToAvoidBottomInset: false,
-          backgroundColor: const Color(0xFF0A0E27),
-          body: SafeArea(
-            bottom: false,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Основной контент по центру
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Основная область с дыхательной фигурой
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        child: SizedBox(
-                          width: shapeDimension,
-                          height: shapeDimension,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              ValueListenableBuilder<double>(
-                                valueListenable: _orbCoordinator.orbProgress,
-                                builder: (context, progress, _) => EclipseOrb(
-                                  size: shapeDimension * progress,
-                                  glowColor: const Color(0xFF00C8E0),
-                                  maskColor: const Color(0xFF0A0E27),
-                                  pulseStream: viewModel.tickStream,
-                                ),
-                              ),
-                              AnimatedOpacity(
-                                opacity: state.loadState == SessionLoadState.ready ? 1.0 : 0.0,
-                                duration: const Duration(milliseconds: 200),
-                                curve: Curves.easeIn,
-                                child: BreathShapeWidget(
-                                  motionController: _motionEngine,
-                                  shapeController: _shapeShifter,
-                                  shapeColor: const Color(0xFF00D9FF),
-                                  pointColor: Colors.white,
-                                  strokeWidth: 3.0,
-                                  pointRadius: 6.0,
-                                ),
-                              ),
-                            ],
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      backgroundColor: const Color(0xFF0A0E27),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Основной контент по центру
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Основная область с дыхательной фигурой
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: layout.shapePadding),
+                    child: SizedBox(
+                      width: layout.shapeDimension,
+                      height: layout.shapeDimension,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          ValueListenableBuilder<double>(
+                            valueListenable: _orbCoordinator.orbProgress,
+                            builder: (context, progress, _) => EclipseOrb(
+                              size: layout.shapeDimension * progress,
+                              glowColor: const Color(0xFF00C8E0),
+                              maskColor: const Color(0xFF0A0E27),
+                              pulseStream: viewModel.tickStream,
+                            ),
                           ),
-                        ),
+                          AnimatedOpacity(
+                            opacity: state.loadState == SessionLoadState.ready ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeIn,
+                            child: BreathShapeWidget(
+                              motionController: _motionEngine,
+                              shapeController: _shapeShifter,
+                              shapeColor: const Color(0xFF00D9FF),
+                              pointColor: Colors.white,
+                              strokeWidth: 3.0,
+                              pointRadius: 6.0,
+                            ),
+                          ),
+                        ],
                       ),
-
-                      SizedBox(
-                        height: timelineHeight,
-                        child: BreathTimelineWidget(
-                          key: _timelineKey,
-                          steps: state.timelineSteps,
-                          activeStepId: state.activeStepId,
-                          scrollController: _scrollController,
-                          status: state.status,
-                          itemHeight: itemHeight,
-                        ),
-                      ),
-
-                      Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: _buildControlButton(state, viewModel),
-                      ),
-                    ],
+                    ),
                   ),
+
+                  SizedBox(
+                    height: layout.timelineHeight,
+                    child: BreathTimelineWidget(
+                      key: _timelineKey,
+                      steps: state.timelineSteps,
+                      activeStepId: state.activeStepId,
+                      scrollController: _scrollController,
+                      status: state.status,
+                      itemHeight: layout.itemHeight,
+                    ),
+                  ),
+
+                  Padding(
+                    padding: EdgeInsets.all(layout.buttonPadding),
+                    child: _buildControlButton(
+                      state,
+                      viewModel,
+                      buttonSize: layout.buttonSize,
+                      iconSize: layout.iconSize,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Bottom bar прибит к низу
+            SessionBottomBar(
+              iconSize: layout.iconSize,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.share_outlined),
+                  color: const Color(0xFF00D9FF),
+                  onPressed: () => viewModel.shareSession(),
                 ),
-                // Bottom bar прибит к низу
-                SessionBottomBar(
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.share_outlined),
-                      color: const Color(0xFF00D9FF),
-                      iconSize: 28,
-                      onPressed: () => viewModel.shareSession(),
+                if (state.canStar)
+                  IconButton(
+                    icon: Icon(
+                      state.isStarred ? Icons.star : Icons.star_border,
                     ),
-                    if (state.canStar)
-                      IconButton(
-                        icon: Icon(
-                          state.isStarred ? Icons.star : Icons.star_border,
-                        ),
-                        color: state.isStarred
-                            ? Theme.of(context).colorScheme.tertiary
-                            : Theme.of(context).colorScheme.primary,
-                        iconSize: 28,
-                        onPressed: () => viewModel.toggleStar(),
-                      ),
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined),
-                      color: const Color(0xFF00D9FF),
-                      iconSize: 28,
-                      onPressed: () => viewModel.openEditor(),
-                    ),
-                  ],
+                    color: state.isStarred
+                        ? Theme.of(context).colorScheme.tertiary
+                        : Theme.of(context).colorScheme.primary,
+                    onPressed: () => viewModel.toggleStar(),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  color: const Color(0xFF00D9FF),
+                  onPressed: () => viewModel.openEditor(),
                 ),
               ],
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildControlButton(BreathSessionState state, BreathViewModel viewModel) {
+  Widget _buildControlButton(
+    BreathSessionState state,
+    BreathViewModel viewModel, {
+    required double buttonSize,
+    required double iconSize,
+  }) {
     if (state.status == BreathSessionStatus.complete) {
       return SizedBox(
-        width: 80,
-        height: 80,
+        width: buttonSize,
+        height: buttonSize,
         child: ControlButton(
           icon: Icons.replay,
           onPressed: () {
@@ -258,7 +265,8 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
             _soundCoordinator.reset();
             viewModel.restartEngine();
           },
-          iconSize: 40,
+          // 0.5 mirrors the original 40/80 icon-to-button ratio.
+          iconSize: buttonSize * 0.5,
         ),
       );
     }
@@ -267,8 +275,8 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
     final isLoading = state.loadState != SessionLoadState.ready;
 
     return SizedBox(
-      width: 80,
-      height: 80,
+      width: buttonSize,
+      height: buttonSize,
       child: ControlButton(
         icon: isPaused ? Icons.play_arrow : Icons.pause,
         onPressed: isLoading ? null : () {
@@ -278,7 +286,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
             viewModel.pause();
           }
         },
-        iconSize: 40,
+        iconSize: buttonSize * 0.5,
       ),
     );
   }

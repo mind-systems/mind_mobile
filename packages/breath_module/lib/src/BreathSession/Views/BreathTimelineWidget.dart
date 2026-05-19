@@ -147,6 +147,7 @@ class BreathTimelineWidgetState extends State<BreathTimelineWidget> {
             index: index,
             isActive: isActive,
             isPausedOrComplete: isPausedOrComplete,
+            itemHeight: widget.itemHeight,
           ),
         );
       },
@@ -170,12 +171,17 @@ class _TimelineItem extends StatelessWidget {
   final int index;
   final bool isActive;
   final bool isPausedOrComplete;
+  final double itemHeight;
+
+  static const double _kActiveFontRatio   = 22.0 / 48.0; // 0.4583…
+  static const double _kInactiveFontRatio = 16.0 / 48.0; // 0.3333…
 
   const _TimelineItem({
     required this.step,
     required this.index,
     required this.isActive,
     required this.isPausedOrComplete,
+    required this.itemHeight,
   });
 
   @override
@@ -185,7 +191,7 @@ class _TimelineItem extends StatelessWidget {
     final color =
     isActive ? const Color(0xFF00D9FF) : Colors.white.withValues(alpha: 0.45);
     final textStyle = TextStyle(
-      fontSize: isActive ? 22 : 16,
+      fontSize: itemHeight * (isActive ? _kActiveFontRatio : _kInactiveFontRatio),
       fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
       color: color,
       letterSpacing: 0.5,
