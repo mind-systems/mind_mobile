@@ -1,1 +1,1 @@
-// Audio package — implementations land in later milestones.
+export 'src/audio_track.dart';
