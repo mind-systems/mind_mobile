@@ -68,6 +68,40 @@ class BreathSessionState {
     activeStepId: null,
   );
 
+  /// Returns `true` iff every field **except** the two tick-cadence fields
+  /// (`remainingTicks`, `currentIntervalMs`) is equal to [other].
+  ///
+  /// Excluded fields and why:
+  /// - `remainingTicks` — advances once per second; read only by raw-stream
+  ///   consumers and the `remainingTicksNotifier` channel, never via Riverpod.
+  /// - `currentIntervalMs` — refreshed with the measured wall-clock delta on
+  ///   every tick; varies by milliseconds (timer source) or tens-to-hundreds of
+  ///   ms (heart-rate source), making it a cadence-only field. Only
+  ///   `BreathAnimationCoordinator` and `BreathSoundCoordinator` read it, both
+  ///   via the raw stream — no Riverpod consumer of `currentIntervalMs` exists.
+  ///
+  /// `timelineSteps` uses `identical(...)` rather than `listEquals` because the
+  /// list is mutated by-replacement only on restart (task 28); a `listEquals`
+  /// refactor would silently break the optimization by comparing elements on
+  /// every tick.
+  bool equalsIgnoringTickFields(BreathSessionState other) {
+    return loadState == other.loadState &&
+        status == other.status &&
+        phase == other.phase &&
+        exerciseIndex == other.exerciseIndex &&
+        activeStepId == other.activeStepId &&
+        isStarred == other.isStarred &&
+        canStar == other.canStar &&
+        resetReason == other.resetReason &&
+        totalPhases == other.totalPhases &&
+        currentPhaseIndex == other.currentPhaseIndex &&
+        currentPhaseTotalDuration == other.currentPhaseTotalDuration &&
+        currentExerciseShape == other.currentExerciseShape &&
+        nextExerciseShape == other.nextExerciseShape &&
+        tickSource == other.tickSource &&
+        identical(timelineSteps, other.timelineSteps);
+  }
+
   BreathSessionState copyWith({
     SessionLoadState? loadState,
     BreathSessionStatus? status,

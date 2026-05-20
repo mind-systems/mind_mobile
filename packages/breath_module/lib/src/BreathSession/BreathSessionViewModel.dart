@@ -75,9 +75,27 @@ class BreathViewModel extends Notifier<BreathSessionState> {
     return BreathSessionState.initial();
   }
 
+  /// Dual-channel publication.
+  ///
+  /// The raw [_stateController] stream fires on **every** call — animation
+  /// coordinators (`BreathAnimationCoordinator`, `OrbAnimationCoordinator`),
+  /// `BreathSoundCoordinator`, and `BreathModuleStateChannel` all subscribe via
+  /// this stream and depend on per-tick cadence.
+  ///
+  /// `super.state = value` (Riverpod publication) is **skipped** when the
+  /// incoming value differs from the current state only in tick-cadence fields
+  /// (`remainingTicks`, `currentIntervalMs`). See
+  /// `.ai-factory/notes/11-breath-session-tick-render-scope.md` for the
+  /// motivation.
+  ///
+  /// Note: `set state` is only invoked after `build()` completes (via
+  /// `_setupEngine`, `_onEngineState`, `toggleStar`, and the error branch in
+  /// `initState`), so `super.state` is safe to read inside the setter.
   @override
   set state(BreathSessionState value) {
-    super.state = value;
+    if (!value.equalsIgnoringTickFields(super.state)) {
+      super.state = value;
+    }
     if (!_stateController.isClosed) {
       _stateController.add(value);
     }
