@@ -18,6 +18,7 @@ class ModuleInstructionStream {
 
   bool _isGrpcConnected = false;
   bool _streamRequested = false;
+  bool _backoffConfirmed = false;
 
   // ── Stream handles ────────────────────────────────────────────────────────
 
@@ -91,10 +92,15 @@ class ModuleInstructionStream {
   // ── Stream lifecycle ──────────────────────────────────────────────────────
 
   void _openStream() {
+    _backoffConfirmed = false;
     _streamSink = StreamController<StreamSample>();
     final response = _instructionStreamService.streamData(_streamSink!.stream);
     _streamSub = response.listen(
       (StreamResponse r) {
+        if (!_backoffConfirmed) {
+          _backoffConfirmed = true;
+          _connectionManager.confirmConnected();
+        }
         switch (r.whichEvent()) {
           case StreamResponse_Event.ack:
             final ack = r.ack;
@@ -133,7 +139,6 @@ class ModuleInstructionStream {
         _connectionManager.scheduleReconnect();
       },
     );
-    _connectionManager.confirmConnected();
     _readyController.add(null);
   }
 

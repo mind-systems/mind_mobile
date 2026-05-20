@@ -29,9 +29,9 @@ class BreathSoundCoordinator {
   bool _isDisposed = false;
 
   static const Map<BreathPhase, String> _phaseAssets = {
-    BreathPhase.inhale: 'assets/audio/ohm_inhale.ogg',
-    BreathPhase.exhale: 'assets/audio/ohm_exhale.ogg',
-    BreathPhase.hold:   'assets/audio/ohm_hold.ogg',
+    BreathPhase.inhale: 'assets/audio/ohm_inhale.opus',
+    BreathPhase.exhale: 'assets/audio/ohm_exhale.opus',
+    BreathPhase.hold:   'assets/audio/ohm_hold.opus',
     // rest → silence (no entry)
   };
 

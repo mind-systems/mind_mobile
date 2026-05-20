@@ -28,6 +28,7 @@ class ModuleStateChannel {
 
   bool _isPendingStart = false;
   bool _isPendingPause = false;
+  bool _backoffConfirmed = false;
 
   // ── Stream handles ────────────────────────────────────────────────────────
 
@@ -67,10 +68,15 @@ class ModuleStateChannel {
   // ── Session stream management ─────────────────────────────────────────────
 
   void _openSessionStream() {
+    _backoffConfirmed = false;
     _sessionSink = StreamController<proto.StateRequest>();
     final response = _moduleStateService.trackActivity(_sessionSink!.stream);
     _sessionSub = response.listen(
       (proto.StateResponse r) {
+        if (!_backoffConfirmed) {
+          _backoffConfirmed = true;
+          _connectionManager.confirmConnected();
+        }
         switch (r.whichEvent()) {
           case proto.StateResponse_Event.sessionState:
             final event = r.sessionState;
@@ -98,7 +104,6 @@ class ModuleStateChannel {
         _connectionManager.scheduleReconnect();
       },
     );
-    _connectionManager.confirmConnected();
   }
 
   void _closeSessionStream() {
