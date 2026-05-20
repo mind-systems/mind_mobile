@@ -219,6 +219,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
                       scrollController: _scrollController,
                       status: state.status,
                       itemHeight: layout.itemHeight,
+                      remainingTicksListenable: ref.read(breathViewModelProvider.notifier).remainingTicksNotifier,
                     ),
                   ),
 

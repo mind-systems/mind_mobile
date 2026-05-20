@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mind_l10n/mind_l10n.dart';
 import '../Models/TimelineStep.dart';
@@ -8,6 +9,7 @@ class BreathTimelineWidget extends StatefulWidget {
   final String? activeStepId;
   final ScrollController scrollController;
   final BreathSessionStatus? status;
+  final ValueListenable<int> remainingTicksListenable;
 
   final double itemHeight;
   final double fadeExtent;
@@ -17,6 +19,7 @@ class BreathTimelineWidget extends StatefulWidget {
     required this.steps,
     required this.activeStepId,
     required this.scrollController,
+    required this.remainingTicksListenable,
     this.status,
     this.itemHeight = 48.0,
     this.fadeExtent = 0.15, // доля высоты под fade сверху/снизу
@@ -148,6 +151,7 @@ class BreathTimelineWidgetState extends State<BreathTimelineWidget> {
             isActive: isActive,
             isPausedOrComplete: isPausedOrComplete,
             itemHeight: widget.itemHeight,
+            remainingTicksListenable: isActive ? widget.remainingTicksListenable : null,
           ),
         );
       },
@@ -172,6 +176,7 @@ class _TimelineItem extends StatelessWidget {
   final bool isActive;
   final bool isPausedOrComplete;
   final double itemHeight;
+  final ValueListenable<int>? remainingTicksListenable;
 
   static const double _kActiveFontRatio   = 22.0 / 48.0; // 0.4583…
   static const double _kInactiveFontRatio = 16.0 / 48.0; // 0.3333…
@@ -182,6 +187,7 @@ class _TimelineItem extends StatelessWidget {
     required this.isActive,
     required this.isPausedOrComplete,
     required this.itemHeight,
+    this.remainingTicksListenable,
   });
 
   @override
@@ -212,7 +218,13 @@ class _TimelineItem extends StatelessWidget {
             children: [
               Text(_phaseName(context, step.type), style: textStyle),
               const SizedBox(width: 6),
-              Text('${step.duration ?? 0}', style: textStyle),
+              if (isActive && remainingTicksListenable != null)
+                ValueListenableBuilder<int>(
+                  valueListenable: remainingTicksListenable!,
+                  builder: (_, ticks, __) => Text('$ticks', style: textStyle),
+                )
+              else
+                Text('${step.duration ?? 0}', style: textStyle),
             ],
           ),
         ),
