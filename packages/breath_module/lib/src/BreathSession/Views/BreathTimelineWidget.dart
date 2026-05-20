@@ -129,6 +129,10 @@ class BreathTimelineWidgetState extends State<BreathTimelineWidget> {
   }
 
   Widget _buildList(bool isPausedOrComplete) {
+    final activeIndex = widget.activeStepId == null
+        ? -1
+        : widget.steps.indexWhere((s) => s.id == widget.activeStepId);
+
     return ListView.builder(
       controller: widget.scrollController,
       physics: const NeverScrollableScrollPhysics(),
@@ -137,6 +141,7 @@ class BreathTimelineWidgetState extends State<BreathTimelineWidget> {
       itemBuilder: (context, index) {
         final step = widget.steps[index];
         final isActive = step.id == widget.activeStepId;
+        final isCompleted = activeIndex >= 0 && index < activeIndex;
 
         if (step.type == TimelineStepType.separator) {
           return _buildSeparator(step);
@@ -149,6 +154,7 @@ class BreathTimelineWidgetState extends State<BreathTimelineWidget> {
             step: step,
             index: index,
             isActive: isActive,
+            isCompleted: isCompleted,
             isPausedOrComplete: isPausedOrComplete,
             itemHeight: widget.itemHeight,
             remainingTicksListenable: isActive ? widget.remainingTicksListenable : null,
@@ -174,6 +180,7 @@ class _TimelineItem extends StatelessWidget {
   final TimelineStep step;
   final int index;
   final bool isActive;
+  final bool isCompleted;
   final bool isPausedOrComplete;
   final double itemHeight;
   final ValueListenable<int>? remainingTicksListenable;
@@ -185,6 +192,7 @@ class _TimelineItem extends StatelessWidget {
     required this.step,
     required this.index,
     required this.isActive,
+    required this.isCompleted,
     required this.isPausedOrComplete,
     required this.itemHeight,
     this.remainingTicksListenable,
@@ -224,7 +232,7 @@ class _TimelineItem extends StatelessWidget {
                   builder: (_, ticks, __) => Text('$ticks', style: textStyle),
                 )
               else
-                Text('${step.duration ?? 0}', style: textStyle),
+                Text(isCompleted ? '0' : '${step.duration ?? 0}', style: textStyle),
             ],
           ),
         ),

@@ -137,23 +137,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
   }
 
   void _onEngineState(BreathSessionStateMachineState engineState) {
-    final previousActiveId = state.activeStepId;
-    final newActiveId = engineState.activeStepId;
-    final remaining = engineState.remainingTicks;
-
-    List<TimelineStep> updatedSteps = state.timelineSteps;
-
-    if (newActiveId != null) {
-      final stepChanged = previousActiveId != newActiveId;
-      updatedSteps = state.timelineSteps.map((step) {
-        if (step.id == null) return step;
-        if (step.id == newActiveId) return step.copyWith(duration: remaining);
-        if (stepChanged && step.id == previousActiveId) return step.copyWith(duration: 0);
-        return step;
-      }).toList();
-    }
-
-    _remainingTicks.value = remaining;
+    _remainingTicks.value = engineState.remainingTicks;
     // Full constructor — copyWith cannot clear nullable fields (resetReason,
     // currentExerciseShape, nextExerciseShape) when the engine emits null.
     state = BreathSessionState(
@@ -164,7 +148,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
       remainingTicks: engineState.remainingTicks,
       activeStepId: engineState.activeStepId,
       currentIntervalMs: engineState.currentIntervalMs,
-      timelineSteps: updatedSteps,
+      timelineSteps: state.timelineSteps,
       isStarred: state.isStarred,
       canStar: state.canStar,
       resetReason: engineState.resetReason,
