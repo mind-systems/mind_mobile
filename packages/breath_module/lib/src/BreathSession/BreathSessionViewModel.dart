@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../ITickService.dart';
 import 'BreathSessionStateMachine.dart';
@@ -32,6 +33,15 @@ class BreathViewModel extends Notifier<BreathSessionState> {
 
   BreathSessionDTO? _sessionDTO;
 
+  final ValueNotifier<int> _remainingTicks = ValueNotifier<int>(0);
+
+  /// Per-tick countdown channel for narrow-scope UI consumers (e.g. the active
+  /// timeline row). Sibling to `BreathSessionState.remainingTicks` — both stay
+  /// in sync but this notifier lets a single widget subscribe without
+  /// triggering screen-wide rebuilds. See
+  /// `.ai-factory/notes/11-breath-session-tick-render-scope.md`.
+  ValueListenable<int> get remainingTicksNotifier => _remainingTicks;
+
   final _stateController = StreamController<BreathSessionState>.broadcast();
 
   /// Stream of state updates — consumed by BreathModuleStateChannel.
@@ -59,6 +69,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
       _stateMachineSubscription?.cancel();
       _stateMachine?.dispose();
       _stateController.close();
+      _remainingTicks.dispose();
       tickService.dispose();
     });
     return BreathSessionState.initial();
@@ -102,6 +113,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
     final timelineSteps = _buildTimelineSteps(dto);
 
     final initialEngineState = _stateMachine!.currentState;
+    _remainingTicks.value = initialEngineState.remainingTicks;
     // Full constructor — copyWith cannot clear nullable fields on restart
     state = BreathSessionState(
       loadState: SessionLoadState.ready,
@@ -141,6 +153,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
       }).toList();
     }
 
+    _remainingTicks.value = remaining;
     // Full constructor — copyWith cannot clear nullable fields (resetReason,
     // currentExerciseShape, nextExerciseShape) when the engine emits null.
     state = BreathSessionState(
