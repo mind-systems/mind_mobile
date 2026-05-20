@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mind_audio/mind_audio.dart';
 import 'package:mind_l10n/mind_l10n.dart';
 import 'package:mind_ui/mind_ui.dart';
 import '../CommonModels/SetShape.dart';
@@ -63,7 +64,11 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen> with 
     );
 
     _orbCoordinator = OrbAnimationCoordinator(viewModel: viewModel, vsync: this);
-    _soundCoordinator = BreathSoundCoordinator(viewModel: viewModel);
+    _soundCoordinator = BreathSoundCoordinator(
+      viewModel: viewModel,
+      looper: AudioLooper(),
+      oneShot: AudioOneShot(),
+    );
 
     _scrollController = ScrollController();
 

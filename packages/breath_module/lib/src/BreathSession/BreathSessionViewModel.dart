@@ -226,6 +226,8 @@ class BreathViewModel extends Notifier<BreathSessionState> {
 
   // ===== Public controls =====
 
+  BreathSessionState get currentState => state;
+
   Stream<void> get tickStream => tickService.tickStream.cast();
 
   void pause() => _stateMachine?.pause();
