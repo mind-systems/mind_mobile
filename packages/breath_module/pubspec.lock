@@ -333,6 +333,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  mind_audio:
+    dependency: "direct main"
+    description:
+      path: "../mind_audio"
+      relative: true
+    source: path
+    version: "0.0.1"
   mind_l10n:
     dependency: "direct main"
     description:
