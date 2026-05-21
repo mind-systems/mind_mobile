@@ -48,6 +48,11 @@ import 'package:mind/Core/Grpc/ModuleInstructionStream.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
 import 'package:mind/Core/Sync/SyncEngine.dart';
 import 'package:mind/Core/Sync/SyncGrpcListener.dart';
+import 'package:mind/Bci/BciDevicesGrpcApi.dart';
+import 'package:mind/Bci/BciDeviceManager.dart';
+import 'package:mind/Bci/BciDeviceRepository.dart';
+import 'package:mind/Bci/BciNotifier.dart';
+import 'package:mind/Bci/NeiryBciProvider.dart';
 import 'package:mind/McpModule/Core/TokenNotifier.dart';
 import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/UserNotifier.dart';
@@ -76,6 +81,7 @@ class App {
   final ModuleInstructionStream instructionStream;
   final BreathModuleInstructionStream breathInstructionStream;
   final TokenNotifier tokenNotifier;
+  final BciNotifier bciNotifier;
   final SyncEngine syncEngine;
   final SyncGrpcListener syncGrpcListener;
   final AppLifecycleService appLifecycleService;
@@ -98,6 +104,7 @@ class App {
     required this.instructionStream,
     required this.breathInstructionStream,
     required this.tokenNotifier,
+    required this.bciNotifier,
     required this.syncEngine,
     required this.syncGrpcListener,
     required this.appLifecycleService,
@@ -139,6 +146,12 @@ class App {
     await syncEngine.waitForColdStart(!initialUser.isGuest);
 
     final prefs = await SharedPreferences.getInstance();
+    final bciDevicesApi = BciDevicesGrpcApi(grpcClient.bciDevicesService);
+    final bciRepository = BciDeviceRepository(api: bciDevicesApi, prefs: prefs);
+    final bciProvider = NeiryBciProvider();
+    final bciDeviceManager = BciDeviceManager(provider: bciProvider, repository: bciRepository);
+    final bciNotifier = BciNotifier(manager: bciDeviceManager);
+    unawaited(bciRepository.fetchKnownSerials().catchError((Object e) { return <String>[]; }));
     final appSettingsRepository = AppSettingsRepository(SharedPreferencesStorage(prefs));
     await appSettingsRepository.init();
     final initialTheme = await appSettingsRepository.getTheme();
@@ -179,6 +192,7 @@ class App {
       instructionStream: instructionStream,
       breathInstructionStream: breathInstructionStream,
       tokenNotifier: tokenNotifier,
+      bciNotifier: bciNotifier,
       syncEngine: syncEngine,
       syncGrpcListener: syncGrpcListener,
       appLifecycleService: appLifecycleService,
