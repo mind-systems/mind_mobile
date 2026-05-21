@@ -68,8 +68,8 @@ class BreathSessionState {
     activeStepId: null,
   );
 
-  /// Returns `true` iff every field **except** the two tick-cadence fields
-  /// (`remainingTicks`, `currentIntervalMs`) is equal to [other].
+  /// Returns `true` iff every field **except** the three transient fields
+  /// (`remainingTicks`, `currentIntervalMs`, `resetReason`) is equal to [other].
   ///
   /// Excluded fields and why:
   /// - `remainingTicks` — advances once per second; read only by raw-stream
@@ -79,6 +79,10 @@ class BreathSessionState {
   ///   ms (heart-rate source), making it a cadence-only field. Only
   ///   `BreathAnimationCoordinator` and `BreathSoundCoordinator` read it, both
   ///   via the raw stream — no Riverpod consumer of `currentIntervalMs` exists.
+  /// - `resetReason` — consumed only by raw-stream animation coordinators
+  ///   (`BreathAnimationCoordinator`, `OrbAnimationCoordinator`) via
+  ///   `viewModel.listen(...)`, never via Riverpod. A clear-emit
+  ///   (`newCycle → null`) must not classify as a structural change.
   ///
   /// `timelineSteps` uses `identical(...)` rather than `listEquals`: the list
   /// is built once in `BreathViewModel._setupEngine` and carried forward by
@@ -96,7 +100,6 @@ class BreathSessionState {
         activeStepId == other.activeStepId &&
         isStarred == other.isStarred &&
         canStar == other.canStar &&
-        resetReason == other.resetReason &&
         totalPhases == other.totalPhases &&
         currentPhaseIndex == other.currentPhaseIndex &&
         currentPhaseTotalDuration == other.currentPhaseTotalDuration &&
