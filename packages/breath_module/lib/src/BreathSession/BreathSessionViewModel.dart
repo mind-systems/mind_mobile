@@ -38,8 +38,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
   /// Per-tick countdown channel for narrow-scope UI consumers (e.g. the active
   /// timeline row). Sibling to `BreathSessionState.remainingTicks` — both stay
   /// in sync but this notifier lets a single widget subscribe without
-  /// triggering screen-wide rebuilds. See
-  /// `.ai-factory/notes/11-breath-session-tick-render-scope.md`.
+  /// triggering screen-wide rebuilds.
   ValueListenable<int> get remainingTicksNotifier => _remainingTicks;
 
   final _stateController = StreamController<BreathSessionState>.broadcast();
@@ -84,9 +83,8 @@ class BreathViewModel extends Notifier<BreathSessionState> {
   ///
   /// `super.state = value` (Riverpod publication) is **skipped** when the
   /// incoming value differs from the current state only in tick-cadence fields
-  /// (`remainingTicks`, `currentIntervalMs`). See
-  /// `.ai-factory/notes/11-breath-session-tick-render-scope.md` for the
-  /// motivation.
+  /// (`remainingTicks`, `currentIntervalMs`) — this is what prevents the
+  /// screen from rebuilding on every tick.
   ///
   /// Note: `set state` is only invoked after `build()` completes (via
   /// `_setupEngine`, `_onEngineState`, `toggleStar`, and the error branch in
@@ -155,9 +153,21 @@ class BreathViewModel extends Notifier<BreathSessionState> {
   }
 
   void _onEngineState(BreathSessionStateMachineState engineState) {
+    // Tick-cadence side channel. The active timeline row subscribes to this
+    // notifier directly so only that one `Text` rebuilds each tick, instead of
+    // pushing the new countdown through `state` and rebuilding the whole
+    // screen. `BreathSessionState.remainingTicks` is updated in lockstep
+    // below for raw-stream consumers (animation coordinators).
     _remainingTicks.value = engineState.remainingTicks;
     // Full constructor — copyWith cannot clear nullable fields (resetReason,
     // currentExerciseShape, nextExerciseShape) when the engine emits null.
+    //
+    // `timelineSteps` is carried by reference (`state.timelineSteps`), never
+    // rebuilt per tick. Identity preservation is load-bearing for the
+    // `identical(...)` check in `BreathSessionState.equalsIgnoringTickFields`,
+    // which lets `set state` skip Riverpod publication on tick-only updates.
+    // The active-row countdown lives on `_remainingTicks` (above), not on a
+    // mutated `step.duration`.
     state = BreathSessionState(
       loadState: state.loadState,
       status: engineState.status,

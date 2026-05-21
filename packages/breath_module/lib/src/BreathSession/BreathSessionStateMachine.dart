@@ -199,12 +199,18 @@ class BreathSessionStateMachine {
   }
 
   void complete() {
+    // `remainingTicks: 0` — at completion no time remains in any phase. The
+    // engine never emits a boundary 0 state during normal phase transitions
+    // (it skips straight from the last tick into `_advanceExercise`), so the
+    // active row's countdown would otherwise show the last known value (e.g.
+    // "1") forever in the complete state.
+    //
     // Full constructor to clear resetReason (copyWith cannot set nullable to null).
     _emit(BreathSessionStateMachineState(
       status: BreathSessionStatus.complete,
       phase: _state.phase,
       exerciseIndex: _state.exerciseIndex,
-      remainingTicks: _state.remainingTicks,
+      remainingTicks: 0,
       activeStepId: _state.activeStepId,
       currentIntervalMs: _state.currentIntervalMs,
       resetReason: null,

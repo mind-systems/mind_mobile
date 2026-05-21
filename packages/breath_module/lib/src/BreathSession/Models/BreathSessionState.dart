@@ -80,10 +80,14 @@ class BreathSessionState {
   ///   `BreathAnimationCoordinator` and `BreathSoundCoordinator` read it, both
   ///   via the raw stream — no Riverpod consumer of `currentIntervalMs` exists.
   ///
-  /// `timelineSteps` uses `identical(...)` rather than `listEquals` because the
-  /// list is mutated by-replacement only on restart (task 28); a `listEquals`
-  /// refactor would silently break the optimization by comparing elements on
-  /// every tick.
+  /// `timelineSteps` uses `identical(...)` rather than `listEquals`: the list
+  /// is built once in `BreathViewModel._setupEngine` and carried forward by
+  /// reference in `_onEngineState`, so reference equality is sufficient to
+  /// detect structural change. A `listEquals` refactor would silently break
+  /// the optimization by comparing elements on every tick — and any future
+  /// change that rebuilds `timelineSteps` into a new list with identical
+  /// content would also defeat it. Keep the carry-by-reference invariant
+  /// intact on the producer side.
   bool equalsIgnoringTickFields(BreathSessionState other) {
     return loadState == other.loadState &&
         status == other.status &&

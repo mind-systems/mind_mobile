@@ -129,6 +129,11 @@ class BreathTimelineWidgetState extends State<BreathTimelineWidget> {
   }
 
   Widget _buildList(bool isPausedOrComplete) {
+    // `step.duration` is no longer mutated per tick (the view-model carries
+    // `timelineSteps` by reference to keep the identity invariant — see
+    // `BreathSessionViewModel._onEngineState`). To render the "0" countdown
+    // for steps that have already elapsed, derive completion from list
+    // position relative to the active step instead.
     final activeIndex = widget.activeStepId == null
         ? -1
         : widget.steps.indexWhere((s) => s.id == widget.activeStepId);
@@ -157,6 +162,9 @@ class BreathTimelineWidgetState extends State<BreathTimelineWidget> {
             isCompleted: isCompleted,
             isPausedOrComplete: isPausedOrComplete,
             itemHeight: widget.itemHeight,
+            // Only the active row subscribes to the per-tick channel: it is
+            // the only row whose countdown changes between structural state
+            // updates. Inactive rows render their static `step.duration`.
             remainingTicksListenable: isActive ? widget.remainingTicksListenable : null,
           ),
         );
