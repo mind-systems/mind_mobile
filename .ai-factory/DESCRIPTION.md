@@ -16,7 +16,7 @@ A Flutter mindfulness app for iOS and Android. Users create and run guided breat
 
 ## Tech Stack
 
-- **Language:** Dart 3.3+
+- **Language:** Dart 3.11+
 - **Framework:** Flutter 3+ (iOS + Android targets)
 - **Flavors:** `dev` and `prod`
 - **Local Database:** Drift 2.x (SQLite ORM with code generation)
@@ -66,6 +66,7 @@ Screen + Coordinator (UI + navigation/side-effects)
 | `lib/McpModule/` | Personal Access Tokens — `TokenNotifier`, token CRUD, MCP screen |
 | `lib/ProfileModule/` | Profile screen — settings, theme/language, account management |
 | `lib/Device/` | Device ping — `DeviceApi`, `DeviceRepository` |
+| `lib/Bci/` | BCI domain abstraction — `IBciDeviceProvider` interface + domain models (`BciDeviceInfo`, `BciConnectionState`, `BciChannelQuality`, `BciCalibrationEvent`) |
 | `packages/breath_module/` | Standalone package — all breathing presentation screens, ViewModels, service/coordinator interfaces, DTOs |
 | `packages/mind_ui/` | Standalone package — shared UI components (buttons, snackbar, theme tokens) |
 | `packages/mind_l10n/` | Standalone package — ARB files and generated `AppLocalizations` |

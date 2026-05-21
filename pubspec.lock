@@ -761,6 +761,13 @@ packages:
       relative: true
     source: path
     version: "0.0.1"
+  neiry_kit:
+    dependency: "direct main"
+    description:
+      path: "../neiry_kit"
+      relative: true
+    source: path
+    version: "0.0.1"
   nm:
     dependency: transitive
     description:
