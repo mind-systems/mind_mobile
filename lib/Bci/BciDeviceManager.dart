@@ -1,0 +1,199 @@
+import 'dart:async';
+
+import 'package:collection/collection.dart';
+import 'package:mind/Bci/BciDeviceRepository.dart';
+import 'package:mind/Bci/IBciDeviceProvider.dart';
+import 'package:mind/Bci/Models/BciCalibrationEvent.dart';
+import 'package:mind/Bci/Models/BciChannelQuality.dart';
+import 'package:mind/Bci/Models/BciConnectionState.dart';
+import 'package:mind/Bci/Models/BciDeviceInfo.dart';
+import 'package:mind/Logger.dart';
+
+class BciDeviceManager {
+  final IBciDeviceProvider _provider;
+  final BciDeviceRepository _repository;
+
+  // Internal state
+  bool _disposed = false;
+  BciConnectionState _state = BciConnectionState.disconnected;
+  String? _connectedSerial;
+  bool _suppressAutoReconnect = false;
+  List<BciDeviceInfo> _discoveredDevices = const <BciDeviceInfo>[];
+
+  // Broadcast controllers
+  final _stateController = StreamController<BciConnectionState>.broadcast();
+  final _discoveredDevicesController = StreamController<List<BciDeviceInfo>>.broadcast();
+
+  // Provider stream subscriptions (nullable, assigned in constructor via _subscribeProviderStreams)
+  StreamSubscription<BciConnectionState>? _connectionStateSub;
+  StreamSubscription<BciCalibrationEvent>? _calibrationSub;
+  StreamSubscription<List<BciDeviceInfo>>? _scanSub;
+
+  BciDeviceManager({
+    required IBciDeviceProvider provider,
+    required BciDeviceRepository repository,
+  })  : _provider = provider,
+        _repository = repository {
+    _subscribeProviderStreams();
+  }
+
+  void _subscribeProviderStreams() {
+    _connectionStateSub = _provider.connectionStateStream.listen((state) {
+      if (state == BciConnectionState.disconnected &&
+          _state != BciConnectionState.disconnected &&
+          _state != BciConnectionState.scanning &&
+          _state != BciConnectionState.connecting) {
+        logPrint('BciDeviceManager: unexpected disconnect');
+        _setState(BciConnectionState.disconnected);
+        if (!_suppressAutoReconnect && _connectedSerial != null) {
+          unawaited(_attemptReconnect());
+        }
+      }
+    });
+    _calibrationSub = _provider.calibrationStream.listen((event) {
+      switch (event) {
+        case BciCalibrationStageFinished():
+          break; // stage progress forwarded to UI via public calibrationStream — no state change
+        case BciCalibrationCompleted():
+          if (_state == BciConnectionState.calibrating) _setState(BciConnectionState.ready);
+        case BciCalibrationFailed(:final reason):
+          logPrint('BciDeviceManager: calibration failed: $reason');
+          if (_state == BciConnectionState.calibrating) _setState(BciConnectionState.impedance);
+      }
+    });
+  }
+
+  // ── Public getters ──────────────────────────────────────────────────────────
+
+  BciConnectionState get state => _state;
+  String? get connectedSerial => _connectedSerial;
+  Stream<BciConnectionState> get stateStream => _stateController.stream;
+  Stream<List<BciDeviceInfo>> get discoveredDevicesStream => _discoveredDevicesController.stream;
+  Stream<List<BciChannelQuality>> get signalQualityStream => _provider.signalQualityStream;
+  Stream<int> get batteryStream => _provider.batteryStream;
+  Stream<BciCalibrationEvent> get calibrationStream => _provider.calibrationStream;
+  List<BciDeviceInfo> get discoveredDevices => _discoveredDevices;
+  List<String> cachedSerials() => _repository.cachedSerials();
+
+  // ── Internal helpers ────────────────────────────────────────────────────────
+
+  void _setState(BciConnectionState next) {
+    if (_disposed || next == _state) return;
+    _state = next;
+    if (!_stateController.isClosed) _stateController.add(next);
+  }
+
+  // ── Lifecycle ───────────────────────────────────────────────────────────────
+
+  Future<void> dispose() async {
+    _disposed = true;
+    await _connectionStateSub?.cancel();
+    await _calibrationSub?.cancel();
+    await _scanSub?.cancel();
+    await _stateController.close();
+    await _discoveredDevicesController.close();
+  }
+
+  // ── Public API (stubs — bodies land in later tasks) ─────────────────────────
+
+  Future<void> startScan() async {
+    _suppressAutoReconnect = false;
+    _setState(BciConnectionState.scanning);
+
+    final cachedSerials = _repository.cachedSerials();
+
+    await _scanSub?.cancel();
+    _scanSub = _provider.scan().listen(
+      (discovered) async {
+        if (_disposed) return;
+        _discoveredDevices = discovered;
+        if (!_discoveredDevicesController.isClosed) {
+          _discoveredDevicesController.add(discovered);
+        }
+
+        if (cachedSerials.isEmpty) return;
+
+        final autoConnect = discovered.firstWhereOrNull(
+          (d) => cachedSerials.contains(d.serial),
+        );
+        if (autoConnect != null && _state == BciConnectionState.scanning) {
+          await _scanSub?.cancel();
+          _scanSub = null;
+          await connectDevice(autoConnect.serial);
+        }
+      },
+      onError: (Object e) {
+        logPrint('BciDeviceManager: scan error: $e');
+        _setState(BciConnectionState.disconnected);
+      },
+    );
+  }
+
+  Future<void> connectDevice(String serial) async {
+    _setState(BciConnectionState.connecting);
+    try {
+      await _provider.connect(serial);
+      _connectedSerial = serial;
+      _setState(BciConnectionState.impedance);
+      unawaited(_repository.registerDevice(serial).catchError(
+        (Object e) => logPrint('BciDeviceManager: registerDevice failed: $e'),
+      ));
+    } catch (e) {
+      logPrint('BciDeviceManager: connect failed: $e');
+      _setState(BciConnectionState.disconnected);
+    }
+  }
+
+  Future<void> startCalibration() async {
+    if (_state != BciConnectionState.impedance) return;
+    _setState(BciConnectionState.calibrating);
+    try {
+      await _provider.startCalibration();
+      // success path: calibration events flow through _provider.calibrationStream
+      // and are handled by the listener in _subscribeProviderStreams.
+    } catch (e) {
+      logPrint('BciDeviceManager: startCalibration failed: $e');
+      _setState(BciConnectionState.impedance);
+    }
+  }
+
+  Future<void> disconnect() async {
+    _suppressAutoReconnect = true;
+    await _scanSub?.cancel();
+    _scanSub = null;
+    await _provider.disconnect();
+    _connectedSerial = null;
+    _setState(BciConnectionState.disconnected);
+  }
+
+  Future<void> _attemptReconnect() async {
+    _setState(BciConnectionState.scanning);
+    await _scanSub?.cancel();
+    _scanSub = _provider.scan().listen(
+      (discovered) async {
+        if (_disposed) return;
+        _discoveredDevices = discovered;
+        if (!_discoveredDevicesController.isClosed) {
+          _discoveredDevicesController.add(discovered);
+        }
+        final match = discovered.firstWhereOrNull(
+          (d) => d.serial == _connectedSerial,
+        );
+        if (match != null && _state == BciConnectionState.scanning) {
+          await _scanSub?.cancel();
+          _scanSub = null;
+          await connectDevice(match.serial);
+        }
+      },
+      onError: (Object e) {
+        logPrint('BciDeviceManager: reconnect scan error: $e');
+        _setState(BciConnectionState.disconnected);
+      },
+      onDone: () {
+        if (_state == BciConnectionState.scanning && _connectedSerial != null) {
+          _setState(BciConnectionState.disconnected);
+        }
+      },
+    );
+  }
+}
