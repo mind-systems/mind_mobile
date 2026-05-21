@@ -1,0 +1,25 @@
+name: bci_module
+description: BCI pairing presentation layer for Mind app.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: '>=3.7.0 <4.0.0'
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.0.0
+  just_audio: ^0.10.5
+  mind_l10n:
+    path: ../mind_l10n
+  mind_ui:
+    path: ../mind_ui
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:

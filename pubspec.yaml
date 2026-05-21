@@ -40,6 +40,8 @@ dependencies:
     path: packages/breath_module
   mind_audio:
     path: packages/mind_audio
+  bci_module:
+    path: packages/bci_module
   neiry_kit:
     path: ../neiry_kit
 
