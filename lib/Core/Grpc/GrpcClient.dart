@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:grpc/grpc.dart';
 import 'package:mind/Core/Grpc/generated/auth.pbgrpc.dart';
+import 'package:mind/Core/Grpc/generated/bci_devices.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/breath_sessions.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/device.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/module_instruction_stream.pbgrpc.dart';
@@ -28,6 +29,7 @@ class GrpcClient {
   }
 
   late final authService = AuthServiceClient(_channel, interceptors: _interceptors);
+  late final bciDevicesService = BciDevicesServiceClient(_channel, interceptors: _interceptors);
   late final breathSessionService = BreathSessionServiceClient(_channel, interceptors: _interceptors);
   late final deviceService = DeviceServiceClient(_channel, interceptors: _interceptors);
   late final moduleStateService = ModuleStateServiceClient(_channel, interceptors: _interceptors);
