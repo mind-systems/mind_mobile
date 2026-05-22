@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mind_l10n/mind_l10n.dart';
 
 import 'BciPairingViewModel.dart';
+import 'Models/BciPairingStage.dart';
 import 'Views/BciCalibrationSection.dart';
+import 'Views/BciDisconnectDialog.dart';
 import 'Views/BciDiscoverySection.dart';
 import 'Views/BciImpedanceSection.dart';
-import 'Views/BciPairingTopBar.dart';
 
 /// Full-screen BCI device pairing flow — discovery, impedance check, and
 /// calibration — driven by [bciPairingViewModelProvider].
@@ -32,21 +34,67 @@ class _BciPairingScreenState extends ConsumerState<BciPairingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BciPairingTopBar(),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
-              BciDiscoverySection(),
-              Divider(height: 1),
-              BciImpedanceSection(),
-              Divider(height: 1),
-              BciCalibrationSection(),
-              SizedBox(height: 16),
+            children: [
+              _BciPairingHeader(),
+              const BciDiscoverySection(),
+              const Divider(height: 1),
+              const BciImpedanceSection(),
+              const Divider(height: 1),
+              const BciCalibrationSection(),
+              const SizedBox(height: 16),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BciPairingHeader extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(bciPairingViewModelProvider);
+    final vm = ref.read(bciPairingViewModelProvider.notifier);
+    final l10n = AppLocalizations.of(context)!;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: vm.onClose,
+          ),
+          const Spacer(),
+          Opacity(
+            opacity: state.batteryPercent != null ? 1.0 : 0.3,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.battery_full, size: 16),
+                const SizedBox(width: 4),
+                Text(state.batteryPercent != null
+                    ? '${state.batteryPercent}%'
+                    : '--'),
+                const SizedBox(width: 8),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: state.stage == BciPairingStage.discovery
+                ? null
+                : () async {
+                    final ok = await showBciDisconnectDialog(context);
+                    if (ok && context.mounted) vm.onDisconnect();
+                  },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(l10n.bciPairingDisconnect),
+          ),
+        ],
       ),
     );
   }
