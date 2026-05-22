@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:bci_module/bci_module.dart' show BciPairingScreen;
 import 'package:breath_module/breath_module.dart' show BreathSessionListScreen, BreathSessionScreen;
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/ProfileScreen.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Presentation/Login/Models/AuthResult.dart';
 import 'package:mind/User/Presentation/Login/OnboardingScreen.dart';
 import 'package:mind/User/UserNotifier.dart';
-import 'package:mind_ui/mind_ui.dart';
 import 'IHomeCoordinator.dart';
 
 class HomeCoordinator implements IHomeCoordinator {
@@ -18,7 +18,7 @@ class HomeCoordinator implements IHomeCoordinator {
   void openBreath() => context.push(BreathSessionListScreen.path);
 
   @override
-  void openComingSoon() => context.push(ComingSoonScreen.path);
+  void openComingSoon() => context.push(BciPairingScreen.path);
 
   @override
   void openProfile() {
