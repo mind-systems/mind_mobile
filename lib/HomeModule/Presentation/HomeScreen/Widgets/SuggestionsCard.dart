@@ -7,6 +7,7 @@ import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/SuggestionCarous
 import 'package:mind/HomeModule/Presentation/HomeScreen/Widgets/SuggestionsTitle.dart';
 import 'package:mind_l10n/mind_l10n.dart';
 import 'package:mind_ui/mind_ui.dart';
+import 'package:shimmer/shimmer.dart';
 
 class SuggestionsCard extends ConsumerWidget {
   const SuggestionsCard({super.key});
@@ -21,11 +22,8 @@ class SuggestionsCard extends ConsumerWidget {
     final onSurface = theme.colorScheme.onSurface;
     final l10n = AppLocalizations.of(context)!;
 
-    if (state.isLoading) {
-      return const SizedBox(
-        height: 80,
-        child: Center(child: CircularProgressIndicator()),
-      );
+    if (!state.isGuest && state.isSuggestionsLoading) {
+      return const _SuggestionsShimmer();
     }
 
     if (state.suggestions.isEmpty) return const SizedBox.shrink();
@@ -61,6 +59,58 @@ class SuggestionsCard extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
         ],
+      ),
+    );
+  }
+}
+
+class _SuggestionsShimmer extends StatelessWidget {
+  const _SuggestionsShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final base = theme.colorScheme.surfaceContainerHighest;
+    final highlight = theme.colorScheme.surface;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(kCardCornerRadius),
+        border: Border.all(color: theme.colorScheme.onSurface.withValues(alpha: 0.1)),
+      ),
+      child: Shimmer.fromColors(
+        baseColor: base,
+        highlightColor: highlight,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 14,
+                width: 120,
+                decoration: BoxDecoration(
+                  color: base,
+                  borderRadius: BorderRadius.circular(7),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: List.generate(3, (i) => Expanded(
+                  child: Container(
+                    height: 88,
+                    margin: EdgeInsets.only(right: i < 2 ? 8 : 0),
+                    decoration: BoxDecoration(
+                      color: base,
+                      borderRadius: BorderRadius.circular(kCardCornerRadius),
+                    ),
+                  ),
+                )),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
       ),
     );
   }

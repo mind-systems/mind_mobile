@@ -4,14 +4,16 @@ class HomeState {
   final List<SuggestionItemDTO> suggestions;
   final StatsDTO? stats;
   final bool isGuest;
-  final bool isLoading;
+  final bool isSuggestionsLoading;
+  final bool isStatsLoading;
   final String? error;
 
   const HomeState({
     this.suggestions = const [],
     this.stats,
     this.isGuest = true,
-    this.isLoading = false,
+    this.isSuggestionsLoading = false,
+    this.isStatsLoading = false,
     this.error,
   });
 
@@ -21,15 +23,15 @@ class HomeState {
     List<SuggestionItemDTO>? suggestions,
     StatsDTO? stats,
     bool? isGuest,
-    bool? isLoading,
+    bool? isSuggestionsLoading,
+    bool? isStatsLoading,
     String? error,
-  }) {
-    return HomeState(
-      suggestions: suggestions ?? this.suggestions,
-      stats: stats ?? this.stats,
-      isGuest: isGuest ?? this.isGuest,
-      isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
-    );
-  }
+  }) => HomeState(
+    suggestions: suggestions ?? this.suggestions,
+    stats: stats ?? this.stats,
+    isGuest: isGuest ?? this.isGuest,
+    isSuggestionsLoading: isSuggestionsLoading ?? this.isSuggestionsLoading,
+    isStatsLoading: isStatsLoading ?? this.isStatsLoading,
+    error: error ?? this.error,
+  );
 }

@@ -34,23 +34,26 @@ class HomeViewModel extends Notifier<HomeState> {
   }
 
   Future<void> _loadSuggestions() async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isSuggestionsLoading: true);
     try {
       final suggestions = await service.fetchSuggestions();
-      state = state.copyWith(suggestions: suggestions, isLoading: false);
+      state = state.copyWith(suggestions: suggestions, isSuggestionsLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isSuggestionsLoading: false, error: e.toString());
     }
   }
 
   Future<void> _loadStats() async {
+    state = state.copyWith(isStatsLoading: true);
     try {
       final stats = await service.fetchStats();
       if (stats != null) {
-        state = state.copyWith(stats: stats);
+        state = state.copyWith(stats: stats, isStatsLoading: false);
+      } else {
+        state = state.copyWith(isStatsLoading: false);
       }
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(isStatsLoading: false, error: e.toString());
     }
   }
 

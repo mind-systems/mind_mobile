@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/HomeViewModel.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/Models/HomeDTOs.dart';
 import 'package:mind_l10n/mind_l10n.dart';
+import 'package:shimmer/shimmer.dart';
 
 class StatsCard extends ConsumerWidget {
   const StatsCard({super.key});
@@ -16,11 +17,17 @@ class StatsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(homeViewModelProvider).stats;
+    final state = ref.watch(homeViewModelProvider);
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
-    if (stats == null) return const SizedBox.shrink();
+    if (!state.isGuest && state.isStatsLoading) {
+      return const _StatsShimmer();
+    }
+
+    if (state.stats == null) return const SizedBox.shrink();
+
+    final stats = state.stats!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,6 +53,61 @@ class StatsCard extends ConsumerWidget {
           color: theme.dividerColor,
         ),
       ],
+    );
+  }
+}
+
+class _StatsShimmer extends StatelessWidget {
+  const _StatsShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final base = theme.colorScheme.surfaceContainerHighest;
+    final highlight = theme.colorScheme.surface;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Shimmer.fromColors(
+          baseColor: base,
+          highlightColor: highlight,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 14),
+                _shimmerLine(base, width: 160),
+                const SizedBox(height: 8),
+                _shimmerLine(base, width: 200),
+                const SizedBox(height: 8),
+                _shimmerLine(base, width: 180),
+                const SizedBox(height: 8),
+                _shimmerLine(base, width: 220),
+                const SizedBox(height: 8),
+                _shimmerLine(base, width: 140),
+                const SizedBox(height: 14),
+              ],
+            ),
+          ),
+        ),
+        Container(
+          height: 1 / MediaQuery.of(context).devicePixelRatio,
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          color: theme.dividerColor,
+        ),
+      ],
+    );
+  }
+
+  Widget _shimmerLine(Color color, {required double width}) {
+    return Container(
+      height: 14,
+      width: width,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(7),
+      ),
     );
   }
 }
