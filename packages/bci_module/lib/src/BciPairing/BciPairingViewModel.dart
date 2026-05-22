@@ -24,11 +24,13 @@ class BciPairingViewModel extends Notifier<BciPairingState> {
 
   @override
   BciPairingState build() {
-    ref.onDispose(() => _eventsSubscription?.cancel());
+    ref.onDispose(() {
+      _eventsSubscription?.cancel();
+      _eventsSubscription = null;
+    });
     return BciPairingState.initial();
   }
 
-  /// Called once by the module assembler after the provider scope is created.
   void initState() {
     if (_eventsSubscription != null) return;
     _eventsSubscription = service.observeChanges().listen(_onServiceEvent);

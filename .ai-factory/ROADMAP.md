@@ -98,6 +98,8 @@ After Phase 15, a residual stutter remains on every phase boundary: the shape-mo
 
 - [x] **Wire `BciModule.dart` + `App.dart` + `router.dart` + HomeScreen** — Create `lib/BciModule/BciModule.dart` (mirrors `lib/BreathModule/BreathModule.dart`): `static Widget buildPairing(BuildContext context)` creates `BciPairingService(App.shared.bciNotifier)` + `BciPairingCoordinator(context)`, wraps with `ProviderScope` overriding `bciPairingViewModelProvider`. Add `GoRoute(path: BciPairingScreen.path, builder: (c, s) => BciModule.buildPairing(c))` to `lib/router.dart`. In `HomeCoordinator` (or wherever `openComingSoon` is implemented for the BCI tile), replace it with `context.push(BciPairingScreen.path)`. [10m 18s]
 
+- [x] **BciPairing post-review fixes** — Two issues found in review. Full spec: `.ai-factory/notes/18-bci-pairing-post-review-fixes.md`. (1) Remove multi-line `///` docstrings from `packages/bci_module/lib/src/BciPairing/IBciPairingService.dart` (class docstring + `observeChanges()` method docstring) and `packages/bci_module/lib/src/BciPairing/Models/BciCalibrationProgressDTO.dart` (class docstring). (2) In `BciPairingViewModel.build()`, change the `ref.onDispose` callback to also null the field: `ref.onDispose(() { _eventsSubscription?.cancel(); _eventsSubscription = null; });` — without this, if the notifier is rebuilt the guard `if (_eventsSubscription != null) return;` in `initState()` blocks re-subscription. [9m 16s]
+
 ---STOP---
 
 ## BCI Classifier Integration
