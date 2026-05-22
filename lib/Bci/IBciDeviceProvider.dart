@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'Models/BciCalibrationEvent.dart';
+import 'Models/BciCardioData.dart';
 import 'Models/BciChannelQuality.dart';
 import 'Models/BciConnectionState.dart';
 import 'Models/BciDeviceInfo.dart';
+import 'Models/BciEmotionsData.dart';
+import 'Models/BciNfbData.dart';
 
 /// Domain-side abstraction for any BCI hardware provider.
 ///
@@ -42,6 +45,15 @@ abstract interface class IBciDeviceProvider {
 
   /// Emits calibration lifecycle events.
   Stream<BciCalibrationEvent> get calibrationStream;
+
+  /// Emits NFB band amplitudes (delta/theta/alpha/smr/beta) per sample.
+  Stream<BciNfbData> get nfbStream;
+
+  /// Emits cardio metrics (heart rate + availability/artifact flags) per sample.
+  Stream<BciCardioData> get cardioStream;
+
+  /// Emits high-level emotion classifier outputs per sample.
+  Stream<BciEmotionsData> get emotionsStream;
 
   /// Requests the device to start its calibration sequence.
   Future<void> startCalibration();

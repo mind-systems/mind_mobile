@@ -8,9 +8,12 @@ import 'package:permission_handler/permission_handler.dart';
 
 import 'IBciDeviceProvider.dart';
 import 'Models/BciCalibrationEvent.dart';
+import 'Models/BciCardioData.dart';
 import 'Models/BciChannelQuality.dart';
 import 'Models/BciConnectionState.dart';
 import 'Models/BciDeviceInfo.dart';
+import 'Models/BciEmotionsData.dart';
+import 'Models/BciNfbData.dart';
 import 'Models/BluetoothPermissionDeniedException.dart';
 import '../Logger.dart';
 
@@ -22,6 +25,10 @@ class NeiryBciProvider implements IBciDeviceProvider {
   final DeviceLocator _locator = DeviceLocator();
   Device? _device;
 
+  NfbClassifier? _nfbClassifier;
+  CardioClassifier? _cardioClassifier;
+  EmotionsClassifier? _emotionsClassifier;
+
   final _connectionStateController =
       StreamController<BciConnectionState>.broadcast();
   final _signalQualityController =
@@ -29,11 +36,19 @@ class NeiryBciProvider implements IBciDeviceProvider {
   final _batteryController = StreamController<int>.broadcast();
   final _calibrationController =
       StreamController<BciCalibrationEvent>.broadcast();
+  final _nfbController = StreamController<BciNfbData>.broadcast();
+  final _cardioController = StreamController<BciCardioData>.broadcast();
+  final _emotionsController = StreamController<BciEmotionsData>.broadcast();
 
   StreamSubscription<NeiryConnectionState>? _connectionSub;
   StreamSubscription<ResistanceData>? _resistanceSub;
   StreamSubscription<int>? _batterySub;
   StreamSubscription<CalibrationEvent>? _calibrationSub;
+  StreamSubscription<NfbUserState>? _nfbSub;
+  StreamSubscription<String>? _nfbErrorSub;
+  StreamSubscription<CardioData>? _cardioSub;
+  StreamSubscription<EmotionsStates>? _emotionsSub;
+  StreamSubscription<String>? _emotionsErrorSub;
 
   // ── Stream getters ──────────────────────────────────────────────────────────
 
@@ -51,6 +66,15 @@ class NeiryBciProvider implements IBciDeviceProvider {
   @override
   Stream<BciCalibrationEvent> get calibrationStream =>
       _calibrationController.stream;
+
+  @override
+  Stream<BciNfbData> get nfbStream => _nfbController.stream;
+
+  @override
+  Stream<BciCardioData> get cardioStream => _cardioController.stream;
+
+  @override
+  Stream<BciEmotionsData> get emotionsStream => _emotionsController.stream;
 
   // ── scan() ──────────────────────────────────────────────────────────────────
 
@@ -110,9 +134,26 @@ class NeiryBciProvider implements IBciDeviceProvider {
     try {
       await _device!.connect();
       await _device!.start();
+      _nfbClassifier = NfbClassifier(_device!);
+      _cardioClassifier = CardioClassifier(_device!);
+      _emotionsClassifier = EmotionsClassifier(_device!);
     } catch (e) {
-      await _device?.disconnect();
-      await _device?.dispose();
+      try {
+        await _nfbClassifier?.dispose();
+      } catch (_) {}
+      _nfbClassifier = null;
+      try {
+        await _cardioClassifier?.dispose();
+      } catch (_) {}
+      _cardioClassifier = null;
+      try {
+        await _emotionsClassifier?.dispose();
+      } catch (_) {}
+      _emotionsClassifier = null;
+      try {
+        await _device?.disconnect();
+        await _device?.dispose();
+      } catch (_) {}
       _device = null;
       rethrow;
     }
@@ -134,6 +175,33 @@ class NeiryBciProvider implements IBciDeviceProvider {
       _batteryController.add,
       onError: (Object e) =>
           logPrint('NeiryBciProvider: batteryStream error: $e'),
+    );
+    // Classifiers are guaranteed non-null here: connect()'s try block
+    // instantiates them before reaching this method.
+    _nfbSub = _nfbClassifier!.stateStream.listen(
+      _onNfbState,
+      onError: (Object e) =>
+          logPrint('NeiryBciProvider: nfb stateStream error: $e'),
+    );
+    _nfbErrorSub = _nfbClassifier!.errorStream.listen(
+      (e) => logPrint('NeiryBciProvider: nfb error: $e'),
+      onError: (Object e) =>
+          logPrint('NeiryBciProvider: nfb errorStream error: $e'),
+    );
+    _cardioSub = _cardioClassifier!.stateStream.listen(
+      _onCardioState,
+      onError: (Object e) =>
+          logPrint('NeiryBciProvider: cardio stateStream error: $e'),
+    );
+    _emotionsSub = _emotionsClassifier!.stateStream.listen(
+      _onEmotionsState,
+      onError: (Object e) =>
+          logPrint('NeiryBciProvider: emotions stateStream error: $e'),
+    );
+    _emotionsErrorSub = _emotionsClassifier!.errorStream.listen(
+      (e) => logPrint('NeiryBciProvider: emotions error: $e'),
+      onError: (Object e) =>
+          logPrint('NeiryBciProvider: emotions errorStream error: $e'),
     );
   }
 
@@ -185,6 +253,40 @@ class NeiryBciProvider implements IBciDeviceProvider {
     _signalQualityController.add(qualities);
   }
 
+  // ── NfbUserState → BciNfbData ───────────────────────────────────────────────
+
+  void _onNfbState(NfbUserState s) {
+    _nfbController.add(BciNfbData(
+      delta: s.delta,
+      theta: s.theta,
+      alpha: s.alpha,
+      smr: s.smr,
+      beta: s.beta,
+    ));
+  }
+
+  // ── CardioData → BciCardioData ──────────────────────────────────────────────
+
+  void _onCardioState(CardioData c) {
+    _cardioController.add(BciCardioData(
+      heartRate: c.heartRate,
+      metricsAvailable: c.metricsAvailable,
+      hasArtifacts: c.hasArtifacts,
+    ));
+  }
+
+  // ── EmotionsStates → BciEmotionsData ────────────────────────────────────────
+
+  void _onEmotionsState(EmotionsStates e) {
+    _emotionsController.add(BciEmotionsData(
+      attention: e.attention,
+      relaxation: e.relaxation,
+      cognitiveLoad: e.cognitiveLoad,
+      cognitiveControl: e.cognitiveControl,
+      selfControl: e.selfControl,
+    ));
+  }
+
   // ── startCalibration() ──────────────────────────────────────────────────────
 
   @override
@@ -217,6 +319,35 @@ class NeiryBciProvider implements IBciDeviceProvider {
     _resistanceSub = null;
     await _batterySub?.cancel();
     _batterySub = null;
+    await _nfbSub?.cancel();
+    _nfbSub = null;
+    await _nfbErrorSub?.cancel();
+    _nfbErrorSub = null;
+    await _cardioSub?.cancel();
+    _cardioSub = null;
+    await _emotionsSub?.cancel();
+    _emotionsSub = null;
+    await _emotionsErrorSub?.cancel();
+    _emotionsErrorSub = null;
+
+    try {
+      await _nfbClassifier?.dispose();
+    } catch (e) {
+      logPrint('NeiryBciProvider: nfb dispose error: $e');
+    }
+    _nfbClassifier = null;
+    try {
+      await _cardioClassifier?.dispose();
+    } catch (e) {
+      logPrint('NeiryBciProvider: cardio dispose error: $e');
+    }
+    _cardioClassifier = null;
+    try {
+      await _emotionsClassifier?.dispose();
+    } catch (e) {
+      logPrint('NeiryBciProvider: emotions dispose error: $e');
+    }
+    _emotionsClassifier = null;
   }
 
   @override
@@ -257,5 +388,8 @@ class NeiryBciProvider implements IBciDeviceProvider {
     _signalQualityController.close();
     _batteryController.close();
     _calibrationController.close();
+    _nfbController.close();
+    _cardioController.close();
+    _emotionsController.close();
   }
 }
