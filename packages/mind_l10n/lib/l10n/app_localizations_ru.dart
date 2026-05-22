@@ -310,4 +310,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get bciPairingDisconnectConfirm => 'Отключить устройство?';
+
+  @override
+  String get bciBluetoothPermissionTitle => 'Нужен доступ к Bluetooth';
+
+  @override
+  String get bciBluetoothPermissionMessage =>
+      'Mind использует Bluetooth для подключения к гарнитуре Neiry. Разрешите доступ в Настройках.';
+
+  @override
+  String get bciOpenSettings => 'Открыть настройки';
 }

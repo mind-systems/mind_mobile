@@ -667,6 +667,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Disconnect device?'**
   String get bciPairingDisconnectConfirm;
+
+  /// No description provided for @bciBluetoothPermissionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth access required'**
+  String get bciBluetoothPermissionTitle;
+
+  /// No description provided for @bciBluetoothPermissionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Mind needs Bluetooth to connect to your Neiry headband. Please allow access in Settings.'**
+  String get bciBluetoothPermissionMessage;
+
+  /// No description provided for @bciOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get bciOpenSettings;
 }
 
 class _AppLocalizationsDelegate

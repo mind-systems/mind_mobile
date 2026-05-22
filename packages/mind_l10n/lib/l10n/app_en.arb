@@ -125,5 +125,8 @@
   "bciPairingCloseEyes": "Close your eyes and relax.",
   "bciPairingCalibrationComplete": "Calibration complete",
   "bciPairingDisconnect": "Disconnect",
-  "bciPairingDisconnectConfirm": "Disconnect device?"
+  "bciPairingDisconnectConfirm": "Disconnect device?",
+  "bciBluetoothPermissionTitle": "Bluetooth access required",
+  "bciBluetoothPermissionMessage": "Mind needs Bluetooth to connect to your Neiry headband. Please allow access in Settings.",
+  "bciOpenSettings": "Open Settings"
 }

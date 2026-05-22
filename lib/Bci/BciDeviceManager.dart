@@ -7,6 +7,7 @@ import 'package:mind/Bci/Models/BciCalibrationEvent.dart';
 import 'package:mind/Bci/Models/BciChannelQuality.dart';
 import 'package:mind/Bci/Models/BciConnectionState.dart';
 import 'package:mind/Bci/Models/BciDeviceInfo.dart';
+import 'package:mind/Bci/Models/BluetoothPermissionDeniedException.dart';
 import 'package:mind/Logger.dart';
 
 class BciDeviceManager {
@@ -42,7 +43,8 @@ class BciDeviceManager {
       if (state == BciConnectionState.disconnected &&
           _state != BciConnectionState.disconnected &&
           _state != BciConnectionState.scanning &&
-          _state != BciConnectionState.connecting) {
+          _state != BciConnectionState.connecting &&
+          _state != BciConnectionState.bluetoothPermissionDenied) {
         logPrint('BciDeviceManager: unexpected disconnect');
         _setState(BciConnectionState.disconnected);
         if (!_suppressAutoReconnect && _connectedSerial != null) {
@@ -129,8 +131,20 @@ class BciDeviceManager {
         }
       },
       onError: (Object e) {
-        logPrint('BciDeviceManager: scan error: $e');
-        _setState(BciConnectionState.disconnected);
+        // startScan() bypasses _setState dedup (direct _state assignment + add),
+        // so a subsequent bluetoothPermissionDenied is always a real transition.
+        if (e is BluetoothPermissionDeniedException) {
+          logPrint('BciDeviceManager: bluetooth permission denied — cannot scan');
+          _setState(BciConnectionState.bluetoothPermissionDenied);
+        } else {
+          logPrint('BciDeviceManager: scan error: $e');
+          _setState(BciConnectionState.disconnected);
+        }
+      },
+      onDone: () {
+        if (_state == BciConnectionState.scanning) {
+          _setState(BciConnectionState.disconnected);
+        }
       },
     );
   }
@@ -192,8 +206,18 @@ class BciDeviceManager {
         }
       },
       onError: (Object e) {
-        logPrint('BciDeviceManager: reconnect scan error: $e');
-        _setState(BciConnectionState.disconnected);
+        // Dedup safety: the only caller is the disconnect listener which
+        // transitions _state → disconnected before invoking _attemptReconnect(),
+        // so _setState(scanning) at line 185 always fires. If you add another
+        // caller that may leave _state already at scanning (or bluetoothPermissionDenied),
+        // audit this path.
+        if (e is BluetoothPermissionDeniedException) {
+          logPrint('BciDeviceManager: bluetooth permission denied — cannot reconnect');
+          _setState(BciConnectionState.bluetoothPermissionDenied);
+        } else {
+          logPrint('BciDeviceManager: reconnect scan error: $e');
+          _setState(BciConnectionState.disconnected);
+        }
       },
       onDone: () {
         if (_state == BciConnectionState.scanning && _connectedSerial != null) {

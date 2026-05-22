@@ -48,6 +48,10 @@ class BciPairingViewModel extends Notifier<BciPairingState> {
 
   void onDeviceTap(String serial) => service.connectDevice(serial);
 
+  /// Starts a new scan. Used by [BciDiscoverySection] after the user grants
+  /// Bluetooth permission in Settings and returns to the app.
+  void onRescan() => service.startScan();
+
   void onStartCalibration() => service.startCalibration();
 
   void onDisconnect() => service.disconnect();

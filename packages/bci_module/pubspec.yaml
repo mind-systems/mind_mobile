@@ -17,6 +17,7 @@ dependencies:
     path: ../mind_l10n
   mind_ui:
     path: ../mind_ui
+  permission_handler: ^11.4.0
 
 dev_dependencies:
   flutter_test:

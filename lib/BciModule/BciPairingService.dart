@@ -93,6 +93,7 @@ class BciPairingService implements IBciPairingService {
           stage: BciPairingStage.discovery,
           isScanning: false,
           isConnecting: false,
+          isBluetoothPermissionDenied: false,
           calibration: null,                         // cleared via _undefined sentinel
           channels: const <BciChannelQualityDTO>[], // MUST be empty list — null is a no-op
           errorMessage: null,                        // cleared via _undefined sentinel
@@ -103,6 +104,16 @@ class BciPairingService implements IBciPairingService {
           stage: BciPairingStage.discovery,
           isScanning: true,
           isConnecting: false,
+          isBluetoothPermissionDenied: false,
+          errorMessage: null,
+        );
+
+      case BciConnectionState.bluetoothPermissionDenied:
+        return acc.copyWith(
+          stage: BciPairingStage.discovery,
+          isScanning: false,
+          isConnecting: false,
+          isBluetoothPermissionDenied: true,
           errorMessage: null,
         );
 

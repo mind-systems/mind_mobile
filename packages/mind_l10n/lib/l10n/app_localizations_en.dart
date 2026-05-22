@@ -308,4 +308,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bciPairingDisconnectConfirm => 'Disconnect device?';
+
+  @override
+  String get bciBluetoothPermissionTitle => 'Bluetooth access required';
+
+  @override
+  String get bciBluetoothPermissionMessage =>
+      'Mind needs Bluetooth to connect to your Neiry headband. Please allow access in Settings.';
+
+  @override
+  String get bciOpenSettings => 'Open Settings';
 }

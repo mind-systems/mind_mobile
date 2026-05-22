@@ -11,4 +11,5 @@ enum BciConnectionState {
   impedance,
   calibrating,
   ready,
+  bluetoothPermissionDenied,
 }

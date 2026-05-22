@@ -10,6 +10,7 @@ class BciPairingState {
   final List<BciScannedDeviceDTO> devices;
   final bool isScanning;
   final bool isConnecting;
+  final bool isBluetoothPermissionDenied;
   final List<BciChannelQualityDTO> channels;
 
   /// `null` means no active calibration data (e.g. before calibration has
@@ -25,6 +26,7 @@ class BciPairingState {
     required this.devices,
     required this.isScanning,
     required this.isConnecting,
+    required this.isBluetoothPermissionDenied,
     required this.channels,
     this.calibration,
     this.batteryPercent,
@@ -36,6 +38,7 @@ class BciPairingState {
         devices: [],
         isScanning: false,
         isConnecting: false,
+        isBluetoothPermissionDenied: false,
         channels: [],
       );
 
@@ -44,6 +47,7 @@ class BciPairingState {
     List<BciScannedDeviceDTO>? devices,
     bool? isScanning,
     bool? isConnecting,
+    bool? isBluetoothPermissionDenied,
     List<BciChannelQualityDTO>? channels,
     Object? calibration = _undefined,
     Object? batteryPercent = _undefined,
@@ -54,6 +58,8 @@ class BciPairingState {
       devices: devices ?? this.devices,
       isScanning: isScanning ?? this.isScanning,
       isConnecting: isConnecting ?? this.isConnecting,
+      isBluetoothPermissionDenied:
+          isBluetoothPermissionDenied ?? this.isBluetoothPermissionDenied,
       channels: channels ?? this.channels,
       calibration: identical(calibration, _undefined)
           ? this.calibration

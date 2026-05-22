@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math' show min;
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:neiry_kit/neiry_kit.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'IBciDeviceProvider.dart';
 import 'Models/BciCalibrationEvent.dart';
 import 'Models/BciChannelQuality.dart';
 import 'Models/BciConnectionState.dart';
 import 'Models/BciDeviceInfo.dart';
+import 'Models/BluetoothPermissionDeniedException.dart';
 import '../Logger.dart';
 
 /// Adapter that bridges `neiry_kit` to [IBciDeviceProvider].
@@ -51,10 +55,46 @@ class NeiryBciProvider implements IBciDeviceProvider {
   // ── scan() ──────────────────────────────────────────────────────────────────
 
   @override
-  Stream<List<BciDeviceInfo>> scan() => _locator
-      .requestDevices(type: NeiryDeviceType.headband, searchTime: 5)
-      .map((list) =>
-          list.map((d) => BciDeviceInfo(serial: d.serial, name: d.name)).toList());
+  Stream<List<BciDeviceInfo>> scan() async* {
+    if (Platform.isIOS) {
+      final status = await Permission.bluetooth.status;
+      if (status.isPermanentlyDenied || status.isRestricted) {
+        logPrint('NeiryBciProvider: bluetooth permission permanently denied (iOS)');
+        throw const BluetoothPermissionDeniedException();
+      }
+      // All other statuses (including denied / notDetermined) fall through so
+      // CoreBluetooth presents its native prompt when requestDevices() runs.
+    } else if (Platform.isAndroid) {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      final sdkInt = androidInfo.version.sdkInt;
+
+      final permissions = [
+        Permission.bluetoothScan,
+        Permission.bluetoothConnect,
+        if (sdkInt < 31) Permission.locationWhenInUse,
+      ];
+
+      final statuses = await permissions.request();
+
+      final anyPermanentlyDenied =
+          permissions.any((p) => statuses[p]?.isPermanentlyDenied == true);
+      if (anyPermanentlyDenied) {
+        logPrint('NeiryBciProvider: bluetooth permission permanently denied (Android)');
+        throw const BluetoothPermissionDeniedException();
+      }
+
+      final allGranted = permissions.every((p) => statuses[p]?.isGranted == true);
+      if (!allGranted) {
+        // Normal denial — return silently; Android will re-prompt next time.
+        return;
+      }
+    }
+
+    yield* _locator
+        .requestDevices(type: NeiryDeviceType.headband, searchTime: 5)
+        .map((list) =>
+            list.map((d) => BciDeviceInfo(serial: d.serial, name: d.name)).toList());
+  }
 
   // ── connect() ───────────────────────────────────────────────────────────────
 
