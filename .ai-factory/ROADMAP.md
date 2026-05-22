@@ -114,7 +114,7 @@ After Phase 15, a residual stutter remains on every phase boundary: the shape-mo
 
 ## Phase 19 — BCI Data Screen
 
-- [ ] **Add `BciNfbData`, `BciCardioData`, `BciEmotionsData` domain models** — Create three files in `lib/Bci/Models/`: `BciNfbData` (delta/theta/alpha/smr/beta, all `double?` 0–1), `BciCardioData` (heartRate, metricsAvailable, hasArtifacts), `BciEmotionsData` (attention/relaxation/cognitiveLoad/cognitiveControl/selfControl, all `double?` 0–1). Pure Dart value objects, no imports from neiry_kit. Full model shapes: `.ai-factory/notes/24-bci-data-screen.md`.
+- [x] **Add `BciNfbData`, `BciCardioData`, `BciEmotionsData` domain models** — Create three files in `lib/Bci/Models/`: `BciNfbData` (delta/theta/alpha/smr/beta, all `double?` 0–1), `BciCardioData` (heartRate, metricsAvailable, hasArtifacts), `BciEmotionsData` (attention/relaxation/cognitiveLoad/cognitiveControl/selfControl, all `double?` 0–1). Pure Dart value objects, no imports from neiry_kit. Full model shapes: `.ai-factory/notes/24-bci-data-screen.md`. [4m 2s]
 
 - [ ] **Wire `NfbClassifier`, `CardioClassifier`, `EmotionsClassifier` in `NeiryBciProvider`** — After `await _device!.start()` in `connect()`, instantiate all three classifiers; subscribe to their `stateStream`s in `_subscribeDeviceStreams()`, map neiry_kit types → domain models, add to three new `StreamController.broadcast()` fields; cancel subs and `dispose()` classifiers in `_cancelDeviceSubscriptions()`. Add `Stream<BciNfbData> get nfbStream`, `Stream<BciCardioData> get cardioStream`, `Stream<BciEmotionsData> get emotionsStream` to `IBciDeviceProvider`. Full wiring spec: `.ai-factory/notes/24-bci-data-screen.md`.
 
