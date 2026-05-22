@@ -24,6 +24,9 @@ class BciNotifier {
   StreamSubscription<dynamic>? _signalSub;
   StreamSubscription<dynamic>? _calibrationSub;
   StreamSubscription<dynamic>? _batterySub;
+  StreamSubscription<dynamic>? _nfbSub;
+  StreamSubscription<dynamic>? _cardioSub;
+  StreamSubscription<dynamic>? _emotionsSub;
 
   BciNotifier({required BciDeviceManager manager}) : _manager = manager {
     _stateSub = manager.stateStream.listen(
@@ -65,6 +68,30 @@ class BciNotifier {
         _subject.add(BciError(e.toString()));
       },
     );
+
+    _nfbSub = manager.nfbStream.listen(
+      (data) => _subject.add(BciNfbUpdated(data)),
+      onError: (Object e) {
+        logPrint('BciNotifier: nfbStream error: $e');
+        _subject.add(BciError(e.toString()));
+      },
+    );
+
+    _cardioSub = manager.cardioStream.listen(
+      (data) => _subject.add(BciCardioUpdated(data)),
+      onError: (Object e) {
+        logPrint('BciNotifier: cardioStream error: $e');
+        _subject.add(BciError(e.toString()));
+      },
+    );
+
+    _emotionsSub = manager.emotionsStream.listen(
+      (data) => _subject.add(BciEmotionsUpdated(data)),
+      onError: (Object e) {
+        logPrint('BciNotifier: emotionsStream error: $e');
+        _subject.add(BciError(e.toString()));
+      },
+    );
   }
 
   // ── Public surface ──────────────────────────────────────────────────────────
@@ -91,6 +118,9 @@ class BciNotifier {
     await _signalSub?.cancel();
     await _calibrationSub?.cancel();
     await _batterySub?.cancel();
+    await _nfbSub?.cancel();
+    await _cardioSub?.cancel();
+    await _emotionsSub?.cancel();
     await _subject.close();
     await _manager.dispose();
   }

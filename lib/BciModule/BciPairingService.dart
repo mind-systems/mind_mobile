@@ -80,6 +80,11 @@ class BciPairingService implements IBciPairingService {
 
       case BciError(:final message):
         return acc.copyWith(errorMessage: message);
+
+      case BciNfbUpdated():
+      case BciCardioUpdated():
+      case BciEmotionsUpdated():
+        return acc;
     }
   }
 

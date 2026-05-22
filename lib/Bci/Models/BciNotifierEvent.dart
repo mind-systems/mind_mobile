@@ -1,7 +1,10 @@
 import 'package:mind/Bci/Models/BciCalibrationEvent.dart';
+import 'package:mind/Bci/Models/BciCardioData.dart';
 import 'package:mind/Bci/Models/BciChannelQuality.dart';
 import 'package:mind/Bci/Models/BciConnectionState.dart';
 import 'package:mind/Bci/Models/BciDeviceInfo.dart';
+import 'package:mind/Bci/Models/BciEmotionsData.dart';
+import 'package:mind/Bci/Models/BciNfbData.dart';
 
 /// Base sealed class for all events emitted by [BciNotifier].
 ///
@@ -42,6 +45,24 @@ final class BciCalibrationEventReceived extends BciNotifierEvent {
 final class BciBatteryUpdated extends BciNotifierEvent {
   final int percent;
   const BciBatteryUpdated(this.percent);
+}
+
+/// Emitted on every NFB band-amplitude sample from the device classifier.
+final class BciNfbUpdated extends BciNotifierEvent {
+  final BciNfbData data;
+  const BciNfbUpdated(this.data);
+}
+
+/// Emitted on every cardio-metrics sample from the device classifier.
+final class BciCardioUpdated extends BciNotifierEvent {
+  final BciCardioData data;
+  const BciCardioUpdated(this.data);
+}
+
+/// Emitted on every emotion-classifier output sample from the device.
+final class BciEmotionsUpdated extends BciNotifierEvent {
+  final BciEmotionsData data;
+  const BciEmotionsUpdated(this.data);
 }
 
 /// Emitted when any underlying provider stream surfaces an error.
