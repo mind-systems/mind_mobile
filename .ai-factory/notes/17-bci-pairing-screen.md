@@ -5,7 +5,7 @@
 
 ## Role
 
-Single screen that covers the full device lifecycle: discovery, connect, impedance check, and calibration. Uses `just_audio` for the calibration-complete sound. Lives in `packages/bci_module/`.
+Single screen that covers the full device lifecycle: discovery, connect, impedance check, and calibration. Uses `AudioOneShot` + `AssetAudioCatalog` from `packages/mind_audio` for the calibration-complete sound — `bci_module` does not import `just_audio` directly. Lives in `packages/bci_module/`.
 
 ```dart
 static const path = '/bci_pairing';
@@ -36,7 +36,7 @@ static const path = '/bci_pairing';
 ## Top bar
 
 - **Close button** (top-left or top-right `X`): calls `vm.onClose()`. Always visible.
-- **Title:** "Connect Headband" (l10n key: `bcsPairingTitle`). Centered.
+- **Title:** "Connect Headband" (l10n key: `bciPairingTitle`). Centered.
 - **Battery indicator:** `"🔋 ${state.batteryPercent}%"` — only visible when `state.batteryPercent != null`.
 - **Disconnect button:** Visible only when `state.stage != BciPairingStage.discovery`. Red text. On tap → show confirmation `AlertDialog`: "Disconnect device?" [Cancel] [Disconnect]. On confirm → `vm.onDisconnect()`. This returns stage to `discovery`.
 
@@ -71,24 +71,47 @@ static const path = '/bci_pairing';
 
 ## Calibration completion sound
 
+Use `AudioOneShot` from `mind_audio` — do not reference `AudioPlayer` or `AudioSource` directly.
+
 ```dart
-// In _BciPairingScreenState.initState():
-_player = AudioPlayer();
-await _player.setAsset('packages/bci_module/assets/calibration_complete.wav');
+// State fields:
+late final AudioOneShot _completionCue;
+bool _cueReady = false;
 
-// In didUpdateWidget / after state.calibration?.isComplete transitions to true:
-unawaited(_player.seek(Duration.zero).then((_) => _player.play()));
+// initState:
+_completionCue = AudioOneShot();
+unawaited(_loadCue());   // must be unawaited(...), not bare call — unawaited_futures lint
 
-// In dispose():
-_player.dispose();
+Future<void> _loadCue() async {
+  final source = await AssetAudioCatalog().sourceFor(
+    const AudioTrack('packages/bci_module/assets/calibration_complete.wav'),
+  );
+  await _completionCue.load(source);
+  if (mounted) setState(() => _cueReady = true);
+}
+
+// ref.listen for the false→true transition (in build):
+ref.listen<BciPairingState>(bciPairingViewModelProvider, (prev, next) {
+  if (_cueReady &&
+      prev != null &&                            // guard: skip mount-time fire
+      prev.calibration?.isComplete != true &&
+      next.calibration?.isComplete == true) {
+    _completionCue.play();
+  }
+});
+
+// dispose():
+_completionCue.dispose();
 ```
 
 **Asset:** copy `calibration_complete.wav` (or `.ogg`, whichever exists) from `neiry_kit/example/assets/` into `packages/bci_module/assets/`. Declare in `packages/bci_module/pubspec.yaml`:
 ```yaml
 flutter:
   assets:
-    - packages/bci_module/assets/
+    - assets/calibration_complete.wav
 ```
+
+Note: in Dart code the asset is referenced as `'packages/bci_module/assets/calibration_complete.wav'` (consumer-side prefix) — this is correct. Only the pubspec declaration uses the package-root-relative form above.
 
 Check `neiry_kit/example/` for the actual filename before copying.
 
@@ -104,13 +127,14 @@ Check `neiry_kit/example/` for the actual filename before copying.
 ## l10n keys needed
 
 Add to `packages/mind_l10n/lib/l10n/app_en.arb` (and `app_ru.arb`):
-- `bcsPairingTitle`: "Connect Headband"
-- `bcsPairingKnownDevice`: "Previously paired"
-- `bcsPairingSignalQuality`: "Signal quality"
-- `bcsPairingAdjustHeadband`: "Adjust headband for good contact on all channels."
-- `bcsPairingCalibration`: "Calibration"
-- `bcsPairingStartCalibration`: "Start calibration"
-- `bcsPairingCloseEyes`: "Close your eyes and relax."
-- `bcsPairingCalibrationComplete`: "Calibration complete"
-- `bcsPairingDisconnect`: "Disconnect"
-- `bcsPairingDisconnectConfirm`: "Disconnect device?"
+- `bciPairingTitle`: "Connect Headband"
+- `bciPairingNearbyDevices`: "Nearby devices"
+- `bciPairingKnownDevice`: "Previously paired"
+- `bciPairingSignalQuality`: "Signal quality"
+- `bciPairingAdjustHeadband`: "Adjust headband for good contact on all channels."
+- `bciPairingCalibration`: "Calibration"
+- `bciPairingStartCalibration`: "Start calibration"
+- `bciPairingCloseEyes`: "Close your eyes and relax."
+- `bciPairingCalibrationComplete`: "Calibration complete"
+- `bciPairingDisconnect`: "Disconnect"
+- `bciPairingDisconnectConfirm`: "Disconnect device?"

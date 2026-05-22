@@ -276,4 +276,38 @@ class AppLocalizationsRu extends AppLocalizations {
   String mcpCreatedAt(String date) {
     return 'Создан $date';
   }
+
+  @override
+  String get bciPairingTitle => 'Подключить нейрогарнитуру';
+
+  @override
+  String get bciPairingNearbyDevices => 'Устройства рядом';
+
+  @override
+  String get bciPairingKnownDevice => 'Сопряжено';
+
+  @override
+  String get bciPairingSignalQuality => 'Качество сигнала';
+
+  @override
+  String get bciPairingAdjustHeadband =>
+      'Поправьте гарнитуру для хорошего контакта на всех каналах.';
+
+  @override
+  String get bciPairingCalibration => 'Калибровка';
+
+  @override
+  String get bciPairingStartCalibration => 'Начать калибровку';
+
+  @override
+  String get bciPairingCloseEyes => 'Закройте глаза и расслабьтесь.';
+
+  @override
+  String get bciPairingCalibrationComplete => 'Калибровка завершена';
+
+  @override
+  String get bciPairingDisconnect => 'Отключить';
+
+  @override
+  String get bciPairingDisconnectConfirm => 'Отключить устройство?';
 }

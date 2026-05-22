@@ -274,4 +274,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String mcpCreatedAt(String date) {
     return 'Created $date';
   }
+
+  @override
+  String get bciPairingTitle => 'Connect Headband';
+
+  @override
+  String get bciPairingNearbyDevices => 'Nearby devices';
+
+  @override
+  String get bciPairingKnownDevice => 'Paired';
+
+  @override
+  String get bciPairingSignalQuality => 'Signal quality';
+
+  @override
+  String get bciPairingAdjustHeadband =>
+      'Adjust headband for good contact on all channels.';
+
+  @override
+  String get bciPairingCalibration => 'Calibration';
+
+  @override
+  String get bciPairingStartCalibration => 'Start calibration';
+
+  @override
+  String get bciPairingCloseEyes => 'Close your eyes and relax.';
+
+  @override
+  String get bciPairingCalibrationComplete => 'Calibration complete';
+
+  @override
+  String get bciPairingDisconnect => 'Disconnect';
+
+  @override
+  String get bciPairingDisconnectConfirm => 'Disconnect device?';
 }

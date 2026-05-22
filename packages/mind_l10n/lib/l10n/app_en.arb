@@ -113,5 +113,17 @@
   "mcpCreatedAt": "Created {date}",
   "@mcpCreatedAt": {
     "placeholders": { "date": { "type": "String" } }
-  }
+  },
+
+  "bciPairingTitle": "Connect Headband",
+  "bciPairingNearbyDevices": "Nearby devices",
+  "bciPairingKnownDevice": "Paired",
+  "bciPairingSignalQuality": "Signal quality",
+  "bciPairingAdjustHeadband": "Adjust headband for good contact on all channels.",
+  "bciPairingCalibration": "Calibration",
+  "bciPairingStartCalibration": "Start calibration",
+  "bciPairingCloseEyes": "Close your eyes and relax.",
+  "bciPairingCalibrationComplete": "Calibration complete",
+  "bciPairingDisconnect": "Disconnect",
+  "bciPairingDisconnectConfirm": "Disconnect device?"
 }

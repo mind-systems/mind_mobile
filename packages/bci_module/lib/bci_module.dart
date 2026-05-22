@@ -1,4 +1,5 @@
 // Screens
+export 'src/BciPairing/BciPairingScreen.dart';
 // ViewModels
 export 'src/BciPairing/BciPairingViewModel.dart';
 // Service + Coordinator interfaces

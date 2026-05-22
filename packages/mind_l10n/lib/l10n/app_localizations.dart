@@ -601,6 +601,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Created {date}'**
   String mcpCreatedAt(String date);
+
+  /// No description provided for @bciPairingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Headband'**
+  String get bciPairingTitle;
+
+  /// No description provided for @bciPairingNearbyDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby devices'**
+  String get bciPairingNearbyDevices;
+
+  /// No description provided for @bciPairingKnownDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired'**
+  String get bciPairingKnownDevice;
+
+  /// No description provided for @bciPairingSignalQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Signal quality'**
+  String get bciPairingSignalQuality;
+
+  /// No description provided for @bciPairingAdjustHeadband.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust headband for good contact on all channels.'**
+  String get bciPairingAdjustHeadband;
+
+  /// No description provided for @bciPairingCalibration.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibration'**
+  String get bciPairingCalibration;
+
+  /// No description provided for @bciPairingStartCalibration.
+  ///
+  /// In en, this message translates to:
+  /// **'Start calibration'**
+  String get bciPairingStartCalibration;
+
+  /// No description provided for @bciPairingCloseEyes.
+  ///
+  /// In en, this message translates to:
+  /// **'Close your eyes and relax.'**
+  String get bciPairingCloseEyes;
+
+  /// No description provided for @bciPairingCalibrationComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibration complete'**
+  String get bciPairingCalibrationComplete;
+
+  /// No description provided for @bciPairingDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get bciPairingDisconnect;
+
+  /// No description provided for @bciPairingDisconnectConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect device?'**
+  String get bciPairingDisconnectConfirm;
 }
 
 class _AppLocalizationsDelegate

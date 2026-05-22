@@ -107,5 +107,17 @@
   "mcpCreatedAt": "Создан {date}",
   "@mcpCreatedAt": {
     "placeholders": { "date": { "type": "String" } }
-  }
+  },
+
+  "bciPairingTitle": "Подключить нейрогарнитуру",
+  "bciPairingNearbyDevices": "Устройства рядом",
+  "bciPairingKnownDevice": "Сопряжено",
+  "bciPairingSignalQuality": "Качество сигнала",
+  "bciPairingAdjustHeadband": "Поправьте гарнитуру для хорошего контакта на всех каналах.",
+  "bciPairingCalibration": "Калибровка",
+  "bciPairingStartCalibration": "Начать калибровку",
+  "bciPairingCloseEyes": "Закройте глаза и расслабьтесь.",
+  "bciPairingCalibrationComplete": "Калибровка завершена",
+  "bciPairingDisconnect": "Отключить",
+  "bciPairingDisconnectConfirm": "Отключить устройство?"
 }
