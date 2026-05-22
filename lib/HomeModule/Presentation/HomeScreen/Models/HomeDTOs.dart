@@ -32,3 +32,5 @@ class HomeSessionExpired extends HomeEvent {}
 class HomeAuthenticated extends HomeEvent {}
 
 class HomeAppResumed extends HomeEvent {}
+
+class HomeGrpcReconnected extends HomeEvent {}

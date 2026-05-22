@@ -14,6 +14,7 @@ class HomeModule {
       moduleStateChannel: App.shared.moduleStateChannel,
       userNotifier: App.shared.userNotifier,
       resumeStream: App.shared.appLifecycleService.onResume,
+      connectionStateStream: App.shared.connectionManager.connectionState,
     );
     final coordinator = HomeCoordinator(context, userNotifier: App.shared.userNotifier);
     return ProviderScope(

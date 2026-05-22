@@ -1,5 +1,6 @@
 import 'package:breath_module/breath_module.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
 import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
 import 'package:mind/Core/TimeOfDayHelper.dart';
@@ -16,6 +17,7 @@ class HomeService implements IHomeService {
   final ModuleStateChannel moduleStateChannel;
   final UserNotifier userNotifier;
   final Stream<void> resumeStream;
+  final Stream<GrpcConnectionState> connectionStateStream;
 
   HomeService({
     required this.userApi,
@@ -23,6 +25,7 @@ class HomeService implements IHomeService {
     required this.moduleStateChannel,
     required this.userNotifier,
     required this.resumeStream,
+    required this.connectionStateStream,
   });
 
   @override
@@ -64,7 +67,18 @@ class HomeService implements IHomeService {
         .where((s) => s is AuthenticatedState)
         .map((_) => HomeAuthenticated() as HomeEvent);
     final resumeEvents = resumeStream.map((_) => HomeAppResumed() as HomeEvent);
-    return statsInvalidated.mergeWith([sessionExpired, authenticated, resumeEvents]);
+    final reconnected = connectionStateStream
+        .pairwise()
+        .where((pair) =>
+            pair.last == GrpcConnectionState.connected &&
+            pair.first != GrpcConnectionState.connected)
+        .map((_) => HomeGrpcReconnected() as HomeEvent);
+    return statsInvalidated.mergeWith([
+      sessionExpired,
+      authenticated,
+      resumeEvents,
+      reconnected,
+    ]);
   }
 
   String _formatDate(String? iso) {

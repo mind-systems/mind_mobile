@@ -65,6 +65,8 @@ class HomeViewModel extends Notifier<HomeState> {
         _loadInitialData();
       case HomeAppResumed _:
         _loadSuggestions();
+      case HomeGrpcReconnected _:
+        _loadInitialData();
     }
   }
 
