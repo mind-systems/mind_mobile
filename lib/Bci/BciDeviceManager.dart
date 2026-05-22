@@ -98,7 +98,13 @@ class BciDeviceManager {
 
   Future<void> startScan() async {
     _suppressAutoReconnect = false;
-    _setState(BciConnectionState.scanning);
+    // Bypass _setState dedup — manager stays alive between screen sessions and
+    // may already be in scanning state, which would silence the event and leave
+    // the new subscriber without a fresh BciStateChanged(scanning).
+    _state = BciConnectionState.scanning;
+    if (!_disposed && !_stateController.isClosed) {
+      _stateController.add(BciConnectionState.scanning);
+    }
 
     final cachedSerials = _repository.cachedSerials();
 
