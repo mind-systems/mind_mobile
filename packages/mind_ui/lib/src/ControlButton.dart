@@ -16,11 +16,12 @@ class ControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isDisabled = onPressed == null;
     return Opacity(
       opacity: isDisabled ? 0.4 : 1.0,
       child: Material(
-        color: const Color.fromRGBO(0, 217, 255, 0.2),
+        color: cs.primary.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(999),
         child: InkWell(
           onTap: onPressed,
@@ -28,7 +29,7 @@ class ControlButton extends StatelessWidget {
           child: Center(
             child: Icon(
               icon,
-              color: destructive ? const Color(0xFFD90000) : const Color(0xFF00D9FF),
+              color: destructive ? const Color(0xFFD90000) : cs.primary,
               size: iconSize,
             ),
           ),

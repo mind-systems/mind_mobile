@@ -8,7 +8,7 @@ class EclipseOrb extends StatefulWidget {
     super.key,
     this.size = 280.0,
     this.progress = 1.0,
-    this.glowColor = const Color(0xFF00C8E0),
+    this.glowColor = const Color(0xFFFFB347),
     this.maskColor = Colors.black,
     this.rFrac = 1.0,
     this.blurRMult = 0.8,

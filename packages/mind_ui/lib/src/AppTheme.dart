@@ -33,8 +33,8 @@ const _kAccent = Color(0xFF00D9FF); // cyan — shared between both themes
 // ── Warm Accent ─────────────────────────────────────────────
 // Secondary accent color (gold): stars, highlights, badges.
 // Access via: theme.colorScheme.tertiary
-const _kWarmAccentDark  = Color(0xFFF4BA40); // warm gold
-const _kWarmAccentLight = Color(0xFFF1A139); // amber gold
+const _kWarmAccentDark  = Color(0xFFFFB347); // warm amber-gold, UAE ambient
+const _kWarmAccentLight = Color(0xFFFF9D3D); // slightly deeper for light background
 
 // ── Error ────────────────────────────────────────────────────
 // Destructive actions, error snackbars, validation messages.
