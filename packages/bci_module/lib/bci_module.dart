@@ -2,6 +2,7 @@
 export 'src/BciPairing/BciPairingScreen.dart';
 // ViewModels
 export 'src/BciPairing/BciPairingViewModel.dart';
+export 'src/BciData/BciDataViewModel.dart';
 // Service + Coordinator interfaces
 export 'src/BciPairing/IBciPairingService.dart';
 export 'src/BciPairing/IBciPairingCoordinator.dart';
