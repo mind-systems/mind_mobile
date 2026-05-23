@@ -128,7 +128,7 @@ After Phase 15, a residual stutter remains on every phase boundary: the shape-mo
 
 - [x] **Implement `BciDataService` + `BciDataCoordinator`** — `lib/BciModule/BciDataService.dart`: subscribes to `bciNotifier.stream` via `.scan()`, accumulates `BciDataState`, maps `BciNfbUpdated/BciCardioUpdated/BciEmotionsUpdated/BciBatteryUpdated/BciSignalQualityUpdated/BciStateChanged` → `BciDataStateUpdated` events. `lib/BciModule/BciDataCoordinator.dart`: `openPairing()` calls `context.push(BciPairingScreen.path)`. [18m 19s]
 
-- [ ] **Wire BCI data screen into app** — `lib/BciModule/BciModule.dart`: add `static Widget buildDataScreen(BuildContext context)` (creates `BciDataService` + `BciDataCoordinator`, wraps with `ProviderScope` overriding `bciDataViewModelProvider`). `lib/router.dart`: add `GoRoute(path: BciDataScreen.path, ...)`. `lib/HomeModule/HomeCoordinator.dart`: replace `openComingSoon()` for the BCI tile with `context.push(BciDataScreen.path)`.
+- [x] **Wire BCI data screen into app** — `lib/BciModule/BciModule.dart`: add `static Widget buildDataScreen(BuildContext context)` (creates `BciDataService` + `BciDataCoordinator`, wraps with `ProviderScope` overriding `bciDataViewModelProvider`). `lib/router.dart`: add `GoRoute(path: BciDataScreen.path, ...)`. `lib/HomeModule/HomeCoordinator.dart`: replace `openComingSoon()` for the BCI tile with `context.push(BciDataScreen.path)`. [8m 6s]
 
 ## Phase 20 — Breath Session Visual Redesign
 

@@ -1,6 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:mind/BreathModule/BreathModule.dart';
-import 'package:bci_module/bci_module.dart' show BciPairingScreen;
+import 'package:bci_module/bci_module.dart' show BciPairingScreen, BciDataScreen;
 import 'package:breath_module/breath_module.dart' show BreathSessionScreen, BreathSessionConstructorScreen, BreathSessionListScreen;
 import 'package:mind/BciModule/BciModule.dart';
 import 'package:mind/HomeModule/HomeModule.dart';
@@ -54,6 +54,11 @@ final appRouter = GoRouter(
       path: BciPairingScreen.path,
       name: BciPairingScreen.name,
       builder: (context, state) => BciModule.buildPairing(context),
+    ),
+    GoRoute(
+      path: BciDataScreen.path,
+      name: BciDataScreen.name,
+      builder: (context, state) => BciModule.buildDataScreen(context),
     ),
     GoRoute(
       path: OnboardingScreen.path,
