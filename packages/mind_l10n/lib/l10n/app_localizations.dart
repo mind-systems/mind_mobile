@@ -685,6 +685,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open Settings'**
   String get bciOpenSettings;
+
+  /// No description provided for @bciFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus'**
+  String get bciFocus;
+
+  /// No description provided for @bciCognitiveLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Cognitive load'**
+  String get bciCognitiveLoad;
+
+  /// No description provided for @bciRelaxation.
+  ///
+  /// In en, this message translates to:
+  /// **'Relaxation'**
+  String get bciRelaxation;
+
+  /// No description provided for @bciCognitiveControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Cognitive control'**
+  String get bciCognitiveControl;
+
+  /// No description provided for @bciSelfControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Self control'**
+  String get bciSelfControl;
+
+  /// No description provided for @bciHeartRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart rate'**
+  String get bciHeartRate;
+
+  /// No description provided for @bciBpm.
+  ///
+  /// In en, this message translates to:
+  /// **'BPM'**
+  String get bciBpm;
+
+  /// No description provided for @bciEegBands.
+  ///
+  /// In en, this message translates to:
+  /// **'EEG bands'**
+  String get bciEegBands;
+
+  /// No description provided for @bciEmotionalStates.
+  ///
+  /// In en, this message translates to:
+  /// **'Emotional states'**
+  String get bciEmotionalStates;
+
+  /// No description provided for @bciNotConnectedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Device not connected'**
+  String get bciNotConnectedMessage;
+
+  /// No description provided for @bciConnectButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get bciConnectButton;
 }
 
 class _AppLocalizationsDelegate

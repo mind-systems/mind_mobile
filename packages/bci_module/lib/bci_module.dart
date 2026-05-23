@@ -1,5 +1,6 @@
 // Screens
 export 'src/BciPairing/BciPairingScreen.dart';
+export 'src/BciData/BciDataScreen.dart';
 // ViewModels
 export 'src/BciPairing/BciPairingViewModel.dart';
 export 'src/BciData/BciDataViewModel.dart';

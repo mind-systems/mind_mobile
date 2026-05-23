@@ -320,4 +320,37 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get bciOpenSettings => 'Открыть настройки';
+
+  @override
+  String get bciFocus => 'Фокус';
+
+  @override
+  String get bciCognitiveLoad => 'Нагрузка';
+
+  @override
+  String get bciRelaxation => 'Расслабление';
+
+  @override
+  String get bciCognitiveControl => 'Контроль';
+
+  @override
+  String get bciSelfControl => 'Самоконтроль';
+
+  @override
+  String get bciHeartRate => 'Пульс';
+
+  @override
+  String get bciBpm => 'уд/мин';
+
+  @override
+  String get bciEegBands => 'ЭЭГ полосы';
+
+  @override
+  String get bciEmotionalStates => 'Состояния';
+
+  @override
+  String get bciNotConnectedMessage => 'Устройство не подключено';
+
+  @override
+  String get bciConnectButton => 'Подключить';
 }

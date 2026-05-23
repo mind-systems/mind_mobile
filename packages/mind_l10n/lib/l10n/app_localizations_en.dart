@@ -318,4 +318,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bciOpenSettings => 'Open Settings';
+
+  @override
+  String get bciFocus => 'Focus';
+
+  @override
+  String get bciCognitiveLoad => 'Cognitive load';
+
+  @override
+  String get bciRelaxation => 'Relaxation';
+
+  @override
+  String get bciCognitiveControl => 'Cognitive control';
+
+  @override
+  String get bciSelfControl => 'Self control';
+
+  @override
+  String get bciHeartRate => 'Heart rate';
+
+  @override
+  String get bciBpm => 'BPM';
+
+  @override
+  String get bciEegBands => 'EEG bands';
+
+  @override
+  String get bciEmotionalStates => 'Emotional states';
+
+  @override
+  String get bciNotConnectedMessage => 'Device not connected';
+
+  @override
+  String get bciConnectButton => 'Connect';
 }

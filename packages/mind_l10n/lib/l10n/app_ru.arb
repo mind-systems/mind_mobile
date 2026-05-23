@@ -122,5 +122,17 @@
   "bciPairingDisconnectConfirm": "Отключить устройство?",
   "bciBluetoothPermissionTitle": "Нужен доступ к Bluetooth",
   "bciBluetoothPermissionMessage": "Mind использует Bluetooth для подключения к гарнитуре Neiry. Разрешите доступ в Настройках.",
-  "bciOpenSettings": "Открыть настройки"
+  "bciOpenSettings": "Открыть настройки",
+
+  "bciFocus": "Фокус",
+  "bciCognitiveLoad": "Нагрузка",
+  "bciRelaxation": "Расслабление",
+  "bciCognitiveControl": "Контроль",
+  "bciSelfControl": "Самоконтроль",
+  "bciHeartRate": "Пульс",
+  "bciBpm": "уд/мин",
+  "bciEegBands": "ЭЭГ полосы",
+  "bciEmotionalStates": "Состояния",
+  "bciNotConnectedMessage": "Устройство не подключено",
+  "bciConnectButton": "Подключить"
 }

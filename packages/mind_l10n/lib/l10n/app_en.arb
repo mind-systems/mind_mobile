@@ -128,5 +128,17 @@
   "bciPairingDisconnectConfirm": "Disconnect device?",
   "bciBluetoothPermissionTitle": "Bluetooth access required",
   "bciBluetoothPermissionMessage": "Mind needs Bluetooth to connect to your Neiry headband. Please allow access in Settings.",
-  "bciOpenSettings": "Open Settings"
+  "bciOpenSettings": "Open Settings",
+
+  "bciFocus": "Focus",
+  "bciCognitiveLoad": "Cognitive load",
+  "bciRelaxation": "Relaxation",
+  "bciCognitiveControl": "Cognitive control",
+  "bciSelfControl": "Self control",
+  "bciHeartRate": "Heart rate",
+  "bciBpm": "BPM",
+  "bciEegBands": "EEG bands",
+  "bciEmotionalStates": "Emotional states",
+  "bciNotConnectedMessage": "Device not connected",
+  "bciConnectButton": "Connect"
 }

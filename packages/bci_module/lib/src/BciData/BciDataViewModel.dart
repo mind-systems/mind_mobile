@@ -38,4 +38,8 @@ class BciDataViewModel extends Notifier<BciDataState> {
         this.state = state;
     }
   }
+
+  void onConnectPressed() => coordinator.openPairing();
+
+  void onHeaderTap() => coordinator.openPairing();
 }
