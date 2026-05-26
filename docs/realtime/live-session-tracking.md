@@ -35,7 +35,7 @@ BreathModuleStateChannel
 
 `ModuleStateChannel` — доменная стейт-машина: хранит `ModuleState` (`status: idle | active`, `isPaused`, `moduleSessionId`), держит pending-флаги (`_isPendingStart`, `_isPendingPause`) и эмитирует типизированные события: `ModuleSessionStarted`, `ModuleSessionPaused`, `ModuleSessionUnpaused`, `ModuleSessionEnded`, `ModuleSessionAbandoned`. При логауте автоматически сбрасывается в idle.
 
-`moduleSessionId` приходит от сервера в ответе `session:state` после `activity:start`. Это корреляционный ключ — под ним записываются все инструкции и в будущем биометрия.
+`moduleSessionId` приходит от сервера в ответе `session:state` после `activity:start`. Это корреляционный ключ — под ним записываются и инструкции, и биометрические сэмплы.
 
 ## Инструкции фаз дыхания
 
@@ -78,9 +78,9 @@ BreathModuleStateChannel
 ──────────────────────────────────────────
 session_started → breath_phase → … → paused → resumed → … → session_ended
 
-Биометрическая шкала (будущее)
-──────────────────────────────
-HR → HR → SpO2 → respiration → …
+Биометрическая шкала
+────────────────────
+HR → RR → δ/θ/α/SMR/β → эмоции → …
 ```
 
 Обе шкалы привязаны к одному `moduleSessionId`. Аналитика выполняет time-join по `moduleSessionId + timestamp`:
@@ -90,4 +90,4 @@ T+6000ms: инструкция — exhale 6s
 T+6000–T+12000ms: биосигнал дыхания → совпадает ли реальный паттерн?
 ```
 
-Биометрические потоки пойдут через отдельный gRPC-сервис и отдельную таблицу, но привязываться к той же `ModuleSession` по `moduleSessionId`.
+Биометрические потоки идут через отдельный gRPC-сервис, гейтятся теми же событиями `ModuleStateChannel` и привязываются к той же `ModuleSession`. Детали — в [docs/biometrics/stream-pipeline.md](../biometrics/stream-pipeline.md).
