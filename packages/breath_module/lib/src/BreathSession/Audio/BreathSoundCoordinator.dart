@@ -28,6 +28,8 @@ class BreathSoundCoordinator {
   bool _isInitialized = false;
   bool _isDisposed = false;
 
+  final ValueNotifier<bool> isMuted = ValueNotifier(false);
+
   static const Map<BreathPhase, String> _phaseAssets = {
     BreathPhase.inhale: 'assets/audio/ohm_inhale.flac',
     BreathPhase.exhale: 'assets/audio/ohm_exhale.flac',
@@ -117,6 +119,24 @@ class BreathSoundCoordinator {
     _currentStatus = null;
   }
 
+  void toggleMute() {
+    isMuted.value = !isMuted.value;
+    if (!_isInitialized) return;
+    if (isMuted.value) {
+      _looper.fadeOut(const Duration(milliseconds: 300));
+      _oneShot.stop();
+    } else {
+      if (_currentStatus == BreathSessionStatus.breath &&
+          _currentPhase != null &&
+          _phaseAssets.containsKey(_currentPhase)) {
+        _looper.crossfadeTo(
+          _phaseOrder.indexOf(_currentPhase!),
+          const Duration(milliseconds: 300),
+        );
+      }
+    }
+  }
+
   void dispose() {
     _isDisposed = true;
     _tickSub?.cancel();
@@ -125,6 +145,7 @@ class BreathSoundCoordinator {
     _stateListener = null;
     _looper.dispose();
     _oneShot.dispose();
+    isMuted.dispose();
   }
 
   void suspend() {
@@ -158,21 +179,27 @@ class BreathSoundCoordinator {
       final prev = _currentStatus;
       _currentStatus = state.status;
       if (kDebugMode) debugPrint('${_ts()} [Sound] status: $prev → ${state.status}  phase=${state.phase}  currentPhase=$_currentPhase');
-      switch (state.status) {
-        case BreathSessionStatus.pause:
-          _looper.fadeOut(const Duration(milliseconds: 200));
-        case BreathSessionStatus.breath:
-          if (_phaseAssets.containsKey(state.phase) && state.phase != _currentPhase) {
-            _currentPhase = state.phase;
-            final fadeDuration = _computeFadeDuration(state);
-            if (kDebugMode) debugPrint('${_ts()} [Sound] status→breath crossfadeTo  phase=${state.phase}  fade=${fadeDuration.inMilliseconds}ms');
-            _looper.crossfadeTo(_phaseOrder.indexOf(state.phase), fadeDuration);
-          } else {
-            _looper.fadeIn(const Duration(milliseconds: 200));
-          }
-        case BreathSessionStatus.complete:
-        case BreathSessionStatus.rest:
-          _looper.fadeOut(const Duration(milliseconds: 500));
+      // Track phase unconditionally so toggleMute restores the correct track.
+      final bool phaseChangedForBreath = state.status == BreathSessionStatus.breath &&
+          _phaseAssets.containsKey(state.phase) &&
+          state.phase != _currentPhase;
+      if (phaseChangedForBreath) _currentPhase = state.phase;
+      if (!isMuted.value) {
+        switch (state.status) {
+          case BreathSessionStatus.pause:
+            _looper.fadeOut(const Duration(milliseconds: 200));
+          case BreathSessionStatus.breath:
+            if (phaseChangedForBreath) {
+              final fadeDuration = _computeFadeDuration(state);
+              if (kDebugMode) debugPrint('${_ts()} [Sound] status→breath crossfadeTo  phase=${state.phase}  fade=${fadeDuration.inMilliseconds}ms');
+              _looper.crossfadeTo(_phaseOrder.indexOf(state.phase), fadeDuration);
+            } else {
+              _looper.fadeIn(const Duration(milliseconds: 200));
+            }
+          case BreathSessionStatus.complete:
+          case BreathSessionStatus.rest:
+            _looper.fadeOut(const Duration(milliseconds: 500));
+        }
       }
       return;
     }
@@ -182,12 +209,14 @@ class BreathSoundCoordinator {
       final prev = _currentPhase;
       _currentPhase = state.phase;
       if (kDebugMode) debugPrint('${_ts()} [Sound] phase: $prev → ${state.phase}  remaining=${state.remainingTicks}  currentStatus=$_currentStatus');
-      if (_phaseAssets.containsKey(state.phase)) {
-        final fadeDuration = _computeFadeDuration(state);
-        if (kDebugMode) debugPrint('${_ts()} [Sound] phase change crossfadeTo  phase=${state.phase}  fade=${fadeDuration.inMilliseconds}ms');
-        _looper.crossfadeTo(_phaseOrder.indexOf(state.phase), fadeDuration);
-      } else {
-        _looper.fadeOut(const Duration(milliseconds: 500));
+      if (!isMuted.value) {
+        if (_phaseAssets.containsKey(state.phase)) {
+          final fadeDuration = _computeFadeDuration(state);
+          if (kDebugMode) debugPrint('${_ts()} [Sound] phase change crossfadeTo  phase=${state.phase}  fade=${fadeDuration.inMilliseconds}ms');
+          _looper.crossfadeTo(_phaseOrder.indexOf(state.phase), fadeDuration);
+        } else {
+          _looper.fadeOut(const Duration(milliseconds: 500));
+        }
       }
       return;
     }
@@ -195,6 +224,7 @@ class BreathSoundCoordinator {
 
   void _onTick() {
     if (_isSuspended) return;
+    if (isMuted.value) return;
     final allowTick = _currentStatus == BreathSessionStatus.pause ||
         _currentStatus == BreathSessionStatus.rest ||
         (_currentStatus == BreathSessionStatus.breath &&

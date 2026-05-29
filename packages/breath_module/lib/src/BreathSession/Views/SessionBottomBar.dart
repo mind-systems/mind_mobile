@@ -4,11 +4,13 @@ import '../BreathSessionLayout.dart';
 class SessionBottomBar extends StatelessWidget {
   const SessionBottomBar({
     super.key,
-    required this.actions,
+    required this.trailingActions,
+    this.leadingActions = const [],
     this.iconSize = BreathSessionLayout.kIconSize,
   });
 
-  final List<Widget> actions;
+  final List<Widget> trailingActions;
+  final List<Widget> leadingActions;
   final double iconSize;
 
   @override
@@ -27,9 +29,11 @@ class SessionBottomBar extends StatelessWidget {
         child: IconTheme.merge(
           data: IconThemeData(size: iconSize),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            spacing: 8,
-            children: actions,
+            children: [
+              Row(spacing: 8, children: leadingActions),
+              const Spacer(),
+              Row(spacing: 8, children: trailingActions),
+            ],
           ),
         ),
       ),

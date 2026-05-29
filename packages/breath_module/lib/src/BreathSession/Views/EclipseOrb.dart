@@ -17,6 +17,7 @@ class EclipseOrb extends StatefulWidget {
     this.maskPulseMult = 0.19,
     this.pulseScale = 0.2,
     this.pulseStream,
+    this.onTap,
   });
 
   final double size;
@@ -49,6 +50,9 @@ class EclipseOrb extends StatefulWidget {
 
   /// Внешний stream событий пульса. Каждое событие запускает pulse().
   final Stream<void>? pulseStream;
+
+  /// Optional callback invoked when the orb is tapped (after the pulse fires).
+  final VoidCallback? onTap;
 
   @override
   State<EclipseOrb> createState() => _EclipseOrbState();
@@ -109,7 +113,7 @@ class _EclipseOrbState extends State<EclipseOrb>
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: pulse,
+      onTap: () { pulse(); widget.onTap?.call(); },
       child: SizedBox(
         width: widget.size,
         height: widget.size,
