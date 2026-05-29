@@ -4,8 +4,8 @@ import 'package:collection/collection.dart';
 import 'package:mind/Bci/BciDeviceRepository.dart';
 import 'package:mind/Bci/IBciDeviceProvider.dart';
 import 'package:mind/Bci/Models/BciCalibrationEvent.dart';
-import 'package:mind/Bci/Models/BciCardioData.dart';
 import 'package:mind/Bci/Models/BciChannelQuality.dart';
+import 'package:mind/Biometrics/Models/CardioData.dart';
 import 'package:mind/Bci/Models/BciConnectionState.dart';
 import 'package:mind/Bci/Models/BciDeviceInfo.dart';
 import 'package:mind/Bci/Models/BciEmotionsData.dart';
@@ -78,7 +78,7 @@ class BciDeviceManager {
   Stream<int> get batteryStream => _provider.batteryStream;
   Stream<BciCalibrationEvent> get calibrationStream => _provider.calibrationStream;
   Stream<BciNfbData> get nfbStream => _provider.nfbStream;
-  Stream<BciCardioData> get cardioStream => _provider.cardioStream;
+  Stream<CardioData> get cardioStream => _provider.cardioStream;
   Stream<BciEmotionsData> get emotionsStream => _provider.emotionsStream;
   List<BciDeviceInfo> get discoveredDevices => _discoveredDevices;
   List<String> cachedSerials() => _repository.cachedSerials();

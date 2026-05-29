@@ -1,7 +1,8 @@
 import 'dart:async';
 
+import 'package:mind/Biometrics/Models/CardioData.dart';
+
 import 'Models/BciCalibrationEvent.dart';
-import 'Models/BciCardioData.dart';
 import 'Models/BciChannelQuality.dart';
 import 'Models/BciConnectionState.dart';
 import 'Models/BciDeviceInfo.dart';
@@ -50,7 +51,7 @@ abstract interface class IBciDeviceProvider {
   Stream<BciNfbData> get nfbStream;
 
   /// Emits cardio metrics (heart rate + availability/artifact flags) per sample.
-  Stream<BciCardioData> get cardioStream;
+  Stream<CardioData> get cardioStream;
 
   /// Emits high-level emotion classifier outputs per sample.
   Stream<BciEmotionsData> get emotionsStream;

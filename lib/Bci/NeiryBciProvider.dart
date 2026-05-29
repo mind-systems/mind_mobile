@@ -3,12 +3,14 @@ import 'dart:io' show Platform;
 import 'dart:math' show min;
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:neiry_kit/neiry_kit.dart';
+import 'package:neiry_kit/neiry_kit.dart' as neiry;
 import 'package:permission_handler/permission_handler.dart';
+
+import 'package:mind/Biometrics/Models/CardioData.dart';
+import 'package:mind/Biometrics/Models/SensorSource.dart';
 
 import 'IBciDeviceProvider.dart';
 import 'Models/BciCalibrationEvent.dart';
-import 'Models/BciCardioData.dart';
 import 'Models/BciChannelQuality.dart';
 import 'Models/BciConnectionState.dart';
 import 'Models/BciDeviceInfo.dart';
@@ -22,12 +24,12 @@ import '../Logger.dart';
 /// This is the **only** file in `mind_mobile` that may import `neiry_kit`.
 /// All consumers must depend on [IBciDeviceProvider], never on this class.
 class NeiryBciProvider implements IBciDeviceProvider {
-  final DeviceLocator _locator = DeviceLocator();
-  Device? _device;
+  final _locator = neiry.DeviceLocator();
+  neiry.Device? _device;
 
-  NfbClassifier? _nfbClassifier;
-  CardioClassifier? _cardioClassifier;
-  EmotionsClassifier? _emotionsClassifier;
+  neiry.NfbClassifier? _nfbClassifier;
+  neiry.CardioClassifier? _cardioClassifier;
+  neiry.EmotionsClassifier? _emotionsClassifier;
 
   final _connectionStateController =
       StreamController<BciConnectionState>.broadcast();
@@ -37,17 +39,17 @@ class NeiryBciProvider implements IBciDeviceProvider {
   final _calibrationController =
       StreamController<BciCalibrationEvent>.broadcast();
   final _nfbController = StreamController<BciNfbData>.broadcast();
-  final _cardioController = StreamController<BciCardioData>.broadcast();
+  final _cardioController = StreamController<CardioData>.broadcast();
   final _emotionsController = StreamController<BciEmotionsData>.broadcast();
 
-  StreamSubscription<NeiryConnectionState>? _connectionSub;
-  StreamSubscription<ResistanceData>? _resistanceSub;
+  StreamSubscription<neiry.NeiryConnectionState>? _connectionSub;
+  StreamSubscription<neiry.ResistanceData>? _resistanceSub;
   StreamSubscription<int>? _batterySub;
-  StreamSubscription<CalibrationEvent>? _calibrationSub;
-  StreamSubscription<NfbUserState>? _nfbSub;
+  StreamSubscription<neiry.CalibrationEvent>? _calibrationSub;
+  StreamSubscription<neiry.NfbUserState>? _nfbSub;
   StreamSubscription<String>? _nfbErrorSub;
-  StreamSubscription<CardioData>? _cardioSub;
-  StreamSubscription<EmotionsStates>? _emotionsSub;
+  StreamSubscription<neiry.CardioData>? _cardioSub;
+  StreamSubscription<neiry.EmotionsStates>? _emotionsSub;
   StreamSubscription<String>? _emotionsErrorSub;
 
   // ── Stream getters ──────────────────────────────────────────────────────────
@@ -71,7 +73,7 @@ class NeiryBciProvider implements IBciDeviceProvider {
   Stream<BciNfbData> get nfbStream => _nfbController.stream;
 
   @override
-  Stream<BciCardioData> get cardioStream => _cardioController.stream;
+  Stream<CardioData> get cardioStream => _cardioController.stream;
 
   @override
   Stream<BciEmotionsData> get emotionsStream => _emotionsController.stream;
@@ -115,7 +117,7 @@ class NeiryBciProvider implements IBciDeviceProvider {
     }
 
     yield* _locator
-        .requestDevices(type: NeiryDeviceType.headband, searchTime: 5)
+        .requestDevices(type: neiry.NeiryDeviceType.headband, searchTime: 5)
         .map((list) =>
             list.map((d) => BciDeviceInfo(serial: d.serial, name: d.name)).toList());
   }
@@ -134,9 +136,9 @@ class NeiryBciProvider implements IBciDeviceProvider {
     try {
       await _device!.connect();
       await _device!.start();
-      _nfbClassifier = NfbClassifier(_device!);
-      _cardioClassifier = CardioClassifier(_device!);
-      _emotionsClassifier = EmotionsClassifier(_device!);
+      _nfbClassifier = neiry.NfbClassifier(_device!);
+      _cardioClassifier = neiry.CardioClassifier(_device!);
+      _emotionsClassifier = neiry.EmotionsClassifier(_device!);
     } catch (e) {
       try {
         await _nfbClassifier?.dispose();
@@ -207,13 +209,13 @@ class NeiryBciProvider implements IBciDeviceProvider {
 
   // ── NeiryConnectionState → BciConnectionState ───────────────────────────────
 
-  void _onNeiryConnectionState(NeiryConnectionState s) {
+  void _onNeiryConnectionState(neiry.NeiryConnectionState s) {
     switch (s) {
-      case NeiryConnectionState.connected:
+      case neiry.NeiryConnectionState.connected:
         _connectionStateController.add(BciConnectionState.connecting);
-      case NeiryConnectionState.disconnected:
+      case neiry.NeiryConnectionState.disconnected:
         _connectionStateController.add(BciConnectionState.disconnected);
-      case NeiryConnectionState.unsupportedConnection:
+      case neiry.NeiryConnectionState.unsupportedConnection:
         logPrint('NeiryBciProvider: unsupported connection');
         _connectionStateController.add(BciConnectionState.disconnected);
     }
@@ -221,7 +223,7 @@ class NeiryBciProvider implements IBciDeviceProvider {
 
   // ── ResistanceData → List<BciChannelQuality> ────────────────────────────────
 
-  void _onResistance(ResistanceData r) {
+  void _onResistance(neiry.ResistanceData r) {
     if (r.channelNames.length != r.values.length ||
         r.channelNames.length != r.channelCount) {
       logPrint(
@@ -255,7 +257,7 @@ class NeiryBciProvider implements IBciDeviceProvider {
 
   // ── NfbUserState → BciNfbData ───────────────────────────────────────────────
 
-  void _onNfbState(NfbUserState s) {
+  void _onNfbState(neiry.NfbUserState s) {
     _nfbController.add(BciNfbData(
       timestamp: s.timestamp,
       delta: s.delta,
@@ -266,19 +268,22 @@ class NeiryBciProvider implements IBciDeviceProvider {
     ));
   }
 
-  // ── CardioData → BciCardioData ──────────────────────────────────────────────
+  // ── neiry.CardioData → CardioData ───────────────────────────────────────────
 
-  void _onCardioState(CardioData c) {
-    _cardioController.add(BciCardioData(
+  void _onCardioState(neiry.CardioData c) {
+    _cardioController.add(CardioData(
       heartRate: c.heartRate,
       metricsAvailable: c.metricsAvailable,
       hasArtifacts: c.hasArtifacts,
+      timestamp: c.timestamp,
+      source: SensorSource.neiry,
+      hrv: null,
     ));
   }
 
   // ── EmotionsStates → BciEmotionsData ────────────────────────────────────────
 
-  void _onEmotionsState(EmotionsStates e) {
+  void _onEmotionsState(neiry.EmotionsStates e) {
     _emotionsController.add(BciEmotionsData(
       timestamp: e.timestamp,
       attention: e.attention,
@@ -294,14 +299,14 @@ class NeiryBciProvider implements IBciDeviceProvider {
   @override
   Future<void> startCalibration() async {
     _calibrationSub?.cancel();
-    _calibrationSub = NfbCalibrator.calibrateIndividual().listen(
+    _calibrationSub = neiry.NfbCalibrator.calibrateIndividual().listen(
       (event) {
         switch (event) {
-          case CalibrationStageFinished(:final stage):
+          case neiry.CalibrationStageFinished(:final stage):
             _calibrationController.add(
               BciCalibrationStageFinished(stage.index + 1),
             );
-          case CalibrationCompleted():
+          case neiry.CalibrationCompleted():
             _calibrationController.add(const BciCalibrationCompleted());
         }
       },

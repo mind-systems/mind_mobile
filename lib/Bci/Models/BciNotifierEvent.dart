@@ -1,6 +1,6 @@
 import 'package:mind/Bci/Models/BciCalibrationEvent.dart';
-import 'package:mind/Bci/Models/BciCardioData.dart';
 import 'package:mind/Bci/Models/BciChannelQuality.dart';
+import 'package:mind/Biometrics/Models/CardioData.dart';
 import 'package:mind/Bci/Models/BciConnectionState.dart';
 import 'package:mind/Bci/Models/BciDeviceInfo.dart';
 import 'package:mind/Bci/Models/BciEmotionsData.dart';
@@ -55,7 +55,7 @@ final class BciNfbUpdated extends BciNotifierEvent {
 
 /// Emitted on every cardio-metrics sample from the device classifier.
 final class BciCardioUpdated extends BciNotifierEvent {
-  final BciCardioData data;
+  final CardioData data;
   const BciCardioUpdated(this.data);
 }
 
