@@ -96,7 +96,8 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
       }
     });
 
-    viewModel.onErrorEvent = (_) {
+    viewModel.onUiEvent = (_) {
+      // noCardioSource handled in M7
       ref
           .read(globalSnackBarNotifierProvider.notifier)
           .show(SnackBarEvent.error(AppLocalizations.of(context)!.error));

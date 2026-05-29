@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../ITickService.dart';
+import '../CommonModels/TickSource.dart';
 import 'BreathSessionStateMachine.dart';
 import 'IBreathSessionCoordinator.dart';
 import 'IBreathSessionService.dart';
@@ -9,7 +10,7 @@ import 'Models/BreathSessionDTO.dart';
 import 'Models/BreathSessionState.dart';
 import 'Models/TimelineStep.dart';
 
-enum BreathSessionError { starFailed }
+enum BreathSessionUiEvent { starFailed, noCardioSource }
 
 final breathViewModelProvider =
     NotifierProvider<BreathViewModel, BreathSessionState>(() {
@@ -28,8 +29,9 @@ class BreathViewModel extends Notifier<BreathSessionState> {
   StreamSubscription<BreathSessionStateMachineState>? _stateMachineSubscription;
   StreamSubscription<BreathSessionDTO>? _sessionUpdateSubscription;
   StreamSubscription<void>? _sessionDeletionSubscription;
+  StreamSubscription<TickSource>? _sourceChangesSub;
 
-  void Function(BreathSessionError error)? onErrorEvent;
+  void Function(BreathSessionUiEvent event)? onUiEvent;
 
   BreathSessionDTO? _sessionDTO;
 
@@ -66,6 +68,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
       _sessionDeletionSubscription?.cancel();
       _sessionUpdateSubscription?.cancel();
       _stateMachineSubscription?.cancel();
+      _sourceChangesSub?.cancel();
       _stateMachine?.dispose();
       _stateController.close();
       _remainingTicks.dispose();
@@ -106,6 +109,9 @@ class BreathViewModel extends Notifier<BreathSessionState> {
       final dto = await service.getSession(sessionId);
       _sessionDTO = dto;
       _setupEngine(dto);
+      _sourceChangesSub = tickService.sourceChanges.listen((src) {
+        state = state.copyWith(tickSource: src);
+      });
       _sessionUpdateSubscription = service.observeSession(sessionId).listen((dto) {
         _sessionDTO = dto;
         _setupEngine(dto);
@@ -274,6 +280,18 @@ class BreathViewModel extends Notifier<BreathSessionState> {
 
   void shareSession() => coordinator.shareSession(sessionId);
 
+  void toggleHeartTickSource() {
+    final target = state.tickSource == TickSource.heartbeat
+        ? TickSource.timer
+        : TickSource.heartbeat;
+    final ok = tickService.trySwitchTo(target);
+    if (!ok) {
+      onUiEvent?.call(BreathSessionUiEvent.noCardioSource);
+    }
+    // state.tickSource is updated by the _sourceChangesSub subscriber, not here —
+    // single sync point for both manual toggle and auto-fallback.
+  }
+
   Future<void> toggleStar() async {
     final newStarred = !state.isStarred;
     state = state.copyWith(isStarred: newStarred);
@@ -283,7 +301,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
       state = state.copyWith(isStarred: dto.isStarred);
     } catch (_) {
       state = state.copyWith(isStarred: !newStarred);
-      onErrorEvent?.call(BreathSessionError.starFailed);
+      onUiEvent?.call(BreathSessionUiEvent.starFailed);
     }
   }
 }
