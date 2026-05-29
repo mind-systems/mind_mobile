@@ -4,6 +4,7 @@ import 'package:mind_audio/mind_audio.dart';
 import 'package:mind_l10n/mind_l10n.dart';
 import 'package:mind_ui/mind_ui.dart';
 import '../CommonModels/SetShape.dart';
+import '../CommonModels/TickSource.dart';
 import 'Models/BreathSessionState.dart';
 import 'BreathSessionLayout.dart';
 import 'BreathSessionViewModel.dart';
@@ -96,11 +97,20 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
       }
     });
 
-    viewModel.onUiEvent = (_) {
-      // noCardioSource handled in M7
-      ref
-          .read(globalSnackBarNotifierProvider.notifier)
-          .show(SnackBarEvent.error(AppLocalizations.of(context)!.error));
+    viewModel.onUiEvent = (event) {
+      switch (event) {
+        case BreathSessionUiEvent.starFailed:
+          ref.read(globalSnackBarNotifierProvider.notifier).show(
+                SnackBarEvent.error(AppLocalizations.of(context)!.error),
+              );
+        case BreathSessionUiEvent.noCardioSource:
+          AppAlert.show(
+            context,
+            title: AppLocalizations.of(context)!.heartTickNoSourceTitle,
+            description:
+                AppLocalizations.of(context)!.heartTickNoSourceDescription,
+          );
+      }
     };
   }
 
@@ -320,6 +330,19 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
                                 onPressed: _soundCoordinator.toggleMute,
                               ),
                         ),
+                        Consumer(builder: (context, ref, _) {
+                          final tickSource = ref.watch(
+                            breathViewModelProvider.select((s) => s.tickSource),
+                          );
+                          final isActive = tickSource == TickSource.heartbeat;
+                          return IconButton(
+                            icon: const Icon(Icons.favorite),
+                            color: isActive
+                                ? Colors.red
+                                : Colors.white.withValues(alpha: 0.3),
+                            onPressed: viewModel.toggleHeartTickSource,
+                          );
+                        }),
                       ],
                       trailingActions: [
                         IconButton(

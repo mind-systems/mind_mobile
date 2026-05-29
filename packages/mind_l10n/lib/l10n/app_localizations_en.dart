@@ -27,6 +27,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingSoon => 'Coming soon';
 
   @override
+  String get heartTickNoSourceTitle => 'Connect a heart sensor';
+
+  @override
+  String get heartTickNoSourceDescription =>
+      'Pair a BCI device to drive the breathing rhythm from your heartbeat.';
+
+  @override
   String get account => 'Account';
 
   @override

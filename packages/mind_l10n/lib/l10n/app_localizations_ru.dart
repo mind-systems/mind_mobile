@@ -27,6 +27,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get comingSoon => 'Скоро';
 
   @override
+  String get heartTickNoSourceTitle => 'Подключите датчик сердца';
+
+  @override
+  String get heartTickNoSourceDescription =>
+      'Чтобы дышать в ритм с сердцем, подключите BCI-устройство.';
+
+  @override
   String get account => 'Аккаунт';
 
   @override

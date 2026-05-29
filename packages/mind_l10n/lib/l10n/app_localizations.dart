@@ -134,6 +134,18 @@ abstract class AppLocalizations {
   /// **'Coming soon'**
   String get comingSoon;
 
+  /// No description provided for @heartTickNoSourceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a heart sensor'**
+  String get heartTickNoSourceTitle;
+
+  /// No description provided for @heartTickNoSourceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a BCI device to drive the breathing rhythm from your heartbeat.'**
+  String get heartTickNoSourceDescription;
+
   /// No description provided for @account.
   ///
   /// In en, this message translates to:

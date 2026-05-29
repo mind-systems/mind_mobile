@@ -165,6 +165,7 @@ Detailed docs and Mermaid architecture diagrams live in `docs/`:
 - `docs/bci/device-manager.md` — BCI device domain: connection state machine, Bluetooth permissions, known-devices registry, auto-reconnect
 - `docs/bci/pairing-screen.md` — BCI pairing flow: discovery / impedance / calibration sections, header, permission-denied dialog
 - `docs/biometrics/capability-sources.md` — capability mixins (HR / RR / EEG / emotions), source tagging, parallel sources
+- `docs/biometrics/active-rr-source.md` — client-side single-active RR source: preferred-with-fallback policy, silence window, artifact handling
 - `docs/biometrics/stream-pipeline.md` — biometric stream pipeline: router, batcher, gRPC client, module-session gating, replay ring
 - `docs/realtime/live-session-tracking.md` — activity lifecycle, instruction stream, biometric correlation
 
