@@ -65,11 +65,6 @@ class _BciPairingHeader extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: vm.onClose,
-          ),
-          const Spacer(),
           Opacity(
             opacity: state.batteryPercent != null ? 1.0 : 0.3,
             child: Row(
@@ -84,6 +79,7 @@ class _BciPairingHeader extends ConsumerWidget {
               ],
             ),
           ),
+          const Spacer(),
           TextButton(
             onPressed: state.stage == BciPairingStage.discovery
                 ? null

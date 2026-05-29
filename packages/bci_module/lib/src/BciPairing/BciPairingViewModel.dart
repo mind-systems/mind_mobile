@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'IBciPairingCoordinator.dart';
 import 'IBciPairingService.dart';
 import 'Models/BciPairingState.dart';
 
@@ -13,14 +12,10 @@ final bciPairingViewModelProvider =
 
 class BciPairingViewModel extends Notifier<BciPairingState> {
   final IBciPairingService service;
-  final IBciPairingCoordinator coordinator;
 
   StreamSubscription<BciPairingServiceEvent>? _eventsSubscription;
 
-  BciPairingViewModel({
-    required this.service,
-    required this.coordinator,
-  });
+  BciPairingViewModel({required this.service});
 
   @override
   BciPairingState build() {
@@ -55,6 +50,4 @@ class BciPairingViewModel extends Notifier<BciPairingState> {
   void onStartCalibration() => service.startCalibration();
 
   void onDisconnect() => service.disconnect();
-
-  void onClose() => coordinator.close();
 }

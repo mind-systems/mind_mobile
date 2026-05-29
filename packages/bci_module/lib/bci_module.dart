@@ -6,7 +6,6 @@ export 'src/BciPairing/BciPairingViewModel.dart';
 export 'src/BciData/BciDataViewModel.dart';
 // Service + Coordinator interfaces
 export 'src/BciPairing/IBciPairingService.dart';
-export 'src/BciPairing/IBciPairingCoordinator.dart';
 export 'src/BciData/IBciDataService.dart';
 export 'src/BciData/IBciDataCoordinator.dart';
 // Other public symbols
