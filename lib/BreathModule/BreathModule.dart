@@ -7,6 +7,8 @@ import 'package:mind/BreathModule/BreathSessionCoordinator.dart';
 import 'package:mind/BreathModule/BreathSessionListService.dart';
 import 'package:mind/BreathModule/BreathSessionService.dart';
 import 'package:mind/BreathModule/ClockTickService.dart';
+import 'package:mind/BreathModule/HeartRateTickService.dart';
+import 'package:mind/BreathModule/SwitchableTickService.dart';
 import 'package:mind/BreathModule/Core/BreathModuleStateChannel.dart';
 import 'package:breath_module/breath_module.dart';
 import 'package:mind/Core/App.dart';
@@ -27,7 +29,9 @@ class BreathModule {
   }
 
   static Widget buildSession(BuildContext context, {required String sessionId}) {
-    final tickService = ClockTickService()..simulateTick();
+    final clock = ClockTickService()..simulateTick();
+    final heart = HeartRateTickService(activeRrSource: App.shared.activeRrSource);
+    final tickService = SwitchableTickService(clock: clock, heart: heart);
     final service = BreathSessionService(notifier: App.shared.breathSessionNotifier, userNotifier: App.shared.userNotifier);
     final coordinator = BreathSessionCoordinator(context, userNotifier: App.shared.userNotifier);
 
