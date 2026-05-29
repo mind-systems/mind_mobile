@@ -387,6 +387,27 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     );
   }
 
+  // ── importCalibration() ────────────────────────────────────────────────────
+
+  @override
+  Future<void> importCalibration(NfbCalibrationData data) async {
+    final neiryData = neiry.IndividualNfbData(
+      timestamp: data.calibratedAt,
+      failReason: neiry.NfbCalibrationFailReason.values
+          .firstWhere((e) => e.name == data.failReason),
+      individualFrequency: data.individualFrequency,
+      individualPeakFrequency: data.individualFrequency,
+      individualPeakFrequencyPower: data.individualPeakFrequencyPower,
+      individualPeakFrequencySuppression:
+          data.individualPeakFrequencySuppression,
+      individualBandwidth: data.individualBandwidth,
+      individualNormalizedPower: data.individualNormalizedPower,
+      lowerFrequency: data.lowerFrequency,
+      upperFrequency: data.upperFrequency,
+    );
+    await neiry.NfbCalibrator.importCalibrationData(neiryData);
+  }
+
   // ── disconnect() ────────────────────────────────────────────────────────────
 
   Future<void> _cancelDeviceSubscriptions() async {

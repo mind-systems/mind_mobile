@@ -4,6 +4,7 @@ import 'Models/BciCalibrationEvent.dart';
 import 'Models/BciChannelQuality.dart';
 import 'Models/BciConnectionState.dart';
 import 'Models/BciDeviceInfo.dart';
+import 'Models/NfbCalibrationData.dart';
 
 /// Domain-side abstraction for any BCI hardware provider.
 ///
@@ -45,6 +46,17 @@ abstract interface class IBciDeviceProvider {
 
   /// Requests the device to start its calibration sequence.
   Future<void> startCalibration();
+
+  /// Imports a previously-persisted [NfbCalibrationData] into the underlying
+  /// NFB calibrator so subsequent sessions can run with prior calibration
+  /// results without forcing the user through another calibration sequence.
+  ///
+  /// This is the reverse direction of the mapping that
+  /// [BciCalibrationCompleted] produces: the concrete implementation
+  /// translates the pure-Dart domain model back into whatever plugin-level
+  /// representation the hardware vendor requires. Plugin types must not
+  /// leak through this signature.
+  Future<void> importCalibration(NfbCalibrationData data);
 
   /// Releases all resources held by this provider.
   ///
