@@ -126,6 +126,11 @@ class BciDeviceManager {
       _stateController.add(BciConnectionState.scanning);
     }
 
+    unawaited(_repository.fetchKnownSerials().catchError((Object e) {
+      logPrint('BciDeviceManager: fetchKnownSerials failed: $e');
+      return <String>[];
+    }));
+
     final cachedSerials = _repository.cachedSerials();
 
     await _scanSub?.cancel();

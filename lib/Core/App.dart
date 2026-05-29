@@ -169,7 +169,6 @@ class App {
       repository: bciRepository,
     );
     final bciNotifier = BciNotifier(manager: bciDeviceManager);
-    unawaited(bciRepository.fetchKnownSerials().catchError((Object e) { return <String>[]; }));
     final appSettingsRepository = AppSettingsRepository(SharedPreferencesStorage(prefs));
     await appSettingsRepository.init();
     final initialTheme = await appSettingsRepository.getTheme();
