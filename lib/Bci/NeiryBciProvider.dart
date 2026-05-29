@@ -6,7 +6,14 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:neiry_kit/neiry_kit.dart' as neiry;
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:mind/Biometrics/IHeartRateSource.dart';
+import 'package:mind/Biometrics/IRrIntervalSource.dart';
+import 'package:mind/Biometrics/IEegBandsSource.dart';
+import 'package:mind/Biometrics/IEmotionsSource.dart';
+import 'package:mind/Biometrics/IMotionSource.dart';
 import 'package:mind/Biometrics/Models/CardioData.dart';
+import 'package:mind/Biometrics/Models/RrInterval.dart';
+import 'package:mind/Biometrics/Models/MotionData.dart';
 import 'package:mind/Biometrics/Models/SensorSource.dart';
 
 import 'IBciDeviceProvider.dart';
@@ -23,13 +30,14 @@ import '../Logger.dart';
 ///
 /// This is the **only** file in `mind_mobile` that may import `neiry_kit`.
 /// All consumers must depend on [IBciDeviceProvider], never on this class.
-class NeiryBciProvider implements IBciDeviceProvider {
+class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrIntervalSource, IEegBandsSource, IEmotionsSource, IMotionSource {
   final _locator = neiry.DeviceLocator();
   neiry.Device? _device;
 
   neiry.NfbClassifier? _nfbClassifier;
   neiry.CardioClassifier? _cardioClassifier;
   neiry.EmotionsClassifier? _emotionsClassifier;
+  neiry.MEMSClassifier? _memsClassifier;
 
   final _connectionStateController =
       StreamController<BciConnectionState>.broadcast();
@@ -40,7 +48,9 @@ class NeiryBciProvider implements IBciDeviceProvider {
       StreamController<BciCalibrationEvent>.broadcast();
   final _nfbController = StreamController<BciNfbData>.broadcast();
   final _cardioController = StreamController<CardioData>.broadcast();
+  final _rrController = StreamController<RrInterval>.broadcast();
   final _emotionsController = StreamController<BciEmotionsData>.broadcast();
+  final _motionController = StreamController<MotionData>.broadcast();
 
   StreamSubscription<neiry.NeiryConnectionState>? _connectionSub;
   StreamSubscription<neiry.ResistanceData>? _resistanceSub;
@@ -49,8 +59,10 @@ class NeiryBciProvider implements IBciDeviceProvider {
   StreamSubscription<neiry.NfbUserState>? _nfbSub;
   StreamSubscription<String>? _nfbErrorSub;
   StreamSubscription<neiry.CardioData>? _cardioSub;
+  StreamSubscription<neiry.RRInterval>? _rrSub;
   StreamSubscription<neiry.EmotionsStates>? _emotionsSub;
   StreamSubscription<String>? _emotionsErrorSub;
+  StreamSubscription<List<neiry.MemsSample>>? _memsSub;
 
   // ── Stream getters ──────────────────────────────────────────────────────────
 
@@ -76,7 +88,13 @@ class NeiryBciProvider implements IBciDeviceProvider {
   Stream<CardioData> get cardioStream => _cardioController.stream;
 
   @override
+  Stream<RrInterval> get rrStream => _rrController.stream;
+
+  @override
   Stream<BciEmotionsData> get emotionsStream => _emotionsController.stream;
+
+  @override
+  Stream<MotionData> get motionStream => _motionController.stream;
 
   // ── scan() ──────────────────────────────────────────────────────────────────
 
@@ -139,6 +157,7 @@ class NeiryBciProvider implements IBciDeviceProvider {
       _nfbClassifier = neiry.NfbClassifier(_device!);
       _cardioClassifier = neiry.CardioClassifier(_device!);
       _emotionsClassifier = neiry.EmotionsClassifier(_device!);
+      _memsClassifier = neiry.MEMSClassifier(_device!);
     } catch (e) {
       try {
         await _nfbClassifier?.dispose();
@@ -152,6 +171,10 @@ class NeiryBciProvider implements IBciDeviceProvider {
         await _emotionsClassifier?.dispose();
       } catch (_) {}
       _emotionsClassifier = null;
+      try {
+        await _memsClassifier?.dispose();
+      } catch (_) {}
+      _memsClassifier = null;
       try {
         await _device?.disconnect();
         await _device?.dispose();
@@ -178,7 +201,7 @@ class NeiryBciProvider implements IBciDeviceProvider {
       onError: (Object e) =>
           logPrint('NeiryBciProvider: batteryStream error: $e'),
     );
-    // Classifiers are guaranteed non-null here: connect()'s try block
+    // All four classifiers are guaranteed non-null here: connect()'s try block
     // instantiates them before reaching this method.
     _nfbSub = _nfbClassifier!.stateStream.listen(
       _onNfbState,
@@ -195,6 +218,11 @@ class NeiryBciProvider implements IBciDeviceProvider {
       onError: (Object e) =>
           logPrint('NeiryBciProvider: cardio stateStream error: $e'),
     );
+    _rrSub = _cardioClassifier!.rrStream.listen(
+      _onRrInterval,
+      onError: (Object e) =>
+          logPrint('NeiryBciProvider: rrStream error: $e'),
+    );
     _emotionsSub = _emotionsClassifier!.stateStream.listen(
       _onEmotionsState,
       onError: (Object e) =>
@@ -204,6 +232,11 @@ class NeiryBciProvider implements IBciDeviceProvider {
       (e) => logPrint('NeiryBciProvider: emotions error: $e'),
       onError: (Object e) =>
           logPrint('NeiryBciProvider: emotions errorStream error: $e'),
+    );
+    _memsSub = _memsClassifier!.memsStream.listen(
+      _onMemsBatch,
+      onError: (Object e) =>
+          logPrint('NeiryBciProvider: memsStream error: $e'),
     );
   }
 
@@ -281,6 +314,30 @@ class NeiryBciProvider implements IBciDeviceProvider {
     ));
   }
 
+  // ── neiry.RRInterval → RrInterval ───────────────────────────────────────────
+
+  void _onRrInterval(neiry.RRInterval rr) {
+    _rrController.add(RrInterval(
+      intervalMs: rr.intervalMs,
+      timestamp: rr.timestamp,
+      isArtifact: rr.isArtifact,
+      source: SensorSource.neiry,
+    ));
+  }
+
+  // ── List<neiry.MemsSample> → MotionData ─────────────────────────────────────
+
+  void _onMemsBatch(List<neiry.MemsSample> batch) {
+    for (final s in batch) {
+      _motionController.add(MotionData(
+        accelerometer: s.accelerometer,
+        gyroscope: s.gyroscope,
+        timestamp: s.timestamp,
+        source: SensorSource.neiry,
+      ));
+    }
+  }
+
   // ── EmotionsStates → BciEmotionsData ────────────────────────────────────────
 
   void _onEmotionsState(neiry.EmotionsStates e) {
@@ -332,10 +389,14 @@ class NeiryBciProvider implements IBciDeviceProvider {
     _nfbErrorSub = null;
     await _cardioSub?.cancel();
     _cardioSub = null;
+    await _rrSub?.cancel();
+    _rrSub = null;
     await _emotionsSub?.cancel();
     _emotionsSub = null;
     await _emotionsErrorSub?.cancel();
     _emotionsErrorSub = null;
+    await _memsSub?.cancel();
+    _memsSub = null;
 
     try {
       await _nfbClassifier?.dispose();
@@ -355,6 +416,12 @@ class NeiryBciProvider implements IBciDeviceProvider {
       logPrint('NeiryBciProvider: emotions dispose error: $e');
     }
     _emotionsClassifier = null;
+    try {
+      await _memsClassifier?.dispose();
+    } catch (e) {
+      logPrint('NeiryBciProvider: mems dispose error: $e');
+    }
+    _memsClassifier = null;
   }
 
   @override
@@ -397,6 +464,8 @@ class NeiryBciProvider implements IBciDeviceProvider {
     _calibrationController.close();
     _nfbController.close();
     _cardioController.close();
+    _rrController.close();
     _emotionsController.close();
+    _motionController.close();
   }
 }

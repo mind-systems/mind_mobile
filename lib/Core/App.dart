@@ -149,7 +149,13 @@ class App {
     final bciDevicesApi = BciDevicesGrpcApi(grpcClient.bciDevicesService);
     final bciRepository = BciDeviceRepository(api: bciDevicesApi, prefs: prefs);
     final bciProvider = NeiryBciProvider();
-    final bciDeviceManager = BciDeviceManager(provider: bciProvider, repository: bciRepository);
+    final bciDeviceManager = BciDeviceManager(
+      provider: bciProvider,
+      cardioSource: bciProvider,
+      eegBandsSource: bciProvider,
+      emotionsSource: bciProvider,
+      repository: bciRepository,
+    );
     final bciNotifier = BciNotifier(manager: bciDeviceManager);
     unawaited(bciRepository.fetchKnownSerials().catchError((Object e) { return <String>[]; }));
     final appSettingsRepository = AppSettingsRepository(SharedPreferencesStorage(prefs));
