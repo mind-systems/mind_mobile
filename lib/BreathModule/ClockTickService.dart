@@ -19,6 +19,12 @@ class ClockTickService implements ITickService {
   }
 
   @override
+  Stream<TickSource> get sourceChanges => const Stream.empty();
+
+  @override
+  bool trySwitchTo(TickSource target) => false;
+
+  @override
   void dispose() {
     _timer?.cancel();
     _tickController.close();

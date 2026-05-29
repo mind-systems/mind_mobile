@@ -29,6 +29,12 @@ class HeartRateTickService implements ITickService {
   Stream<bool> get hasActiveSourceStream => _activeRrSource.hasActiveSourceStream;
 
   @override
+  Stream<TickSource> get sourceChanges => const Stream.empty();
+
+  @override
+  bool trySwitchTo(TickSource target) => false;
+
+  @override
   void dispose() {
     _sub?.cancel();
     _tickController.close();

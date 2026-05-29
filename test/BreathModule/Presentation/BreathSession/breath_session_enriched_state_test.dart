@@ -25,6 +25,12 @@ class FakeTickService implements ITickService {
   @override
   TickSource get source => TickSource.timer;
 
+  @override
+  Stream<TickSource> get sourceChanges => const Stream.empty();
+
+  @override
+  bool trySwitchTo(TickSource target) => false;
+
   void tick([int intervalMs = 1000]) => _controller.add(TickData(intervalMs));
 
   @override
