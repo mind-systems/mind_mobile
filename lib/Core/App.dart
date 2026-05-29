@@ -53,6 +53,9 @@ import 'package:mind/Bci/BciDeviceManager.dart';
 import 'package:mind/Bci/BciDeviceRepository.dart';
 import 'package:mind/Bci/BciNotifier.dart';
 import 'package:mind/Bci/NeiryBciProvider.dart';
+import 'package:mind/Biometrics/BioStreamRouter.dart';
+import 'package:mind/Biometrics/BiometricBatcher.dart';
+import 'package:mind/Biometrics/BiometricStreamClient.dart';
 import 'package:mind/McpModule/Core/TokenNotifier.dart';
 import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/UserNotifier.dart';
@@ -82,6 +85,9 @@ class App {
   final BreathModuleInstructionStream breathInstructionStream;
   final TokenNotifier tokenNotifier;
   final BciNotifier bciNotifier;
+  final BioStreamRouter bioStreamRouter;
+  final BiometricStreamClient biometricStreamClient;
+  final BiometricBatcher biometricBatcher;
   final SyncEngine syncEngine;
   final SyncGrpcListener syncGrpcListener;
   final AppLifecycleService appLifecycleService;
@@ -105,6 +111,9 @@ class App {
     required this.breathInstructionStream,
     required this.tokenNotifier,
     required this.bciNotifier,
+    required this.bioStreamRouter,
+    required this.biometricStreamClient,
+    required this.biometricBatcher,
     required this.syncEngine,
     required this.syncGrpcListener,
     required this.appLifecycleService,
@@ -174,6 +183,14 @@ class App {
 
     final connectionManager = GrpcConnectionManager(authStream: userNotifier.stream, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
     final moduleStateChannel = ModuleStateChannel(moduleStateService: grpcClient.moduleStateService, connectionManager: connectionManager, authStream: userNotifier.stream);
+    final bioStreamRouter = BioStreamRouter();
+    bioStreamRouter.registerHeartRateSource(bciProvider);
+    bioStreamRouter.registerRrIntervalSource(bciProvider);
+    bioStreamRouter.registerEegBandsSource(bciProvider);
+    bioStreamRouter.registerEmotionsSource(bciProvider);
+    bioStreamRouter.registerMotionSource(bciProvider);
+    final biometricStreamClient = BiometricStreamClient(grpcStub: grpcClient.moduleBiometricStreamService, moduleStateEvents: moduleStateChannel.events);
+    final biometricBatcher = BiometricBatcher(router: bioStreamRouter, client: biometricStreamClient);
     final instructionStream = ModuleInstructionStream(connectionManager: connectionManager, instructionStreamService: grpcClient.instructionStreamService);
     final syncGrpcListener = SyncGrpcListener(syncService: grpcClient.syncService, syncEngine: syncEngine, syncStateDao: db.syncStateDao, authStream: userNotifier.stream);
 
@@ -199,6 +216,9 @@ class App {
       breathInstructionStream: breathInstructionStream,
       tokenNotifier: tokenNotifier,
       bciNotifier: bciNotifier,
+      bioStreamRouter: bioStreamRouter,
+      biometricStreamClient: biometricStreamClient,
+      biometricBatcher: biometricBatcher,
       syncEngine: syncEngine,
       syncGrpcListener: syncGrpcListener,
       appLifecycleService: appLifecycleService,
