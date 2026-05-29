@@ -1,3 +1,5 @@
+import 'NfbCalibrationData.dart';
+
 /// Base sealed class for all BCI calibration lifecycle events.
 ///
 /// Concrete implementations cover the three outcomes of a calibration run:
@@ -17,10 +19,13 @@ final class BciCalibrationStageFinished extends BciCalibrationEvent {
 
 /// Emitted when the full calibration sequence completes successfully.
 ///
-/// Carries no payload — calibration results from the plugin must not
-/// leak into the domain layer.
+/// [data] is the domain-level calibration result mapped from the plugin's
+/// `IndividualNfbData` by the concrete [IBciDeviceProvider] implementation.
+/// Plugin types (e.g. `IndividualNfbData`) must NOT appear in this file —
+/// [NfbCalibrationData] is the pure-Dart projection of the calibration outcome.
 final class BciCalibrationCompleted extends BciCalibrationEvent {
-  const BciCalibrationCompleted();
+  final NfbCalibrationData data;
+  const BciCalibrationCompleted(this.data);
 }
 
 /// Emitted when calibration fails for any reason.

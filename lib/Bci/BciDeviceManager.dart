@@ -71,7 +71,7 @@ class BciDeviceManager {
       switch (event) {
         case BciCalibrationStageFinished():
           break; // stage progress forwarded to UI via public calibrationStream — no state change
-        case BciCalibrationCompleted():
+        case BciCalibrationCompleted(data: final _):
           if (_state == BciConnectionState.calibrating) _setState(BciConnectionState.ready);
         case BciCalibrationFailed(:final reason):
           logPrint('BciDeviceManager: calibration failed: $reason');

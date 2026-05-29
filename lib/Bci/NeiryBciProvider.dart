@@ -24,6 +24,7 @@ import 'Models/BciDeviceInfo.dart';
 import 'Models/BciEmotionsData.dart';
 import 'Models/BciNfbData.dart';
 import 'Models/BluetoothPermissionDeniedException.dart';
+import 'Models/NfbCalibrationData.dart';
 import '../Logger.dart';
 
 /// Adapter that bridges `neiry_kit` to [IBciDeviceProvider].
@@ -363,8 +364,20 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
             _calibrationController.add(
               BciCalibrationStageFinished(stage.index + 1),
             );
-          case neiry.CalibrationCompleted():
-            _calibrationController.add(const BciCalibrationCompleted());
+          case neiry.CalibrationCompleted(:final data):
+            final mapped = NfbCalibrationData(
+              calibratedAt: data.timestamp ?? DateTime.now(),
+              isValid: data.isValid,
+              failReason: data.failReason.name,
+              individualFrequency: data.individualFrequency,
+              individualPeakFrequencyPower: data.individualPeakFrequencyPower,
+              individualPeakFrequencySuppression: data.individualPeakFrequencySuppression,
+              individualBandwidth: data.individualBandwidth,
+              individualNormalizedPower: data.individualNormalizedPower,
+              lowerFrequency: data.lowerFrequency,
+              upperFrequency: data.upperFrequency,
+            );
+            _calibrationController.add(BciCalibrationCompleted(mapped));
         }
       },
       onError: (Object e) {
