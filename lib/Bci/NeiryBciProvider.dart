@@ -257,6 +257,7 @@ class NeiryBciProvider implements IBciDeviceProvider {
 
   void _onNfbState(NfbUserState s) {
     _nfbController.add(BciNfbData(
+      timestamp: s.timestamp,
       delta: s.delta,
       theta: s.theta,
       alpha: s.alpha,
@@ -279,6 +280,7 @@ class NeiryBciProvider implements IBciDeviceProvider {
 
   void _onEmotionsState(EmotionsStates e) {
     _emotionsController.add(BciEmotionsData(
+      timestamp: e.timestamp,
       attention: e.attention,
       relaxation: e.relaxation,
       cognitiveLoad: e.cognitiveLoad,

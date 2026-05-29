@@ -10,8 +10,10 @@ class BciNfbData {
   final double? alpha;
   final double? smr;
   final double? beta;
+  final DateTime timestamp;
 
   const BciNfbData({
+    required this.timestamp,
     this.delta,
     this.theta,
     this.alpha,

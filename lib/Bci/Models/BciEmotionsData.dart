@@ -10,8 +10,10 @@ class BciEmotionsData {
   final double? cognitiveLoad;
   final double? cognitiveControl;
   final double? selfControl;
+  final DateTime timestamp;
 
   const BciEmotionsData({
+    required this.timestamp,
     this.attention,
     this.relaxation,
     this.cognitiveLoad,
