@@ -1,14 +1,20 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mind/Bci/Models/NfbCalibrationData.dart';
+import 'package:mind/Bci/NfbCalibrationGrpcApi.dart';
+import 'package:mind/Logger.dart';
 
 class NfbCalibrationRepository {
   static const int _maxEntries = 20;
 
   final SharedPreferences _prefs;
+  final NfbCalibrationGrpcApi _api;
 
-  NfbCalibrationRepository({required SharedPreferences prefs}) : _prefs = prefs;
+  NfbCalibrationRepository({required SharedPreferences prefs, required NfbCalibrationGrpcApi api})
+      : _prefs = prefs,
+        _api = api;
 
   String _keyFor(String serial) => 'bci_nfb_cal_history_$serial';
 
@@ -42,5 +48,8 @@ class NfbCalibrationRepository {
     }
     final encoded = jsonEncode(newList.map((e) => e.toJson()).toList());
     await _prefs.setString(_keyFor(serial), encoded);
+    unawaited(_api.record(serial, data).catchError(
+      (Object e) => logPrint('NfbCalibrationRepository: sync failed: $e'),
+    ));
   }
 }

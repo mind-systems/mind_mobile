@@ -9,6 +9,7 @@ import 'package:mind/Core/Grpc/generated/device.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/module_biometric_stream.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/module_instruction_stream.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/module_state.pbgrpc.dart';
+import 'package:mind/Core/Grpc/generated/nfb_calibration.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/stats.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/sync.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/users.pbgrpc.dart';
@@ -36,6 +37,7 @@ class GrpcClient {
   late final moduleBiometricStreamService = ModuleBiometricStreamServiceClient(_channel, interceptors: _interceptors);
   late final moduleStateService = ModuleStateServiceClient(_channel, interceptors: _interceptors);
   late final instructionStreamService = ModuleInstructionStreamServiceClient(_channel, interceptors: _interceptors);
+  late final nfbCalibrationService = NfbCalibrationServiceClient(_channel, interceptors: _interceptors);
   late final statsService = StatsServiceClient(_channel, interceptors: _interceptors);
   late final syncService = SyncServiceClient(_channel, interceptors: _interceptors);
   late final userService = UserServiceClient(_channel, interceptors: _interceptors);

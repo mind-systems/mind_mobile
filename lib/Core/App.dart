@@ -51,6 +51,7 @@ import 'package:mind/Core/Sync/SyncGrpcListener.dart';
 import 'package:mind/Bci/BciDevicesGrpcApi.dart';
 import 'package:mind/Bci/BciDeviceManager.dart';
 import 'package:mind/Bci/BciDeviceRepository.dart';
+import 'package:mind/Bci/NfbCalibrationGrpcApi.dart';
 import 'package:mind/Bci/NfbCalibrationRepository.dart';
 import 'package:mind/Bci/BciNotifier.dart';
 import 'package:mind/Bci/NeiryBciProvider.dart';
@@ -159,7 +160,8 @@ class App {
     await syncEngine.waitForColdStart(!initialUser.isGuest);
 
     final prefs = await SharedPreferences.getInstance();
-    final nfbCalibrationRepository = NfbCalibrationRepository(prefs: prefs);
+    final nfbCalibrationApi = NfbCalibrationGrpcApi(grpcClient.nfbCalibrationService);
+    final nfbCalibrationRepository = NfbCalibrationRepository(prefs: prefs, api: nfbCalibrationApi);
     final bciDevicesApi = BciDevicesGrpcApi(grpcClient.bciDevicesService);
     final bciRepository = BciDeviceRepository(api: bciDevicesApi, prefs: prefs);
     final bciProvider = NeiryBciProvider();
