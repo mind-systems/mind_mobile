@@ -145,6 +145,12 @@ class BciDeviceManager {
       return <String>[];
     }));
 
+    for (final serial in _repository.cachedSerials()) {
+      unawaited(_nfbCalibrationRepository.refreshFromServer(serial).catchError(
+        (Object e) => logPrint('BciDeviceManager: refreshFromServer failed for $serial: $e'),
+      ));
+    }
+
     final cachedSerials = _repository.cachedSerials();
 
     await _scanSub?.cancel();

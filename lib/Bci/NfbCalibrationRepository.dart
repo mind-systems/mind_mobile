@@ -40,6 +40,17 @@ class NfbCalibrationRepository {
     return null;
   }
 
+  Future<void> refreshFromServer(String serial) async {
+    try {
+      final list = await _api.list(serial);
+      final trimmed = list.length > _maxEntries ? list.sublist(0, _maxEntries) : list;
+      final encoded = jsonEncode(trimmed.map((e) => e.toJson()).toList());
+      await _prefs.setString(_keyFor(serial), encoded);
+    } catch (e) {
+      logPrint('NfbCalibrationRepository: refreshFromServer failed for $serial: $e');
+    }
+  }
+
   Future<void> record(String serial, NfbCalibrationData data) async {
     final existing = history(serial);
     var newList = [data, ...existing];
