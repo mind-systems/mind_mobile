@@ -51,6 +51,7 @@ import 'package:mind/Core/Sync/SyncGrpcListener.dart';
 import 'package:mind/Bci/BciDevicesGrpcApi.dart';
 import 'package:mind/Bci/BciDeviceManager.dart';
 import 'package:mind/Bci/BciDeviceRepository.dart';
+import 'package:mind/Bci/NfbCalibrationRepository.dart';
 import 'package:mind/Bci/BciNotifier.dart';
 import 'package:mind/Bci/NeiryBciProvider.dart';
 import 'package:mind/Biometrics/ActiveRrSource.dart';
@@ -158,6 +159,7 @@ class App {
     await syncEngine.waitForColdStart(!initialUser.isGuest);
 
     final prefs = await SharedPreferences.getInstance();
+    final nfbCalibrationRepository = NfbCalibrationRepository(prefs: prefs);
     final bciDevicesApi = BciDevicesGrpcApi(grpcClient.bciDevicesService);
     final bciRepository = BciDeviceRepository(api: bciDevicesApi, prefs: prefs);
     final bciProvider = NeiryBciProvider();
@@ -167,6 +169,7 @@ class App {
       eegBandsSource: bciProvider,
       emotionsSource: bciProvider,
       repository: bciRepository,
+      nfbCalibrationRepository: nfbCalibrationRepository,
     );
     final bciNotifier = BciNotifier(manager: bciDeviceManager);
     final appSettingsRepository = AppSettingsRepository(SharedPreferencesStorage(prefs));

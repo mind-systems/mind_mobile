@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:mind/Bci/BciDeviceRepository.dart';
+import 'package:mind/Bci/NfbCalibrationRepository.dart';
 import 'package:mind/Bci/IBciDeviceProvider.dart';
 import 'package:mind/Bci/Models/BciCalibrationEvent.dart';
 import 'package:mind/Bci/Models/BciChannelQuality.dart';
@@ -22,6 +23,7 @@ class BciDeviceManager {
   final IEegBandsSource _eegBandsSource;
   final IEmotionsSource _emotionsSource;
   final BciDeviceRepository _repository;
+  final NfbCalibrationRepository _nfbCalibrationRepository;
 
   // Internal state
   bool _disposed = false;
@@ -45,11 +47,13 @@ class BciDeviceManager {
     required IEegBandsSource eegBandsSource,
     required IEmotionsSource emotionsSource,
     required BciDeviceRepository repository,
+    required NfbCalibrationRepository nfbCalibrationRepository,
   })  : _provider = provider,
         _cardioSource = cardioSource,
         _eegBandsSource = eegBandsSource,
         _emotionsSource = emotionsSource,
-        _repository = repository {
+        _repository = repository,
+        _nfbCalibrationRepository = nfbCalibrationRepository {
     _subscribeProviderStreams();
   }
 
@@ -71,7 +75,17 @@ class BciDeviceManager {
       switch (event) {
         case BciCalibrationStageFinished():
           break; // stage progress forwarded to UI via public calibrationStream — no state change
-        case BciCalibrationCompleted(data: final _):
+        case BciCalibrationCompleted(data: final data):
+          // _connectedSerial is captured synchronously — Dart is single-threaded
+          // within a listener callback, so the null check and dereference are safe.
+          // Edge case: a late-arriving event after disconnect→reconnect-to-different-device
+          // would record under the new serial; accepted as a thin race given that
+          // calibration events fire immediately during calibrateIndividual().
+          if (data.isValid && _connectedSerial != null) {
+            unawaited(_nfbCalibrationRepository.record(_connectedSerial!, data).catchError(
+              (Object e) => logPrint('BciDeviceManager: nfbCalibration record failed: $e'),
+            ));
+          }
           if (_state == BciConnectionState.calibrating) _setState(BciConnectionState.ready);
         case BciCalibrationFailed(:final reason):
           logPrint('BciDeviceManager: calibration failed: $reason');
@@ -177,10 +191,28 @@ class BciDeviceManager {
     try {
       await _provider.connect(serial);
       _connectedSerial = serial;
-      _setState(BciConnectionState.impedance);
       unawaited(_repository.registerDevice(serial).catchError(
         (Object e) => logPrint('BciDeviceManager: registerDevice failed: $e'),
       ));
+
+      var restored = false;
+      final cal = _nfbCalibrationRepository.latestValid(serial);
+      if (cal != null) {
+        try {
+          await _provider.importCalibration(cal);
+          restored = true;
+        } catch (e) {
+          logPrint('BciDeviceManager: importCalibration failed: $e');
+          // Fall through to normal impedance/calibration flow.
+        }
+      }
+
+      // Guard against disconnect() racing with the awaited importCalibration call.
+      // If the user disconnected mid-flight, _state has moved to disconnected and
+      // we must not override it back to ready/impedance.
+      if (_state == BciConnectionState.connecting) {
+        _setState(restored ? BciConnectionState.ready : BciConnectionState.impedance);
+      }
     } catch (e) {
       logPrint('BciDeviceManager: connect failed: $e');
       _setState(BciConnectionState.disconnected);
