@@ -1,7 +1,9 @@
 import 'package:go_router/go_router.dart';
 import 'package:mind/BreathModule/BreathModule.dart';
+import 'package:mind/MeditationModule/MeditationModule.dart';
 import 'package:bci_module/bci_module.dart' show BciPairingScreen, BciDataScreen;
 import 'package:breath_module/breath_module.dart' show BreathSessionScreen, BreathSessionConstructorScreen, BreathSessionListScreen;
+import 'package:meditation_module/meditation_module.dart' show MeditationListScreen, MeditationSessionScreen;
 import 'package:mind/BciModule/BciModule.dart';
 import 'package:mind/HomeModule/HomeModule.dart';
 import 'package:mind/HomeModule/Presentation/HomeScreen/HomeScreen.dart';
@@ -48,6 +50,19 @@ final appRouter = GoRouter(
       builder: (context, state) {
         final sessionId = state.extra as String?;
         return BreathModule.buildConstructor(context, sessionId: sessionId);
+      },
+    ),
+    GoRoute(
+      path: MeditationListScreen.path,
+      name: MeditationListScreen.name,
+      builder: (context, state) => MeditationModule.buildSessionList(context),
+    ),
+    GoRoute(
+      path: MeditationSessionScreen.path,
+      name: MeditationSessionScreen.name,
+      builder: (context, state) {
+        final poseId = state.extra as String;
+        return MeditationModule.buildSession(context, poseId: poseId);
       },
     ),
     GoRoute(
