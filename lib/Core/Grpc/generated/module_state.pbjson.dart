@@ -21,13 +21,14 @@ const ActivityType$json = {
   '2': [
     {'1': 'ACTIVITY_TYPE_UNSPECIFIED', '2': 0},
     {'1': 'BREATH', '2': 1},
+    {'1': 'MEDITATION', '2': 2},
   ],
 };
 
 /// Descriptor for `ActivityType`. Decode as a `google.protobuf.EnumDescriptorProto`.
 final $typed_data.Uint8List activityTypeDescriptor = $convert.base64Decode(
     'CgxBY3Rpdml0eVR5cGUSHQoZQUNUSVZJVFlfVFlQRV9VTlNQRUNJRklFRBAAEgoKBkJSRUFUSB'
-    'AB');
+    'ABEg4KCk1FRElUQVRJT04QAg==');
 
 @$core.Deprecated('Use activityStatusDescriptor instead')
 const ActivityStatus$json = {
