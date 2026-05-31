@@ -1,1 +1,1 @@
-enum ActivityType { breath }
+enum ActivityType { breath, meditation }

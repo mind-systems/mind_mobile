@@ -195,6 +195,8 @@ class ModuleStateChannel {
     switch (type) {
       case ActivityType.breath:
         return proto.ActivityType.BREATH;
+      case ActivityType.meditation:
+        return proto.ActivityType.MEDITATION;
     }
   }
 
