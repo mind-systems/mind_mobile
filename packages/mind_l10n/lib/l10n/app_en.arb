@@ -142,5 +142,12 @@
   "bciEegBands": "EEG bands",
   "bciEmotionalStates": "Emotional states",
   "bciNotConnectedMessage": "Device not connected",
-  "bciConnectButton": "Connect"
+  "bciConnectButton": "Connect",
+
+  "meditationPoseEasy": "Easy Pose",
+  "meditationPoseLotus": "Lotus",
+  "meditationPoseHalfLotus": "Half Lotus",
+  "meditationPoseSeiza": "Kneeling (Seiza)",
+  "meditationPoseChair": "Seated (Chair)",
+  "meditationPoseSavasana": "Lying Down (Savasana)"
 }

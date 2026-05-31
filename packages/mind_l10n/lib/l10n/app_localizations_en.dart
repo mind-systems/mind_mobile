@@ -358,4 +358,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bciConnectButton => 'Connect';
+
+  @override
+  String get meditationPoseEasy => 'Easy Pose';
+
+  @override
+  String get meditationPoseLotus => 'Lotus';
+
+  @override
+  String get meditationPoseHalfLotus => 'Half Lotus';
+
+  @override
+  String get meditationPoseSeiza => 'Kneeling (Seiza)';
+
+  @override
+  String get meditationPoseChair => 'Seated (Chair)';
+
+  @override
+  String get meditationPoseSavasana => 'Lying Down (Savasana)';
 }

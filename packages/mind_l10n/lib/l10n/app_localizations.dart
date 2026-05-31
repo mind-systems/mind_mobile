@@ -763,6 +763,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Connect'**
   String get bciConnectButton;
+
+  /// No description provided for @meditationPoseEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy Pose'**
+  String get meditationPoseEasy;
+
+  /// No description provided for @meditationPoseLotus.
+  ///
+  /// In en, this message translates to:
+  /// **'Lotus'**
+  String get meditationPoseLotus;
+
+  /// No description provided for @meditationPoseHalfLotus.
+  ///
+  /// In en, this message translates to:
+  /// **'Half Lotus'**
+  String get meditationPoseHalfLotus;
+
+  /// No description provided for @meditationPoseSeiza.
+  ///
+  /// In en, this message translates to:
+  /// **'Kneeling (Seiza)'**
+  String get meditationPoseSeiza;
+
+  /// No description provided for @meditationPoseChair.
+  ///
+  /// In en, this message translates to:
+  /// **'Seated (Chair)'**
+  String get meditationPoseChair;
+
+  /// No description provided for @meditationPoseSavasana.
+  ///
+  /// In en, this message translates to:
+  /// **'Lying Down (Savasana)'**
+  String get meditationPoseSavasana;
 }
 
 class _AppLocalizationsDelegate
