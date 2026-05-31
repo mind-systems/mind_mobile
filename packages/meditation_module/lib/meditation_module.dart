@@ -4,3 +4,7 @@ export 'src/MeditationList/IMeditationListCoordinator.dart';
 export 'src/MeditationList/Models/MeditationListState.dart';
 export 'src/MeditationList/MeditationListViewModel.dart';
 export 'src/MeditationList/MeditationListScreen.dart';
+export 'src/MeditationSession/Models/MeditationSessionState.dart';
+export 'src/MeditationSession/MeditationSessionViewModel.dart';
+export 'src/MeditationSession/IMeditationSessionCoordinator.dart';
+export 'src/MeditationSession/MeditationSessionScreen.dart';
