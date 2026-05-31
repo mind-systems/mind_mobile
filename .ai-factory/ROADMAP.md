@@ -228,4 +228,40 @@ Copy the breath module skeleton into a parallel meditation module. Poses are a h
 
 - [x] **Add meditation card to the Home grid** — Add a `ModuleItem` for meditation to the `modules` list in `lib/HomeModule/Presentation/HomeScreen/HomeScreen.dart` (`title: l10n.homeTabMeditation`, `iconPath: 'assets/images/modules/home/meditation.png'` — asset already exists and the dir is already declared in `pubspec.yaml`, no asset/pubspec changes; `onTap: vm.onMeditationTap`). Add `homeTabMeditation` key to both `mind_l10n` ARB files (EN: "Meditation" / RU: "Медитация"). Add `onMeditationTap() => coordinator.openMeditation();` to `HomeViewModel` (alongside `onBreathTap`/`onComingSoonTap`). Add `openMeditation()` to `IHomeCoordinator` and implement in `HomeCoordinator` as `context.push(MeditationListScreen.path);` (mirrors `openBreath`). The grid grows from 3 to 4 cards (Breath, Meditation, Mind, Profile). Card appears on Home and navigates to the meditation list. [5m 53s]
 
+## Phase 26 — Roadmap Review Fixes
+
+Fixes surfaced by the code review of phases 12–25. The first six are the confident, decision-free fixes (full specs: `.ai-factory/notes/42-roadmap-review-fix-tasks.md`). The remaining six were originally open questions, now resolved by a cross-project investigation (`neiry_kit`/`mind_api`) with evidence and decisions in `.ai-factory/notes/44-open-questions-resolved.md`. Only one item stays open by choice — the biometric-stream reconnect architecture (Q4): Task 3's cooldown is the interim, full `GrpcConnectionManager` coordination is the alternative; see note 44. No `mind_api` or `neiry_kit` changes are required by any task here.
+
+- [ ] **Make meditation Stop reset the lifecycle (re-arm the state-channel) so each session is tracked** — Meditation's one-shot `_started`/`_ended` never re-arm, so any session after the first in a screen mount records nothing (no lifecycle, no biometrics); re-arm on `active→idle` to mirror breath's `reset()`. Spec: `.ai-factory/notes/46-task-meditation-stop-reset.md`.
+
+- [ ] **Guard `AudioOneShot.play()` against an in-flight `load()`** — Add a `_loading` guard so `AudioOneShot.play()` no-ops during an in-flight `load()`, killing the tick-source-toggle race. Spec: `.ai-factory/notes/47-task-audio-oneshot-load-guard.md`.
+
+- [ ] **Rate-limit `BiometricStreamClient` stream reopen** — Add a 2s reopen cooldown to `_ensureSinkOpen` so it stops thrashing `streamData` every 250ms during an outage (conservative interim for note 43 Q4; ring-loss tradeoff documented). Spec: `.ai-factory/notes/48-task-biometric-stream-reopen-cooldown.md`.
+
+- [ ] **Cap the gRPC reconnect backoff exponent** — Clamp the reconnect backoff exponent (`pow(2, min(attempt, 6))`) in `GrpcConnectionManager._nextDelay` to prevent Duration overflow on a long outage. Spec: `.ai-factory/notes/49-task-grpc-backoff-exponent-cap.md`.
+
+- [ ] **Clear stale battery on disconnect in the pairing reducer** — Add `batteryPercent: null` to the `disconnected` branch in `BciPairingService` so the pairing header doesn't show a stale percentage. Spec: `.ai-factory/notes/50-task-pairing-battery-clear-on-disconnect.md`.
+
+- [ ] **Remove leftover `[Sound]` debug instrumentation** — Delete the leftover `_ts()` helper + `[Sound]` `debugPrint` lines from `BreathSoundCoordinator` (same class of throwaway logs Phase 16 already stripped). Spec: `.ai-factory/notes/51-task-remove-sound-debug-logs.md`.
+
+- [ ] **Tear down the neiry `Device` on an unexpected disconnect so auto-reconnect works** — On a native drop, tear down + null `_device`/classifiers BEFORE emitting `disconnected` so `BciDeviceManager`'s reconnect recreates a fresh device (classifiers are non-idempotent → SIGABRT if reused). Needs on-device drop test. Spec: `.ai-factory/notes/52-task-neiry-device-teardown-on-drop.md`.
+
+- [ ] **Carry `individualPeakFrequency` through the NFB calibration round-trip** — Add `individualPeakFrequency` to `NfbCalibrationData` (+ backward-compat `fromJson`) and capture/restore it separately, fixing the local + live-SDK round-trip. Durable server sync depends on mind_api adding the proto field (accepted — their Phase 29; contract in note 60, incl. the `0.0`-means-absent rule); regen stubs + map `NfbCalibrationGrpcApi` only after it ships. Spec: `.ai-factory/notes/53-task-calibration-peak-frequency-roundtrip.md`.
+
+- [ ] **Make the active timeline row use the gold theme accent** — Replace the hardcoded cyan `0xFF00D9FF` on the active timeline row with `cs.tertiary` (gold), matching the Phase 20 redesign. Spec: `.ai-factory/notes/54-task-timeline-active-gold.md`.
+
+- [ ] **Extract the duplicated BCI channel-quality mapper into `lib/BciModule/`** — Extract the duplicated `_mapLevel` + channel→DTO map into `lib/BciModule/BciChannelQualityMapping.dart` (must stay in `lib`, not the package — it imports the domain `BciSignalLevel`). Spec: `.ai-factory/notes/55-task-bci-channel-mapper-extract.md`.
+
+- [ ] **Align `BciPairingViewModel` to subscribe in `build()`** — Move `BciPairingViewModel`'s subscription + `startScan()` into `build()` (canonical pattern) and drop the public `initState()` plus its call site in `BciPairingScreen`. Spec: `.ai-factory/notes/56-task-bcipairing-vm-build-subscription.md`.
+
+- [ ] **Remove the dead cyan default `shapeColor` fallbacks** — Drop the unreachable cyan `shapeColor` defaults in `BreathShapeWidget`/`BreathShapePainter`, making the param required (single call site already passes `cs.tertiary`). Spec: `.ai-factory/notes/57-task-remove-dead-cyan-defaults.md`.
+
+## Phase 27 — Auth: OTP Brute-Force Lockout Handling
+
+Cross-project change driven by `mind_api` Phase 27 (passwordless OTP brute-force protection). Full requirements: `.ai-factory/notes/45-otp-verify-lockout-requirements.md`. The proto contract is unchanged (no new fields, no stub regen) — only a new gRPC status/message appears for the locked case. Safe to ship before the API: until then the app simply never receives the new status.
+
+- [ ] **Distinguish OTP lockout (`RESOURCE_EXHAUSTED`) from wrong code (`UNAUTHENTICATED`) on the interactive login path** — Map the new `VerifyCode` `RESOURCE_EXHAUSTED` lockout (vs `UNAUTHENTICATED`) to a typed exception + `LoginError.tooManyAttempts` recovery UX on the interactive login path; distinguish strictly by status code, never auto-resend. Spec: `.ai-factory/notes/58-task-otp-lockout-interactive.md`.
+
+- [ ] **Cover the magic-link/deeplink verification path for OTP lockout** — Handle `OtpLockedException` on the magic-link path (`AuthCodeDeeplinkHandler`/`DeeplinkRouter`, currently uncaught) and surface the same localized recovery via the global snackbar; guard against a double snackbar. Depends on the previous task. Spec: `.ai-factory/notes/59-task-otp-lockout-deeplink.md`.
+
 ---STOP---
