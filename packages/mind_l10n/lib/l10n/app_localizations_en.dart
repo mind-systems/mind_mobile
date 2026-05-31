@@ -167,6 +167,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeTabBreath => 'Breath';
 
   @override
+  String get homeTabMeditation => 'Meditation';
+
+  @override
   String get homeTabMind => 'Mind';
 
   @override

@@ -24,6 +24,11 @@ class HomeScreen extends ConsumerWidget {
         onTap: vm.onBreathTap,
       ),
       ModuleItem(
+        title: l10n.homeTabMeditation,
+        iconPath: 'assets/images/modules/home/meditation.png',
+        onTap: vm.onMeditationTap,
+      ),
+      ModuleItem(
         title: l10n.homeTabMind,
         iconPath: 'assets/images/modules/home/bci.png',
         onTap: vm.onComingSoonTap,

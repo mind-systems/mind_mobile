@@ -74,6 +74,7 @@ class HomeViewModel extends Notifier<HomeState> {
   }
 
   void onBreathTap() => coordinator.openBreath();
+  void onMeditationTap() => coordinator.openMeditation();
   void onComingSoonTap() => coordinator.openComingSoon();
   void onProfileTap() => coordinator.openProfile();
   void onSuggestionTap(String sessionId) => coordinator.openSuggestion(sessionId);

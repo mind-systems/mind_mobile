@@ -398,6 +398,12 @@ abstract class AppLocalizations {
   /// **'Breath'**
   String get homeTabBreath;
 
+  /// No description provided for @homeTabMeditation.
+  ///
+  /// In en, this message translates to:
+  /// **'Meditation'**
+  String get homeTabMeditation;
+
   /// No description provided for @homeTabMind.
   ///
   /// In en, this message translates to:

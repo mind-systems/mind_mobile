@@ -168,6 +168,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get homeTabBreath => 'Дыхание';
 
   @override
+  String get homeTabMeditation => 'Медитация';
+
+  @override
   String get homeTabMind => 'Mind';
 
   @override
