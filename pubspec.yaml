@@ -42,6 +42,8 @@ dependencies:
     path: packages/mind_audio
   bci_module:
     path: packages/bci_module
+  meditation_module:
+    path: packages/meditation_module
   neiry_kit:
     path: ../neiry_kit
 
