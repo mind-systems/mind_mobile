@@ -250,7 +250,7 @@ Fixes surfaced by the code review of phases 12–25. The first six are the confi
 
 - [x] **Make the active timeline row use the gold theme accent** — Replace the hardcoded cyan `0xFF00D9FF` on the active timeline row with `cs.tertiary` (gold), matching the Phase 20 redesign. Spec: `.ai-factory/notes/54-task-timeline-active-gold.md`. [3m 27s]
 
-- [ ] **Extract the duplicated BCI channel-quality mapper into `lib/BciModule/`** — Extract the duplicated `_mapLevel` + channel→DTO map into `lib/BciModule/BciChannelQualityMapping.dart` (must stay in `lib`, not the package — it imports the domain `BciSignalLevel`). Spec: `.ai-factory/notes/55-task-bci-channel-mapper-extract.md`.
+- [x] **Extract the duplicated BCI channel-quality mapper into `lib/BciModule/`** — Extract the duplicated `_mapLevel` + channel→DTO map into `lib/BciModule/BciChannelQualityMapping.dart` (must stay in `lib`, not the package — it imports the domain `BciSignalLevel`). Spec: `.ai-factory/notes/55-task-bci-channel-mapper-extract.md`. [8m 0s]
 
 - [ ] **Align `BciPairingViewModel` to subscribe in `build()`** — Move `BciPairingViewModel`'s subscription + `startScan()` into `build()` (canonical pattern) and drop the public `initState()` plus its call site in `BciPairingScreen`. Spec: `.ai-factory/notes/56-task-bcipairing-vm-build-subscription.md`.
 

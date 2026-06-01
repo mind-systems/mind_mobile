@@ -6,7 +6,7 @@ import 'package:mind/Bci/BciNotifier.dart';
 import 'package:mind/Bci/Models/BciNotifierEvent.dart';
 import 'package:mind/Bci/Models/BciConnectionState.dart';
 import 'package:mind/Bci/Models/BciCalibrationEvent.dart';
-import 'package:mind/Bci/Models/BciChannelQuality.dart';
+import 'package:mind/BciModule/BciChannelQualityMapping.dart';
 
 class BciPairingService implements IBciPairingService {
   final BciNotifier bciNotifier;
@@ -64,13 +64,7 @@ class BciPairingService implements IBciPairingService {
         return acc.copyWith(devices: dtos);
 
       case BciSignalQualityUpdated(:final channels):
-        final dtos = channels
-            .map((c) => BciChannelQualityDTO(
-                  channelName: c.channelName,
-                  quality: _mapLevel(c.level),
-                ))
-            .toList(growable: false);
-        return acc.copyWith(channels: dtos);
+        return acc.copyWith(channels: mapBciChannelQualities(channels));
 
       case BciCalibrationEventReceived(:final event):
         return _reduceCalibrationEvent(acc, event);
@@ -181,19 +175,6 @@ class BciPairingService implements IBciPairingService {
 
       case BciCalibrationFailed(:final reason):
         return acc.copyWith(calibration: null, errorMessage: reason);
-    }
-  }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  BciSignalQuality _mapLevel(BciSignalLevel level) {
-    switch (level) {
-      case BciSignalLevel.green:
-        return BciSignalQuality.good;
-      case BciSignalLevel.yellow:
-        return BciSignalQuality.fair;
-      case BciSignalLevel.red:
-        return BciSignalQuality.poor;
     }
   }
 }

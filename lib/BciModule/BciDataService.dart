@@ -3,7 +3,7 @@ import 'package:bci_module/bci_module.dart';
 import 'package:mind/Bci/BciNotifier.dart';
 import 'package:mind/Bci/Models/BciNotifierEvent.dart';
 import 'package:mind/Bci/Models/BciConnectionState.dart';
-import 'package:mind/Bci/Models/BciChannelQuality.dart';
+import 'package:mind/BciModule/BciChannelQualityMapping.dart';
 
 class BciDataService implements IBciDataService {
   final BciNotifier bciNotifier;
@@ -61,13 +61,7 @@ class BciDataService implements IBciDataService {
         return acc.copyWith(batteryPercent: percent);
 
       case BciSignalQualityUpdated(:final channels):
-        final dtos = channels
-            .map((c) => BciChannelQualityDTO(
-                  channelName: c.channelName,
-                  quality: _mapLevel(c.level),
-                ))
-            .toList(growable: false);
-        return acc.copyWith(channels: dtos);
+        return acc.copyWith(channels: mapBciChannelQualities(channels));
 
       case BciStateChanged(:final state):
         switch (state) {
@@ -94,19 +88,6 @@ class BciDataService implements IBciDataService {
       case BciCalibrationEventReceived():
       case BciError():
         return acc;
-    }
-  }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  BciSignalQuality _mapLevel(BciSignalLevel level) {
-    switch (level) {
-      case BciSignalLevel.green:
-        return BciSignalQuality.good;
-      case BciSignalLevel.yellow:
-        return BciSignalQuality.fair;
-      case BciSignalLevel.red:
-        return BciSignalQuality.poor;
     }
   }
 }
