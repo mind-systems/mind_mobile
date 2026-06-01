@@ -37,6 +37,9 @@ class BiometricStreamClient {
   /// Server-side response stream subscription.
   StreamSubscription<$bio.BioStreamResponse>? _responseSub;
 
+  /// Timestamp of the last stream-open attempt; used for the 2-second reopen cooldown.
+  DateTime? _lastOpenAttempt;
+
   BiometricStreamClient({
     required $bio.ModuleBiometricStreamServiceClient grpcStub,
     required Stream<ModuleStateEvent> moduleStateEvents,
@@ -51,6 +54,7 @@ class BiometricStreamClient {
       case ModuleSessionStarted(:final moduleSessionId):
         _currentSessionId = moduleSessionId;
         _isPaused = false;
+        _lastOpenAttempt = null;
       case ModuleSessionPaused():
         _isPaused = true;
       case ModuleSessionUnpaused():
@@ -58,6 +62,7 @@ class BiometricStreamClient {
       case ModuleSessionEnded() || ModuleSessionAbandoned():
         _currentSessionId = null;
         _isPaused = false;
+        _lastOpenAttempt = null;
         _replayRing.clear();
     }
   }
@@ -84,6 +89,12 @@ class BiometricStreamClient {
 
   void _ensureSinkOpen() {
     if (_sink != null) return;
+
+    if (_lastOpenAttempt != null &&
+        DateTime.now().difference(_lastOpenAttempt!) < const Duration(seconds: 2)) {
+      return;
+    }
+    _lastOpenAttempt = DateTime.now();
 
     _sink = StreamController<$bio.BioSampleBatch>();
     try {
