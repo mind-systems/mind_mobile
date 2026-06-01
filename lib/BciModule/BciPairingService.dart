@@ -15,7 +15,7 @@ class BciPairingService implements IBciPairingService {
 
   // NOTE: BciNotifier._subject is a BehaviorSubject that caches only the single
   // most-recent event. A new subscriber replays one event — not one per variant.
-  // BciPairingViewModel.initState() calls startScan() on mount to trigger fresh
+  // BciPairingViewModel.build() calls startScan() on subscribe to trigger fresh
   // emissions; do not assume full history is available on subscribe.
   @override
   Stream<BciPairingServiceEvent> observeChanges() {

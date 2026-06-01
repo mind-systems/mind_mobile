@@ -23,13 +23,9 @@ class BciPairingViewModel extends Notifier<BciPairingState> {
       _eventsSubscription?.cancel();
       _eventsSubscription = null;
     });
-    return BciPairingState.initial();
-  }
-
-  void initState() {
-    if (_eventsSubscription != null) return;
     _eventsSubscription = service.observeChanges().listen(_onServiceEvent);
     service.startScan();
+    return BciPairingState.initial();
   }
 
   void _onServiceEvent(BciPairingServiceEvent event) {

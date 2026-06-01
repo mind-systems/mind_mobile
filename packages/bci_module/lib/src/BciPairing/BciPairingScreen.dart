@@ -23,15 +23,6 @@ class BciPairingScreen extends ConsumerStatefulWidget {
 
 class _BciPairingScreenState extends ConsumerState<BciPairingScreen> {
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.read(bciPairingViewModelProvider.notifier).initState();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(

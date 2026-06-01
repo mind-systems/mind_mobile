@@ -252,7 +252,7 @@ Fixes surfaced by the code review of phases 12–25. The first six are the confi
 
 - [x] **Extract the duplicated BCI channel-quality mapper into `lib/BciModule/`** — Extract the duplicated `_mapLevel` + channel→DTO map into `lib/BciModule/BciChannelQualityMapping.dart` (must stay in `lib`, not the package — it imports the domain `BciSignalLevel`). Spec: `.ai-factory/notes/55-task-bci-channel-mapper-extract.md`. [8m 0s]
 
-- [ ] **Align `BciPairingViewModel` to subscribe in `build()`** — Move `BciPairingViewModel`'s subscription + `startScan()` into `build()` (canonical pattern) and drop the public `initState()` plus its call site in `BciPairingScreen`. Spec: `.ai-factory/notes/56-task-bcipairing-vm-build-subscription.md`.
+- [x] **Align `BciPairingViewModel` to subscribe in `build()`** — Move `BciPairingViewModel`'s subscription + `startScan()` into `build()` (canonical pattern) and drop the public `initState()` plus its call site in `BciPairingScreen`. Spec: `.ai-factory/notes/56-task-bcipairing-vm-build-subscription.md`. [7m 9s]
 
 - [ ] **Remove the dead cyan default `shapeColor` fallbacks** — Drop the unreachable cyan `shapeColor` defaults in `BreathShapeWidget`/`BreathShapePainter`, making the param required (single call site already passes `cs.tertiary`). Spec: `.ai-factory/notes/57-task-remove-dead-cyan-defaults.md`.
 
