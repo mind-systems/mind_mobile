@@ -238,7 +238,7 @@ Fixes surfaced by the code review of phases 12–25. The first six are the confi
 
 - [x] **Rate-limit `BiometricStreamClient` stream reopen** — Add a 2s reopen cooldown to `_ensureSinkOpen` so it stops thrashing `streamData` every 250ms during an outage (conservative interim for note 43 Q4; ring-loss tradeoff documented). Spec: `.ai-factory/notes/48-task-biometric-stream-reopen-cooldown.md`. [5m 54s]
 
-- [ ] **Cap the gRPC reconnect backoff exponent** — Clamp the reconnect backoff exponent (`pow(2, min(attempt, 6))`) in `GrpcConnectionManager._nextDelay` to prevent Duration overflow on a long outage. Spec: `.ai-factory/notes/49-task-grpc-backoff-exponent-cap.md`.
+- [x] **Cap the gRPC reconnect backoff exponent** — Clamp the reconnect backoff exponent (`pow(2, min(attempt, 6))`) in `GrpcConnectionManager._nextDelay` to prevent Duration overflow on a long outage. Spec: `.ai-factory/notes/49-task-grpc-backoff-exponent-cap.md`. [2m 51s]
 
 - [ ] **Clear stale battery on disconnect in the pairing reducer** — Add `batteryPercent: null` to the `disconnected` branch in `BciPairingService` so the pairing header doesn't show a stale percentage. Spec: `.ai-factory/notes/50-task-pairing-battery-clear-on-disconnect.md`.
 

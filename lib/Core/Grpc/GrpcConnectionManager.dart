@@ -114,7 +114,8 @@ class GrpcConnectionManager {
   // ── Reconnect infrastructure ──────────────────────────────────────────────
 
   Duration _nextDelay() {
-    final base = _initialDelay * math.pow(2, _reconnectAttempt);
+    final exp = math.min(_reconnectAttempt, 6);
+    final base = _initialDelay * math.pow(2, exp);
     final clamped =
         base.inMilliseconds < _maxDelay.inMilliseconds ? base : _maxDelay;
     final jitter =
