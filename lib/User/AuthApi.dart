@@ -1,7 +1,10 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:grpc/grpc.dart';
 import 'package:mind/Core/Grpc/generated/auth.pb.dart' as proto;
 import 'package:mind/Core/Grpc/generated/auth.pbgrpc.dart';
 import 'package:mind/User/IAuthApi.dart';
+import 'package:mind/User/Models/OtpLockedException.dart';
+import 'package:mind/User/Models/OtpSendCooldownException.dart';
 import 'package:mind/User/Models/User.dart';
 
 class AuthApi implements IAuthApi {
@@ -14,14 +17,24 @@ class AuthApi implements IAuthApi {
 
   @override
   Future<void> sendCode({required String email, required String locale}) async {
-    await _authService.sendCode(proto.SendCodeRequest(email: email, locale: locale));
+    try {
+      await _authService.sendCode(proto.SendCodeRequest(email: email, locale: locale));
+    } on GrpcError catch (e) {
+      if (e.code == StatusCode.resourceExhausted) throw const OtpSendCooldownException();
+      rethrow;
+    }
   }
 
   @override
   Future<User> verifyCode({required String email, required String code, String? language}) async {
-    final response = await _authService.verifyCode(proto.VerifyCodeRequest(email: email, code: code, language: language));
-    await _storage.write(key: _tokenKey, value: response.accessToken);
-    return _mapUser(response.user);
+    try {
+      final response = await _authService.verifyCode(proto.VerifyCodeRequest(email: email, code: code, language: language));
+      await _storage.write(key: _tokenKey, value: response.accessToken);
+      return _mapUser(response.user);
+    } on GrpcError catch (e) {
+      if (e.code == StatusCode.resourceExhausted) throw const OtpLockedException();
+      rethrow;
+    }
   }
 
   @override

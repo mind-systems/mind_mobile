@@ -1,6 +1,8 @@
 enum LoginError {
   sendCodeFailed,
   codeInvalidOrExpired,
+  tooManyAttempts,
+  sendCodeCooldown,
 }
 
 class LoginState {

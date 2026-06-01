@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
+import 'package:mind/User/Models/OtpLockedException.dart';
+import 'package:mind/User/Models/OtpSendCooldownException.dart';
 import 'package:mind/User/Presentation/Login/ILoginService.dart';
 import 'package:mind/User/Presentation/Login/Models/LoginState.dart';
 
@@ -50,7 +52,10 @@ class LoginViewModel extends Notifier<LoginState> {
       await service.sendPasswordlessSignInLink(state.email);
       state = state.copyWith(isLoading: false);
       onSuccessEvent?.call();
-    } catch (e) {
+    } on OtpSendCooldownException {
+      state = state.copyWith(isLoading: false);
+      onErrorEvent?.call(LoginError.sendCodeCooldown);
+    } catch (_) {
       state = state.copyWith(isLoading: false);
       onErrorEvent?.call(LoginError.sendCodeFailed);
     }
@@ -62,7 +67,10 @@ class LoginViewModel extends Notifier<LoginState> {
     try {
       await service.completePasswordlessSignIn(code);
       state = state.copyWith(isLoading: false);
-    } catch (e) {
+    } on OtpLockedException {
+      state = state.copyWith(isLoading: false);
+      onErrorEvent?.call(LoginError.tooManyAttempts);
+    } catch (_) {
       state = state.copyWith(isLoading: false);
       onErrorEvent?.call(LoginError.codeInvalidOrExpired);
     }

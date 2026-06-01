@@ -33,6 +33,8 @@
   "loginCodeHint": "Or paste your code here",
   "loginSendCodeError": "Failed to send code",
   "loginCodeInvalidError": "Code is invalid or expired",
+  "loginTooManyAttemptsError": "Too many attempts. Request a new code and try again in a few minutes.",
+  "loginSendCodeCooldownError": "Please wait a moment before requesting another code.",
   "logOutDescription": "Come back again soon",
 
   "breathPhaseInhale": "Inhale",

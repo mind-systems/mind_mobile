@@ -95,6 +95,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginCodeInvalidError => 'Code is invalid or expired';
 
   @override
+  String get loginTooManyAttemptsError =>
+      'Too many attempts. Request a new code and try again in a few minutes.';
+
+  @override
+  String get loginSendCodeCooldownError =>
+      'Please wait a moment before requesting another code.';
+
+  @override
   String get logOutDescription => 'Come back again soon';
 
   @override

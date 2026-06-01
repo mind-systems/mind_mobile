@@ -32,6 +32,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final message = switch (error) {
           LoginError.sendCodeFailed => l10n.loginSendCodeError,
           LoginError.codeInvalidOrExpired => l10n.loginCodeInvalidError,
+          LoginError.tooManyAttempts => l10n.loginTooManyAttemptsError,
+          LoginError.sendCodeCooldown => l10n.loginSendCodeCooldownError,
         };
         AppAlert.show(context, title: l10n.error, description: message);
       };

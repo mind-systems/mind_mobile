@@ -33,6 +33,8 @@
   "loginCodeHint": "Или вставьте код здесь",
   "loginSendCodeError": "Не удалось отправить код",
   "loginCodeInvalidError": "Код недействителен или истёк",
+  "loginTooManyAttemptsError": "Слишком много попыток. Запросите новый код и попробуйте через несколько минут.",
+  "loginSendCodeCooldownError": "Подождите немного перед повторным запросом кода.",
   "logOutDescription": "Возвращайтесь скорее",
 
   "breathPhaseInhale": "Вдох",

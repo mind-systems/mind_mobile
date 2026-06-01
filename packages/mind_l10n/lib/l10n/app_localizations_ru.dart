@@ -95,6 +95,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get loginCodeInvalidError => 'Код недействителен или истёк';
 
   @override
+  String get loginTooManyAttemptsError =>
+      'Слишком много попыток. Запросите новый код и попробуйте через несколько минут.';
+
+  @override
+  String get loginSendCodeCooldownError =>
+      'Подождите немного перед повторным запросом кода.';
+
+  @override
   String get logOutDescription => 'Возвращайтесь скорее';
 
   @override

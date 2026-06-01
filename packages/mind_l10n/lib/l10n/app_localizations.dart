@@ -266,6 +266,18 @@ abstract class AppLocalizations {
   /// **'Code is invalid or expired'**
   String get loginCodeInvalidError;
 
+  /// No description provided for @loginTooManyAttemptsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Request a new code and try again in a few minutes.'**
+  String get loginTooManyAttemptsError;
+
+  /// No description provided for @loginSendCodeCooldownError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait a moment before requesting another code.'**
+  String get loginSendCodeCooldownError;
+
   /// No description provided for @logOutDescription.
   ///
   /// In en, this message translates to:
