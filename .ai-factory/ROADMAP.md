@@ -240,7 +240,7 @@ Fixes surfaced by the code review of phases 12–25. The first six are the confi
 
 - [x] **Cap the gRPC reconnect backoff exponent** — Clamp the reconnect backoff exponent (`pow(2, min(attempt, 6))`) in `GrpcConnectionManager._nextDelay` to prevent Duration overflow on a long outage. Spec: `.ai-factory/notes/49-task-grpc-backoff-exponent-cap.md`. [2m 51s]
 
-- [ ] **Clear stale battery on disconnect in the pairing reducer** — Add `batteryPercent: null` to the `disconnected` branch in `BciPairingService` so the pairing header doesn't show a stale percentage. Spec: `.ai-factory/notes/50-task-pairing-battery-clear-on-disconnect.md`.
+- [x] **Clear stale battery on disconnect in the pairing reducer** — Add `batteryPercent: null` to the `disconnected` branch in `BciPairingService` so the pairing header doesn't show a stale percentage. Spec: `.ai-factory/notes/50-task-pairing-battery-clear-on-disconnect.md`. [3m 6s]
 
 - [ ] **Remove leftover `[Sound]` debug instrumentation** — Delete the leftover `_ts()` helper + `[Sound]` `debugPrint` lines from `BreathSoundCoordinator` (same class of throwaway logs Phase 16 already stripped). Spec: `.ai-factory/notes/51-task-remove-sound-debug-logs.md`.
 

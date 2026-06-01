@@ -101,6 +101,7 @@ class BciPairingService implements IBciPairingService {
           isBluetoothPermissionDenied: false,
           calibration: null,                         // cleared via _undefined sentinel
           channels: const <BciChannelQualityDTO>[], // MUST be empty list — null is a no-op
+          batteryPercent: null,                      // cleared via _undefined sentinel
           errorMessage: null,                        // cleared via _undefined sentinel
         );
 
@@ -119,6 +120,7 @@ class BciPairingService implements IBciPairingService {
           isScanning: false,
           isConnecting: false,
           isBluetoothPermissionDenied: true,
+          batteryPercent: null,                      // cleared via _undefined sentinel
           errorMessage: null,
         );
 
