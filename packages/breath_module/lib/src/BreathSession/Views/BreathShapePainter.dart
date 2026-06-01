@@ -16,7 +16,7 @@ class BreathShapePainter extends CustomPainter {
   BreathShapePainter({
     required this.shapeShifter,
     required this.normalizedTime,
-    this.shapeColor = const Color(0xFF00D9FF),
+    required this.shapeColor,
     this.pointColor = const Color(0xFFFFFFFF),
     this.shapeStrokeWidth = 3.0,
     this.pointRadius = 8.0,

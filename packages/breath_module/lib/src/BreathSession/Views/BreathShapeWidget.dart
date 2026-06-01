@@ -7,7 +7,7 @@ class BreathShapeWidget extends StatelessWidget {
   final BreathMotionEngine motionController;
   final BreathShapeShifter shapeController;
 
-  final Color? shapeColor;
+  final Color shapeColor;
   final Color? pointColor;
   final double? strokeWidth;
   final double? pointRadius;
@@ -16,7 +16,7 @@ class BreathShapeWidget extends StatelessWidget {
     super.key,
     required this.motionController,
     required this.shapeController,
-    this.shapeColor,
+    required this.shapeColor,
     this.pointColor,
     this.strokeWidth,
     this.pointRadius,
@@ -43,7 +43,7 @@ class BreathShapeWidget extends StatelessWidget {
               painter: BreathShapePainter(
                 shapeShifter: shapeController,
                 normalizedTime: motionController.normalizedPosition,
-                shapeColor: shapeColor ?? const Color(0xFF00D9FF),
+                shapeColor: shapeColor,
                 pointColor: pointColor ?? const Color(0xFFFFFFFF),
                 shapeStrokeWidth: strokeWidth ?? 3.0,
                 pointRadius: pointRadius ?? 8.0,
