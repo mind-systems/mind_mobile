@@ -208,10 +208,11 @@ class _TimelineItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final opacity = isActive ? 1.0 : 0.6;
     final scale = isActive ? 1.15 : 1.0;
     final color =
-    isActive ? const Color(0xFF00D9FF) : Colors.white.withValues(alpha: 0.45);
+        isActive ? cs.tertiary : Colors.white.withValues(alpha: 0.45);
     final textStyle = TextStyle(
       fontSize: itemHeight * (isActive ? _kActiveFontRatio : _kInactiveFontRatio),
       fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,

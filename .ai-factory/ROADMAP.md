@@ -248,7 +248,7 @@ Fixes surfaced by the code review of phases 12–25. The first six are the confi
 
 - [x] **Carry `individualPeakFrequency` through the NFB calibration round-trip** — Add `individualPeakFrequency` to `NfbCalibrationData` (+ backward-compat `fromJson`) and capture/restore it separately, fixing the local + live-SDK round-trip. Durable server sync depends on mind_api adding the proto field (accepted — their Phase 29; contract in note 60, incl. the `0.0`-means-absent rule); regen stubs + map `NfbCalibrationGrpcApi` only after it ships. Spec: `.ai-factory/notes/53-task-calibration-peak-frequency-roundtrip.md`. [8m 58s]
 
-- [ ] **Make the active timeline row use the gold theme accent** — Replace the hardcoded cyan `0xFF00D9FF` on the active timeline row with `cs.tertiary` (gold), matching the Phase 20 redesign. Spec: `.ai-factory/notes/54-task-timeline-active-gold.md`.
+- [x] **Make the active timeline row use the gold theme accent** — Replace the hardcoded cyan `0xFF00D9FF` on the active timeline row with `cs.tertiary` (gold), matching the Phase 20 redesign. Spec: `.ai-factory/notes/54-task-timeline-active-gold.md`. [3m 27s]
 
 - [ ] **Extract the duplicated BCI channel-quality mapper into `lib/BciModule/`** — Extract the duplicated `_mapLevel` + channel→DTO map into `lib/BciModule/BciChannelQualityMapping.dart` (must stay in `lib`, not the package — it imports the domain `BciSignalLevel`). Spec: `.ai-factory/notes/55-task-bci-channel-mapper-extract.md`.
 
