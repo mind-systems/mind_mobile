@@ -30,7 +30,10 @@ class MeditationModuleStateChannel {
       _started = true;
     } else if (status == MeditationSessionStatus.idle && _started && !_ended) {
       _channel.end();
-      _ended = true;
+      // Re-arm so the next Start→Stop cycle fires fresh lifecycle events.
+      // Mirrors BreathModuleStateChannel.reset() (BreathModuleStateChannel.dart:110-113).
+      _started = false;
+      _ended = false;
     }
     _previousStatus = status;
   }

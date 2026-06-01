@@ -232,7 +232,7 @@ Copy the breath module skeleton into a parallel meditation module. Poses are a h
 
 Fixes surfaced by the code review of phases 12–25. The first six are the confident, decision-free fixes (full specs: `.ai-factory/notes/42-roadmap-review-fix-tasks.md`). The remaining six were originally open questions, now resolved by a cross-project investigation (`neiry_kit`/`mind_api`) with evidence and decisions in `.ai-factory/notes/44-open-questions-resolved.md`. Only one item stays open by choice — the biometric-stream reconnect architecture (Q4): Task 3's cooldown is the interim, full `GrpcConnectionManager` coordination is the alternative; see note 44. No `mind_api` or `neiry_kit` changes are required by any task here.
 
-- [ ] **Make meditation Stop reset the lifecycle (re-arm the state-channel) so each session is tracked** — Meditation's one-shot `_started`/`_ended` never re-arm, so any session after the first in a screen mount records nothing (no lifecycle, no biometrics); re-arm on `active→idle` to mirror breath's `reset()`. Spec: `.ai-factory/notes/46-task-meditation-stop-reset.md`.
+- [x] **Make meditation Stop reset the lifecycle (re-arm the state-channel) so each session is tracked** — Meditation's one-shot `_started`/`_ended` never re-arm, so any session after the first in a screen mount records nothing (no lifecycle, no biometrics); re-arm on `active→idle` to mirror breath's `reset()`. Spec: `.ai-factory/notes/46-task-meditation-stop-reset.md`. [4m 50s]
 
 - [ ] **Guard `AudioOneShot.play()` against an in-flight `load()`** — Add a `_loading` guard so `AudioOneShot.play()` no-ops during an in-flight `load()`, killing the tick-source-toggle race. Spec: `.ai-factory/notes/47-task-audio-oneshot-load-guard.md`.
 
