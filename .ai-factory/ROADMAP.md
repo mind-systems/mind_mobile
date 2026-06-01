@@ -234,7 +234,7 @@ Fixes surfaced by the code review of phases 12–25. The first six are the confi
 
 - [x] **Make meditation Stop reset the lifecycle (re-arm the state-channel) so each session is tracked** — Meditation's one-shot `_started`/`_ended` never re-arm, so any session after the first in a screen mount records nothing (no lifecycle, no biometrics); re-arm on `active→idle` to mirror breath's `reset()`. Spec: `.ai-factory/notes/46-task-meditation-stop-reset.md`. [4m 50s]
 
-- [ ] **Guard `AudioOneShot.play()` against an in-flight `load()`** — Add a `_loading` guard so `AudioOneShot.play()` no-ops during an in-flight `load()`, killing the tick-source-toggle race. Spec: `.ai-factory/notes/47-task-audio-oneshot-load-guard.md`.
+- [x] **Guard `AudioOneShot.play()` against an in-flight `load()`** — Add a `_loading` guard so `AudioOneShot.play()` no-ops during an in-flight `load()`, killing the tick-source-toggle race. Spec: `.ai-factory/notes/47-task-audio-oneshot-load-guard.md`. [3m 13s]
 
 - [ ] **Rate-limit `BiometricStreamClient` stream reopen** — Add a 2s reopen cooldown to `_ensureSinkOpen` so it stops thrashing `streamData` every 250ms during an outage (conservative interim for note 43 Q4; ring-loss tradeoff documented). Spec: `.ai-factory/notes/48-task-biometric-stream-reopen-cooldown.md`.
 

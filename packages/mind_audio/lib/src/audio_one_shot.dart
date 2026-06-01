@@ -7,14 +7,23 @@ import 'package:just_audio/just_audio.dart';
 /// seek-and-go with no async overhead on the hot path.
 class AudioOneShot {
   final AudioPlayer _player = AudioPlayer();
+  bool _loading = false;
 
   /// Buffers [source] so that each subsequent [play] only needs seek + play.
   Future<void> load(AudioSource source) async {
-    await _player.setAudioSource(source);
+    _loading = true;
+    try {
+      await _player.setAudioSource(source);
+    } finally {
+      _loading = false;
+    }
   }
 
   /// Seeks to the start of the buffered source and plays it. Fire-and-forget.
+  /// No-ops if a [load] is currently in progress to avoid a seek on a
+  /// half-initialised source.
   void play() {
+    if (_loading) return;
     unawaited(_player.seek(Duration.zero).then((_) => _player.play()));
   }
 
