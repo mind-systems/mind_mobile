@@ -53,9 +53,8 @@ class UserNotifier {
     try {
       final authenticatedUser = await repository.completePasswordlessSignIn(code, language: language);
       _subject.add(AuthenticatedState(authenticatedUser));
-    } catch (e) {
-      _authErrorSubject.add(e.toString());
-      rethrow;
+    } catch (_) {
+      rethrow; // both callers surface a localized message; no raw publish needed
     } finally {
       _authInProgressSubject.add(false);
     }

@@ -193,17 +193,18 @@ void main() {
   });
 
   group('authErrorStream', () {
-    test('emits error string when completePasswordlessSignIn fails', () async {
-      final errorFuture = expectLater(
-        userNotifier.authErrorStream,
-        emits(contains('invalid code')),
-      );
+    test('does NOT emit when completePasswordlessSignIn fails', () async {
+      final errors = <String>[];
+      userNotifier.authErrorStream.listen(errors.add);
 
       final future = userNotifier.completePasswordlessSignIn('bad-code');
       fakeRepo.failSignIn(Exception('invalid code'));
 
       await expectLater(future, throwsA(isA<Exception>()));
-      await errorFuture;
+      await Future.delayed(Duration.zero);
+
+      expect(errors, isEmpty,
+          reason: 'callers show their own localized message; no raw publish needed');
     });
 
     test('does NOT emit when completePasswordlessSignIn succeeds', () async {

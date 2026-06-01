@@ -29,7 +29,7 @@
 
 ## Ошибки
 
-Если аутентификация через диплинк падает, `UserNotifier` публикует сообщение в `authErrorStream`, `GlobalListeners` показывает снэкбар — даже если экран входа уже закрыт.
+Если аутентификация через диплинк падает, `AuthCodeDeeplinkHandler` показывает локализованный снэкбар напрямую через `rootScaffoldMessengerKey` — даже если экран входа уже закрыт. При превышении лимита попыток (`OtpLockedException`) отображается `loginTooManyAttemptsError`; для любой другой ошибки (истёкшая или уже использованная ссылка) — `loginCodeInvalidError`.
 
 ## See Also
 

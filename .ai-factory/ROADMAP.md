@@ -262,6 +262,6 @@ Cross-project change driven by `mind_api` Phase 27 (passwordless OTP brute-force
 
 - [x] **Distinguish OTP lockout (`RESOURCE_EXHAUSTED`) from wrong code (`UNAUTHENTICATED`) on the interactive login path** — Map the new `VerifyCode` `RESOURCE_EXHAUSTED` lockout (vs `UNAUTHENTICATED`) to a typed exception + `LoginError.tooManyAttempts` recovery UX on the interactive login path; distinguish strictly by status code, never auto-resend. Spec: `.ai-factory/notes/58-task-otp-lockout-interactive.md`. [14m 42s]
 
-- [ ] **Cover the magic-link/deeplink verification path for OTP lockout** — Handle `OtpLockedException` on the magic-link path (`AuthCodeDeeplinkHandler`/`DeeplinkRouter`, currently uncaught) and surface the same localized recovery via the global snackbar; guard against a double snackbar. Depends on the previous task. Spec: `.ai-factory/notes/59-task-otp-lockout-deeplink.md`.
+- [x] **Cover the magic-link/deeplink verification path for OTP lockout** — Handle `OtpLockedException` on the magic-link path (`AuthCodeDeeplinkHandler`/`DeeplinkRouter`, currently uncaught) and surface the same localized recovery via the global snackbar; guard against a double snackbar. Depends on the previous task. Spec: `.ai-factory/notes/59-task-otp-lockout-deeplink.md`. [15m 43s]
 
 ---STOP---
