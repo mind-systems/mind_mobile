@@ -244,7 +244,7 @@ Fixes surfaced by the code review of phases 12–25. The first six are the confi
 
 - [x] **Remove leftover `[Sound]` debug instrumentation** — Delete the leftover `_ts()` helper + `[Sound]` `debugPrint` lines from `BreathSoundCoordinator` (same class of throwaway logs Phase 16 already stripped). Spec: `.ai-factory/notes/51-task-remove-sound-debug-logs.md`. [5m 15s]
 
-- [ ] **Tear down the neiry `Device` on an unexpected disconnect so auto-reconnect works** — On a native drop, tear down + null `_device`/classifiers BEFORE emitting `disconnected` so `BciDeviceManager`'s reconnect recreates a fresh device (classifiers are non-idempotent → SIGABRT if reused). Needs on-device drop test. Spec: `.ai-factory/notes/52-task-neiry-device-teardown-on-drop.md`.
+- [x] **Tear down the neiry `Device` on an unexpected disconnect so auto-reconnect works** — On a native drop, tear down + null `_device`/classifiers BEFORE emitting `disconnected` so `BciDeviceManager`'s reconnect recreates a fresh device (classifiers are non-idempotent → SIGABRT if reused). Needs on-device drop test. Spec: `.ai-factory/notes/52-task-neiry-device-teardown-on-drop.md`. [8m 7s]
 
 - [ ] **Carry `individualPeakFrequency` through the NFB calibration round-trip** — Add `individualPeakFrequency` to `NfbCalibrationData` (+ backward-compat `fromJson`) and capture/restore it separately, fixing the local + live-SDK round-trip. Durable server sync depends on mind_api adding the proto field (accepted — their Phase 29; contract in note 60, incl. the `0.0`-means-absent rule); regen stubs + map `NfbCalibrationGrpcApi` only after it ships. Spec: `.ai-factory/notes/53-task-calibration-peak-frequency-roundtrip.md`.
 

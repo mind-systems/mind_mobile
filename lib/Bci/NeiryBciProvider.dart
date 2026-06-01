@@ -248,9 +248,17 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       case neiry.NeiryConnectionState.connected:
         _connectionStateController.add(BciConnectionState.connecting);
       case neiry.NeiryConnectionState.disconnected:
+        // Idempotency guard: our own disconnect() already nulls _device and
+        // emits; a second native event in that window is redundant noise.
+        if (_device == null) return;
+        // Null fields synchronously BEFORE emitting — reconnect's connect()
+        // throws StateError if _device is non-null when it runs.
+        _teardownAfterUnexpectedDrop();
         _connectionStateController.add(BciConnectionState.disconnected);
       case neiry.NeiryConnectionState.unsupportedConnection:
+        if (_device == null) return;
         logPrint('NeiryBciProvider: unsupported connection');
+        _teardownAfterUnexpectedDrop();
         _connectionStateController.add(BciConnectionState.disconnected);
     }
   }
@@ -409,6 +417,89 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   }
 
   // ── disconnect() ────────────────────────────────────────────────────────────
+
+  /// Captures device + classifier + subscription fields into locals, nulls
+  /// them immediately (so reconnect sees a clean slate), then schedules the
+  /// actual heavy disposal asynchronously to avoid re-entrancy while
+  /// [_connectionSub]'s callback is still on the stack.
+  ///
+  /// Does NOT touch [_calibrationSub] or the [StreamController]s — they must
+  /// stay alive so reconnect can resume emitting.
+  void _teardownAfterUnexpectedDrop() {
+    final device = _device;
+    final nfbClassifier = _nfbClassifier;
+    final cardioClassifier = _cardioClassifier;
+    final emotionsClassifier = _emotionsClassifier;
+    final memsClassifier = _memsClassifier;
+
+    final connectionSub = _connectionSub;
+    final resistanceSub = _resistanceSub;
+    final batterySub = _batterySub;
+    final nfbSub = _nfbSub;
+    final nfbErrorSub = _nfbErrorSub;
+    final cardioSub = _cardioSub;
+    final rrSub = _rrSub;
+    final emotionsSub = _emotionsSub;
+    final emotionsErrorSub = _emotionsErrorSub;
+    final memsSub = _memsSub;
+
+    _device = null;
+    _nfbClassifier = null;
+    _cardioClassifier = null;
+    _emotionsClassifier = null;
+    _memsClassifier = null;
+
+    _connectionSub = null;
+    _resistanceSub = null;
+    _batterySub = null;
+    _nfbSub = null;
+    _nfbErrorSub = null;
+    _cardioSub = null;
+    _rrSub = null;
+    _emotionsSub = null;
+    _emotionsErrorSub = null;
+    _memsSub = null;
+
+    unawaited(Future.microtask(() async {
+      await connectionSub?.cancel();
+      await resistanceSub?.cancel();
+      await batterySub?.cancel();
+      await nfbSub?.cancel();
+      await nfbErrorSub?.cancel();
+      await cardioSub?.cancel();
+      await rrSub?.cancel();
+      await emotionsSub?.cancel();
+      await emotionsErrorSub?.cancel();
+      await memsSub?.cancel();
+
+      try {
+        await nfbClassifier?.dispose();
+      } catch (e) {
+        logPrint('NeiryBciProvider: nfb dispose error: $e');
+      }
+      try {
+        await cardioClassifier?.dispose();
+      } catch (e) {
+        logPrint('NeiryBciProvider: cardio dispose error: $e');
+      }
+      try {
+        await emotionsClassifier?.dispose();
+      } catch (e) {
+        logPrint('NeiryBciProvider: emotions dispose error: $e');
+      }
+      try {
+        await memsClassifier?.dispose();
+      } catch (e) {
+        logPrint('NeiryBciProvider: mems dispose error: $e');
+      }
+      try {
+        await device?.disconnect();
+        await device?.dispose();
+      } catch (e) {
+        logPrint('NeiryBciProvider: unexpected drop dispose error: $e');
+      }
+    }));
+  }
 
   Future<void> _cancelDeviceSubscriptions() async {
     await _connectionSub?.cancel();
