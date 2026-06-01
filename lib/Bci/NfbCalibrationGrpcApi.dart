@@ -39,6 +39,8 @@ class NfbCalibrationGrpcApi {
       isValid: r.isValid,
       failReason: r.failReason,
       individualFrequency: r.individualFrequency,
+      // TODO(mind_api Phase 29): use r.individualPeakFrequency with the <=0 sentinel rule.
+      individualPeakFrequency: r.individualFrequency,
       individualPeakFrequencyPower: r.individualPeakFrequencyPower,
       individualPeakFrequencySuppression: r.individualPeakFrequencySuppression,
       individualBandwidth: r.individualBandwidth,

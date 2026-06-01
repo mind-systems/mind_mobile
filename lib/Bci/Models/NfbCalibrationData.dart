@@ -20,6 +20,7 @@ class NfbCalibrationData {
   final String failReason;
 
   final double individualFrequency;
+  final double individualPeakFrequency;
   final double individualPeakFrequencyPower;
   final double individualPeakFrequencySuppression;
   final double individualBandwidth;
@@ -32,6 +33,7 @@ class NfbCalibrationData {
     required this.isValid,
     required this.failReason,
     required this.individualFrequency,
+    required this.individualPeakFrequency,
     required this.individualPeakFrequencyPower,
     required this.individualPeakFrequencySuppression,
     required this.individualBandwidth,
@@ -46,6 +48,7 @@ class NfbCalibrationData {
       'isValid': isValid,
       'failReason': failReason,
       'individualFrequency': individualFrequency,
+      'individualPeakFrequency': individualPeakFrequency,
       'individualPeakFrequencyPower': individualPeakFrequencyPower,
       'individualPeakFrequencySuppression': individualPeakFrequencySuppression,
       'individualBandwidth': individualBandwidth,
@@ -61,6 +64,7 @@ class NfbCalibrationData {
       isValid: json['isValid'] as bool,
       failReason: json['failReason'] as String,
       individualFrequency: (json['individualFrequency'] as num).toDouble(),
+      individualPeakFrequency: ((json['individualPeakFrequency'] ?? json['individualFrequency']) as num).toDouble(),
       individualPeakFrequencyPower: (json['individualPeakFrequencyPower'] as num).toDouble(),
       individualPeakFrequencySuppression: (json['individualPeakFrequencySuppression'] as num).toDouble(),
       individualBandwidth: (json['individualBandwidth'] as num).toDouble(),

@@ -378,6 +378,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
               isValid: data.isValid,
               failReason: data.failReason.name,
               individualFrequency: data.individualFrequency,
+              individualPeakFrequency: data.individualPeakFrequency,
               individualPeakFrequencyPower: data.individualPeakFrequencyPower,
               individualPeakFrequencySuppression: data.individualPeakFrequencySuppression,
               individualBandwidth: data.individualBandwidth,
@@ -404,7 +405,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       failReason: neiry.NfbCalibrationFailReason.values
           .firstWhere((e) => e.name == data.failReason),
       individualFrequency: data.individualFrequency,
-      individualPeakFrequency: data.individualFrequency,
+      individualPeakFrequency: data.individualPeakFrequency,
       individualPeakFrequencyPower: data.individualPeakFrequencyPower,
       individualPeakFrequencySuppression:
           data.individualPeakFrequencySuppression,
