@@ -242,7 +242,7 @@ Fixes surfaced by the code review of phases 12–25. The first six are the confi
 
 - [x] **Clear stale battery on disconnect in the pairing reducer** — Add `batteryPercent: null` to the `disconnected` branch in `BciPairingService` so the pairing header doesn't show a stale percentage. Spec: `.ai-factory/notes/50-task-pairing-battery-clear-on-disconnect.md`. [3m 6s]
 
-- [ ] **Remove leftover `[Sound]` debug instrumentation** — Delete the leftover `_ts()` helper + `[Sound]` `debugPrint` lines from `BreathSoundCoordinator` (same class of throwaway logs Phase 16 already stripped). Spec: `.ai-factory/notes/51-task-remove-sound-debug-logs.md`.
+- [x] **Remove leftover `[Sound]` debug instrumentation** — Delete the leftover `_ts()` helper + `[Sound]` `debugPrint` lines from `BreathSoundCoordinator` (same class of throwaway logs Phase 16 already stripped). Spec: `.ai-factory/notes/51-task-remove-sound-debug-logs.md`. [5m 15s]
 
 - [ ] **Tear down the neiry `Device` on an unexpected disconnect so auto-reconnect works** — On a native drop, tear down + null `_device`/classifiers BEFORE emitting `disconnected` so `BciDeviceManager`'s reconnect recreates a fresh device (classifiers are non-idempotent → SIGABRT if reused). Needs on-device drop test. Spec: `.ai-factory/notes/52-task-neiry-device-teardown-on-drop.md`.
 

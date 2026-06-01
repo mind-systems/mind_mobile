@@ -6,12 +6,6 @@ import '../../CommonModels/TickSource.dart';
 import '../Models/BreathSessionState.dart';
 import '../BreathSessionViewModel.dart';
 
-String _ts() {
-  final now = DateTime.now();
-  final ms = now.millisecond.toString().padLeft(3, '0');
-  return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}.$ms';
-}
-
 class BreathSoundCoordinator {
   final BreathViewModel viewModel;
   final AudioLooper _looper;
@@ -88,7 +82,6 @@ class BreathSoundCoordinator {
     if (_isInitialized) return;
     _isInitialized = true;
     _currentTickSource = initialState.tickSource;
-    if (kDebugMode) debugPrint('${_ts()} [Sound] initialize start');
     unawaited(_initAudio());
   }
 
@@ -109,7 +102,6 @@ class BreathSoundCoordinator {
     _tickSub = viewModel.tickStream.listen((_) => _onTick());
     _stateListener = viewModel.listen(_onStateChanged);
     _onStateChanged(viewModel.currentState);
-    if (kDebugMode) debugPrint('${_ts()} [Sound] initialize ready — listeners attached');
   }
 
   void reset() {
@@ -176,9 +168,7 @@ class BreathSoundCoordinator {
 
     // 3. Status changes
     if (state.status != _currentStatus) {
-      final prev = _currentStatus;
       _currentStatus = state.status;
-      if (kDebugMode) debugPrint('${_ts()} [Sound] status: $prev → ${state.status}  phase=${state.phase}  currentPhase=$_currentPhase');
       // Track phase unconditionally so toggleMute restores the correct track.
       final bool phaseChangedForBreath = state.status == BreathSessionStatus.breath &&
           _phaseAssets.containsKey(state.phase) &&
@@ -191,7 +181,6 @@ class BreathSoundCoordinator {
           case BreathSessionStatus.breath:
             if (phaseChangedForBreath) {
               final fadeDuration = _computeFadeDuration(state);
-              if (kDebugMode) debugPrint('${_ts()} [Sound] status→breath crossfadeTo  phase=${state.phase}  fade=${fadeDuration.inMilliseconds}ms');
               _looper.crossfadeTo(_phaseOrder.indexOf(state.phase), fadeDuration);
             } else {
               _looper.fadeIn(const Duration(milliseconds: 200));
@@ -206,13 +195,10 @@ class BreathSoundCoordinator {
 
     // 4. Phase changes
     if (state.phase != _currentPhase) {
-      final prev = _currentPhase;
       _currentPhase = state.phase;
-      if (kDebugMode) debugPrint('${_ts()} [Sound] phase: $prev → ${state.phase}  remaining=${state.remainingTicks}  currentStatus=$_currentStatus');
       if (!isMuted.value) {
         if (_phaseAssets.containsKey(state.phase)) {
           final fadeDuration = _computeFadeDuration(state);
-          if (kDebugMode) debugPrint('${_ts()} [Sound] phase change crossfadeTo  phase=${state.phase}  fade=${fadeDuration.inMilliseconds}ms');
           _looper.crossfadeTo(_phaseOrder.indexOf(state.phase), fadeDuration);
         } else {
           _looper.fadeOut(const Duration(milliseconds: 500));
@@ -229,7 +215,6 @@ class BreathSoundCoordinator {
         _currentStatus == BreathSessionStatus.rest ||
         (_currentStatus == BreathSessionStatus.breath &&
             _currentPhase == BreathPhase.rest);
-    if (kDebugMode) debugPrint('${_ts()} [Sound] _onTick  status=$_currentStatus  phase=$_currentPhase  allowed=$allowTick');
     if (!allowTick) return;
     _oneShot.play();
   }
