@@ -281,9 +281,9 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       final name = r.channelNames[i];
       final value = r.values[i];
       final BciSignalLevel level;
-      if (!value.isFinite || value > 200) {
+      if (!value.isFinite || value > 1000) {
         level = BciSignalLevel.red;
-      } else if (value > 50) {
+      } else if (value > 500) {
         level = BciSignalLevel.yellow;
       } else {
         level = BciSignalLevel.green;
