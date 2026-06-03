@@ -70,8 +70,8 @@ class _SuggestionsShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final base = theme.colorScheme.surfaceContainerHighest;
-    final highlight = theme.colorScheme.surface;
+    final base = theme.cardColor;
+    final highlight = theme.highlightColor;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(

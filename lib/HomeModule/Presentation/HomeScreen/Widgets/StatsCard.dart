@@ -63,8 +63,8 @@ class _StatsShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final base = theme.colorScheme.surfaceContainerHighest;
-    final highlight = theme.colorScheme.surface;
+    final base = theme.cardColor;
+    final highlight = theme.highlightColor;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
