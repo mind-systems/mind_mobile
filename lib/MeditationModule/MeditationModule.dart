@@ -25,7 +25,7 @@ class MeditationModule {
     return ProviderScope(
       overrides: [
         meditationSessionViewModelProvider.overrideWith(() {
-          final vm = MeditationSessionViewModel();
+          final vm = MeditationSessionViewModel(poseId: poseId);
           stateChannel = MeditationModuleStateChannel(
             channel: App.shared.moduleStateChannel,
             stateStream: vm.stream,

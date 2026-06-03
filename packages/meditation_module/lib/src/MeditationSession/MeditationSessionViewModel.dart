@@ -8,6 +8,9 @@ final meditationSessionViewModelProvider =
 });
 
 class MeditationSessionViewModel extends Notifier<MeditationSessionState> {
+  MeditationSessionViewModel({required this.poseId});
+
+  final String poseId;
   final _stateController = StreamController<MeditationSessionState>.broadcast();
 
   Stream<MeditationSessionState> get stream => _stateController.stream;
@@ -15,7 +18,7 @@ class MeditationSessionViewModel extends Notifier<MeditationSessionState> {
   @override
   MeditationSessionState build() {
     ref.onDispose(() => _stateController.close());
-    return const MeditationSessionState.initial();
+    return MeditationSessionState.initial(poseId: poseId);
   }
 
   @override
