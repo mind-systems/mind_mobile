@@ -10,7 +10,7 @@ class StatsApi implements IStatsApi {
 
   @override
   Future<UserStatsDTO> fetchStats() async {
-    final response = await _statsService.getStats(statsProto.GetStatsRequest());
+    final response = await _statsService.getStats(statsProto.GetStatsRequest()).timeout(const Duration(seconds: 10));
     return _mapStats(response);
   }
 

@@ -19,7 +19,7 @@ class UserApi implements IUserApi {
 
   @override
   Future<List<SuggestionDTO>> fetchSuggestions(String timeOfDay) async {
-    final response = await _breathSessionService.getSuggestions(bsProto.GetSuggestionsRequest(timeOfDay: _mapTimeOfDay(timeOfDay)));
+    final response = await _breathSessionService.getSuggestions(bsProto.GetSuggestionsRequest(timeOfDay: _mapTimeOfDay(timeOfDay))).timeout(const Duration(seconds: 10));
     return response.suggestions.map(_mapSuggestion).toList();
   }
 
