@@ -41,6 +41,14 @@ const _kWarmAccentLight = Color(0xFFFF9D3D); // slightly deeper for light backgr
 // Access via: theme.colorScheme.error
 const _kError = Color(0xFFD90000); // pure red — shared between both themes
 
+/// Dark-palette colors, for screens intentionally pinned to the dark theme
+/// regardless of the active ThemeData (e.g. BreathSessionScreen).
+abstract class AppColors {
+  static const Color backgroundDark = _kBackgroundDark; // 0xFF0A0E27
+  static const Color accent         = _kAccent;         // 0xFF00D9FF — default highlight
+  static const Color warmAccentDark = _kWarmAccentDark; // 0xFFFFB347 — gold
+}
+
 abstract class AppTheme {
   static ThemeData dark() => ThemeData(
         brightness: Brightness.dark,

@@ -175,13 +175,11 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
         BreathSessionLayout.kBottomBarBaseHeight + mq.padding.bottom;
     final availableHeight = mq.size.height - mq.padding.top - bottomBarHeight;
     final layout = BreathSessionLayout.compute(screenWidth, availableHeight);
-    final cs = Theme.of(context).colorScheme;
-
     final viewModel = ref.read(breathViewModelProvider.notifier);
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: AppColors.backgroundDark,
       body: Stack(
         children: [
           SafeArea(
@@ -217,11 +215,8 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
                                         (context, progress, _) => EclipseOrb(
                                           size:
                                               layout.shapeDimension * progress,
-                                          glowColor: cs.tertiary,
-                                          maskColor:
-                                              Theme.of(
-                                                context,
-                                              ).scaffoldBackgroundColor,
+                                          glowColor: AppColors.warmAccentDark,
+                                          maskColor: AppColors.backgroundDark,
                                           pulseStream: viewModel.tickStream,
                                           onTap:
                                               () => setState(
@@ -239,7 +234,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
                                     child: BreathShapeWidget(
                                       motionController: _motionEngine,
                                       shapeController: _shapeShifter,
-                                      shapeColor: cs.tertiary,
+                                      shapeColor: AppColors.accent,
                                       pointColor: Colors.white,
                                       strokeWidth: 3.0,
                                       pointRadius: 6.0,
@@ -326,7 +321,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
                                 color:
                                     isMuted
                                         ? Colors.white.withValues(alpha: 0.3)
-                                        : cs.tertiary,
+                                        : AppColors.accent,
                                 onPressed: _soundCoordinator.toggleMute,
                               ),
                         ),
@@ -347,7 +342,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
                       trailingActions: [
                         IconButton(
                           icon: const Icon(Icons.share_outlined),
-                          color: cs.tertiary,
+                          color: AppColors.accent,
                           onPressed: () => viewModel.shareSession(),
                         ),
                         if (canStar)
@@ -355,12 +350,12 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
                             icon: Icon(
                               isStarred ? Icons.star : Icons.star_border,
                             ),
-                            color: cs.tertiary,
+                            color: isStarred ? AppColors.warmAccentDark : AppColors.accent,
                             onPressed: () => viewModel.toggleStar(),
                           ),
                         IconButton(
                           icon: const Icon(Icons.edit_outlined),
-                          color: cs.tertiary,
+                          color: AppColors.accent,
                           onPressed: () => viewModel.openEditor(),
                         ),
                       ],
