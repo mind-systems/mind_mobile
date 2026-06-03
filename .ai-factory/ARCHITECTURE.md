@@ -244,18 +244,29 @@ When adding a new feature `FooModule`:
 
 | Feature | Hashes |
 |---------|--------|
-| Authentication (Google Sign-In + passwordless email OTP) | |
-| Breathing session (phase state machine, pause/resume/restart) | |
+| **Breath** | |
+| Breathing session (phase state machine, pause/resume/restart, mute, screen blackout) | ad5be30 |
 | Session constructor (create and edit custom exercises) | |
 | Session list and library (pagination, starred, grouping) | b19b90a |
 | Session complexity indicator | 688c732 |
-| Heart rate tick source (BLE-driven session timing) | |
+| Breath session audio (crossfade, ticks, suspend/resume, mind_audio package) | d73bd27 8b343b2 |
+| Heart rate tick source (BLE-driven session timing) | f2b5f13 |
+| Meditation module (pose list, session tracking, lifecycle) | 31af4f8 |
+| **BCI** | |
+| BCI device pairing (scan, connect, impedance, calibration) | 4e489da |
+| BCI data screen (NFB bands, emotions, cardio, per-metric normalization) | 8b56a59 |
+| NFB calibration persistence (local cache + server sync, auto-restore on connect) | 7957993 |
+| Biometric streaming (router, batcher, gRPC sink, capability mixins) | 1675ada |
+| **Auth & User** | |
+| Authentication (Google Sign-In + passwordless email OTP + lockout handling) | 06640c6 |
+| Personal access tokens (MCP / API integrations) | 3bc36cb |
+| **HomeScreen & UX** | |
 | Time-of-day suggestions carousel | 95c5d6a |
 | App settings (theme, language, server sync) | 62a360f |
-| Personal access tokens (MCP / API integrations) | 3bc36cb |
 | Session statistics | bdc8455 |
+| **Infrastructure** | |
 | gRPC API | 7a71587 |
-| Real-time data sync | 48fab6a |
+| Real-time data sync (sync engine, reconnect reload, shimmer placeholders) | 48fab6a e128ccc |
 | Live module session | 7199841 |
-| Breath session audio | d73bd27 |
-| Roadmap drop history | d73bd27 |
+| **Internal** | |
+| Roadmap drop history | d73bd27 ece2859 |

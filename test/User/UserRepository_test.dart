@@ -148,8 +148,10 @@ void main() {
   group('loadUser', () {
     test('returns existing user from DB', () async {
       final dao = FakeUserDao();
+      final storage = FakeSecureStorage();
+      await storage.write('jwt_token', 'fake-token');
       await dao.saveUser(_authenticatedUser);
-      final repo = _makeRepo(dao: dao);
+      final repo = _makeRepo(dao: dao, storage: storage);
 
       final user = await repo.loadUser();
 
