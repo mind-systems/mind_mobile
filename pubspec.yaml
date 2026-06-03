@@ -111,6 +111,7 @@ flutter:
   assets:
    - assets/images/
    - assets/images/modules/home/
+   - assets/images/modules/meditation/
    - assets/audio/
 
   # An image asset can refer to one or more resolution-specific "variants", see

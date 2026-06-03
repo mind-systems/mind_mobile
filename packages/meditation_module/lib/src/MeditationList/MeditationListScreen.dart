@@ -4,6 +4,7 @@ import 'package:mind_l10n/mind_l10n.dart';
 
 import 'MeditationListViewModel.dart';
 import '../Models/MeditationPoses.dart';
+import 'Views/MeditationListCell.dart';
 
 class MeditationListScreen extends ConsumerWidget {
   const MeditationListScreen({super.key});
@@ -22,8 +23,9 @@ class MeditationListScreen extends ConsumerWidget {
           itemCount: state.poses.length,
           itemBuilder: (context, index) {
             final pose = state.poses[index];
-            return ListTile(
-              title: Text(meditationPoseTitle(l10n, pose.id)),
+            return MeditationListCell(
+              poseId: pose.id,
+              title: meditationPoseTitle(l10n, pose.id),
               onTap: () =>
                   ref.read(meditationListViewModelProvider.notifier).onPoseTap(pose.id),
             );
