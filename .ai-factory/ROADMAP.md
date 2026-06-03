@@ -84,4 +84,8 @@ Fixes the `activityRefId` UUID crash (`invalid input syntax for type uuid: "easy
 
 - [ ] **`NfbCalibrationRepository.record()`: expose API sync future for testability** — `_api.record()` is fired unawaited inside `record()`, making server-sync assertions impossible without artificial delays. Add an optional `@visibleForTesting bool awaitApiSync = false` parameter to `record()` (or expose the background future via a field); when `awaitApiSync: true` the local persist and API call are both awaited in sequence — used only in tests. Default behavior unchanged. Test plan: `.ai-factory/notes/92-test-plan-nfb-calibration-repository.md`.
 
+## Bug Fixes
+
+- [ ] **Always require calibration on every BCI connect — remove `importCalibration()` from `connectDevice()`** — `BciDeviceManager.connectDevice(serial)` calls `await _provider.importCalibration(cal)` before `connect()`; the Neiry SDK treats this as "already calibrated" and fires a synthetic `CalibrationCompleted`, transitioning the state machine to `ready` without user-initiated calibration. Fix: delete the `latestValid` check and `importCalibration` call from `connectDevice()`. History recording (`NfbCalibrationRepository.record()`) and server sync are unchanged — the local cache stays for analytics. One file changes: `lib/Bci/BciDeviceManager.dart`. Also update `docs/bci/nfb-calibration.md` (remove auto-restore section) and `docs/bci/device-manager.md` (remove "reused on subsequent connections" sentence). Spec: `.ai-factory/notes/98-nfb-calibration-always-require.md`.
+
 ---STOP---
