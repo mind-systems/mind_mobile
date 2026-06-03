@@ -154,11 +154,11 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     _device = await _locator.createDevice(serial);
     try {
       await _device!.connect();
-      await _device!.start();
       _nfbClassifier = neiry.NfbClassifier(_device!);
       _cardioClassifier = neiry.CardioClassifier(_device!);
       _emotionsClassifier = neiry.EmotionsClassifier(_device!);
       _memsClassifier = neiry.MEMSClassifier(_device!);
+      await _device!.start();
     } catch (e) {
       try {
         await _nfbClassifier?.dispose();
@@ -462,6 +462,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     _memsSub = null;
 
     unawaited(Future.microtask(() async {
+      try { await device?.unregisterCallbacks(); } catch (_) {}
       await connectionSub?.cancel();
       await resistanceSub?.cancel();
       await batterySub?.cancel();
@@ -493,6 +494,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       } catch (e) {
         logPrint('NeiryBciProvider: mems dispose error: $e');
       }
+      try { await device?.stopStream(); } catch (_) {}
       try {
         await device?.disconnect();
         await device?.dispose();
@@ -552,8 +554,12 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
 
   @override
   Future<void> disconnect() async {
+    try { await _device?.unregisterCallbacks(); } catch (e) {
+      logPrint('NeiryBciProvider: unregisterCallbacks error: $e');
+    }
     await _cancelDeviceSubscriptions();
     try {
+      await _device?.stopStream();
       await _device?.disconnect();
       await _device?.dispose();
     } catch (e) {
