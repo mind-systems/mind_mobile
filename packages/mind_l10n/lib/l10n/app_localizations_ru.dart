@@ -373,6 +373,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get bciConnectButton => 'Подключить';
 
   @override
+  String get meditationPoseSectionTitle => 'Позы';
+
+  @override
   String get meditationPoseEasy => 'Поза по-турецки';
 
   @override

@@ -782,6 +782,12 @@ abstract class AppLocalizations {
   /// **'Connect'**
   String get bciConnectButton;
 
+  /// No description provided for @meditationPoseSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Poses'**
+  String get meditationPoseSectionTitle;
+
   /// No description provided for @meditationPoseEasy.
   ///
   /// In en, this message translates to:

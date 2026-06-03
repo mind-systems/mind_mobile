@@ -147,6 +147,7 @@
   "bciNotConnectedMessage": "Device not connected",
   "bciConnectButton": "Connect",
 
+  "meditationPoseSectionTitle": "Poses",
   "meditationPoseEasy": "Easy Pose",
   "meditationPoseLotus": "Lotus",
   "meditationPoseHalfLotus": "Half Lotus",

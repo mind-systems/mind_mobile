@@ -141,6 +141,7 @@
   "bciNotConnectedMessage": "Устройство не подключено",
   "bciConnectButton": "Подключить",
 
+  "meditationPoseSectionTitle": "Позы",
   "meditationPoseEasy": "Поза по-турецки",
   "meditationPoseLotus": "Лотос",
   "meditationPoseHalfLotus": "Полулотос",
