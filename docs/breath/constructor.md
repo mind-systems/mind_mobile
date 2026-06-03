@@ -56,9 +56,3 @@
 - **Сборка** — в `BreathModule.buildConstructor(context, sessionId:)`, который создаёт сервис с нотифаером и координатор с `BuildContext`
 
 Сервис преобразует доменные модели `BreathSession` / `ExerciseSet` / `ExerciseStep` в `BreathSessionConstructorDTO` и обратно. Вычисление сложности делегируется функции `calculateComplexity()`.
-
-## See Also
-
-- [Complexity](complexity.md) — алгоритм расчёта сложности сессии
-- [Module System](../core/module-system.md) — архитектура модулей-пакетов и паттерн сборки
-- [Auth-Gated Navigation](../core/auth-gated-navigation.md) — auth gate при входе в конструктор

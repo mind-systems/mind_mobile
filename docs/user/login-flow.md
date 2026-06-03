@@ -30,9 +30,3 @@
 ## Ошибки
 
 Если аутентификация через диплинк падает, `AuthCodeDeeplinkHandler` показывает локализованный снэкбар напрямую через `rootScaffoldMessengerKey` — даже если экран входа уже закрыт. При превышении лимита попыток (`OtpLockedException`) отображается `loginTooManyAttemptsError`; для любой другой ошибки (истёкшая или уже использованная ссылка) — `loginCodeInvalidError`.
-
-## See Also
-
-- [Auth-Gated Navigation](../core/auth-gated-navigation.md) — паттерн `AuthResult` + `context.push(...).then(...)`
-- [JWT Authentication](jwt-authentication.md) — токены, GrpcAuthInterceptor, logout по UNAUTHENTICATED
-- [Global Listeners](../core/global-listeners.md) — как `authErrorStream` доходит до UI

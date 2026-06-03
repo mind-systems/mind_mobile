@@ -33,9 +33,3 @@ McpScreen ← McpViewModel ← IMcpService / IMcpCoordinator
 ## API
 
 Клиент работает через gRPC (`AuthServiceClient`): `listTokens`, `createToken`, `deleteToken`. Интерфейс `IPersonalAccessTokenApi` реализован в `PersonalAccessTokenApi`. Подробная документация — в `docs/auth/personal-access-tokens.md` репозитория API.
-
-## See Also
-
-- [Module System](../core/module-system.md) — архитектура модулей и паттерн сборки
-- [Notifier Pattern](../core/notifier-pattern.md) — типизированные события в нотифаерах
-- [Login Flow](login-flow.md) — JWT-аутентификация, к которой привязано создание токенов

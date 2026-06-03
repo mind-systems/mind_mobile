@@ -69,6 +69,17 @@ BreathModuleStateChannel
 
 Сервер держит grace period (по умолчанию 30 секунд) после обрыва. При переподключении в этом окне сервер отвечает `session:state { status: resumed }` с тем же `moduleSessionId` — `ModuleStateChannel` продолжает работу без разрыва. Если grace period истёк, сессия закрывается как `abandoned` и при следующем `activity:start` создаётся новая.
 
+## Адаптеры по типу модуля
+
+`ModuleStateChannel` — доменная стейт-машина общего назначения. Каждый тип активности реализует собственный адаптер:
+
+| Адаптер | Тип активности | Инструкции | Пауза/возобновление |
+|---------|---------------|------------|---------------------|
+| `BreathModuleStateChannel` | `ActivityType.breath` | ✅ фазы дыхания | ✅ |
+| `MeditationModuleStateChannel` | `ActivityType.meditation` | ❌ | ❌ |
+
+`MeditationModuleStateChannel` реализует только `start` / `end` с ре-армом между сессиями. Биометрический конвейер гейтируется одним и тем же `ModuleStateChannel` для обоих типов — отдельной конфигурации не требуется. Детали — в [docs/realtime/meditation-tracking.md](meditation-tracking.md).
+
 ## Связь с биометрическими данными
 
 Инструкции — это инструкционный лог, а не самостоятельные биометрические данные. Две шкалы хранятся раздельно:

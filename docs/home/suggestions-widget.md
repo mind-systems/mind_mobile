@@ -41,10 +41,3 @@ Enum `DayPeriod` — чистый Dart, без зависимости от Flutt
 ## Заголовок
 
 Заголовок карточки выбирается случайно из 4 локализованных вариантов для текущего периода — итого 12 строк в ARB-файлах. При каждом построении виджета заголовок может измениться.
-
-## See Also
-
-- [Module System](../core/module-system.md) — архитектура модулей-пакетов
-- [Global Listeners](../core/global-listeners.md) — глобальная координация событий, включая session expired
-- [Auth-Gated Navigation](../core/auth-gated-navigation.md) — auth gate при переходе в профиль с HomeScreen
-- [Complexity](../breath/complexity.md) — расчёт сложности сессий, используемый в фильтрации рекомендаций

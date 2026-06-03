@@ -58,8 +58,3 @@ context.push<AuthResult>(OnboardingScreen.path).then((result) {
 2. `OnboardingScreen` получает то же событие → `context.pop(AuthResult.success)` → стек: `[...]`
 
 Каждый экран попает только себя. `push<AuthResult>` в координаторе резолвится с результатом последнего pop из Onboarding.
-
-## See Also
-
-- [Login Flow](../user/login-flow.md) — детали Google и email аутентификации
-- [Global Listeners](global-listeners.md) — обработка ошибок через authErrorStream

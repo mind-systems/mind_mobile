@@ -21,10 +21,12 @@ The internals of the box (private fields, internal loops, helper methods) are no
 | Layer | Why |
 |-------|-----|
 | **Domain Notifiers** (`BreathSessionNotifier`, `UserNotifier`) | Complex state machines with pagination, event emission, race condition guards — high regression risk |
-| **Repositories** (`BreathSessionRepository`, `UserRepository`, `AppSettingsRepository`) | Cache/fallback logic, data mapping — behaviour is non-obvious from reading the code |
-| **Pure calculators / data structures** (`ComplexityCalculator`, `InstructionBuffer`) | Deterministic functions with non-trivial formulas — cheap to test, high value |
+| **Repositories** (`BreathSessionRepository`, `UserRepository`, `AppSettingsRepository`, `NfbCalibrationRepository`) | Cache/fallback logic, prepend-and-cap invariants, data mapping — behaviour is non-obvious from reading the code |
+| **Pure calculators / data structures** (`ComplexityCalculator`, `InstructionBuffer`, `BioSample` factory methods) | Deterministic functions with non-trivial formulas — cheap to test, high value |
 | **State machines** (`BreathSessionStateMachine`) | Phase transitions driven by external ticks — core UX logic |
-| **Deep link parsers / handlers** (`AuthCodeDeeplinkHandler`, `BreathSessionDeeplinkHandler`) | URI contracts are easy to break silently |
+| **Deep link parsers / handlers** (`AuthCodeDeeplinkHandler`, `BreathSessionDeeplinkHandler`) | URI contracts and error-classification branches are easy to break silently |
+| **Silently-failing domain logic** (`ActiveRrSource`, `SwitchableTickService`, `BiometricBatcher`, `MeditationModuleStateChannel`) | Logic where a wrong result produces no exception or visible error — the system continues running with incorrect behaviour. Test plan: `docs/core/testing.md` (this file) and `.ai-factory/ROADMAP_TESTS.md` |
+| **Extracted infrastructure algorithms** (`GrpcConnectionManager` backoff) | Algorithms inside infrastructure classes, once extracted behind an injectable seam — see note above |
 
 ### Do not test these
 
@@ -34,8 +36,10 @@ The internals of the box (private fields, internal loops, helper methods) are no
 | **Services** (bridge between domain and presentation) | Thin translation layers. Their inputs and outputs are the domain notifier and the ViewModel interface — both of which are already tested at their own level. |
 | **Mappers / converters** | Mechanical field assignments. Bugs here are caught immediately at runtime and are obvious to read. |
 | **Navigation coordinators** | Routing calls — easy to verify manually, hard to fake correctly, low regression risk. |
-| **Infrastructure** (`GrpcConnectionManager`, `ModuleInstructionStream`, `GrpcAuthInterceptor`, `GrpcClient`) | Require mocking gRPC. Fragile, expensive to maintain, simple logic. |
+| **gRPC plumbing** (`ModuleInstructionStream`, `GrpcAuthInterceptor`, `GrpcClient`) | Require mocking gRPC. Fragile, expensive to maintain relative to the coverage they add. |
 | **Animation coordinators** | Exception: keep existing animation tests that guard against known regressions (pause/resume bugs). Don't add new ones. |
+
+> **Infrastructure with non-trivial algorithms.** An infrastructure class that also contains a non-trivial algorithm is two things at once. The rule above applies to the gRPC plumbing part — not to the algorithm. Extract the algorithm behind an injectable seam (clock function, config object, timer factory) so it can be tested without gRPC mocks. `GrpcConnectionManager._nextDelay` and `confirmConnected` are examples: the backoff math has a real exponent-cap invariant and the timing of the reset is load-bearing; both are tested through `BackoffConfig` injection without touching the gRPC channel.
 
 ---
 
