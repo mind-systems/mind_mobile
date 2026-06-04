@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'IMeditationListService.dart';
@@ -18,7 +20,13 @@ class MeditationListViewModel extends Notifier<MeditationListState> {
   MeditationListViewModel({required this.service, required this.coordinator});
 
   @override
-  MeditationListState build() => MeditationListState(poses: service.poses());
+  MeditationListState build() {
+    final state = MeditationListState(poses: service.poses());
+    // Fire-and-forget: assumes build() runs once per screen open (no ref.watch here).
+    // If a reactive dependency is ever added to build(), this would re-fire on every rebuild.
+    unawaited(service.refresh());
+    return state;
+  }
 
   void onPoseTap(String id) => coordinator.openSession(id);
 }
