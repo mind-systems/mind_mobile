@@ -817,6 +817,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lying Down (Savasana)'**
   String get meditationPoseSavasana;
+
+  /// No description provided for @meditationNotePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Write what you felt during the session — how you felt at the start, and how it changed towards the end. This will help the AI better understand your body.'**
+  String get meditationNotePrompt;
 }
 
 class _AppLocalizationsDelegate

@@ -152,5 +152,7 @@
   "meditationPoseHalfLotus": "Half Lotus",
   "meditationPoseSeiza": "Kneeling (Seiza)",
   "meditationPoseChair": "Seated (Chair)",
-  "meditationPoseSavasana": "Lying Down (Savasana)"
+  "meditationPoseSavasana": "Lying Down (Savasana)",
+
+  "meditationNotePrompt": "Write what you felt during the session — how you felt at the start, and how it changed towards the end. This will help the AI better understand your body."
 }

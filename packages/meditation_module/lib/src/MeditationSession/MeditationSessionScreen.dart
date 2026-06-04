@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind_ui/mind_ui.dart';
+import 'IMeditationSessionCoordinator.dart';
 import 'Models/MeditationSessionState.dart';
 import 'MeditationSessionViewModel.dart';
 
@@ -27,6 +29,18 @@ class _MeditationSessionScreenState
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<MeditationSessionStatus>(
+      meditationSessionViewModelProvider.select((s) => s.status),
+      (previous, next) {
+        if (previous == MeditationSessionStatus.active &&
+            next == MeditationSessionStatus.idle) {
+          unawaited(
+            ref.read(meditationSessionCoordinatorProvider).onSessionStopped(),
+          );
+        }
+      },
+    );
+
     final status = ref.watch(
       meditationSessionViewModelProvider.select((s) => s.status),
     );

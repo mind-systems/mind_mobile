@@ -9,4 +9,5 @@ export 'src/MeditationList/Views/MeditationListSectionHeader.dart';
 export 'src/MeditationSession/Models/MeditationSessionState.dart';
 export 'src/MeditationSession/MeditationSessionViewModel.dart';
 export 'src/MeditationSession/IMeditationSessionCoordinator.dart';
+export 'src/MeditationSession/MeditationNoteScreen.dart';
 export 'src/MeditationSession/MeditationSessionScreen.dart';

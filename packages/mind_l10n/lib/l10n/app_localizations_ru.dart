@@ -389,4 +389,8 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get meditationPoseSavasana => 'Лёжа (шавасана)';
+
+  @override
+  String get meditationNotePrompt =>
+      'Запишите что чувствовали на протяжении сессии — что в начале, и как это изменилось к концу. Это поможет нейросети лучше понимать ваше тело.';
 }

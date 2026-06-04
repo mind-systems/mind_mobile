@@ -1,5 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'package:go_router/go_router.dart';
 import 'package:meditation_module/meditation_module.dart'
     show IMeditationSessionCoordinator;
 
@@ -9,8 +8,8 @@ class MeditationSessionCoordinator implements IMeditationSessionCoordinator {
   MeditationSessionCoordinator(this.context);
 
   @override
-  void close() {
-    if (!context.mounted) return;
-    context.pop();
+  Future<void> onSessionStopped() async {
+    // Placeholder — full implementation (push MeditationNoteScreen, persist note)
+    // arrives in the meditation-notes wiring milestone (ROADMAP line 78).
   }
 }

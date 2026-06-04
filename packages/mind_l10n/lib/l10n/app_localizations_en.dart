@@ -387,4 +387,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meditationPoseSavasana => 'Lying Down (Savasana)';
+
+  @override
+  String get meditationNotePrompt =>
+      'Write what you felt during the session — how you felt at the start, and how it changed towards the end. This will help the AI better understand your body.';
 }
