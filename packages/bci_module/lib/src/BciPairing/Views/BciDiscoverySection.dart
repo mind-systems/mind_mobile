@@ -129,12 +129,7 @@ class _BciDiscoverySectionState extends ConsumerState<BciDiscoverySection>
                     ? device.serial.substring(device.serial.length - 6)
                     : device.serial,
               ),
-              trailing: device.isKnown
-                  ? Chip(
-                      label: Text(l10n.bciPairingKnownDevice),
-                      visualDensity: VisualDensity.compact,
-                    )
-                  : null,
+              trailing: null,
               onTap: () {
                 setState(() => _pendingSerial = device.serial);
                 ref

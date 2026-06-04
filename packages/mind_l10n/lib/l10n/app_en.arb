@@ -122,7 +122,6 @@
 
   "bciPairingTitle": "Connect Headband",
   "bciPairingNearbyDevices": "Nearby devices",
-  "bciPairingKnownDevice": "Paired",
   "bciPairingSignalQuality": "Signal quality",
   "bciPairingAdjustHeadband": "Adjust headband for good contact on all channels.",
   "bciPairingCalibration": "Calibration",

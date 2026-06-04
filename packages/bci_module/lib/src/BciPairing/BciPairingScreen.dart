@@ -52,10 +52,18 @@ class _BciPairingHeader extends ConsumerWidget {
     final vm = ref.read(bciPairingViewModelProvider.notifier);
     final l10n = AppLocalizations.of(context)!;
 
+    final isConnected = state.stage != BciPairingStage.discovery;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
         children: [
+          Icon(
+            Icons.bluetooth,
+            size: 16,
+            color: isConnected ? Colors.blue : Colors.white.withValues(alpha: 0.3),
+          ),
+          const SizedBox(width: 4),
           Opacity(
             opacity: state.batteryPercent != null ? 1.0 : 0.3,
             child: Row(

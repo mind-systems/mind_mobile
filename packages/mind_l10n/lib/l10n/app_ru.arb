@@ -116,7 +116,6 @@
 
   "bciPairingTitle": "Подключить нейрогарнитуру",
   "bciPairingNearbyDevices": "Устройства рядом",
-  "bciPairingKnownDevice": "Сопряжено",
   "bciPairingSignalQuality": "Качество сигнала",
   "bciPairingAdjustHeadband": "Поправьте гарнитуру для хорошего контакта на всех каналах.",
   "bciPairingCalibration": "Калибровка",

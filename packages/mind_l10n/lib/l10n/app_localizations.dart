@@ -644,12 +644,6 @@ abstract class AppLocalizations {
   /// **'Nearby devices'**
   String get bciPairingNearbyDevices;
 
-  /// No description provided for @bciPairingKnownDevice.
-  ///
-  /// In en, this message translates to:
-  /// **'Paired'**
-  String get bciPairingKnownDevice;
-
   /// No description provided for @bciPairingSignalQuality.
   ///
   /// In en, this message translates to:

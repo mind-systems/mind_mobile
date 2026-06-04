@@ -302,9 +302,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get bciPairingNearbyDevices => 'Устройства рядом';
 
   @override
-  String get bciPairingKnownDevice => 'Сопряжено';
-
-  @override
   String get bciPairingSignalQuality => 'Качество сигнала';
 
   @override

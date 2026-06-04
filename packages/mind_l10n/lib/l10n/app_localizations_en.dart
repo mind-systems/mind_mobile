@@ -300,9 +300,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bciPairingNearbyDevices => 'Nearby devices';
 
   @override
-  String get bciPairingKnownDevice => 'Paired';
-
-  @override
   String get bciPairingSignalQuality => 'Signal quality';
 
   @override
