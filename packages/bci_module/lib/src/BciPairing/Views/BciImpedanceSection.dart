@@ -58,6 +58,16 @@ class BciImpedanceSection extends ConsumerWidget {
                         ch.channelName,
                         style: Theme.of(context).textTheme.labelSmall,
                       ),
+                      Text(
+                        ch.impedanceOhm?.toStringAsFixed(0) ?? '',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.color
+                                  ?.withValues(alpha: 0.5),
+                            ),
+                      ),
                     ],
                   )),
               ...List.generate(
