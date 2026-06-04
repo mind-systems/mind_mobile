@@ -17,13 +17,14 @@ part 'Database.g.dart';
 part 'UserDao.dart';
 part 'BreathSessionDao.dart';
 part 'SyncStateDao.dart';
+part 'MeditationPosesDao.dart';
 
-@DriftDatabase(tables: [UserRecord, BreathSessions, SyncState], daos: [UserDao, BreathSessionDao, SyncStateDao])
+@DriftDatabase(tables: [UserRecord, BreathSessions, SyncState, MeditationPoses], daos: [UserDao, BreathSessionDao, SyncStateDao, MeditationPosesDao])
 class Database extends _$Database {
   Database([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -34,6 +35,9 @@ class Database extends _$Database {
         }
         if (step == 2) {
           await migrator.createTable(syncState);
+        }
+        if (step == 3) {
+          await migrator.createTable(meditationPoses);
         }
       }
     },

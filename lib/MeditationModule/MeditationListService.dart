@@ -10,6 +10,9 @@ class MeditationListService implements IMeditationListService {
   Future<void> refresh() async {
     try {
       final poses = await App.shared.meditationPosesApi.listPoses();
+      await App.shared.db.meditationPosesDao.saveAll(
+        poses.map((p) => (id: p.id, slug: p.slug, displayOrder: p.displayOrder)).toList(),
+      );
       App.shared.meditationPoseUuids = {
         for (final p in poses) p.slug: p.id,
       };

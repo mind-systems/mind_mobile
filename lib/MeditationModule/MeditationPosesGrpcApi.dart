@@ -6,8 +6,8 @@ class MeditationPosesGrpcApi {
 
   MeditationPosesGrpcApi(this._client);
 
-  Future<List<({String id, String slug})>> listPoses() async {
+  Future<List<({String id, String slug, int displayOrder})>> listPoses() async {
     final response = await _client.listPoses(Empty());
-    return response.poses.map((p) => (id: p.id, slug: p.slug)).toList();
+    return response.poses.map((p) => (id: p.id, slug: p.slug, displayOrder: p.displayOrder)).toList();
   }
 }

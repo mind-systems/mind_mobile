@@ -1079,17 +1079,288 @@ class SyncStateCompanion extends UpdateCompanion<SyncStateRow> {
   }
 }
 
+class $MeditationPosesTable extends MeditationPoses
+    with TableInfo<$MeditationPosesTable, MeditationPoseRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MeditationPosesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _slugMeta = const VerificationMeta('slug');
+  @override
+  late final GeneratedColumn<String> slug = GeneratedColumn<String>(
+    'slug',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _displayOrderMeta = const VerificationMeta(
+    'displayOrder',
+  );
+  @override
+  late final GeneratedColumn<int> displayOrder = GeneratedColumn<int>(
+    'display_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, slug, displayOrder];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'meditation_poses';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MeditationPoseRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('slug')) {
+      context.handle(
+        _slugMeta,
+        slug.isAcceptableOrUnknown(data['slug']!, _slugMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_slugMeta);
+    }
+    if (data.containsKey('display_order')) {
+      context.handle(
+        _displayOrderMeta,
+        displayOrder.isAcceptableOrUnknown(
+          data['display_order']!,
+          _displayOrderMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_displayOrderMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MeditationPoseRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MeditationPoseRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      slug: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}slug'],
+      )!,
+      displayOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}display_order'],
+      )!,
+    );
+  }
+
+  @override
+  $MeditationPosesTable createAlias(String alias) {
+    return $MeditationPosesTable(attachedDatabase, alias);
+  }
+}
+
+class MeditationPoseRow extends DataClass
+    implements Insertable<MeditationPoseRow> {
+  final String id;
+  final String slug;
+  final int displayOrder;
+  const MeditationPoseRow({
+    required this.id,
+    required this.slug,
+    required this.displayOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['slug'] = Variable<String>(slug);
+    map['display_order'] = Variable<int>(displayOrder);
+    return map;
+  }
+
+  MeditationPosesCompanion toCompanion(bool nullToAbsent) {
+    return MeditationPosesCompanion(
+      id: Value(id),
+      slug: Value(slug),
+      displayOrder: Value(displayOrder),
+    );
+  }
+
+  factory MeditationPoseRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MeditationPoseRow(
+      id: serializer.fromJson<String>(json['id']),
+      slug: serializer.fromJson<String>(json['slug']),
+      displayOrder: serializer.fromJson<int>(json['displayOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'slug': serializer.toJson<String>(slug),
+      'displayOrder': serializer.toJson<int>(displayOrder),
+    };
+  }
+
+  MeditationPoseRow copyWith({String? id, String? slug, int? displayOrder}) =>
+      MeditationPoseRow(
+        id: id ?? this.id,
+        slug: slug ?? this.slug,
+        displayOrder: displayOrder ?? this.displayOrder,
+      );
+  MeditationPoseRow copyWithCompanion(MeditationPosesCompanion data) {
+    return MeditationPoseRow(
+      id: data.id.present ? data.id.value : this.id,
+      slug: data.slug.present ? data.slug.value : this.slug,
+      displayOrder: data.displayOrder.present
+          ? data.displayOrder.value
+          : this.displayOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MeditationPoseRow(')
+          ..write('id: $id, ')
+          ..write('slug: $slug, ')
+          ..write('displayOrder: $displayOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, slug, displayOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MeditationPoseRow &&
+          other.id == this.id &&
+          other.slug == this.slug &&
+          other.displayOrder == this.displayOrder);
+}
+
+class MeditationPosesCompanion extends UpdateCompanion<MeditationPoseRow> {
+  final Value<String> id;
+  final Value<String> slug;
+  final Value<int> displayOrder;
+  final Value<int> rowid;
+  const MeditationPosesCompanion({
+    this.id = const Value.absent(),
+    this.slug = const Value.absent(),
+    this.displayOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MeditationPosesCompanion.insert({
+    required String id,
+    required String slug,
+    required int displayOrder,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       slug = Value(slug),
+       displayOrder = Value(displayOrder);
+  static Insertable<MeditationPoseRow> custom({
+    Expression<String>? id,
+    Expression<String>? slug,
+    Expression<int>? displayOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (slug != null) 'slug': slug,
+      if (displayOrder != null) 'display_order': displayOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MeditationPosesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? slug,
+    Value<int>? displayOrder,
+    Value<int>? rowid,
+  }) {
+    return MeditationPosesCompanion(
+      id: id ?? this.id,
+      slug: slug ?? this.slug,
+      displayOrder: displayOrder ?? this.displayOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (slug.present) {
+      map['slug'] = Variable<String>(slug.value);
+    }
+    if (displayOrder.present) {
+      map['display_order'] = Variable<int>(displayOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MeditationPosesCompanion(')
+          ..write('id: $id, ')
+          ..write('slug: $slug, ')
+          ..write('displayOrder: $displayOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$Database extends GeneratedDatabase {
   _$Database(QueryExecutor e) : super(e);
   $DatabaseManager get managers => $DatabaseManager(this);
   late final $UserRecordTable userRecord = $UserRecordTable(this);
   late final $BreathSessionsTable breathSessions = $BreathSessionsTable(this);
   late final $SyncStateTable syncState = $SyncStateTable(this);
+  late final $MeditationPosesTable meditationPoses = $MeditationPosesTable(
+    this,
+  );
   late final UserDao userDao = UserDao(this as Database);
   late final BreathSessionDao breathSessionDao = BreathSessionDao(
     this as Database,
   );
   late final SyncStateDao syncStateDao = SyncStateDao(this as Database);
+  late final MeditationPosesDao meditationPosesDao = MeditationPosesDao(
+    this as Database,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1098,6 +1369,7 @@ abstract class _$Database extends GeneratedDatabase {
     userRecord,
     breathSessions,
     syncState,
+    meditationPoses,
   ];
 }
 
@@ -1693,6 +1965,174 @@ typedef $$SyncStateTableProcessedTableManager =
       SyncStateRow,
       PrefetchHooks Function()
     >;
+typedef $$MeditationPosesTableCreateCompanionBuilder =
+    MeditationPosesCompanion Function({
+      required String id,
+      required String slug,
+      required int displayOrder,
+      Value<int> rowid,
+    });
+typedef $$MeditationPosesTableUpdateCompanionBuilder =
+    MeditationPosesCompanion Function({
+      Value<String> id,
+      Value<String> slug,
+      Value<int> displayOrder,
+      Value<int> rowid,
+    });
+
+class $$MeditationPosesTableFilterComposer
+    extends Composer<_$Database, $MeditationPosesTable> {
+  $$MeditationPosesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get slug => $composableBuilder(
+    column: $table.slug,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get displayOrder => $composableBuilder(
+    column: $table.displayOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MeditationPosesTableOrderingComposer
+    extends Composer<_$Database, $MeditationPosesTable> {
+  $$MeditationPosesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get slug => $composableBuilder(
+    column: $table.slug,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get displayOrder => $composableBuilder(
+    column: $table.displayOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MeditationPosesTableAnnotationComposer
+    extends Composer<_$Database, $MeditationPosesTable> {
+  $$MeditationPosesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get slug =>
+      $composableBuilder(column: $table.slug, builder: (column) => column);
+
+  GeneratedColumn<int> get displayOrder => $composableBuilder(
+    column: $table.displayOrder,
+    builder: (column) => column,
+  );
+}
+
+class $$MeditationPosesTableTableManager
+    extends
+        RootTableManager<
+          _$Database,
+          $MeditationPosesTable,
+          MeditationPoseRow,
+          $$MeditationPosesTableFilterComposer,
+          $$MeditationPosesTableOrderingComposer,
+          $$MeditationPosesTableAnnotationComposer,
+          $$MeditationPosesTableCreateCompanionBuilder,
+          $$MeditationPosesTableUpdateCompanionBuilder,
+          (
+            MeditationPoseRow,
+            BaseReferences<
+              _$Database,
+              $MeditationPosesTable,
+              MeditationPoseRow
+            >,
+          ),
+          MeditationPoseRow,
+          PrefetchHooks Function()
+        > {
+  $$MeditationPosesTableTableManager(_$Database db, $MeditationPosesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MeditationPosesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MeditationPosesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MeditationPosesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> slug = const Value.absent(),
+                Value<int> displayOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MeditationPosesCompanion(
+                id: id,
+                slug: slug,
+                displayOrder: displayOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String slug,
+                required int displayOrder,
+                Value<int> rowid = const Value.absent(),
+              }) => MeditationPosesCompanion.insert(
+                id: id,
+                slug: slug,
+                displayOrder: displayOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MeditationPosesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$Database,
+      $MeditationPosesTable,
+      MeditationPoseRow,
+      $$MeditationPosesTableFilterComposer,
+      $$MeditationPosesTableOrderingComposer,
+      $$MeditationPosesTableAnnotationComposer,
+      $$MeditationPosesTableCreateCompanionBuilder,
+      $$MeditationPosesTableUpdateCompanionBuilder,
+      (
+        MeditationPoseRow,
+        BaseReferences<_$Database, $MeditationPosesTable, MeditationPoseRow>,
+      ),
+      MeditationPoseRow,
+      PrefetchHooks Function()
+    >;
 
 class $DatabaseManager {
   final _$Database _db;
@@ -1703,6 +2143,8 @@ class $DatabaseManager {
       $$BreathSessionsTableTableManager(_db, _db.breathSessions);
   $$SyncStateTableTableManager get syncState =>
       $$SyncStateTableTableManager(_db, _db.syncState);
+  $$MeditationPosesTableTableManager get meditationPoses =>
+      $$MeditationPosesTableTableManager(_db, _db.meditationPoses);
 }
 
 mixin _$UserDaoMixin on DatabaseAccessor<Database> {
@@ -1713,4 +2155,7 @@ mixin _$BreathSessionDaoMixin on DatabaseAccessor<Database> {
 }
 mixin _$SyncStateDaoMixin on DatabaseAccessor<Database> {
   $SyncStateTable get syncState => attachedDatabase.syncState;
+}
+mixin _$MeditationPosesDaoMixin on DatabaseAccessor<Database> {
+  $MeditationPosesTable get meditationPoses => attachedDatabase.meditationPoses;
 }

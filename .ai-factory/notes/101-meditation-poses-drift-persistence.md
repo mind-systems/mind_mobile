@@ -105,17 +105,31 @@ if (cachedPoses.isNotEmpty) {
 ```
 Guard: only populate if Drift has rows — on first-ever launch the table is empty and the map stays `const {}` (populated later by `refresh()` when online).
 
-**5. Persist to Drift in `MeditationListService.refresh()` — `lib/MeditationModule/MeditationListService.dart`**
+**5. Extend `MeditationPosesGrpcApi.listPoses()` to return `displayOrder` — `lib/MeditationModule/MeditationPosesGrpcApi.dart`**
 
-After a successful `listPoses()` call, write to Drift before (or alongside) updating the in-memory map:
+The current method returns `List<({String id, String slug})>` — it drops `display_order` from the proto response. The Drift table needs it for ordered reads. Extend the return record:
+
+```dart
+Future<List<({String id, String slug, int displayOrder})>> listPoses() async {
+  final response = await _client.listPoses(Empty());
+  return response.poses
+      .map((p) => (id: p.id, slug: p.slug, displayOrder: p.displayOrder))
+      .toList();
+}
+```
+
+Update the interface type accordingly (`IBreathSessionApi`-style — check if there's an `IMeditationPosesGrpcApi` interface; if not, just update the concrete class). `MeditationListService.refresh()` already receives the result of `listPoses()`, so its call site needs the type updated too.
+
+**6. Persist to Drift in `MeditationListService.refresh()` — `lib/MeditationModule/MeditationListService.dart`**
+
+After a successful `listPoses()` call, write to Drift before updating the in-memory map:
 ```dart
 @override
 Future<void> refresh() async {
   try {
     final poses = await App.shared.meditationPosesApi.listPoses();
-    // persist for offline use — displayOrder from proto field (or enumerate by index if absent)
     await App.shared.meditationPosesDao.saveAll(
-      poses.indexed.map((e) => (id: e.$2.id, slug: e.$2.slug, displayOrder: e.$1)).toList(),
+      poses.map((p) => (id: p.id, slug: p.slug, displayOrder: p.displayOrder)).toList(),
     );
     App.shared.meditationPoseUuids = {
       for (final p in poses) p.slug: p.id,
@@ -125,7 +139,6 @@ Future<void> refresh() async {
   }
 }
 ```
-`displayOrder` note: `MeditationPosesServiceClient.listPoses()` returns `MeditationPose` which has `displayOrder` (int32 field in proto). Use `p.displayOrder` directly — no need to enumerate by index.
 
 ### Data flow after this task
 

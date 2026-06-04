@@ -138,6 +138,8 @@ class App {
     );
 
     final db = Database();
+    final cachedPoses = await db.meditationPosesDao.getAll();
+    final cachedPoseUuids = cachedPoses.isEmpty ? null : { for (final p in cachedPoses) p.slug: p.id };
     final logoutNotifier = LogoutNotifier();
 
     final appLifecycleService = AppLifecycleService();
@@ -237,6 +239,7 @@ class App {
     );
 
     shared.meditationPosesApi = MeditationPosesGrpcApi(grpcClient.meditationPosesService);
+    if (cachedPoseUuids != null) shared.meditationPoseUuids = cachedPoseUuids;
     await shared.deeplinkRouter.init();
 
     runApp(ProviderScope(
