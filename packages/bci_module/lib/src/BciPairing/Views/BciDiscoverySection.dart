@@ -4,6 +4,7 @@ import 'package:mind_l10n/mind_l10n.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../BciPairingViewModel.dart';
+import '../Models/BciPairingStage.dart';
 import '../Models/BciPairingState.dart';
 import 'BciSectionHeader.dart';
 
@@ -87,7 +88,20 @@ class _BciDiscoverySectionState extends ConsumerState<BciDiscoverySection>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        BciSectionHeader(title: l10n.bciPairingNearbyDevices),
+        Row(
+          children: [
+            Expanded(child: BciSectionHeader(title: l10n.bciPairingNearbyDevices)),
+            if (!state.isScanning && state.stage == BciPairingStage.discovery)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () =>
+                      ref.read(bciPairingViewModelProvider.notifier).onRescan(),
+                ),
+              ),
+          ],
+        ),
         if (state.isScanning) const LinearProgressIndicator(),
         ListView.builder(
           shrinkWrap: true,
