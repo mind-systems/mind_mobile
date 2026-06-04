@@ -50,6 +50,7 @@ import 'package:mind/Core/Sync/SyncEngine.dart';
 import 'package:mind/Core/Sync/SyncGrpcListener.dart';
 import 'package:mind/Bci/BciDevicesGrpcApi.dart';
 import 'package:mind/MeditationModule/MeditationPosesGrpcApi.dart';
+import 'package:mind/MeditationModule/MeditationNoteRepository.dart';
 import 'package:mind/Bci/BciDeviceManager.dart';
 import 'package:mind/Bci/BciDeviceRepository.dart';
 import 'package:mind/Bci/NfbCalibrationGrpcApi.dart';
@@ -97,6 +98,7 @@ class App {
   final SyncGrpcListener syncGrpcListener;
   final AppLifecycleService appLifecycleService;
   late final MeditationPosesGrpcApi meditationPosesApi;
+  late final MeditationNoteRepository meditationNoteRepository;
   Map<String, String> meditationPoseUuids = const {}; // slug → UUID; populated lazily when the meditation list opens, NOT in initialize()
 
   App._({
@@ -239,6 +241,7 @@ class App {
     );
 
     shared.meditationPosesApi = MeditationPosesGrpcApi(grpcClient.meditationPosesService);
+    shared.meditationNoteRepository = MeditationNoteRepository(dao: db.meditationNotesDao);
     if (cachedPoseUuids != null) shared.meditationPoseUuids = cachedPoseUuids;
     await shared.deeplinkRouter.init();
 
