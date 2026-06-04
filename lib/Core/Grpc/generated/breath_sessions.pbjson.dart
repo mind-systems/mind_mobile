@@ -43,6 +43,20 @@ const TimeOfDay$json = {
 final $typed_data.Uint8List timeOfDayDescriptor = $convert.base64Decode(
     'CglUaW1lT2ZEYXkSCwoHTU9STklORxAAEgoKBk1JRERBWRABEgsKB0VWRU5JTkcQAg==');
 
+@$core.Deprecated('Use sessionSectionDescriptor instead')
+const SessionSection$json = {
+  '1': 'SessionSection',
+  '2': [
+    {'1': 'STARRED', '2': 0},
+    {'1': 'MINE', '2': 1},
+    {'1': 'SHARED', '2': 2},
+  ],
+};
+
+/// Descriptor for `SessionSection`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List sessionSectionDescriptor = $convert.base64Decode(
+    'Cg5TZXNzaW9uU2VjdGlvbhILCgdTVEFSUkVEEAASCAoETUlORRABEgoKBlNIQVJFRBAC');
+
 @$core.Deprecated('Use stepDtoDescriptor instead')
 const StepDto$json = {
   '1': 'StepDto',
@@ -188,6 +202,35 @@ final $typed_data.Uint8List breathSessionWithStarredDtoDescriptor =
         'ChtCcmVhdGhTZXNzaW9uV2l0aFN0YXJyZWREdG8SMAoHc2Vzc2lvbhgBIAEoCzIWLm1pbmQuQn'
         'JlYXRoU2Vzc2lvbkR0b1IHc2Vzc2lvbhIiCgppc19zdGFycmVkGAIgASgISABSCWlzU3RhcnJl'
         'ZIgBAUINCgtfaXNfc3RhcnJlZA==');
+
+@$core.Deprecated('Use sessionListItemDescriptor instead')
+const SessionListItem$json = {
+  '1': 'SessionListItem',
+  '2': [
+    {
+      '1': 'session',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.mind.BreathSessionWithStarredDto',
+      '10': 'session'
+    },
+    {
+      '1': 'section',
+      '3': 2,
+      '4': 1,
+      '5': 14,
+      '6': '.mind.SessionSection',
+      '10': 'section'
+    },
+  ],
+};
+
+/// Descriptor for `SessionListItem`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List sessionListItemDescriptor = $convert.base64Decode(
+    'Cg9TZXNzaW9uTGlzdEl0ZW0SOwoHc2Vzc2lvbhgBIAEoCzIhLm1pbmQuQnJlYXRoU2Vzc2lvbl'
+    'dpdGhTdGFycmVkRHRvUgdzZXNzaW9uEi4KB3NlY3Rpb24YAiABKA4yFC5taW5kLlNlc3Npb25T'
+    'ZWN0aW9uUgdzZWN0aW9u');
 
 @$core.Deprecated('Use createSessionRequestDescriptor instead')
 const CreateSessionRequest$json = {
@@ -375,39 +418,51 @@ final $typed_data.Uint8List deleteSessionResponseDescriptor =
 const ListSessionsRequest$json = {
   '1': 'ListSessionsRequest',
   '2': [
-    {'1': 'page', '3': 1, '4': 1, '5': 5, '10': 'page'},
+    {'1': 'cursor', '3': 1, '4': 1, '5': 9, '9': 0, '10': 'cursor', '17': true},
     {'1': 'page_size', '3': 2, '4': 1, '5': 5, '10': 'pageSize'},
+  ],
+  '8': [
+    {'1': '_cursor'},
   ],
 };
 
 /// Descriptor for `ListSessionsRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List listSessionsRequestDescriptor = $convert.base64Decode(
-    'ChNMaXN0U2Vzc2lvbnNSZXF1ZXN0EhIKBHBhZ2UYASABKAVSBHBhZ2USGwoJcGFnZV9zaXplGA'
-    'IgASgFUghwYWdlU2l6ZQ==');
+    'ChNMaXN0U2Vzc2lvbnNSZXF1ZXN0EhsKBmN1cnNvchgBIAEoCUgAUgZjdXJzb3KIAQESGwoJcG'
+    'FnZV9zaXplGAIgASgFUghwYWdlU2l6ZUIJCgdfY3Vyc29y');
 
 @$core.Deprecated('Use listSessionsResponseDescriptor instead')
 const ListSessionsResponse$json = {
   '1': 'ListSessionsResponse',
   '2': [
     {
-      '1': 'data',
+      '1': 'items',
       '3': 1,
       '4': 3,
       '5': 11,
-      '6': '.mind.BreathSessionWithStarredDto',
-      '10': 'data'
+      '6': '.mind.SessionListItem',
+      '10': 'items'
     },
-    {'1': 'total', '3': 2, '4': 1, '5': 5, '10': 'total'},
-    {'1': 'page', '3': 3, '4': 1, '5': 5, '10': 'page'},
-    {'1': 'page_size', '3': 4, '4': 1, '5': 5, '10': 'pageSize'},
+    {
+      '1': 'next_cursor',
+      '3': 2,
+      '4': 1,
+      '5': 9,
+      '9': 0,
+      '10': 'nextCursor',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_next_cursor'},
   ],
 };
 
 /// Descriptor for `ListSessionsResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List listSessionsResponseDescriptor = $convert.base64Decode(
-    'ChRMaXN0U2Vzc2lvbnNSZXNwb25zZRI1CgRkYXRhGAEgAygLMiEubWluZC5CcmVhdGhTZXNzaW'
-    '9uV2l0aFN0YXJyZWREdG9SBGRhdGESFAoFdG90YWwYAiABKAVSBXRvdGFsEhIKBHBhZ2UYAyAB'
-    'KAVSBHBhZ2USGwoJcGFnZV9zaXplGAQgASgFUghwYWdlU2l6ZQ==');
+    'ChRMaXN0U2Vzc2lvbnNSZXNwb25zZRIrCgVpdGVtcxgBIAMoCzIVLm1pbmQuU2Vzc2lvbkxpc3'
+    'RJdGVtUgVpdGVtcxIkCgtuZXh0X2N1cnNvchgCIAEoCUgAUgpuZXh0Q3Vyc29yiAEBQg4KDF9u'
+    'ZXh0X2N1cnNvcg==');
 
 @$core.Deprecated('Use getSessionRequestDescriptor instead')
 const GetSessionRequest$json = {

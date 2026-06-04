@@ -1,26 +1,25 @@
 import 'package:mind/BreathModule/Models/BreathSession.dart';
+import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 
 sealed class BreathSessionNotifierEvent {}
 
 class PageLoaded extends BreathSessionNotifierEvent {
-  final int page;
-  final List<BreathSession> sessions;
-  final bool hasMore;
+  final List<BreathSessionListEntry> entries;
+  final String? nextCursor;
 
   PageLoaded({
-    required this.page,
-    required this.sessions,
-    required this.hasMore,
+    required this.entries,
+    required this.nextCursor,
   });
 }
 
 class SessionsRefreshed extends BreathSessionNotifierEvent {
-  final List<BreathSession> sessions;
-  final bool hasMore;
+  final List<BreathSessionListEntry> entries;
+  final String? nextCursor;
 
   SessionsRefreshed({
-    required this.sessions,
-    required this.hasMore,
+    required this.entries,
+    required this.nextCursor,
   });
 }
 

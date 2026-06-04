@@ -453,6 +453,77 @@ class BreathSessionWithStarredDto extends $pb.GeneratedMessage {
   void clearIsStarred() => $_clearField(2);
 }
 
+/// Wraps a session with its section so the client can render grouped lists.
+class SessionListItem extends $pb.GeneratedMessage {
+  factory SessionListItem({
+    BreathSessionWithStarredDto? session,
+    SessionSection? section,
+  }) {
+    final result = create();
+    if (session != null) result.session = session;
+    if (section != null) result.section = section;
+    return result;
+  }
+
+  SessionListItem._();
+
+  factory SessionListItem.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory SessionListItem.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SessionListItem',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
+      createEmptyInstance: create)
+    ..aOM<BreathSessionWithStarredDto>(1, _omitFieldNames ? '' : 'session',
+        subBuilder: BreathSessionWithStarredDto.create)
+    ..aE<SessionSection>(2, _omitFieldNames ? '' : 'section',
+        enumValues: SessionSection.values)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SessionListItem clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SessionListItem copyWith(void Function(SessionListItem) updates) =>
+      super.copyWith((message) => updates(message as SessionListItem))
+          as SessionListItem;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SessionListItem create() => SessionListItem._();
+  @$core.override
+  SessionListItem createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static SessionListItem getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SessionListItem>(create);
+  static SessionListItem? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  BreathSessionWithStarredDto get session => $_getN(0);
+  @$pb.TagNumber(1)
+  set session(BreathSessionWithStarredDto value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSession() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSession() => $_clearField(1);
+  @$pb.TagNumber(1)
+  BreathSessionWithStarredDto ensureSession() => $_ensure(0);
+
+  @$pb.TagNumber(2)
+  SessionSection get section => $_getN(1);
+  @$pb.TagNumber(2)
+  set section(SessionSection value) => $_setField(2, value);
+  @$pb.TagNumber(2)
+  $core.bool hasSection() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSection() => $_clearField(2);
+}
+
 /// CreateSession — maps to CreateBreathSessionDto in src/breath-sessions/dto/breath-session.dto.ts.
 /// Auth identity comes from metadata/interceptor, not the message.
 class CreateSessionRequest extends $pb.GeneratedMessage {
@@ -991,16 +1062,16 @@ class DeleteSessionResponse extends $pb.GeneratedMessage {
   void clearMessage() => $_clearField(1);
 }
 
-/// ListSessions — maps to ListQueryDto in src/breath-sessions/dto/breath-session.dto.ts.
+/// ListSessions — cursor-based pagination.
 /// Auth is optional: anonymous users see shared sessions only; authenticated users
-/// receive is_starred on each item and the full own/starred/shared grouping.
+/// receive is_starred on each item and the full STARRED/MINE/SHARED grouping.
 class ListSessionsRequest extends $pb.GeneratedMessage {
   factory ListSessionsRequest({
-    $core.int? page,
+    $core.String? cursor,
     $core.int? pageSize,
   }) {
     final result = create();
-    if (page != null) result.page = page;
+    if (cursor != null) result.cursor = cursor;
     if (pageSize != null) result.pageSize = pageSize;
     return result;
   }
@@ -1018,7 +1089,7 @@ class ListSessionsRequest extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'ListSessionsRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
-    ..aI(1, _omitFieldNames ? '' : 'page')
+    ..aOS(1, _omitFieldNames ? '' : 'cursor')
     ..aI(2, _omitFieldNames ? '' : 'pageSize')
     ..hasRequiredFields = false;
 
@@ -1042,13 +1113,13 @@ class ListSessionsRequest extends $pb.GeneratedMessage {
   static ListSessionsRequest? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.int get page => $_getIZ(0);
+  $core.String get cursor => $_getSZ(0);
   @$pb.TagNumber(1)
-  set page($core.int value) => $_setSignedInt32(0, value);
+  set cursor($core.String value) => $_setString(0, value);
   @$pb.TagNumber(1)
-  $core.bool hasPage() => $_has(0);
+  $core.bool hasCursor() => $_has(0);
   @$pb.TagNumber(1)
-  void clearPage() => $_clearField(1);
+  void clearCursor() => $_clearField(1);
 
   @$pb.TagNumber(2)
   $core.int get pageSize => $_getIZ(1);
@@ -1060,19 +1131,14 @@ class ListSessionsRequest extends $pb.GeneratedMessage {
   void clearPageSize() => $_clearField(2);
 }
 
-/// Maps to BreathSessionListResponseDto in src/breath-sessions/dto/breath-session.dto.ts
 class ListSessionsResponse extends $pb.GeneratedMessage {
   factory ListSessionsResponse({
-    $core.Iterable<BreathSessionWithStarredDto>? data,
-    $core.int? total,
-    $core.int? page,
-    $core.int? pageSize,
+    $core.Iterable<SessionListItem>? items,
+    $core.String? nextCursor,
   }) {
     final result = create();
-    if (data != null) result.data.addAll(data);
-    if (total != null) result.total = total;
-    if (page != null) result.page = page;
-    if (pageSize != null) result.pageSize = pageSize;
+    if (items != null) result.items.addAll(items);
+    if (nextCursor != null) result.nextCursor = nextCursor;
     return result;
   }
 
@@ -1089,11 +1155,9 @@ class ListSessionsResponse extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'ListSessionsResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
-    ..pPM<BreathSessionWithStarredDto>(1, _omitFieldNames ? '' : 'data',
-        subBuilder: BreathSessionWithStarredDto.create)
-    ..aI(2, _omitFieldNames ? '' : 'total')
-    ..aI(3, _omitFieldNames ? '' : 'page')
-    ..aI(4, _omitFieldNames ? '' : 'pageSize')
+    ..pPM<SessionListItem>(1, _omitFieldNames ? '' : 'items',
+        subBuilder: SessionListItem.create)
+    ..aOS(2, _omitFieldNames ? '' : 'nextCursor')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1116,34 +1180,16 @@ class ListSessionsResponse extends $pb.GeneratedMessage {
   static ListSessionsResponse? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $pb.PbList<BreathSessionWithStarredDto> get data => $_getList(0);
+  $pb.PbList<SessionListItem> get items => $_getList(0);
 
   @$pb.TagNumber(2)
-  $core.int get total => $_getIZ(1);
+  $core.String get nextCursor => $_getSZ(1);
   @$pb.TagNumber(2)
-  set total($core.int value) => $_setSignedInt32(1, value);
+  set nextCursor($core.String value) => $_setString(1, value);
   @$pb.TagNumber(2)
-  $core.bool hasTotal() => $_has(1);
+  $core.bool hasNextCursor() => $_has(1);
   @$pb.TagNumber(2)
-  void clearTotal() => $_clearField(2);
-
-  @$pb.TagNumber(3)
-  $core.int get page => $_getIZ(2);
-  @$pb.TagNumber(3)
-  set page($core.int value) => $_setSignedInt32(2, value);
-  @$pb.TagNumber(3)
-  $core.bool hasPage() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearPage() => $_clearField(3);
-
-  @$pb.TagNumber(4)
-  $core.int get pageSize => $_getIZ(3);
-  @$pb.TagNumber(4)
-  set pageSize($core.int value) => $_setSignedInt32(3, value);
-  @$pb.TagNumber(4)
-  $core.bool hasPageSize() => $_has(3);
-  @$pb.TagNumber(4)
-  void clearPageSize() => $_clearField(4);
+  void clearNextCursor() => $_clearField(2);
 }
 
 /// GetSession — auth optional: authenticated users receive is_starred in the response.

@@ -57,5 +57,30 @@ class TimeOfDay extends $pb.ProtobufEnum {
   const TimeOfDay._(super.value, super.name);
 }
 
+/// Section grouping for ListSessions items. A session may legitimately appear
+/// in more than one section (e.g. starred AND mine) — duplication is intentional
+/// so the client can render each section independently.
+class SessionSection extends $pb.ProtobufEnum {
+  static const SessionSection STARRED =
+      SessionSection._(0, _omitEnumNames ? '' : 'STARRED');
+  static const SessionSection MINE =
+      SessionSection._(1, _omitEnumNames ? '' : 'MINE');
+  static const SessionSection SHARED =
+      SessionSection._(2, _omitEnumNames ? '' : 'SHARED');
+
+  static const $core.List<SessionSection> values = <SessionSection>[
+    STARRED,
+    MINE,
+    SHARED,
+  ];
+
+  static final $core.List<SessionSection?> _byValue =
+      $pb.ProtobufEnum.$_initByValueList(values, 2);
+  static SessionSection? valueOf($core.int value) =>
+      value < 0 || value >= _byValue.length ? null : _byValue[value];
+
+  const SessionSection._(super.value, super.name);
+}
+
 const $core.bool _omitEnumNames =
     $core.bool.fromEnvironment('protobuf.omit_enum_names');

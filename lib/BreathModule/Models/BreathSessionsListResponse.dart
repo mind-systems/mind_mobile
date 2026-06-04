@@ -1,26 +1,24 @@
+import 'package:mind/BreathModule/Models/BreathListSection.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 
+class BreathSessionListEntry {
+  final BreathSession session;
+  final BreathListSection section;
+
+  const BreathSessionListEntry({
+    required this.session,
+    required this.section,
+  });
+}
+
 class BreathSessionsListResponse {
-  final List<BreathSession> data;
-  final int total;
-  final int page;
-  final int pageSize;
+  final List<BreathSessionListEntry> entries;
+  final String? nextCursor;
 
-  bool get hasMore => page * pageSize < total;
-
-  BreathSessionsListResponse({
-    required this.data,
-    required this.total,
-    required this.page,
-    required this.pageSize,
+  const BreathSessionsListResponse({
+    required this.entries,
+    required this.nextCursor,
   });
 
-  factory BreathSessionsListResponse.fromJson(Map<String, dynamic> json) {
-    return BreathSessionsListResponse(
-      data: (json['data'] as List).map((e) => BreathSession.fromJson(e as Map<String, dynamic>)).toList(),
-      total: json['total'] as int,
-      page: json['page'] as int,
-      pageSize: json['pageSize'] as int,
-    );
-  }
+  bool get hasMore => nextCursor != null && nextCursor!.isNotEmpty;
 }

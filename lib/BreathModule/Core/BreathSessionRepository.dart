@@ -4,6 +4,7 @@ import 'package:mind/Core/Api/Models/SaveBreathSessionRequest.dart';
 import 'package:mind/Core/Api/Models/StarSessionRequest.dart';
 import 'package:mind/Core/Database/IBreathSessionDao.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
+import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 
 class BreathSessionRepository implements IBreathSessionRepository {
   final IBreathSessionDao _dao;
@@ -23,28 +24,18 @@ class BreathSessionRepository implements IBreathSessionRepository {
   }
 
   @override
-  Future<({List<BreathSession> sessions, bool hasMore})> refresh(int pageSize) async {
-    final response = await _api.fetchAll(1, pageSize);
-    await _dao.deleteAllSessions();
-    await _dao.saveSessions(response.data);
-    return (sessions: response.data, hasMore: response.hasMore);
+  Future<({List<BreathSessionListEntry> entries, String? nextCursor})> refresh(int pageSize) async {
+    final response = await _api.fetchPage(null, pageSize);
+    // Upsert — do NOT deleteAllSessions; detail/getById rely on cached rows
+    await _dao.saveSessions(response.entries.map((e) => e.session).toList());
+    return (entries: response.entries, nextCursor: response.nextCursor);
   }
 
   @override
-  Future<({List<BreathSession> sessions, bool hasMore})> fetch(int page, int pageSize) async {
-    final offset = page * pageSize;
-    final daoPage = await _dao.getSessions(limit: pageSize, offset: offset);
-
-    if (daoPage.length == pageSize) {
-      // DAO returned a full page — assume there may be more; API will confirm on next scroll
-      return (sessions: daoPage, hasMore: true);
-    }
-
-    // DAO returned fewer than pageSize — fetch from API
-    // API uses 1-based page numbering
-    final response = await _api.fetchAll(page + 1, pageSize);
-    await _dao.saveSessions(response.data);
-    return (sessions: response.data, hasMore: response.hasMore);
+  Future<({List<BreathSessionListEntry> entries, String? nextCursor})> fetch(String? cursor, int pageSize) async {
+    final response = await _api.fetchPage(cursor, pageSize);
+    await _dao.saveSessions(response.entries.map((e) => e.session).toList());
+    return (entries: response.entries, nextCursor: response.nextCursor);
   }
 
   @override

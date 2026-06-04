@@ -1,20 +1,32 @@
 sealed class BreathSessionListItem {}
 
-/// Ячейка с данными сессии
+/// Section grouping for the list (server-provided)
+enum ListSection {
+  /// Starred sessions (may duplicate entries from mine/shared)
+  starred,
+  /// Sessions created by the current user
+  mine,
+  /// Public sessions from other users
+  shared,
+}
+
+/// Cell model with session data
 class BreathSessionListCellModel extends BreathSessionListItem {
   final String id;
-  /// Дескрипшн сессии (1–2 строки)
+  /// Session description (1–2 lines)
   final String title;
-  /// Строка паттернов дыхания: "● 4-4-4-4   ■ 6-6   ▲ 4-2-6"
+  /// Breathing pattern string: "● 4-4-4-4   ■ 6-6   ▲ 4-2-6"
   final String subtitle;
-  /// Общая длительность сессии: "12:40"
+  /// Total session duration: "12:40"
   final String duration;
-  /// Сложность сессии (0–500+)
+  /// Session complexity (0–500+)
   final double complexity;
-  /// Тип владения сессией (используется VM для группировки)
+  /// Ownership type (used for metadata display)
   final SessionOwnership ownership;
-  /// Отмечена ли сессия звёздочкой (используется VM для группировки)
+  /// Whether the session is starred
   final bool isStarred;
+  /// Server-provided section this cell belongs to
+  final ListSection section;
 
   BreathSessionListCellModel({
     required this.id,
@@ -24,32 +36,33 @@ class BreathSessionListCellModel extends BreathSessionListItem {
     required this.complexity,
     required this.ownership,
     required this.isStarred,
+    required this.section,
   });
 }
 
-/// Тип заголовка секции
+/// Section header type
 enum SectionHeaderType {
   mySessions,
   starredSessions,
   sharedSessions,
 }
 
-/// Заголовок секции (разделитель групп)
+/// Section header (group separator)
 class SectionHeaderModel extends BreathSessionListItem {
   final SectionHeaderType type;
   SectionHeaderModel(this.type);
 }
 
-/// Skeleton-ячейка (для initial/empty/paging)
+/// Skeleton cell (for initial/empty/paging states)
 class SkeletonCellModel extends BreathSessionListItem {
   final bool animated;
   SkeletonCellModel({required this.animated});
 }
 
-/// Тип владения сессией
+/// Session ownership type
 enum SessionOwnership {
-  /// Сессия создана текущим пользователем
+  /// Session created by the current user
   mine,
-  /// Публичная сессия другого пользователя
+  /// Public session from another user
   shared,
 }

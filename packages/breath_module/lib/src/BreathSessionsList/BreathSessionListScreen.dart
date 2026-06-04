@@ -68,7 +68,7 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
     final threshold = _scrollController.position.maxScrollExtent - (10 * _estimatedCellHeight);
 
     if (_scrollController.position.pixels >= threshold) {
-      ref.read(breathSessionListViewModelProvider.notifier).loadNextPage();
+      ref.read(breathSessionListViewModelProvider.notifier).loadNext();
     }
 
     _scrollThrottleTimer = Timer(const Duration(milliseconds: 200), () {

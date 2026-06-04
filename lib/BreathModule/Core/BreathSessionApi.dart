@@ -1,4 +1,5 @@
 import 'package:mind/BreathModule/Core/IBreathSessionApi.dart';
+import 'package:mind/BreathModule/Models/BreathListSection.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
 import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 import 'package:mind/BreathModule/Models/ExerciseSet.dart';
@@ -47,19 +48,37 @@ class BreathSessionApi implements IBreathSessionApi {
   }
 
   @override
-  Future<BreathSessionsListResponse> fetchAll(int page, int pageSize) async {
-    final response = await _service.listSessions(proto.ListSessionsRequest(page: page, pageSize: pageSize));
+  Future<BreathSessionsListResponse> fetchPage(String? cursor, int pageSize) async {
+    final request = cursor != null
+        ? proto.ListSessionsRequest(cursor: cursor, pageSize: pageSize)
+        : proto.ListSessionsRequest(pageSize: pageSize);
+    final response = await _service.listSessions(request);
+    final entries = response.items.map((item) => BreathSessionListEntry(
+      session: _mapSessionWithStarred(item.session),
+      section: _mapSection(item.section),
+    )).toList();
     return BreathSessionsListResponse(
-      data: response.data.map(_mapSessionWithStarred).toList(),
-      total: response.total,
-      page: response.page,
-      pageSize: response.pageSize,
+      entries: entries,
+      nextCursor: response.hasNextCursor() ? response.nextCursor : null,
     );
   }
 
   @override
   Future<void> starSession(StarSessionRequest request) async {
     await _service.updateSessionSettings(proto.UpdateSessionSettingsRequest(id: request.id, starred: request.starred));
+  }
+
+  BreathListSection _mapSection(proto.SessionSection section) {
+    switch (section) {
+      case proto.SessionSection.STARRED:
+        return BreathListSection.starred;
+      case proto.SessionSection.MINE:
+        return BreathListSection.mine;
+      case proto.SessionSection.SHARED:
+        return BreathListSection.shared;
+      default:
+        return BreathListSection.shared;
+    }
   }
 
   BreathSession _mapSession(proto.BreathSessionDto dto, {bool isStarred = false}) {

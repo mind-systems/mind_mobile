@@ -3,31 +3,39 @@ import 'dart:async';
 import 'package:rxdart/rxdart.dart';
 
 import 'package:mind/BreathModule/Core/IBreathSessionRepository.dart';
+import 'package:mind/BreathModule/Models/BreathListSection.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
+import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 import 'package:mind/BreathModule/Core/Models/BreathSessionNotifierEvent.dart';
 import 'package:mind/User/Models/AuthState.dart';
 
 class BreathSessionsState {
-  final Map<String, BreathSession> byId;
-  final List<String> order;
+  final List<BreathSessionListEntry> entries;
+  final String? nextCursor;
   final BreathSessionNotifierEvent? lastEvent;
 
   const BreathSessionsState({
-    required this.byId,
-    required this.order,
+    required this.entries,
+    required this.nextCursor,
     required this.lastEvent,
   });
 
-  List<BreathSession> get orderedSessions =>
-      order.map((id) => byId[id]!).toList();
+  /// Synchronous lookup for non-list consumers.
+  /// Returns the first entry matching [id], or null if not found.
+  BreathSession? cachedById(String id) {
+    for (final entry in entries) {
+      if (entry.session.id == id) return entry.session;
+    }
+    return null;
+  }
 }
 
-/// Доменный нотифаер — источник правды по сессиям дыхания.
+/// Domain notifier — source of truth for breathing sessions.
 class BreathSessionNotifier {
   final IBreathSessionRepository repository;
 
   final BehaviorSubject<BreathSessionsState> _subject = BehaviorSubject.seeded(
-    const BreathSessionsState(byId: {}, order: [], lastEvent: null),
+    const BreathSessionsState(entries: [], nextCursor: null, lastEvent: null),
   );
 
   bool _isLoading = false;
@@ -48,8 +56,8 @@ class BreathSessionNotifier {
 
   void invalidate() {
     _subject.add(BreathSessionsState(
-      byId: {},
-      order: [],
+      entries: const [],
+      nextCursor: null,
       lastEvent: SessionsInvalidated(),
     ));
   }
@@ -60,48 +68,31 @@ class BreathSessionNotifier {
 
   /// ---------- Pagination ----------
 
-  Future<void> load(int page, int pageSize) async {
+  Future<void> load(String? cursor, int pageSize) async {
     if (_isLoading) return;
 
     _isLoading = true;
 
     try {
-      final result = await repository.fetch(page, pageSize);
-      final sessions = result.sessions;
-      final hasMore = result.hasMore;
-
-      final Map<String, BreathSession> updatedById;
-      final List<String> updatedOrder;
-      final List<BreathSession> newSessions;
-
+      final result = await repository.fetch(cursor, pageSize);
       final state = _subject.value;
 
-      if (page == 0) {
-        updatedById = {for (final s in sessions) s.id: s};
-        updatedOrder = sessions.map((s) => s.id).toList();
-        newSessions = sessions;
-      } else {
-        updatedById = Map.from(state.byId);
-        updatedOrder = List.from(state.order);
-        newSessions = [];
+      final List<BreathSessionListEntry> updatedEntries;
 
-        for (final session in sessions) {
-          final isNew = !state.byId.containsKey(session.id);
-          updatedById[session.id] = session;
-          if (isNew) {
-            updatedOrder.add(session.id);
-            newSessions.add(session);
-          }
-        }
+      if (cursor == null) {
+        // First page — replace entirely
+        updatedEntries = result.entries;
+      } else {
+        // Append — no dedup
+        updatedEntries = [...state.entries, ...result.entries];
       }
 
       _subject.add(BreathSessionsState(
-        byId: updatedById,
-        order: updatedOrder,
+        entries: updatedEntries,
+        nextCursor: result.nextCursor,
         lastEvent: PageLoaded(
-          page: page,
-          sessions: newSessions,
-          hasMore: hasMore,
+          entries: result.entries,
+          nextCursor: result.nextCursor,
         ),
       ));
     } finally {
@@ -116,15 +107,13 @@ class BreathSessionNotifier {
 
     try {
       final result = await repository.refresh(pageSize);
-      final sessions = result.sessions;
-      final hasMore = result.hasMore;
 
       _subject.add(BreathSessionsState(
-        byId: {for (final s in sessions) s.id: s},
-        order: sessions.map((s) => s.id).toList(),
+        entries: result.entries,
+        nextCursor: result.nextCursor,
         lastEvent: SessionsRefreshed(
-          sessions: sessions,
-          hasMore: hasMore,
+          entries: result.entries,
+          nextCursor: result.nextCursor,
         ),
       ));
     } finally {
@@ -137,43 +126,119 @@ class BreathSessionNotifier {
   Future<BreathSession> create(BreathSession session) async {
     final saved = await repository.create(session);
     final state = _subject.value;
-    final updatedById = Map<String, BreathSession>.from(state.byId)..[saved.id] = saved;
-    final updatedOrder = [saved.id, ...state.order];
-    _subject.add(BreathSessionsState(byId: updatedById, order: updatedOrder, lastEvent: SessionCreated(saved)));
+    final newEntry = BreathSessionListEntry(session: saved, section: BreathListSection.mine);
+    final updatedEntries = [newEntry, ...state.entries];
+    _subject.add(BreathSessionsState(
+      entries: updatedEntries,
+      nextCursor: state.nextCursor,
+      lastEvent: SessionCreated(saved),
+    ));
     return saved;
   }
 
   Future<BreathSession> update(BreathSession session) async {
     final saved = await repository.update(session);
     final state = _subject.value;
-    final updatedById = Map<String, BreathSession>.from(state.byId)..[saved.id] = saved;
-    _subject.add(BreathSessionsState(byId: updatedById, order: state.order, lastEvent: SessionUpdated(saved)));
+    // Replace session on every entry whose id matches, preserving each entry's section
+    final updatedEntries = state.entries.map((e) {
+      if (e.session.id == saved.id) {
+        return BreathSessionListEntry(session: saved, section: e.section);
+      }
+      return e;
+    }).toList();
+    _subject.add(BreathSessionsState(
+      entries: updatedEntries,
+      nextCursor: state.nextCursor,
+      lastEvent: SessionUpdated(saved),
+    ));
     return saved;
   }
 
   Future<void> starSession(String id, {required bool starred}) async {
     await repository.starSession(id, starred: starred);
     final state = _subject.value;
-    final session = state.byId[id];
-    if (session == null) return;
-    final updated = session.copyWith(isStarred: starred);
-    final updatedById = Map<String, BreathSession>.from(state.byId)..[id] = updated;
-    _subject.add(BreathSessionsState(byId: updatedById, order: state.order, lastEvent: SessionStarred(updated)));
+
+    // If the session is not in the entry list, skip optimistic mutation.
+    // The server write has already succeeded; the next load/refresh will sync it.
+    if (!state.entries.any((e) => e.session.id == id)) return;
+
+    // Capture source before any mutation — guaranteed to exist by the guard above.
+    // Used as fallback for the event payload when unstar removes the only loaded copy.
+    final source = state.entries.firstWhere((e) => e.session.id == id).session;
+
+    List<BreathSessionListEntry> updatedEntries;
+
+    if (starred) {
+      // Set isStarred=true on every entry with this id
+      updatedEntries = state.entries.map((e) {
+        if (e.session.id == id) {
+          return BreathSessionListEntry(
+            session: e.session.copyWith(isStarred: true),
+            section: e.section,
+          );
+        }
+        return e;
+      }).toList();
+
+      // If no entry with section==starred exists for this id, prepend one.
+      // Safe: source exists, so firstWhere will always match.
+      final hasStarredEntry = updatedEntries.any(
+        (e) => e.session.id == id && e.section == BreathListSection.starred,
+      );
+      if (!hasStarredEntry) {
+        final base = updatedEntries.firstWhere((e) => e.session.id == id);
+        final starredEntry = BreathSessionListEntry(
+          session: base.session.copyWith(isStarred: true),
+          section: BreathListSection.starred,
+        );
+        updatedEntries = [starredEntry, ...updatedEntries];
+      }
+    } else {
+      // Remove every entry where id==id && section==starred
+      // Set isStarred=false on remaining entries with this id
+      updatedEntries = state.entries
+          .where((e) => !(e.session.id == id && e.section == BreathListSection.starred))
+          .map((e) {
+            if (e.session.id == id) {
+              return BreathSessionListEntry(
+                session: e.session.copyWith(isStarred: false),
+                section: e.section,
+              );
+            }
+            return e;
+          })
+          .toList();
+    }
+
+    // When unstarring a session that was only present as a STARRED entry (e.g. its MINE/SHARED
+    // duplicate is on an unloaded page), updatedEntries has no entry with this id after filtering.
+    // Fall back to source for the event payload — the list path ignores it anyway.
+    final updatedSession = updatedEntries
+        .firstWhere(
+          (e) => e.session.id == id,
+          orElse: () => BreathSessionListEntry(
+            session: source.copyWith(isStarred: starred),
+            section: BreathListSection.mine,
+          ),
+        )
+        .session;
+
+    _subject.add(BreathSessionsState(
+      entries: updatedEntries,
+      nextCursor: state.nextCursor,
+      lastEvent: SessionStarred(updatedSession),
+    ));
   }
 
   Future<void> delete(String id) async {
     await repository.delete(id);
 
     final state = _subject.value;
-    final updatedById = Map<String, BreathSession>.from(state.byId);
-    updatedById.remove(id);
-
-    final updatedOrder = List<String>.from(state.order);
-    updatedOrder.remove(id);
+    final updatedEntries = state.entries.where((e) => e.session.id != id).toList();
 
     _subject.add(BreathSessionsState(
-      byId: updatedById,
-      order: updatedOrder,
+      entries: updatedEntries,
+      nextCursor: state.nextCursor,
       lastEvent: SessionDeleted(id),
     ));
   }
@@ -181,9 +246,8 @@ class BreathSessionNotifier {
   /// ---------- Sync access ----------
 
   Future<BreathSession?> getById(String id) async {
-    if (_subject.value.byId.containsKey(id)) {
-      return _subject.value.byId[id];
-    }
+    final cached = currentState.cachedById(id);
+    if (cached != null) return cached;
     return await repository.fetchById(id);
   }
 

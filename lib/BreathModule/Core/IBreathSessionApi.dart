@@ -8,6 +8,6 @@ abstract class IBreathSessionApi {
   Future<BreathSession> update(String id, SaveBreathSessionRequest request);
   Future<void> delete(String sessionId);
   Future<BreathSession> fetchById(String id);
-  Future<BreathSessionsListResponse> fetchAll(int page, int pageSize);
+  Future<BreathSessionsListResponse> fetchPage(String? cursor, int pageSize);
   Future<void> starSession(StarSessionRequest request);
 }

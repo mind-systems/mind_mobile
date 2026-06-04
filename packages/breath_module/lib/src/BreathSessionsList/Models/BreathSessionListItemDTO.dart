@@ -8,6 +8,7 @@ class BreathSessionListItemDTO {
   final double complexity;
   final SessionOwnership ownership;
   final bool isStarred;
+  final ListSection section;
 
   const BreathSessionListItemDTO({
     required this.id,
@@ -17,6 +18,7 @@ class BreathSessionListItemDTO {
     required this.complexity,
     required this.ownership,
     required this.isStarred,
+    required this.section,
   });
 }
 

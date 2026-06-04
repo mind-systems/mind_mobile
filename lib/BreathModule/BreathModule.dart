@@ -61,7 +61,7 @@ class BreathModule {
     final app = App.shared;
     final userId = app.userNotifier.currentState.user.id;
     final session = sessionId != null
-        ? app.breathSessionNotifier.currentState.byId[sessionId]
+        ? app.breathSessionNotifier.currentState.cachedById(sessionId)
         : null;
     assert(sessionId == null || session != null, 'Session $sessionId not found in cache — was it deleted before navigation?');
     final service = BreathSessionConstructorService(userId: userId, existingSession: session, provider: app.breathSessionNotifier, userNotifier: app.userNotifier);

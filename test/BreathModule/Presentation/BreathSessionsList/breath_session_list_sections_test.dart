@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:breath_module/breath_module.dart' show IBreathSessionListCoordinator, IBreathSessionListService, BreathSessionListItemDTO, BreathSessionListState, BreathSessionListViewModel, breathSessionListViewModelProvider, BreathSessionListEvent, SessionOwnership, PageLoadedEvent, SectionHeaderType, SectionHeaderModel, BreathSessionListCellModel;
+import 'package:breath_module/breath_module.dart' show IBreathSessionListCoordinator, IBreathSessionListService, BreathSessionListItemDTO, BreathSessionListState, BreathSessionListViewModel, breathSessionListViewModelProvider, BreathSessionListEvent, SessionOwnership, ListSection, ListUpdatedEvent, SectionHeaderType, SectionHeaderModel, BreathSessionListCellModel;
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -18,21 +18,21 @@ class _FakeCoordinator implements IBreathSessionListCoordinator {
 
 class _FakeService implements IBreathSessionListService {
   final _controller = StreamController<BreathSessionListEvent>.broadcast();
-  final Completer<void> _fetchCompleter = Completer();
+  final Completer<void> _loadCompleter = Completer();
 
   @override
   Stream<BreathSessionListEvent> observeChanges() => _controller.stream;
 
   @override
-  Future<void> fetchPage(int page, int pageSize) => _fetchCompleter.future;
+  Future<void> loadNext(int pageSize) => _loadCompleter.future;
 
   @override
   Future<void> refresh(int pageSize) async {}
 
   void emit(BreathSessionListEvent event) => _controller.add(event);
 
-  void completeFetch() {
-    if (!_fetchCompleter.isCompleted) _fetchCompleter.complete();
+  void completeLoad() {
+    if (!_loadCompleter.isCompleted) _loadCompleter.complete();
   }
 
   void dispose() => _controller.close();
@@ -44,7 +44,8 @@ class _FakeService implements IBreathSessionListService {
 
 BreathSessionListItemDTO _makeDTO({
   required String id,
-  required SessionOwnership ownership,
+  required ListSection section,
+  SessionOwnership ownership = SessionOwnership.mine,
   bool isStarred = false,
 }) {
   return BreathSessionListItemDTO(
@@ -55,6 +56,7 @@ BreathSessionListItemDTO _makeDTO({
     complexity: 0,
     ownership: ownership,
     isStarred: isStarred,
+    section: section,
   );
 }
 
@@ -94,7 +96,7 @@ void main() {
       ],
     );
     vm = container.read(breathSessionListViewModelProvider.notifier);
-    service.completeFetch();
+    service.completeLoad();
   });
 
   tearDown(() {
@@ -102,13 +104,12 @@ void main() {
     service.dispose();
   });
 
-  group('_buildItemsWithSections', () {
+  group('_buildItemsWithSections — server sections', () {
     test('mine-only → only mySessions header', () async {
-      service.emit(PageLoadedEvent(
-        page: 0,
+      service.emit(ListUpdatedEvent(
         items: [
-          _makeDTO(id: '1', ownership: SessionOwnership.mine),
-          _makeDTO(id: '2', ownership: SessionOwnership.mine),
+          _makeDTO(id: '1', section: ListSection.mine),
+          _makeDTO(id: '2', section: ListSection.mine),
         ],
         hasMore: false,
       ));
@@ -118,49 +119,30 @@ void main() {
       expect(_extractCellIds(vm.state), ['1', '2']);
     });
 
-    test('starred-others present → starredSessions header appears between my and shared', () async {
-      service.emit(PageLoadedEvent(
-        page: 0,
+    test('starred section appears first before mine and shared', () async {
+      service.emit(ListUpdatedEvent(
         items: [
-          _makeDTO(id: 'm1', ownership: SessionOwnership.mine),
-          _makeDTO(id: 's1', ownership: SessionOwnership.shared, isStarred: true),
-          _makeDTO(id: 'u1', ownership: SessionOwnership.shared, isStarred: false),
+          _makeDTO(id: 's1', section: ListSection.starred, isStarred: true),
+          _makeDTO(id: 'm1', section: ListSection.mine),
+          _makeDTO(id: 'u1', section: ListSection.shared, ownership: SessionOwnership.shared),
         ],
         hasMore: false,
       ));
       await Future.microtask(() {});
 
       expect(_extractHeaders(vm.state), [
-        SectionHeaderType.mySessions,
         SectionHeaderType.starredSessions,
-        SectionHeaderType.sharedSessions,
-      ]);
-      expect(_extractCellIds(vm.state), ['m1', 's1', 'u1']);
-    });
-
-    test('no starred-others → starredSessions header omitted', () async {
-      service.emit(PageLoadedEvent(
-        page: 0,
-        items: [
-          _makeDTO(id: 'm1', ownership: SessionOwnership.mine),
-          _makeDTO(id: 'u1', ownership: SessionOwnership.shared, isStarred: false),
-        ],
-        hasMore: false,
-      ));
-      await Future.microtask(() {});
-
-      expect(_extractHeaders(vm.state), [
         SectionHeaderType.mySessions,
         SectionHeaderType.sharedSessions,
       ]);
+      expect(_extractCellIds(vm.state), ['s1', 'm1', 'u1']);
     });
 
-    test('no unstarred-shared → sharedSessions header omitted', () async {
-      service.emit(PageLoadedEvent(
-        page: 0,
+    test('no starred section → starredSessions header omitted', () async {
+      service.emit(ListUpdatedEvent(
         items: [
-          _makeDTO(id: 'm1', ownership: SessionOwnership.mine),
-          _makeDTO(id: 's1', ownership: SessionOwnership.shared, isStarred: true),
+          _makeDTO(id: 'm1', section: ListSection.mine),
+          _makeDTO(id: 'u1', section: ListSection.shared, ownership: SessionOwnership.shared),
         ],
         hasMore: false,
       ));
@@ -168,19 +150,46 @@ void main() {
 
       expect(_extractHeaders(vm.state), [
         SectionHeaderType.mySessions,
-        SectionHeaderType.starredSessions,
+        SectionHeaderType.sharedSessions,
       ]);
     });
 
-    test('all three groups present → correct ordering', () async {
-      service.emit(PageLoadedEvent(
-        page: 0,
+    test('no mine section → mySessions header omitted', () async {
+      service.emit(ListUpdatedEvent(
         items: [
-          _makeDTO(id: 'm1', ownership: SessionOwnership.mine),
-          _makeDTO(id: 'm2', ownership: SessionOwnership.mine),
-          _makeDTO(id: 's1', ownership: SessionOwnership.shared, isStarred: true),
-          _makeDTO(id: 's2', ownership: SessionOwnership.shared, isStarred: true),
-          _makeDTO(id: 'u1', ownership: SessionOwnership.shared, isStarred: false),
+          _makeDTO(id: 's1', section: ListSection.starred, isStarred: true),
+          _makeDTO(id: 'u1', section: ListSection.shared, ownership: SessionOwnership.shared),
+        ],
+        hasMore: false,
+      ));
+      await Future.microtask(() {});
+
+      expect(_extractHeaders(vm.state), [
+        SectionHeaderType.starredSessions,
+        SectionHeaderType.sharedSessions,
+      ]);
+    });
+
+    test('no shared section → sharedSessions header omitted', () async {
+      service.emit(ListUpdatedEvent(
+        items: [
+          _makeDTO(id: 'm1', section: ListSection.mine),
+        ],
+        hasMore: false,
+      ));
+      await Future.microtask(() {});
+
+      expect(_extractHeaders(vm.state), [SectionHeaderType.mySessions]);
+    });
+
+    test('all three groups present → STARRED first, then MINE, then SHARED', () async {
+      service.emit(ListUpdatedEvent(
+        items: [
+          _makeDTO(id: 's1', section: ListSection.starred, isStarred: true),
+          _makeDTO(id: 's2', section: ListSection.starred, isStarred: true),
+          _makeDTO(id: 'm1', section: ListSection.mine),
+          _makeDTO(id: 'm2', section: ListSection.mine),
+          _makeDTO(id: 'u1', section: ListSection.shared, ownership: SessionOwnership.shared),
         ],
         hasMore: false,
       ));
@@ -188,23 +197,22 @@ void main() {
 
       final items = vm.state.items;
       expect(items[0], isA<SectionHeaderModel>());
-      expect((items[0] as SectionHeaderModel).type, SectionHeaderType.mySessions);
-      expect((items[1] as BreathSessionListCellModel).id, 'm1');
-      expect((items[2] as BreathSessionListCellModel).id, 'm2');
+      expect((items[0] as SectionHeaderModel).type, SectionHeaderType.starredSessions);
+      expect((items[1] as BreathSessionListCellModel).id, 's1');
+      expect((items[2] as BreathSessionListCellModel).id, 's2');
 
-      expect((items[3] as SectionHeaderModel).type, SectionHeaderType.starredSessions);
-      expect((items[4] as BreathSessionListCellModel).id, 's1');
-      expect((items[5] as BreathSessionListCellModel).id, 's2');
+      expect((items[3] as SectionHeaderModel).type, SectionHeaderType.mySessions);
+      expect((items[4] as BreathSessionListCellModel).id, 'm1');
+      expect((items[5] as BreathSessionListCellModel).id, 'm2');
 
       expect((items[6] as SectionHeaderModel).type, SectionHeaderType.sharedSessions);
       expect((items[7] as BreathSessionListCellModel).id, 'u1');
     });
 
-    test('shared-only → no mySessions header', () async {
-      service.emit(PageLoadedEvent(
-        page: 0,
+    test('shared-only → no starred or mine headers', () async {
+      service.emit(ListUpdatedEvent(
         items: [
-          _makeDTO(id: 'u1', ownership: SessionOwnership.shared, isStarred: false),
+          _makeDTO(id: 'u1', section: ListSection.shared, ownership: SessionOwnership.shared),
         ],
         hasMore: false,
       ));
@@ -214,31 +222,49 @@ void main() {
     });
   });
 
-  // Sort by createdAt lives at the DAO/server level. These tests verify
-  // that _buildItemsWithSections preserves the server-provided order
-  // within each partition (mine / starred / shared).
-  group('within-section ordering', () {
-    test('mine section preserves server-provided order', () async {
-      service.emit(PageLoadedEvent(
-        page: 0,
+  group('duplication — same id in multiple sections', () {
+    test('session appears under both STARRED and MINE (duplicate ids allowed)', () async {
+      // The server can return the same session id in both STARRED and MINE sections.
+      service.emit(ListUpdatedEvent(
         items: [
-          _makeDTO(id: 'm-new', ownership: SessionOwnership.mine),
-          _makeDTO(id: 'm-old', ownership: SessionOwnership.mine),
+          _makeDTO(id: 'own1', section: ListSection.starred, isStarred: true),
+          _makeDTO(id: 'own1', section: ListSection.mine),
         ],
         hasMore: false,
       ));
       await Future.microtask(() {});
 
       final ids = _extractCellIds(vm.state);
-      expect(ids, ['m-new', 'm-old']);
+      expect(ids.where((id) => id == 'own1').length, 2,
+          reason: 'own1 should appear twice (once in STARRED, once in MINE)');
+      expect(_extractHeaders(vm.state), [
+        SectionHeaderType.starredSessions,
+        SectionHeaderType.mySessions,
+      ]);
     });
 
-    test('starred section preserves server-provided order', () async {
-      service.emit(PageLoadedEvent(
-        page: 0,
+    test('session appears under both STARRED and SHARED', () async {
+      service.emit(ListUpdatedEvent(
         items: [
-          _makeDTO(id: 's-new', ownership: SessionOwnership.shared, isStarred: true),
-          _makeDTO(id: 's-old', ownership: SessionOwnership.shared, isStarred: true),
+          _makeDTO(id: 'shared1', section: ListSection.starred, ownership: SessionOwnership.shared, isStarred: true),
+          _makeDTO(id: 'shared1', section: ListSection.shared, ownership: SessionOwnership.shared),
+        ],
+        hasMore: false,
+      ));
+      await Future.microtask(() {});
+
+      final ids = _extractCellIds(vm.state);
+      expect(ids.where((id) => id == 'shared1').length, 2,
+          reason: 'shared1 should appear twice (once in STARRED, once in SHARED)');
+    });
+  });
+
+  group('within-section ordering', () {
+    test('starred section preserves server-provided order', () async {
+      service.emit(ListUpdatedEvent(
+        items: [
+          _makeDTO(id: 's-new', section: ListSection.starred, isStarred: true),
+          _makeDTO(id: 's-old', section: ListSection.starred, isStarred: true),
         ],
         hasMore: false,
       ));
@@ -248,12 +274,25 @@ void main() {
       expect(ids, ['s-new', 's-old']);
     });
 
-    test('shared section preserves server-provided order', () async {
-      service.emit(PageLoadedEvent(
-        page: 0,
+    test('mine section preserves server-provided order', () async {
+      service.emit(ListUpdatedEvent(
         items: [
-          _makeDTO(id: 'u-new', ownership: SessionOwnership.shared, isStarred: false),
-          _makeDTO(id: 'u-old', ownership: SessionOwnership.shared, isStarred: false),
+          _makeDTO(id: 'm-new', section: ListSection.mine),
+          _makeDTO(id: 'm-old', section: ListSection.mine),
+        ],
+        hasMore: false,
+      ));
+      await Future.microtask(() {});
+
+      final ids = _extractCellIds(vm.state);
+      expect(ids, ['m-new', 'm-old']);
+    });
+
+    test('shared section preserves server-provided order', () async {
+      service.emit(ListUpdatedEvent(
+        items: [
+          _makeDTO(id: 'u-new', section: ListSection.shared, ownership: SessionOwnership.shared),
+          _makeDTO(id: 'u-old', section: ListSection.shared, ownership: SessionOwnership.shared),
         ],
         hasMore: false,
       ));
@@ -264,22 +303,47 @@ void main() {
     });
 
     test('mixed sections each preserve their own server-provided order', () async {
-      service.emit(PageLoadedEvent(
-        page: 0,
+      service.emit(ListUpdatedEvent(
         items: [
-          _makeDTO(id: 'm-new', ownership: SessionOwnership.mine),
-          _makeDTO(id: 'm-old', ownership: SessionOwnership.mine),
-          _makeDTO(id: 's-new', ownership: SessionOwnership.shared, isStarred: true),
-          _makeDTO(id: 's-old', ownership: SessionOwnership.shared, isStarred: true),
-          _makeDTO(id: 'u-new', ownership: SessionOwnership.shared, isStarred: false),
-          _makeDTO(id: 'u-old', ownership: SessionOwnership.shared, isStarred: false),
+          _makeDTO(id: 's-new', section: ListSection.starred, isStarred: true),
+          _makeDTO(id: 's-old', section: ListSection.starred, isStarred: true),
+          _makeDTO(id: 'm-new', section: ListSection.mine),
+          _makeDTO(id: 'm-old', section: ListSection.mine),
+          _makeDTO(id: 'u-new', section: ListSection.shared, ownership: SessionOwnership.shared),
+          _makeDTO(id: 'u-old', section: ListSection.shared, ownership: SessionOwnership.shared),
         ],
         hasMore: false,
       ));
       await Future.microtask(() {});
 
       final ids = _extractCellIds(vm.state);
-      expect(ids, ['m-new', 'm-old', 's-new', 's-old', 'u-new', 'u-old']);
+      expect(ids, ['s-new', 's-old', 'm-new', 'm-old', 'u-new', 'u-old']);
+    });
+  });
+
+  group('full list replacement (no append logic in ViewModel)', () {
+    test('second ListUpdatedEvent replaces first completely', () async {
+      service.emit(ListUpdatedEvent(
+        items: [
+          _makeDTO(id: 'a', section: ListSection.mine),
+          _makeDTO(id: 'b', section: ListSection.mine),
+        ],
+        hasMore: true,
+      ));
+      await Future.microtask(() {});
+
+      service.emit(ListUpdatedEvent(
+        items: [
+          _makeDTO(id: 'a', section: ListSection.mine),
+          _makeDTO(id: 'b', section: ListSection.mine),
+          _makeDTO(id: 'c', section: ListSection.mine),
+        ],
+        hasMore: false,
+      ));
+      await Future.microtask(() {});
+
+      expect(_extractCellIds(vm.state), ['a', 'b', 'c']);
+      expect(vm.state.hasMore, isFalse);
     });
   });
 }
