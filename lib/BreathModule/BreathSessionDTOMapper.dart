@@ -10,7 +10,7 @@ class BreathSessionDTOMapper {
       id: session.id,
       description: session.description,
       isStarred: session.isStarred,
-      canStar: session.userId != currentUserId,
+      canStar: true, // own sessions are now starrable too
       exercises: session.exercises.map(_mapExercise).toList(),
     );
   }
