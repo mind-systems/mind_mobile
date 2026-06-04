@@ -17,6 +17,7 @@ List<BciChannelQualityDTO> mapBciChannelQualities(List<BciChannelQuality> channe
       .map((c) => BciChannelQualityDTO(
             channelName: c.channelName,
             quality: mapBciSignalLevel(c.level),
+            impedanceOhm: c.impedanceOhm,
           ))
       .toList(growable: false);
 }
