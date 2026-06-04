@@ -201,23 +201,10 @@ class BciDeviceManager {
         (Object e) => logPrint('BciDeviceManager: registerDevice failed: $e'),
       ));
 
-      var restored = false;
-      final cal = _nfbCalibrationRepository.latestValid(serial);
-      if (cal != null) {
-        try {
-          await _provider.importCalibration(cal);
-          restored = true;
-        } catch (e) {
-          logPrint('BciDeviceManager: importCalibration failed: $e');
-          // Fall through to normal impedance/calibration flow.
-        }
-      }
-
-      // Guard against disconnect() racing with the awaited importCalibration call.
-      // If the user disconnected mid-flight, _state has moved to disconnected and
-      // we must not override it back to ready/impedance.
+      // Guard against disconnect() racing with the awaited connect call. If the user
+      // disconnected mid-flight, _state moved to disconnected and must not be overridden.
       if (_state == BciConnectionState.connecting) {
-        _setState(restored ? BciConnectionState.ready : BciConnectionState.impedance);
+        _setState(BciConnectionState.impedance);
       }
     } catch (e) {
       logPrint('BciDeviceManager: connect failed: $e');
