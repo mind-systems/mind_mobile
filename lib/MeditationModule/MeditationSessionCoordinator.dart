@@ -1,15 +1,29 @@
-import 'package:flutter/widgets.dart';
+import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:meditation_module/meditation_module.dart'
-    show IMeditationSessionCoordinator;
+    show IMeditationSessionCoordinator, MeditationNoteScreen;
+import 'package:mind/MeditationModule/IMeditationNoteService.dart';
 
 class MeditationSessionCoordinator implements IMeditationSessionCoordinator {
-  final BuildContext context;
+  MeditationSessionCoordinator(
+    this.context, {
+    required this.noteService,
+    required this.getSessionId,
+  });
 
-  MeditationSessionCoordinator(this.context);
+  final BuildContext context;
+  final IMeditationNoteService noteService;
+  final String? Function() getSessionId;
 
   @override
   Future<void> onSessionStopped() async {
-    // Placeholder — full implementation (push MeditationNoteScreen, persist note)
-    // arrives in the meditation-notes wiring milestone (ROADMAP line 78).
+    if (!context.mounted) return;
+    final text = await Navigator.of(context).push<String?>(
+      MaterialPageRoute(builder: (_) => const MeditationNoteScreen()),
+    );
+    final trimmed = text?.trim() ?? '';
+    if (trimmed.isEmpty) return;
+    unawaited(noteService.saveNote(trimmed, sessionId: getSessionId()));
   }
 }

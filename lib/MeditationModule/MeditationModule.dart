@@ -4,6 +4,7 @@ import 'package:meditation_module/meditation_module.dart';
 import 'package:mind/Core/App.dart';
 import 'package:mind/MeditationModule/MeditationListCoordinator.dart';
 import 'package:mind/MeditationModule/MeditationListService.dart';
+import 'package:mind/MeditationModule/MeditationNoteService.dart';
 import 'package:mind/MeditationModule/MeditationSessionCoordinator.dart';
 import 'package:mind/MeditationModule/Core/MeditationModuleStateChannel.dart';
 
@@ -36,7 +37,11 @@ class MeditationModule {
           return vm;
         }),
         meditationSessionCoordinatorProvider.overrideWithValue(
-          MeditationSessionCoordinator(context),
+          MeditationSessionCoordinator(
+            context,
+            noteService: MeditationNoteService(poseId, App.shared.meditationNoteRepository),
+            getSessionId: () => stateChannel.moduleSessionId,
+          ),
         ),
       ],
       child: MeditationSessionScreen(onDispose: () => stateChannel.dispose()),
