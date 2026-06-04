@@ -22,12 +22,16 @@ class BciCalibrationSection extends ConsumerStatefulWidget {
 class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
   late final AudioOneShot _completionCue;
   bool _cueReady = false;
+  late final AudioOneShot _tick;
+  Timer? _tickTimer;
 
   @override
   void initState() {
     super.initState();
     _completionCue = AudioOneShot();
     unawaited(_loadCue());
+    _tick = AudioOneShot();
+    unawaited(_loadTick());
   }
 
   Future<void> _loadCue() async {
@@ -38,8 +42,17 @@ class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
     if (mounted) setState(() => _cueReady = true);
   }
 
+  Future<void> _loadTick() async {
+    final source = await AssetAudioCatalog().sourceFor(
+      const AudioTrack('assets/audio/tick_clock.ogg'),
+    );
+    await _tick.load(source);
+  }
+
   @override
   void dispose() {
+    _tickTimer?.cancel();
+    _tick.dispose();
     _completionCue.dispose();
     super.dispose();
   }
@@ -54,6 +67,17 @@ class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
           prev.calibration?.isComplete != true &&
           next.calibration?.isComplete == true) {
         _completionCue.play();
+      }
+
+      final inProgress =
+          next.calibration != null && !next.calibration!.isComplete;
+      if (inProgress && _tickTimer == null) {
+        _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+          _tick.play();
+        });
+      } else if (!inProgress) {
+        _tickTimer?.cancel();
+        _tickTimer = null;
       }
     });
 
