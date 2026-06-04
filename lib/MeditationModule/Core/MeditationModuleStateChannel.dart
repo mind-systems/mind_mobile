@@ -1,13 +1,12 @@
 import 'dart:async';
 
-import 'package:mind/Core/App.dart';
 import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
 import 'package:meditation_module/meditation_module.dart' show MeditationSessionState, MeditationSessionStatus;
 
 class MeditationModuleStateChannel {
   final ModuleStateChannel _channel;
-  final String _poseId;
+  final String _refId;
   bool _started = false;
   bool _ended = false;
   MeditationSessionStatus? _previousStatus;
@@ -16,9 +15,9 @@ class MeditationModuleStateChannel {
   MeditationModuleStateChannel({
     required ModuleStateChannel channel,
     required Stream<MeditationSessionState> stateStream,
-    required String poseId,
+    required String refId,
   })  : _channel = channel,
-        _poseId = poseId {
+        _refId = refId {
     _stateSub = stateStream.listen(_onState);
   }
 
@@ -27,8 +26,7 @@ class MeditationModuleStateChannel {
     if (status == _previousStatus) return;
 
     if (status == MeditationSessionStatus.active && !_started) {
-      final refId = App.shared.meditationPoseUuids[_poseId] ?? _poseId;
-      _channel.start(type: ActivityType.meditation, refId: refId);
+      _channel.start(type: ActivityType.meditation, refId: _refId);
       _started = true;
     } else if (status == MeditationSessionStatus.idle && _started && !_ended) {
       _channel.end();

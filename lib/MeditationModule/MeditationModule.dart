@@ -22,6 +22,7 @@ class MeditationModule {
 
   static Widget buildSession(BuildContext context, {required String poseId}) {
     late final MeditationModuleStateChannel stateChannel;
+    final refId = App.shared.meditationPoseUuids[poseId] ?? poseId;
     return ProviderScope(
       overrides: [
         meditationSessionViewModelProvider.overrideWith(() {
@@ -29,7 +30,7 @@ class MeditationModule {
           stateChannel = MeditationModuleStateChannel(
             channel: App.shared.moduleStateChannel,
             stateStream: vm.stream,
-            poseId: poseId,
+            refId: refId,
           );
           return vm;
         }),
