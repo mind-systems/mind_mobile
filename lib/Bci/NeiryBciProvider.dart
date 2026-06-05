@@ -462,7 +462,12 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     _memsSub = null;
 
     unawaited(Future.microtask(() async {
-      try { await device?.unregisterCallbacks(); } catch (_) {}
+      // Step 1: stopStream() = nativeUnregister + nativeStop — stops SDK background
+      // threads before any Dart subscription is cancelled (Invariant A). Native side
+      // may already be gone on unexpected drop; wrap in try/catch and continue.
+      try { await device?.stopStream(); } catch (_) {}
+
+      // Step 2: cancel fan-in subscriptions (safe — background threads stopped).
       await connectionSub?.cancel();
       await resistanceSub?.cancel();
       await batterySub?.cancel();
@@ -474,6 +479,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       await emotionsErrorSub?.cancel();
       await memsSub?.cancel();
 
+      // Step 3: dispose classifiers (safe — handle still alive, no nativeRelease yet).
       try {
         await nfbClassifier?.dispose();
       } catch (e) {
@@ -494,7 +500,8 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       } catch (e) {
         logPrint('NeiryBciProvider: mems dispose error: $e');
       }
-      try { await device?.stopStream(); } catch (_) {}
+
+      // Step 4: nativeDisconnect + nativeRelease (Invariant C).
       try {
         await device?.disconnect();
         await device?.dispose();
@@ -554,16 +561,30 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
 
   @override
   Future<void> disconnect() async {
-    try { await _device?.unregisterCallbacks(); } catch (e) {
-      logPrint('NeiryBciProvider: unregisterCallbacks error: $e');
+    // Step 1: stopStream() = nativeUnregister + nativeStop — stops SDK background
+    // threads before any Dart subscription is cancelled (Invariant A).
+    // Only called when streaming is active; calling it on an unstarted device throws.
+    if (_device?.isStarted == true) {
+      try {
+        await _device!.stopStream();
+      } catch (e) {
+        logPrint('NeiryBciProvider: stopStream error: $e');
+      }
     }
+    // Steps 2+3: cancel fan-in subscriptions and dispose classifiers.
+    // Safe — SDK threads are stopped, handle still alive (no nativeRelease yet).
     await _cancelDeviceSubscriptions();
+    // Step 4: nativeDisconnect + nativeRelease (Invariant C).
     try {
-      await _device?.stopStream();
       await _device?.disconnect();
-      await _device?.dispose();
     } catch (e) {
       logPrint('NeiryBciProvider: disconnect error: $e');
+    }
+    // Step 5: Dart cleanup — no-op on native (already disconnected above).
+    try {
+      await _device?.dispose();
+    } catch (e) {
+      logPrint('NeiryBciProvider: dispose error: $e');
     }
     _device = null;
     // Emit explicitly — _connectionSub is already cancelled so the native
@@ -580,6 +601,10 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   }
 
   Future<void> _doDispose() async {
+    // Same invariant sequence as disconnect().
+    if (_device?.isStarted == true) {
+      try { await _device!.stopStream(); } catch (_) {}
+    }
     await _cancelDeviceSubscriptions();
     await _calibrationSub?.cancel();
     _calibrationSub = null;
