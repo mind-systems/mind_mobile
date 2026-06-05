@@ -65,6 +65,8 @@ class BreathModuleStateChannel {
         dev.log('BreathModuleStateChannel: session start [$_sessionId]', name: 'BreathModuleState');
         _channel.start(type: ActivityType.breath, refId: _sessionId);
         _started = true;
+        _previousPhase = null;
+        _previousExerciseIndex = null;
       } else {
         dev.log('BreathModuleStateChannel: session resume [$_sessionId]', name: 'BreathModuleState');
         _channel.unpause();
