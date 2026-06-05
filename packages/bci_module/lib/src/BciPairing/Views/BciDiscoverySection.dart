@@ -18,7 +18,6 @@ class BciDiscoverySection extends ConsumerStatefulWidget {
 
 class _BciDiscoverySectionState extends ConsumerState<BciDiscoverySection>
     with WidgetsBindingObserver {
-  String? _pendingSerial;
 
   @override
   void initState() {
@@ -69,12 +68,6 @@ class _BciDiscoverySectionState extends ConsumerState<BciDiscoverySection>
     final l10n = AppLocalizations.of(context)!;
 
     ref.listen<BciPairingState>(bciPairingViewModelProvider, (prev, next) {
-      if (prev?.isConnecting == true &&
-          next.isConnecting == false &&
-          _pendingSerial != null) {
-        setState(() => _pendingSerial = null);
-      }
-
       if (prev?.isBluetoothPermissionDenied != true &&
           next.isBluetoothPermissionDenied == true) {
         if (!mounted) return;
@@ -109,17 +102,19 @@ class _BciDiscoverySectionState extends ConsumerState<BciDiscoverySection>
           itemCount: state.devices.length,
           itemBuilder: (context, index) {
             final device = state.devices[index];
-            final isConnectingThis =
-                _pendingSerial == device.serial && state.isConnecting;
+            final isThisDevice = state.connectedSerial == device.serial;
+            final isConnectedThis =
+                isThisDevice && state.stage != BciPairingStage.discovery;
+            // Spinner while connecting (isConnecting) or connected but channels
+            // not yet arrived.
+            final showSpinner =
+                isThisDevice && state.channels.isEmpty;
 
             return ListTile(
-              leading: isConnectingThis
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.bluetooth),
+              leading: Icon(
+                Icons.bluetooth,
+                color: isConnectedThis ? Colors.blue : null,
+              ),
               title: Text(
                 device.name,
                 overflow: TextOverflow.ellipsis,
@@ -129,13 +124,20 @@ class _BciDiscoverySectionState extends ConsumerState<BciDiscoverySection>
                     ? device.serial.substring(device.serial.length - 6)
                     : device.serial,
               ),
-              trailing: null,
-              onTap: () {
-                setState(() => _pendingSerial = device.serial);
-                ref
-                    .read(bciPairingViewModelProvider.notifier)
-                    .onDeviceTap(device.serial);
-              },
+              trailing: showSpinner
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : null,
+              onTap: isConnectedThis
+                  ? null
+                  : () {
+                      ref
+                          .read(bciPairingViewModelProvider.notifier)
+                          .onDeviceTap(device.serial);
+                    },
             );
           },
         ),

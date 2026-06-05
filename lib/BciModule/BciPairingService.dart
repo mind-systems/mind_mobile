@@ -11,6 +11,12 @@ import 'package:mind/BciModule/BciChannelQualityMapping.dart';
 class BciPairingService implements IBciPairingService {
   final BciNotifier bciNotifier;
 
+  // Tracks the serial passed to connectDevice() so the reducer can embed it
+  // in BciPairingState.connectedSerial. For auto-connect (known device,
+  // BciNotifier initiates without a user tap), this is null — we fall back
+  // to the single device in the scanned list.
+  String? _connectingSerial;
+
   BciPairingService({required this.bciNotifier});
 
   // NOTE: BciNotifier._subject is a BehaviorSubject that caches only the single
@@ -33,7 +39,10 @@ class BciPairingService implements IBciPairingService {
   void startScan() => unawaited(bciNotifier.startScan());
 
   @override
-  void connectDevice(String serial) => unawaited(bciNotifier.connectDevice(serial));
+  void connectDevice(String serial) {
+    _connectingSerial = serial;
+    unawaited(bciNotifier.connectDevice(serial));
+  }
 
   @override
   void startCalibration() => unawaited(bciNotifier.startCalibration());
@@ -88,11 +97,13 @@ class BciPairingService implements IBciPairingService {
   ) {
     switch (state) {
       case BciConnectionState.disconnected:
+        _connectingSerial = null;
         return acc.copyWith(
           stage: BciPairingStage.discovery,
           isScanning: false,
           isConnecting: false,
           isBluetoothPermissionDenied: false,
+          connectedSerial: null,
           calibration: null,                         // cleared via _undefined sentinel
           channels: const <BciChannelQualityDTO>[], // MUST be empty list — null is a no-op
           batteryPercent: null,                      // cleared via _undefined sentinel
@@ -100,11 +111,13 @@ class BciPairingService implements IBciPairingService {
         );
 
       case BciConnectionState.scanning:
+        _connectingSerial = null;
         return acc.copyWith(
           stage: BciPairingStage.discovery,
           isScanning: true,
           isConnecting: false,
           isBluetoothPermissionDenied: false,
+          connectedSerial: null,
           errorMessage: null,
         );
 
@@ -119,10 +132,15 @@ class BciPairingService implements IBciPairingService {
         );
 
       case BciConnectionState.connecting:
+        // For auto-connect (known device, BciNotifier initiates without a tap),
+        // _connectingSerial is null. Fall back to the single scanned device.
+        _connectingSerial ??=
+            acc.devices.length == 1 ? acc.devices.first.serial : null;
         return acc.copyWith(
           stage: BciPairingStage.discovery,
           isScanning: false,
           isConnecting: true,
+          connectedSerial: _connectingSerial,
           errorMessage: null,
         );
 
@@ -131,6 +149,7 @@ class BciPairingService implements IBciPairingService {
           stage: BciPairingStage.impedance,
           isScanning: false,
           isConnecting: false,
+          connectedSerial: _connectingSerial ?? acc.connectedSerial,
           errorMessage: null,
         );
 

@@ -13,6 +13,10 @@ class BciPairingState {
   final bool isBluetoothPermissionDenied;
   final List<BciChannelQualityDTO> channels;
 
+  /// Serial of the device currently being connected or already connected.
+  /// Set as soon as the `connecting` state is emitted; cleared on disconnect.
+  final String? connectedSerial;
+
   /// `null` means no active calibration data (e.g. before calibration has
   /// started, or after a failure has cleared it) — not "calibration is in
   /// stage 0".
@@ -28,6 +32,7 @@ class BciPairingState {
     required this.isConnecting,
     required this.isBluetoothPermissionDenied,
     required this.channels,
+    this.connectedSerial,
     this.calibration,
     this.batteryPercent,
     this.errorMessage,
@@ -49,6 +54,7 @@ class BciPairingState {
     bool? isConnecting,
     bool? isBluetoothPermissionDenied,
     List<BciChannelQualityDTO>? channels,
+    Object? connectedSerial = _undefined,
     Object? calibration = _undefined,
     Object? batteryPercent = _undefined,
     Object? errorMessage = _undefined,
@@ -61,6 +67,9 @@ class BciPairingState {
       isBluetoothPermissionDenied:
           isBluetoothPermissionDenied ?? this.isBluetoothPermissionDenied,
       channels: channels ?? this.channels,
+      connectedSerial: identical(connectedSerial, _undefined)
+          ? this.connectedSerial
+          : connectedSerial as String?,
       calibration: identical(calibration, _undefined)
           ? this.calibration
           : calibration as BciCalibrationProgressDTO?,

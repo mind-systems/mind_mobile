@@ -82,7 +82,15 @@ Fixes the `activityRefId` UUID crash (`invalid input syntax for type uuid: "easy
 
 - [x] **BCI calibration UX — per-stage instructions, stage sounds, and `AudioOneShot` warm-up** — `BciCalibrationSection` showed no instruction at the start (service emitted `calibration: null` until the first stage completed) and played only a clock tick with no stage-change or completion sounds. `AudioOneShot.play()` delivered only ~78 ms on first call due to ExoPlayer cold-start AudioTrack underrun (just_audio #941). Fixed: (1) `BciPairingService.dart` seeds `calibration: BciCalibrationProgressDTO(stagesCompleted:0, isComplete:false)` on `calibrating` entry; (2) `BciCalibrationSection.dart` derives instruction from `(stagesCompleted+1).isOdd` → close/open eyes, plays `stage.wav` on stage change and `calibration_complete.wav` on completion; (3) `AudioOneShot.load()` plays silently for 200 ms to warm the OS page cache. New `bciPairingOpenEyes` ARB key; `stage.wav` added to `bci_module/assets/`. Spec: `.ai-factory/notes/102-bci-calibration-ux-and-audio-warmup.md`.
 
+- [x] **BCI pairing screen — connection spinner and connected-device highlight** — `BciDiscoverySection` showed no connecting feedback after tap and no visual distinction between connected and disconnected devices. `BciPairingScreen` header had a bluetooth icon that turned blue on connect — removed from header. `BciConnectionState` carries no serial, so `connectedSerial` was added to `BciPairingState` and `BciPairingService` stores `_connectingSerial` to populate it (auto-connect fallback: `devices.length == 1`). Cell now shows a trailing `CircularProgressIndicator` while `connectedSerial` matches and `channels.isEmpty`; bluetooth icon turns blue once `stage != discovery`. Tap is disabled on the connected cell.
+
 ---STOP---
+
+## Previews
+
+- [~] **BCI connection domain — `BciConnectionState` serial gap** — `BciConnectionState.connecting` carries no device serial, forcing `BciPairingService` to maintain a mutable `_connectingSerial` side-channel that breaks reducer purity and fails for auto-connect (known-device reconnect bypasses `connectDevice()` entirely). Fix: make `connecting` carry the serial (sealed class or separate `BciDeviceConnecting` event from `BciNotifier`), letting the reducer derive `connectedSerial` purely from the event. `BciConnectionState` lives in `lib/Bci/Models/BciConnectionState.dart` (app code, not SDK). Spec: `.ai-factory/notes/103-bci-connection-serial-gap.md`.
+
+---
 
 ## Visual / Cosmetic
 
