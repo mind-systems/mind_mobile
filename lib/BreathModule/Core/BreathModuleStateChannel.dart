@@ -97,14 +97,14 @@ class BreathModuleStateChannel {
       _pendingInstruction = state;
       return;
     }
-    _instructionStream.sendSample(sessionId, state.phase.name, state.currentIntervalMs);
+    _instructionStream.sendSample(sessionId, state.phase.name, state.currentPhaseTotalDuration * state.currentIntervalMs);
   }
 
   void _flushPending(String sessionId) {
     final pending = _pendingInstruction;
     if (pending == null) return;
     _pendingInstruction = null;
-    _instructionStream.sendSample(sessionId, pending.phase.name, pending.currentIntervalMs);
+    _instructionStream.sendSample(sessionId, pending.phase.name, pending.currentPhaseTotalDuration * pending.currentIntervalMs);
   }
 
   void reset() {
