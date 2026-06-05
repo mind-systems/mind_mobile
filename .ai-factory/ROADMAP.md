@@ -84,6 +84,8 @@ Fixes the `activityRefId` UUID crash (`invalid input syntax for type uuid: "easy
 
 - [x] **BCI pairing screen — connection spinner and connected-device highlight** — `BciDiscoverySection` showed no connecting feedback after tap and no visual distinction between connected and disconnected devices. `BciPairingScreen` header had a bluetooth icon that turned blue on connect — removed from header. `BciConnectionState` carries no serial, so `connectedSerial` was added to `BciPairingState` and `BciPairingService` stores `_connectingSerial` to populate it (auto-connect fallback: `devices.length == 1`). Cell now shows a trailing `CircularProgressIndicator` while `connectedSerial` matches and `channels.isEmpty`; bluetooth icon turns blue once `stage != discovery`. Tap is disabled on the connected cell.
 
+- [x] **Fix BCI screens on re-open — `startWith` current state + skip scan when connected** — Both `BciDataService` and `BciPairingService` built their `scan` stream from `BciDataState.initial()` / `BciPairingState.initial()`, relying on the `BehaviorSubject` replay to restore state. Since the subject caches only the last event (often `BciBatteryUpdated` or `BciNfbUpdated`, not `BciStateChanged`), re-opening either screen left `isConnected = false` — data screen showed "connect device" despite live battery, pairing screen started a fresh scan and triggered auto-reconnect. Fix: prepend `startWith(BciStateChanged(bciNotifier.currentState))` to both streams so the reducer always seeds connection state first. `BciPairingService.startScan()` additionally guards: skips native scan unless state is `disconnected`, `scanning`, or `bluetoothPermissionDenied`.
+
 ---STOP---
 
 ## Previews

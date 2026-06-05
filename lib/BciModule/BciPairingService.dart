@@ -19,13 +19,14 @@ class BciPairingService implements IBciPairingService {
 
   BciPairingService({required this.bciNotifier});
 
-  // NOTE: BciNotifier._subject is a BehaviorSubject that caches only the single
-  // most-recent event. A new subscriber replays one event — not one per variant.
-  // BciPairingViewModel.build() calls startScan() on subscribe to trigger fresh
-  // emissions; do not assume full history is available on subscribe.
+  // NOTE: BciNotifier._subject is a BehaviorSubject — replays only the single
+  // most-recent event to new subscribers. We prepend a synthetic
+  // BciStateChanged(currentState) so the reducer always seeds connection state
+  // correctly regardless of which event happens to be cached.
   @override
   Stream<BciPairingServiceEvent> observeChanges() {
     return bciNotifier.stream
+        .startWith(BciStateChanged(bciNotifier.currentState))
         .scan<BciPairingState>(
           (acc, event, _) => _reduce(acc, event),
           BciPairingState.initial(),
@@ -36,7 +37,14 @@ class BciPairingService implements IBciPairingService {
   // ── Command methods ───────────────────────────────────────────────────────
 
   @override
-  void startScan() => unawaited(bciNotifier.startScan());
+  void startScan() {
+    final current = bciNotifier.currentState;
+    if (current == BciConnectionState.disconnected ||
+        current == BciConnectionState.scanning ||
+        current == BciConnectionState.bluetoothPermissionDenied) {
+      unawaited(bciNotifier.startScan());
+    }
+  }
 
   @override
   void connectDevice(String serial) {

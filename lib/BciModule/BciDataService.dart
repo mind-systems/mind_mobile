@@ -10,13 +10,14 @@ class BciDataService implements IBciDataService {
 
   BciDataService({required this.bciNotifier});
 
-  // NOTE: BciNotifier._subject is a BehaviorSubject that caches only the single
-  // most-recent event. A new subscriber replays one event — not one per variant.
-  // The reducer starts from BciDataState.initial() so partial state is handled
-  // correctly regardless of event arrival order.
+  // NOTE: BciNotifier._subject is a BehaviorSubject — replays only the single
+  // most-recent event to new subscribers. We prepend a synthetic
+  // BciStateChanged(currentState) so the reducer always seeds connection state
+  // correctly regardless of which event happens to be cached.
   @override
   Stream<BciDataEvent> get events {
     return bciNotifier.stream
+        .startWith(BciStateChanged(bciNotifier.currentState))
         .scan<BciDataState>(
           (acc, event, _) => _reduce(acc, event),
           BciDataState.initial(),
