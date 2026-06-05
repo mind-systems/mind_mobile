@@ -140,6 +140,10 @@ class BciPairingService implements IBciPairingService {
           isScanning: false,
           isConnecting: false,
           errorMessage: null,
+          calibration: const BciCalibrationProgressDTO(
+            stagesCompleted: 0,
+            isComplete: false,
+          ),
         );
 
       case BciConnectionState.ready:

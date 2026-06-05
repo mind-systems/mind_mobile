@@ -127,6 +127,7 @@
   "bciPairingCalibration": "Calibration",
   "bciPairingStartCalibration": "Start calibration",
   "bciPairingCloseEyes": "Close your eyes and relax.",
+  "bciPairingOpenEyes": "Open your eyes and look straight ahead.",
   "bciPairingCalibrationComplete": "Calibration complete",
   "bciPairingDisconnect": "Disconnect",
   "bciPairingDisconnectConfirm": "Disconnect device?",

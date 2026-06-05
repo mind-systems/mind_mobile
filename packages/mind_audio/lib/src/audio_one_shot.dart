@@ -1,30 +1,49 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 
-/// A one-shot audio player pre-buffered with a single [AudioSource].
-///
-/// Call [load] once to buffer the source; subsequent [play] calls are
-/// seek-and-go with no async overhead on the hot path.
+import 'audio_track.dart';
+
+/// A one-shot audio player pre-buffered with a single [AudioTrack].
 class AudioOneShot {
   final AudioPlayer _player = AudioPlayer();
   bool _loading = false;
 
-  /// Buffers [source] so that each subsequent [play] only needs seek + play.
-  Future<void> load(AudioSource source) async {
+  /// Loads [track] and plays it once silently to warm up ExoPlayer's read
+  /// buffer and the OS page cache.
+  ///
+  /// The first audible play of a cold local asset underruns on Android
+  /// (just_audio #941): ExoPlayer fills only the minimum AudioTrack buffer
+  /// (~78 ms) before playback begins, then can't refill fast enough. After
+  /// even a partial silent play the asset is in the OS page cache, so the
+  /// next call to [play] delivers the full audio without underrun.
+  Future<void> load(AudioTrack track) async {
     _loading = true;
     try {
-      await _player.setAudioSource(source);
+      await _player.setAudioSource(AudioSource.asset(track.assetPath));
+      await _player.setVolume(0);
+      unawaited(_player.play());
+      // Allow enough time for ExoPlayer to read the file into its buffer.
+      await Future.delayed(const Duration(milliseconds: 200));
+      await _player.stop();
+      await _player.seek(Duration.zero);
+      await _player.setVolume(1);
     } finally {
       _loading = false;
     }
   }
 
-  /// Seeks to the start of the buffered source and plays it. Fire-and-forget.
-  /// No-ops if a [load] is currently in progress to avoid a seek on a
-  /// half-initialised source.
+  /// Seeks to the start and plays. Fire-and-forget.
   void play() {
     if (_loading) return;
-    unawaited(_player.seek(Duration.zero).then((_) => _player.play()));
+    unawaited(
+      _player
+          .seek(Duration.zero)
+          .then((_) => _player.play())
+          .catchError((Object e) {
+        debugPrint('[AudioOneShot] play failed: $e  state=${_player.processingState}');
+      }),
+    );
   }
 
   /// Stops playback immediately. Fire-and-forget.

@@ -91,14 +91,7 @@ class BreathSoundCoordinator {
     );
     if (_isDisposed) return;
     unawaited(_looper.initialize(sources));
-    unawaited(
-      _catalog
-          .sourceFor(AudioTrack(_tickAssets[_currentTickSource]!))
-          .then((src) async {
-            if (_isDisposed) return;
-            await _oneShot.load(src);
-          }),
-    );
+    unawaited(_oneShot.load(AudioTrack(_tickAssets[_currentTickSource]!)));
     _tickSub = viewModel.tickStream.listen((_) => _onTick());
     _stateListener = viewModel.listen(_onStateChanged);
     _onStateChanged(viewModel.currentState);
@@ -156,14 +149,7 @@ class BreathSoundCoordinator {
     // 2. Tick-source change (stable within a session; guard for correctness across restarts)
     if (state.tickSource != _currentTickSource) {
       _currentTickSource = state.tickSource;
-      unawaited(
-        _catalog
-            .sourceFor(AudioTrack(_tickAssets[_currentTickSource]!))
-            .then((src) async {
-              if (_isDisposed) return;
-              await _oneShot.load(src);
-            }),
-      );
+      unawaited(_oneShot.load(AudioTrack(_tickAssets[_currentTickSource]!)));
     }
 
     // 3. Status changes

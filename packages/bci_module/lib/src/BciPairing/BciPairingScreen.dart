@@ -49,7 +49,6 @@ class _BciPairingHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(bciPairingViewModelProvider);
-    final vm = ref.read(bciPairingViewModelProvider.notifier);
     final l10n = AppLocalizations.of(context)!;
 
     final isConnected = state.stage != BciPairingStage.discovery;
@@ -84,7 +83,9 @@ class _BciPairingHeader extends ConsumerWidget {
                 ? null
                 : () async {
                     final ok = await showBciDisconnectDialog(context);
-                    if (ok && context.mounted) vm.onDisconnect();
+                    if (ok && context.mounted) {
+                      ref.read(bciPairingViewModelProvider.notifier).onDisconnect();
+                    }
                   },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: Text(l10n.bciPairingDisconnect),

@@ -316,6 +316,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bciPairingCloseEyes => 'Close your eyes and relax.';
 
   @override
+  String get bciPairingOpenEyes => 'Open your eyes and look straight ahead.';
+
+  @override
   String get bciPairingCalibrationComplete => 'Calibration complete';
 
   @override

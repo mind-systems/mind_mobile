@@ -318,6 +318,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get bciPairingCloseEyes => 'Закройте глаза и расслабьтесь.';
 
   @override
+  String get bciPairingOpenEyes => 'Откройте глаза и смотрите прямо.';
+
+  @override
   String get bciPairingCalibrationComplete => 'Калибровка завершена';
 
   @override

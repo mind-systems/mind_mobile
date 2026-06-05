@@ -674,6 +674,12 @@ abstract class AppLocalizations {
   /// **'Close your eyes and relax.'**
   String get bciPairingCloseEyes;
 
+  /// No description provided for @bciPairingOpenEyes.
+  ///
+  /// In en, this message translates to:
+  /// **'Open your eyes and look straight ahead.'**
+  String get bciPairingOpenEyes;
+
   /// No description provided for @bciPairingCalibrationComplete.
   ///
   /// In en, this message translates to:

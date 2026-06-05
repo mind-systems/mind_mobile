@@ -10,7 +10,6 @@ import '../Models/BciPairingStage.dart';
 import '../Models/BciPairingState.dart';
 import 'BciSectionHeader.dart';
 
-/// Section showing calibration controls and progress.
 class BciCalibrationSection extends ConsumerStatefulWidget {
   const BciCalibrationSection({super.key});
 
@@ -21,40 +20,63 @@ class BciCalibrationSection extends ConsumerStatefulWidget {
 
 class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
   late final AudioOneShot _completionCue;
-  bool _cueReady = false;
+  late final AudioOneShot _stageChime;
   late final AudioOneShot _tick;
+
+  bool _cueReady = false;
+  bool _chimeReady = false;
+
   Timer? _tickTimer;
 
   @override
   void initState() {
     super.initState();
     _completionCue = AudioOneShot();
-    unawaited(_loadCue());
+    _stageChime = AudioOneShot();
     _tick = AudioOneShot();
+    unawaited(_loadCue());
+    unawaited(_loadChime());
     unawaited(_loadTick());
   }
 
   Future<void> _loadCue() async {
-    final source = await AssetAudioCatalog().sourceFor(
-      const AudioTrack('packages/bci_module/assets/calibration_complete.wav'),
-    );
-    await _completionCue.load(source);
-    if (mounted) setState(() => _cueReady = true);
+    try {
+      await _completionCue.load(
+        const AudioTrack('packages/bci_module/assets/calibration_complete.wav'),
+      );
+      if (mounted) setState(() => _cueReady = true);
+    } catch (_) {}
+  }
+
+  Future<void> _loadChime() async {
+    try {
+      await _stageChime.load(const AudioTrack('packages/bci_module/assets/stage.wav'));
+      if (mounted) setState(() => _chimeReady = true);
+    } catch (_) {}
   }
 
   Future<void> _loadTick() async {
-    final source = await AssetAudioCatalog().sourceFor(
-      const AudioTrack('assets/audio/tick_clock.ogg'),
-    );
-    await _tick.load(source);
+    try {
+      await _tick.load(const AudioTrack('assets/audio/tick_clock.ogg'));
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     _tickTimer?.cancel();
     _tick.dispose();
+    _stageChime.dispose();
     _completionCue.dispose();
     super.dispose();
+  }
+
+  // Returns the instruction for the currently active stage.
+  // activeStage = stagesCompleted + 1 (1-indexed).
+  // Stages 1 and 3 (odd) → close eyes; stages 2 and 4 (even) → open eyes.
+  String _instruction(BuildContext context, int stagesCompleted) {
+    final l10n = AppLocalizations.of(context)!;
+    final activeStage = stagesCompleted + 1;
+    return activeStage.isOdd ? l10n.bciPairingCloseEyes : l10n.bciPairingOpenEyes;
   }
 
   @override
@@ -62,22 +84,30 @@ class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
     final l10n = AppLocalizations.of(context)!;
 
     ref.listen<BciPairingState>(bciPairingViewModelProvider, (prev, next) {
-      if (_cueReady &&
-          prev != null &&
-          prev.calibration?.isComplete != true &&
-          next.calibration?.isComplete == true) {
-        _completionCue.play();
+      // ── Stage change → play chime and update tick timer ──────────────────
+      final prevStages = prev?.calibration?.stagesCompleted;
+      final nextStages = next.calibration?.stagesCompleted;
+      final inProgress = next.calibration != null && !next.calibration!.isComplete;
+
+      if (inProgress && prevStages != nextStages) {
+        if (_chimeReady) _stageChime.play();
       }
 
-      final inProgress =
-          next.calibration != null && !next.calibration!.isComplete;
+      // ── Tick timer: run while calibration is in progress ─────────────────
       if (inProgress && _tickTimer == null) {
         _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
           _tick.play();
         });
-      } else if (!inProgress) {
+      } else if (!inProgress && _tickTimer != null) {
         _tickTimer?.cancel();
         _tickTimer = null;
+      }
+
+      // ── Completion cue ────────────────────────────────────────────────────
+      final wasComplete = prev?.calibration?.isComplete == true;
+      final isComplete = next.calibration?.isComplete == true;
+      if (!wasComplete && isComplete && _cueReady) {
+        _completionCue.play();
       }
     });
 
@@ -129,7 +159,7 @@ class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
           const SizedBox(height: 8),
           Center(
             child: Text(
-              l10n.bciPairingCloseEyes,
+              _instruction(context, state.calibration!.stagesCompleted),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),

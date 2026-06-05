@@ -121,6 +121,7 @@
   "bciPairingCalibration": "Калибровка",
   "bciPairingStartCalibration": "Начать калибровку",
   "bciPairingCloseEyes": "Закройте глаза и расслабьтесь.",
+  "bciPairingOpenEyes": "Откройте глаза и смотрите прямо.",
   "bciPairingCalibrationComplete": "Калибровка завершена",
   "bciPairingDisconnect": "Отключить",
   "bciPairingDisconnectConfirm": "Отключить устройство?",
