@@ -78,29 +78,33 @@ class BciDataScreen extends ConsumerWidget {
               BciSectionHeader(title: l10n.bciEmotionalStates),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     BciMetricBar(
                       value: state.emotions?.attention,
                       color: const Color(0xFFC88DF8),
                       label: l10n.bciFocus,
                     ),
+                    const SizedBox(height: 12),
                     BciMetricBar(
                       value: state.emotions?.cognitiveLoad,
                       color: const Color(0xFFA1BFF6),
                       label: l10n.bciCognitiveLoad,
                     ),
+                    const SizedBox(height: 12),
                     BciMetricBar(
                       value: state.emotions?.relaxation,
                       color: const Color(0xFFA4F792),
                       label: l10n.bciRelaxation,
                     ),
+                    const SizedBox(height: 12),
                     BciMetricBar(
                       value: state.emotions?.cognitiveControl,
                       color: const Color(0xFFF8C88D),
                       label: l10n.bciCognitiveControl,
                     ),
+                    const SizedBox(height: 12),
                     BciMetricBar(
                       value: state.emotions?.selfControl,
                       color: const Color(0xFFF88DB8),
@@ -115,29 +119,33 @@ class BciDataScreen extends ConsumerWidget {
               BciSectionHeader(title: l10n.bciEegBands),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     BciMetricBar(
                       value: state.nfb?.delta,
                       color: const Color(0xFF8DD6F8),
                       label: 'Delta',
                     ),
+                    const SizedBox(height: 12),
                     BciMetricBar(
                       value: state.nfb?.theta,
                       color: const Color(0xFFB48DF8),
                       label: 'Theta',
                     ),
+                    const SizedBox(height: 12),
                     BciMetricBar(
                       value: state.nfb?.alpha,
                       color: const Color(0xFFF8F08D),
                       label: 'Alpha',
                     ),
+                    const SizedBox(height: 12),
                     BciMetricBar(
                       value: state.nfb?.smr,
                       color: const Color(0xFF8DF8E4),
                       label: 'SMR',
                     ),
+                    const SizedBox(height: 12),
                     BciMetricBar(
                       value: state.nfb?.beta,
                       color: const Color(0xFFF8B08D),
