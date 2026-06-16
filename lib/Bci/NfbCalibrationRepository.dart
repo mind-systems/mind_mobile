@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mind/Bci/Models/NfbCalibrationData.dart';
 import 'package:mind/Bci/NfbCalibrationGrpcApi.dart';
@@ -51,7 +52,11 @@ class NfbCalibrationRepository {
     }
   }
 
-  Future<void> record(String serial, NfbCalibrationData data) async {
+  Future<void> record(
+    String serial,
+    NfbCalibrationData data, {
+    @visibleForTesting bool awaitApiSync = false,
+  }) async {
     final existing = history(serial);
     var newList = [data, ...existing];
     if (newList.length > _maxEntries) {
@@ -59,8 +64,13 @@ class NfbCalibrationRepository {
     }
     final encoded = jsonEncode(newList.map((e) => e.toJson()).toList());
     await _prefs.setString(_keyFor(serial), encoded);
-    unawaited(_api.record(serial, data).catchError(
-      (Object e) => logPrint('NfbCalibrationRepository: sync failed: $e'),
-    ));
+    final syncFuture = _api
+        .record(serial, data)
+        .catchError((Object e) => logPrint('NfbCalibrationRepository: sync failed: $e'));
+    if (awaitApiSync) {
+      await syncFuture;
+    } else {
+      unawaited(syncFuture);
+    }
   }
 }

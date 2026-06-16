@@ -80,6 +80,7 @@ dependencies:
   dio: ^5.9.2
   collection: ^1.19.1
   permission_handler: ^11.4.0
+  meta: ^1.17.0
 
 dev_dependencies:
   flutter_test:
