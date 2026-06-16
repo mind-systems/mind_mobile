@@ -15,8 +15,9 @@ Color _impedanceColor(BciSignalQuality q) {
   }
 }
 
-/// Header row for BciDataScreen — shows battery level on the left and channel
-/// impedance dots on the right. Tapping opens the pairing flow.
+/// Header row for BciDataScreen — shows battery level and channel impedance
+/// dots together on the left, with the dots wrapped in a pill background.
+/// Tapping opens the pairing flow.
 /// Package-internal; not exported from bci_module.dart.
 class BciDataHeader extends ConsumerWidget {
   const BciDataHeader({super.key});
@@ -93,8 +94,17 @@ class BciDataHeader extends ConsumerWidget {
                 ],
               ),
             ),
+            const SizedBox(width: 8),
+            Container(
+              height: 22,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: channelRow,
+            ),
             const Spacer(),
-            channelRow,
           ],
         ),
       ),
