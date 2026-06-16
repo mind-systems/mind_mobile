@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mind_l10n/l10n/app_localizations_en.dart';
+import 'package:mind_ui/mind_ui.dart';
 import 'package:mind/Core/Environment.dart';
 import 'package:mind/Core/Handlers/AuthCodeDeeplinkHandler.dart';
 import 'package:mind/User/LogoutNotifier.dart';
+import 'package:mind/User/Models/OtpLockedException.dart';
 import 'package:mind/User/Models/User.dart';
 import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
@@ -12,10 +15,12 @@ import 'package:mind/User/UserRepository.dart';
 
 class FakeUserRepository implements UserRepository {
   String? lastVerifiedCode;
+  Exception? exceptionToThrow;
 
   @override
   Future<User> completePasswordlessSignIn(String code, {String? language}) async {
     lastVerifiedCode = code;
+    if (exceptionToThrow != null) throw exceptionToThrow!;
     return User(
       id: 'user-id',
       email: 'test@example.com',
@@ -53,6 +58,7 @@ class FakeUserRepository implements UserRepository {
 
 void main() {
   setUpAll(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
     Environment.initDev();
   });
 
@@ -60,8 +66,10 @@ void main() {
   late LogoutNotifier logoutNotifier;
   late UserNotifier userNotifier;
   late AuthCodeDeeplinkHandler handler;
+  late List<SnackBarEvent> captured;
 
   setUp(() {
+    captured = [];
     fakeRepo = FakeUserRepository();
     logoutNotifier = LogoutNotifier();
     userNotifier = UserNotifier(
@@ -75,7 +83,10 @@ void main() {
         isGuest: true,
       ),
     );
-    handler = AuthCodeDeeplinkHandler(userNotifier: userNotifier);
+    handler = AuthCodeDeeplinkHandler(
+      userNotifier: userNotifier,
+      onError: captured.add,
+    );
   });
 
   tearDown(() {
@@ -117,6 +128,28 @@ void main() {
       final result = await handler.handle(uri);
       expect(result, isTrue);
       expect(fakeRepo.lastVerifiedCode, '123456');
+    });
+  });
+
+  group('error handling', () {
+    test('OTP lockout shows loginTooManyAttemptsError snackbar', () async {
+      fakeRepo.exceptionToThrow = const OtpLockedException();
+      final uri = Uri.parse('https://dev.mind-awake.life/deeplink-auth?code=123456');
+      final result = await handler.handle(uri);
+      expect(result, isTrue);
+      expect(captured, hasLength(1));
+      expect(captured.first.type, SnackBarType.error);
+      expect(captured.first.message, AppLocalizationsEn().loginTooManyAttemptsError);
+    });
+
+    test('generic error shows loginCodeInvalidError snackbar', () async {
+      fakeRepo.exceptionToThrow = Exception('boom');
+      final uri = Uri.parse('https://dev.mind-awake.life/deeplink-auth?code=123456');
+      final result = await handler.handle(uri);
+      expect(result, isTrue);
+      expect(captured, hasLength(1));
+      expect(captured.first.type, SnackBarType.error);
+      expect(captured.first.message, AppLocalizationsEn().loginCodeInvalidError);
     });
   });
 }

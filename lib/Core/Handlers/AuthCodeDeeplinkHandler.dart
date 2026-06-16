@@ -1,4 +1,5 @@
 import 'package:mind_l10n/mind_l10n.dart';
+import 'package:mind_l10n/l10n/app_localizations_en.dart';
 import 'package:mind_ui/mind_ui.dart';
 
 import 'package:mind/Core/Environment.dart';
@@ -8,9 +9,18 @@ import 'package:mind/User/UserNotifier.dart';
 
 class AuthCodeDeeplinkHandler {
   final UserNotifier _userNotifier;
+  final void Function(SnackBarEvent) _onError;
 
-  AuthCodeDeeplinkHandler({required UserNotifier userNotifier})
-      : _userNotifier = userNotifier;
+  AuthCodeDeeplinkHandler({
+    required UserNotifier userNotifier,
+    void Function(SnackBarEvent)? onError,
+  })  : _userNotifier = userNotifier,
+        _onError = onError ?? _defaultOnError;
+
+  static void _defaultOnError(SnackBarEvent event) {
+    rootScaffoldMessengerKey.currentState
+        ?.showSnackBar(SnackBarBuilder.build(event));
+  }
 
   Future<bool> handle(Uri uri) async {
     final isHttpsLink = uri.scheme == 'https' &&
@@ -39,9 +49,9 @@ class AuthCodeDeeplinkHandler {
 
   void _showLocalizedSnackBar(String Function(AppLocalizations) pick) {
     final context = rootScaffoldMessengerKey.currentContext;
-    if (context == null) return;
-    final message = pick(AppLocalizations.of(context)!);
-    rootScaffoldMessengerKey.currentState
-        ?.showSnackBar(SnackBarBuilder.build(SnackBarEvent.error(message)));
+    final l10n = context != null
+        ? AppLocalizations.of(context)!
+        : AppLocalizationsEn();
+    _onError(SnackBarEvent.error(pick(l10n)));
   }
 }
