@@ -12,11 +12,10 @@ import 'BiometricStreamClient.dart';
 ///
 /// Reference: `.ai-factory/notes/28-biometric-stream-pipeline.md` "Milestone 8".
 class BiometricBatcher {
-  static const int _maxBatchSize = 25;
-  static const Duration _flushInterval = Duration(milliseconds: 250);
-
   final BioStreamRouter _router;
   final BiometricStreamClient _client;
+  final Duration _flushInterval;
+  final int _maxBatchSize;
 
   final List<BioSample> _buffer = [];
   Timer? _flushTimer;
@@ -25,8 +24,12 @@ class BiometricBatcher {
   BiometricBatcher({
     required BioStreamRouter router,
     required BiometricStreamClient client,
+    Duration flushInterval = const Duration(milliseconds: 250),
+    int maxBatchSize = 25,
   })  : _router = router,
-        _client = client {
+        _client = client,
+        _flushInterval = flushInterval,
+        _maxBatchSize = maxBatchSize {
     _sub = _router.samples.listen(_onSample);
   }
 
