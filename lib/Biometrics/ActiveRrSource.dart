@@ -25,8 +25,13 @@ import 'Models/RrInterval.dart';
 /// behavior. The filter slot is intentionally easy to add later (one branch
 /// in `_onInterval`).
 class ActiveRrSource {
-  ActiveRrSource(List<IRrIntervalSource> sources)
-      : _sources = List.unmodifiable(sources) {
+  ActiveRrSource(
+    List<IRrIntervalSource> sources, {
+    DateTime Function() clock = DateTime.now,
+    Timer Function(Duration, void Function()) timerFactory = Timer.new,
+  })  : _sources = List.unmodifiable(sources),
+        _clock = clock,
+        _timerFactory = timerFactory {
     for (var i = 0; i < _sources.length; i++) {
       final index = i;
       _subs.add(_sources[i].rrStream.listen((rr) => _onInterval(index, rr)));
@@ -37,6 +42,8 @@ class ActiveRrSource {
   static const double _silenceMultiplier = 2.0;
 
   final List<IRrIntervalSource> _sources;
+  final DateTime Function() _clock;
+  final Timer Function(Duration, void Function()) _timerFactory;
   final List<StreamSubscription<RrInterval>> _subs = [];
 
   final _intervalController = StreamController<RrInterval>.broadcast();
@@ -62,7 +69,7 @@ class ActiveRrSource {
   Stream<bool> get hasActiveSourceStream => _hasActiveController.stream;
 
   void _onInterval(int index, RrInterval rr) {
-    _lastSeenAt[index] = DateTime.now();
+    _lastSeenAt[index] = _clock();
     if (rr.isArtifact) {
       logPrint('ActiveRrSource: artifact from source[$index] (${rr.source.name}), intervalMs=${rr.intervalMs}');
     }
@@ -83,13 +90,13 @@ class ActiveRrSource {
     final base = _lastIntervalMs ?? 1000;
     final window = Duration(milliseconds: (base * _silenceMultiplier).round());
     final effective = window > _silenceFloor ? window : _silenceFloor;
-    _watchdog = Timer(effective, _onSilence);
+    _watchdog = _timerFactory(effective, _onSilence);
   }
 
   void _onSilence() {
     // Active source went silent — try the next-priority source that has
     // emitted recently. Walk the full list in priority order.
-    final now = DateTime.now();
+    final now = _clock();
     int? next;
     for (var i = 0; i < _sources.length; i++) {
       if (i == _activeIndex) continue;

@@ -94,7 +94,7 @@ Fixes the `activityRefId` UUID crash (`invalid input syntax for type uuid: "easy
 
 ## Test Infra
 
-- [ ] **Make `ActiveRrSource` testable: inject clock + Timer factory** — `DateTime.now()` is called directly in `_onInterval` and `_onSilence`, and `Timer(...)` is constructed inline in `_restartWatchdog`. Inject a `DateTime Function() clock` parameter (default `DateTime.now`) and a `Timer Function(Duration, void Function()) timerFactory` parameter (default `Timer.new`) so tests can advance time deterministically without real delays. Test plan: `.ai-factory/notes/90-test-plan-active-rr-source.md`.
+- [x] **Make `ActiveRrSource` testable: inject clock + Timer factory** — `DateTime.now()` is called directly in `_onInterval` and `_onSilence`, and `Timer(...)` is constructed inline in `_restartWatchdog`. Inject a `DateTime Function() clock` parameter (default `DateTime.now`) and a `Timer Function(Duration, void Function()) timerFactory` parameter (default `Timer.new`) so tests can advance time deterministically without real delays. Test plan: `.ai-factory/notes/90-test-plan-active-rr-source.md`. [4m 26s]
 
 - [ ] **Make `BiometricBatcher` testable: inject flush interval + batch-size cap** — `_flushInterval` (250 ms) and `_maxBatchSize` (25) are hard-coded constants with no constructor override, making it impossible to test flush-on-size and flush-on-deadline behaviour without real timing. Add optional named constructor parameters `Duration flushInterval = const Duration(milliseconds: 250)` and `int maxBatchSize = 25` with the current values as defaults. No behavior change. Test plan: `.ai-factory/notes/93-test-plan-biometric-batcher.md`.
 
