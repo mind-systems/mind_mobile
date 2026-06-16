@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:rxdart/rxdart.dart';
 
+import 'package:mind/Core/Grpc/BackoffConfig.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
 import 'package:mind/User/Models/AuthState.dart';
 
@@ -29,8 +30,8 @@ class GrpcConnectionManager {
   Timer? _reconnectTimer;
   int _reconnectAttempt = 0;
 
-  static const Duration _initialDelay = Duration(seconds: 1);
-  static const Duration _maxDelay = Duration(seconds: 30);
+  late final BackoffConfig _backoffConfig;
+  late final TimerFactory _timerFactory;
 
   // ── Listener subscriptions ────────────────────────────────────────────────
 
@@ -44,7 +45,10 @@ class GrpcConnectionManager {
     required Stream<AuthState> authStream,
     required Stream<List<ConnectivityResult>> connectivityStream,
     required Stream<void> resumeStream,
-  }) {
+    BackoffConfig? backoffConfig,
+    TimerFactory? timerFactory,
+  })  : _backoffConfig = backoffConfig ?? BackoffConfig(),
+        _timerFactory = timerFactory ?? Timer.new {
     _authSubscription = authStream.listen((state) {
       if (state is AuthenticatedState) {
         _isAuthenticated = true;
@@ -115,15 +119,15 @@ class GrpcConnectionManager {
 
   Duration _nextDelay() {
     final exp = math.min(_reconnectAttempt, 6);
-    final base = _initialDelay * math.pow(2, exp);
+    final base = _backoffConfig.initialDelay * math.pow(2, exp);
     final clamped =
-        base.inMilliseconds < _maxDelay.inMilliseconds ? base : _maxDelay;
+        base.inMilliseconds < _backoffConfig.maxDelay.inMilliseconds ? base : _backoffConfig.maxDelay;
     final jitter =
-        (clamped.inMilliseconds * 0.25 * (math.Random().nextDouble() * 2 - 1))
+        (clamped.inMilliseconds * 0.25 * (_backoffConfig.random.nextDouble() * 2 - 1))
             .round();
     _reconnectAttempt++;
     final ms =
-        (clamped.inMilliseconds + jitter).clamp(0, _maxDelay.inMilliseconds);
+        (clamped.inMilliseconds + jitter).clamp(0, _backoffConfig.maxDelay.inMilliseconds);
     return Duration(milliseconds: ms);
   }
 
@@ -135,7 +139,7 @@ class GrpcConnectionManager {
       '[GrpcConnectionManager] reconnecting in ${delay.inSeconds}s (attempt $_reconnectAttempt)',
       name: 'GrpcConnectionManager',
     );
-    _reconnectTimer = Timer(delay, () {
+    _reconnectTimer = _timerFactory(delay, () {
       if (_isAuthenticated) connect();
     });
   }
