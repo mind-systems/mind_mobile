@@ -1,0 +1,56 @@
+flowchart TB
+    Start(["▶ User starts a session"])
+
+    subgraph APP["APPLICATION"]
+        direction TB
+        SessionUI["Session UI<br/>emits session state<br/>(lifecycle + phase)"]
+        Adapter["Module adapter<br/>turns state into<br/>lifecycle commands + instructions"]
+        Bio["Biometric sources<br/>merged + batched<br/>(passive background)"]
+        Transport["Transport<br/>one connection ·<br/>tunnels open on connect"]
+    end
+
+    subgraph TUNNELS["TUNNELS · one connection, multiplexed · payload only after readiness ack"]
+        direction TB
+        Control["Control tunnel<br/>lifecycle commands ⇄ session events"]
+        Instr["Instruction tunnel<br/>phase log →"]
+        BioT["Biometric tunnel<br/>sensor log →"]
+    end
+
+    subgraph SERVER["SERVER"]
+        direction TB
+        SessionEngine["Session engine<br/>one active session per user ·<br/>issues correlation key"]
+        Collector["Sample collector<br/>buffers · periodic flush"]
+    end
+
+    subgraph STORE["STORE"]
+        SessionRec[("Session record")]
+        SampleLog[("Sample log")]
+    end
+
+    %% ── Lifecycle: produces the correlation key ──
+    Start --> SessionUI --> Adapter
+    Adapter -->|"① lifecycle command"| Control
+    Control --> SessionEngine --> SessionRec
+    SessionEngine -.->|"② correlation key + events"| Control
+    Control -->|"correlation key"| Adapter
+    Control -. "session events gate sending" .-> Bio
+
+    %% ── Instruction log ──
+    Adapter -->|"③ phase change"| Instr --> Collector
+
+    %% ── Biometric log ──
+    Bio --> BioT --> Collector
+
+    %% ── Persist + correlation ──
+    Collector --> SampleLog
+    SampleLog -. "analytics time-join:<br/>correlation key + timestamp" .- SessionRec
+
+    %% ── Transport raises every tunnel up front ──
+    Transport -. opens on connect .-> Control
+    Transport -. opens on connect .-> Instr
+    Transport -. opens on connect .-> BioT
+
+    classDef trigger fill:#2d6a4f,stroke:#1b4332,color:#fff;
+    classDef store fill:#3d405b,stroke:#22223b,color:#fff;
+    class Start trigger;
+    class SessionRec,SampleLog store;

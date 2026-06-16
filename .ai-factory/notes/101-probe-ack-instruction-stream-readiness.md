@@ -3,6 +3,18 @@
 **Date:** 2026-06-05
 **Source:** conversation context — deep investigation of `rest` instruction loss
 
+## Decision (2026-06-16)
+
+The fix is now two-part, and this probe/ACK design is half of it:
+
+- **Cold start** is handled by **opening all data tunnels eagerly at connect** (instruction + biometric), mirroring the control tunnel. By the time the first sample flows, the server has long since subscribed — the same reason the control tunnel never races. This removes the need for the probe to carry the cold-start case alone.
+- **Reconnect mid-session** is what the probe/ACK gate below primarily protects: on re-open the buffer would otherwise flush immediately into a not-yet-subscribed tunnel. The readiness ACK holds the flush until the server confirms it is subscribed.
+- The same race exists on the **biometric** tunnel (`BiometricStreamClient` opens lazily and replays its ring on open). Apply eager-open there too; the readiness gate is optional for biometrics since losing a first batch is far cheaper than losing the one-shot `rest`.
+
+**Still gated on the log verification** in `mind_api/.ai-factory/notes/44`: if early frames are dropped before `request.subscribe()`, the probe itself can be lost (deadlock) and eager-open can still race on a fast cold start — then the foundation must be server-side. Confirm the log before building.
+
+The probe/ACK mechanism below is unchanged and remains correct for the reconnect path.
+
 ## Key Findings
 
 - The gRPC instruction stream is opened lazily on the first `emit()` call. The first message sent is always lost because the NestJS server runs async JWT auth before calling `request.subscribe()` — the first DATA frame arrives before the Subject has a subscriber.
