@@ -19,6 +19,13 @@ class MeditationSessionScreen extends ConsumerStatefulWidget {
       _MeditationSessionScreenState();
 }
 
+String _formatDuration(int totalSeconds) {
+  final h = totalSeconds ~/ 3600;
+  final m = (totalSeconds % 3600) ~/ 60;
+  final s = totalSeconds % 60;
+  return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+}
+
 class _MeditationSessionScreenState
     extends ConsumerState<MeditationSessionScreen> {
   @override
@@ -50,33 +57,52 @@ class _MeditationSessionScreenState
     final isActive = status == MeditationSessionStatus.active;
 
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 240,
-              height: 240,
-              child: Image.asset(
-                'assets/images/modules/meditation/meditation-pose-${poseId.replaceAll('_', '-')}.png',
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 240,
+                    height: 240,
+                    child: Image.asset(
+                      'assets/images/modules/meditation/meditation-pose-${poseId.replaceAll('_', '-')}.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: ControlButton(
+                      icon: isActive ? Icons.stop : Icons.play_arrow,
+                      onPressed: () => isActive
+                          ? ref.read(meditationSessionViewModelProvider.notifier).stop()
+                          : ref.read(meditationSessionViewModelProvider.notifier).start(),
+                      iconSize: 40,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: 80,
-              height: 80,
-              child: ControlButton(
-                icon: isActive ? Icons.stop : Icons.play_arrow,
-                onPressed: () => isActive
-                    ? ref.read(meditationSessionViewModelProvider.notifier).stop()
-                    : ref.read(meditationSessionViewModelProvider.notifier).start(),
-                iconSize: 40,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 40),
+            child: ValueListenableBuilder<int>(
+              valueListenable: ref.read(meditationSessionViewModelProvider.notifier).elapsedSeconds,
+              builder: (context, seconds, _) => Text(
+                _formatDuration(seconds),
+                style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                  color: AppColors.warmAccentDark,
+                  fontFeatures: [const FontFeature.tabularFigures()],
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
