@@ -5,7 +5,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:observe/observe.dart';
+import 'package:mind/Logger.dart';
 import 'package:mind_l10n/mind_l10n.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -132,6 +135,7 @@ class App {
   });
 
   static Future<void> initialize() async {
+    if (logToObserver && Environment.instance.otlpEndpoint != null) { init(project: 'mind', service: 'mind_mobile', endpoint: Environment.instance.otlpEndpoint!, onError: kDebugMode ? (e) => debugPrint('observe: $e') : null); }
     WidgetsFlutterBinding.ensureInitialized();
 
     await GoogleSignIn.instance.initialize(
@@ -147,6 +151,8 @@ class App {
     final logoutNotifier = LogoutNotifier();
 
     final appLifecycleService = AppLifecycleService();
+    appLifecycleService.onPause.listen((_) => unawaited(flush()));
+    appLifecycleService.onDetach.listen((_) => unawaited(flush()));
     final grpcAuthInterceptor = GrpcAuthInterceptor(storage: const FlutterSecureStorage(), logoutNotifier: logoutNotifier);
     final grpcClient = GrpcClient(host: Environment.instance.grpcHost, port: Environment.instance.grpcPort, isSecure: Environment.instance.grpcSecure, detachStream: appLifecycleService.onDetach, interceptors: [grpcAuthInterceptor, GrpcLoggingInterceptor()]);
     final authApi = AuthApi(grpcClient.authService, const FlutterSecureStorage());

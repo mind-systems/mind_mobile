@@ -798,6 +798,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.2"
+  observe:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: "v0.1.0"
+      resolved-ref: "69fd6cc06b73cd5f20be588d4b1a7a4213e72f66"
+      url: "https://github.com/mind-systems/observe-dart.git"
+    source: git
+    version: "0.0.0"
   package_config:
     dependency: transitive
     description:

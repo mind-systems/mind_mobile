@@ -21,6 +21,7 @@ class Environment {
   int grpcPort;
   bool grpcSecure;
   String apiBaseUrl;
+  String? otlpEndpoint;
 
   Environment._({
     required this.name,
@@ -74,6 +75,7 @@ class Environment {
     _instance.grpcPort = 50051;
     _instance.grpcSecure = false;
     _instance.apiBaseUrl = 'http://YOUR_LOCAL_IP:3001';
+    _instance.otlpEndpoint = 'http://YOUR_LOCAL_IP:3100/otlp/v1/logs';
   }
 
   static void initProd() {

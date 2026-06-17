@@ -1,5 +1,10 @@
 import 'package:flutter/foundation.dart';
 
+const _logDestination = String.fromEnvironment('LOG_DESTINATION', defaultValue: kDebugMode ? 'both' : 'file');
+
+bool get logToConsole => _logDestination != 'grafana';
+bool get logToObserver => _logDestination != 'file';
+
 void logPrint(Object? object) {
   final now = DateTime.now();
   final time = '${now.hour.toString().padLeft(2, '0')}:'
