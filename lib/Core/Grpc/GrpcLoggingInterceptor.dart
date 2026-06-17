@@ -5,20 +5,6 @@ import 'package:mind/Logger.dart';
 import 'package:observe/observe.dart';
 
 class GrpcLoggingInterceptor extends ClientInterceptor {
-  CallOptions _withTraceparent(CallOptions options) {
-    final span = startSpan();
-    final carrier = <String, String>{};
-    runWithContext(
-      TraceContext(
-        traceId: span.traceId,
-        spanId: span.spanId,
-        traceFlags: span.traceFlags,
-      ),
-      () => inject(MapCarrier(carrier)),
-    );
-    return options.mergedWith(CallOptions(metadata: carrier));
-  }
-
   @override
   ResponseFuture<R> interceptUnary<Q, R>(
     ClientMethod<Q, R> method,
@@ -26,11 +12,22 @@ class GrpcLoggingInterceptor extends ClientInterceptor {
     CallOptions options,
     ClientUnaryInvoker<Q, R> invoker,
   ) {
-    final response = invoker(method, request, _withTraceparent(options));
-    unawaited(response.then<void>((_) {}, onError: (Object e) {
-      logPrint('[gRPC] ${method.path} ERROR: $e');
-    }));
-    return response;
+    final span = startSpan();
+    final ctx = TraceContext(
+      traceId: span.traceId,
+      spanId: span.spanId,
+      traceFlags: span.traceFlags,
+    );
+    return runWithContext<ResponseFuture<R>>(ctx, () {
+      final carrier = <String, String>{};
+      inject(MapCarrier(carrier));
+      final traced = options.mergedWith(CallOptions(metadata: carrier));
+      final response = invoker(method, request, traced);
+      unawaited(response.then<void>((_) {}, onError: (Object e) {
+        logPrint('[gRPC] ${method.path} ERROR: $e');
+      }));
+      return response;
+    });
   }
 
   @override
@@ -40,10 +37,21 @@ class GrpcLoggingInterceptor extends ClientInterceptor {
     CallOptions options,
     ClientStreamingInvoker<Q, R> invoker,
   ) {
-    final response = invoker(method, requests, _withTraceparent(options));
-    unawaited(response.trailers.then<void>((_) {}, onError: (Object e) {
-      logPrint('[gRPC] ${method.path} ERROR: $e');
-    }));
-    return response;
+    final span = startSpan();
+    final ctx = TraceContext(
+      traceId: span.traceId,
+      spanId: span.spanId,
+      traceFlags: span.traceFlags,
+    );
+    return runWithContext<ResponseStream<R>>(ctx, () {
+      final carrier = <String, String>{};
+      inject(MapCarrier(carrier));
+      final traced = options.mergedWith(CallOptions(metadata: carrier));
+      final response = invoker(method, requests, traced);
+      unawaited(response.trailers.then<void>((_) {}, onError: (Object e) {
+        logPrint('[gRPC] ${method.path} ERROR: $e');
+      }));
+      return response;
+    });
   }
 }
