@@ -75,6 +75,7 @@ BreathSessionState _state({
   int exerciseIndex = 0,
   SessionLoadState loadState = SessionLoadState.ready,
   int currentIntervalMs = 4000,
+  int currentPhaseTotalDuration = 1,
 }) {
   return BreathSessionState(
     loadState: loadState,
@@ -83,6 +84,7 @@ BreathSessionState _state({
     exerciseIndex: exerciseIndex,
     remainingTicks: 0,
     currentIntervalMs: currentIntervalMs,
+    currentPhaseTotalDuration: currentPhaseTotalDuration,
   );
 }
 
@@ -871,14 +873,15 @@ void main() {
         // Prime _previousPhase=inhale, _previousExerciseIndex=0
         f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
-        // Breath to start lifecycle; no dispatch because phase is unchanged (inhale == inhale from prime)
+        // Breath starts the session; _handleLifecycle resets _previousPhase=null so the
+        // first active emission always dispatches (inhale != null → phaseChanged=true)
         f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
-        // Rest with phase change — active check covers both breath and rest
+        // Rest with phase change — active check covers both breath and rest; 2nd dispatch
         f.stateCtrl.add(_state(status: BreathSessionStatus.rest, phase: BreathPhase.exhale, currentIntervalMs: 6000));
         await Future<void>.delayed(Duration.zero);
 
-        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        expect(f.instructionStream.sendSampleCalls, hasLength(2));
         expect(f.instructionStream.sendSampleCalls.last, ('sid', 'exhale', 6000));
 
         f.target.dispose();

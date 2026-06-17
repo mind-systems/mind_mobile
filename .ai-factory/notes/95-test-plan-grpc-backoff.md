@@ -9,24 +9,25 @@ GrpcConnectionManager maintains a gRPC connection to a backend service with expo
 
 ## Instantiation
 
-Constructor signature:
+Constructor signature (current — `BackoffConfig` and `TimerFactory` are now injectable):
 ```dart
 GrpcConnectionManager({
   required Stream<AuthState> authStream,
   required Stream<List<ConnectivityResult>> connectivityStream,
   required Stream<void> resumeStream,
+  BackoffConfig? backoffConfig,
+  TimerFactory? timerFactory,   // TimerFactory = Timer Function(Duration, void Function())
 })
 ```
 
-For unit tests, **all three streams must be faked**:
-- `authStream`: A `StreamController<AuthState>` that emits `AuthenticatedState` or `GuestState`.
+For unit tests, **all three streams plus two injectable params** must be controlled:
+- `authStream`: A `StreamController<AuthState>` emitting `AuthenticatedState` or `GuestState`. Emit `AuthenticatedState` to make `_isAuthenticated = true` (required before `scheduleReconnect()` fires a timer).
 - `connectivityStream`: A `StreamController<List<ConnectivityResult>>` emitting connectivity states.
 - `resumeStream`: A `StreamController<void>` for app lifecycle resume events.
+- `backoffConfig`: Inject `BackoffConfig(initialDelay: Duration(milliseconds: 10), maxDelay: Duration(milliseconds: 100), random: Random(0))` for deterministic, fast delays.
+- `timerFactory`: Inject a spy `List<({Duration delay, void Function() callback})> timers = []` so tests can capture scheduled delays and fire callbacks manually — avoids real `Timer` delays entirely.
 
-**Key challenge:** The class has **heavy external dependencies** (auth, connectivity listeners). For focused backoff testing, consider:
-1. **Full integration approach:** Mock the streams and assert on timers + state transitions.
-2. **Partial unit approach:** Extract `_nextDelay()` as a standalone function and test it in isolation (avoids Timer complexity).
-3. **Current recommendation:** Test via mocked streams + advancing fake timers with `fake_async` package, verifying `_nextDelay()` output and timer scheduling behavior.
+**Recommended approach:** inject a `TimerFactory` spy. Call `scheduleReconnect()` (public wrapper for `_scheduleReconnectInternal()`), then inspect `timers.last.delay` to assert the scheduled duration. Fire `timers.last.callback()` to simulate a timer firing. This avoids `fake_async` complexity while giving full control over timing.
 
 ## Existing Coverage
 
