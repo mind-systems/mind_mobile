@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:grpc/grpc.dart';
+import 'package:mind/Logger.dart';
 
 class GrpcLoggingInterceptor extends ClientInterceptor {
   @override
@@ -13,7 +13,7 @@ class GrpcLoggingInterceptor extends ClientInterceptor {
   ) {
     final response = invoker(method, request, options);
     unawaited(response.then<void>((_) {}, onError: (Object e) {
-      log('${method.path} ERROR: $e', name: 'gRPC', error: e);
+      logPrint('[gRPC] ${method.path} ERROR: $e');
     }));
     return response;
   }
@@ -27,7 +27,7 @@ class GrpcLoggingInterceptor extends ClientInterceptor {
   ) {
     final response = invoker(method, requests, options);
     unawaited(response.trailers.then<void>((_) {}, onError: (Object e) {
-      log('${method.path} ERROR: $e', name: 'gRPC', error: e);
+      logPrint('[gRPC] ${method.path} ERROR: $e');
     }));
     return response;
   }

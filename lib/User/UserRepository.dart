@@ -1,5 +1,4 @@
-import 'dart:developer';
-
+import 'package:mind/Logger.dart';
 import 'package:mind/User/IAuthApi.dart';
 import 'package:mind/User/IUserApi.dart';
 import 'package:mind/Core/Api/Models/UpdateUserRequest.dart';
@@ -44,7 +43,7 @@ class UserRepository {
       if (!existingUser.isGuest) {
         final token = await _storage.read('jwt_token');
         if (token == null) {
-          log('[UserRepository] loadUser — authenticated user in DB but no token in storage, downgrading to guest');
+          logPrint('[UserRepository] loadUser — authenticated user in DB but no token in storage, downgrading to guest');
           await _userDao.deleteUser(existingUser.id);
           final guest = User.guest();
           await _userDao.saveUser(guest);
@@ -107,7 +106,7 @@ class UserRepository {
     try {
       await _google.signOut();
     } catch (e) {
-      log('[UserRepository] clearSession — Google sign out error (non-fatal): $e');
+      logPrint('[UserRepository] clearSession — Google sign out error (non-fatal): $e');
     }
 
     await _api.clearToken();

@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:rxdart/rxdart.dart';
+import 'package:mind/Logger.dart';
 
 import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/Models/AuthState.dart';
@@ -76,7 +76,7 @@ class UserNotifier {
         serverAuthCode: googleAuth.code, redirectUri: googleAuth.redirectUri, language: language);
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e) {
-      log('[UserNotifier] loginWithGoogle error: $e');
+      logPrint('[UserNotifier] loginWithGoogle error: $e');
       _authErrorSubject.add('Failed to sign in with Google');
       rethrow;
     } finally {

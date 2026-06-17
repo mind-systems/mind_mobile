@@ -1,6 +1,5 @@
-import 'dart:developer';
-
 import 'package:rxdart/rxdart.dart';
+import 'package:mind/Logger.dart';
 
 import 'package:mind/Core/Api/IPersonalAccessTokenApi.dart';
 import 'package:mind/Core/Api/Models/CreateTokenRequest.dart';
@@ -37,7 +36,7 @@ class TokenNotifier {
       )).toList();
       _subject.add(TokenNotifierState(tokens: tokens, lastEvent: TokensLoaded(tokens)));
     } catch (e) {
-      log('[TokenNotifier] loadTokens error: $e', name: 'TokenNotifier');
+      logPrint('[TokenNotifier] loadTokens error: $e');
       _subject.add(TokenNotifierState(tokens: _subject.value.tokens, lastEvent: TokenError(e.toString())));
     }
   }
@@ -53,7 +52,7 @@ class TokenNotifier {
       final updated = [token, ..._subject.value.tokens];
       _subject.add(TokenNotifierState(tokens: updated, lastEvent: TokenCreated(token: token, plainToken: response.token)));
     } catch (e) {
-      log('[TokenNotifier] createToken error: $e', name: 'TokenNotifier');
+      logPrint('[TokenNotifier] createToken error: $e');
       _subject.add(TokenNotifierState(tokens: _subject.value.tokens, lastEvent: TokenError(e.toString())));
     }
   }
@@ -64,7 +63,7 @@ class TokenNotifier {
       final updated = _subject.value.tokens.where((t) => t.id != id).toList();
       _subject.add(TokenNotifierState(tokens: updated, lastEvent: TokenRevoked(id)));
     } catch (e) {
-      log('[TokenNotifier] revokeToken error: $e', name: 'TokenNotifier');
+      logPrint('[TokenNotifier] revokeToken error: $e');
       _subject.add(TokenNotifierState(tokens: _subject.value.tokens, lastEvent: TokenError(e.toString())));
     }
   }

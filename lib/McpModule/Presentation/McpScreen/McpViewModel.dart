@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/services.dart';
+import 'package:mind/Logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/McpModule/Presentation/McpScreen/IMcpCoordinator.dart';
 import 'package:mind/McpModule/Presentation/McpScreen/IMcpService.dart';
@@ -38,7 +38,7 @@ class McpViewModel extends Notifier<McpScreenState> {
         final updated = state.tokens.where((t) => t.id != e.id).toList();
         state = state.copyWith(tokens: updated);
       case TokenErrorEvent e:
-        log('[McpViewModel] error: ${e.message}', name: 'McpViewModel');
+        logPrint('[McpViewModel] error: ${e.message}');
     }
   }
 

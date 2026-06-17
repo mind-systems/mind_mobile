@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:grpc/grpc.dart';
+import 'package:mind/Logger.dart';
 import 'package:mind/Core/Grpc/generated/auth.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/bci_devices.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/breath_sessions.pbgrpc.dart';
@@ -26,7 +26,7 @@ class GrpcClient {
         _interceptors = interceptors {
     if (detachStream != null) {
       _detachSubscription = detachStream.listen((_) {
-        log('[GrpcClient] app detached — shutting down channel', name: 'GrpcClient');
+        logPrint('[GrpcClient] app detached — shutting down channel');
         shutdown();
       });
     }

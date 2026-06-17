@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:developer' as dev;
 
 import 'package:mind/Core/Grpc/ActivityType.dart';
+import 'package:mind/Logger.dart';
 import 'package:mind/Core/Grpc/ModuleState.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
 import 'package:mind/BreathModule/Core/BreathModuleInstructionStream.dart';
@@ -62,23 +62,23 @@ class BreathModuleStateChannel {
 
     if (wasPaused && isActive) {
       if (!_started) {
-        dev.log('BreathModuleStateChannel: session start [$_sessionId]', name: 'BreathModuleState');
+        logPrint('[BreathModuleState] BreathModuleStateChannel: session start [$_sessionId]');
         _channel.start(type: ActivityType.breath, refId: _sessionId);
         _started = true;
         _previousPhase = null;
         _previousExerciseIndex = null;
       } else {
-        dev.log('BreathModuleStateChannel: session resume [$_sessionId]', name: 'BreathModuleState');
+        logPrint('[BreathModuleState] BreathModuleStateChannel: session resume [$_sessionId]');
         _channel.unpause();
       }
     } else if (wasActive && status == BreathSessionStatus.pause) {
       if (_started && !_ended) {
-        dev.log('BreathModuleStateChannel: session pause [$_sessionId]', name: 'BreathModuleState');
+        logPrint('[BreathModuleState] BreathModuleStateChannel: session pause [$_sessionId]');
         _channel.pause();
       }
     } else if (status == BreathSessionStatus.complete) {
       if (_started && !_ended) {
-        dev.log('BreathModuleStateChannel: session end [$_sessionId]', name: 'BreathModuleState');
+        logPrint('[BreathModuleState] BreathModuleStateChannel: session end [$_sessionId]');
         _channel.end();
         _ended = true;
       }
@@ -122,7 +122,7 @@ class BreathModuleStateChannel {
 
   void dispose() {
     if (_started && !_ended) {
-      dev.log('BreathModuleStateChannel: dispose — stopping session [$_sessionId]', name: 'BreathModuleState');
+      logPrint('[BreathModuleState] BreathModuleStateChannel: dispose — stopping session [$_sessionId]');
       _channel.stop();
     }
     _stateSub.cancel();

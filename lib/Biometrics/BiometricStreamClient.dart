@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:developer';
 
 import 'package:fixnum/fixnum.dart';
+import 'package:mind/Logger.dart';
 import 'package:protobuf/well_known_types/google/protobuf/struct.pb.dart';
 
 import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
@@ -105,34 +105,22 @@ class BiometricStreamClient {
             case $bio.BioStreamResponse_Event.ack:
               break; // no-op for this milestone
             case $bio.BioStreamResponse_Event.error:
-              log(
-                '[BiometricStreamClient] error: ${r.error.code} — ${r.error.message}',
-                name: 'BiometricStreamClient',
-              );
+              logPrint('[BiometricStreamClient] error: ${r.error.code} — ${r.error.message}');
             case $bio.BioStreamResponse_Event.notSet:
               break;
           }
         },
         onError: (Object e) {
-          log(
-            '[BiometricStreamClient] stream error: $e',
-            name: 'BiometricStreamClient',
-          );
+          logPrint('[BiometricStreamClient] stream error: $e');
           _teardownSink();
         },
         onDone: () {
-          log(
-            '[BiometricStreamClient] stream done',
-            name: 'BiometricStreamClient',
-          );
+          logPrint('[BiometricStreamClient] stream done');
           _teardownSink();
         },
       );
     } catch (e) {
-      log(
-        '[BiometricStreamClient] stream open failed: $e',
-        name: 'BiometricStreamClient',
-      );
+      logPrint('[BiometricStreamClient] stream open failed: $e');
       _teardownSink();
       return;
     }
@@ -176,10 +164,7 @@ class BiometricStreamClient {
     try {
       _sink!.add(batch);
     } catch (e) {
-      log(
-        '[BiometricStreamClient] stream send failed, enqueuing replay: $e',
-        name: 'BiometricStreamClient',
-      );
+      logPrint('[BiometricStreamClient] stream send failed, enqueuing replay: $e');
       for (final sample in samples) {
         _enqueueReplay(sample);
       }

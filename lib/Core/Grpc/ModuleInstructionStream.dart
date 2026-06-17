@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:fixnum/fixnum.dart';
+import 'package:mind/Logger.dart';
 import 'package:protobuf/well_known_types/google/protobuf/struct.pb.dart';
 
 import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
@@ -69,10 +69,7 @@ class ModuleInstructionStream {
   void emit(InstructionSample sample) {
     if (_streamSink == null) {
       if (!_isGrpcConnected) {
-        log(
-          '[ModuleInstructionStream] not connected, dropping sample',
-          name: 'ModuleInstructionStream',
-        );
+        logPrint('[ModuleInstructionStream] not connected, dropping sample');
         return;
       }
       _streamRequested = true;
@@ -112,28 +109,19 @@ class ModuleInstructionStream {
               timestamp: ack.timestamp.toInt(),
             ));
           case StreamResponse_Event.error:
-            log(
-              '[ModuleInstructionStream] error: ${r.error.code} — ${r.error.message}',
-              name: 'ModuleInstructionStream',
-            );
+            logPrint('[ModuleInstructionStream] error: ${r.error.code} — ${r.error.message}');
           case StreamResponse_Event.notSet:
             break;
         }
       },
       onError: (Object e) {
-        log(
-          '[ModuleInstructionStream] stream error: $e',
-          name: 'ModuleInstructionStream',
-        );
+        logPrint('[ModuleInstructionStream] stream error: $e');
         _streamRequested = false;
         _connectionManager.disconnect();
         _connectionManager.scheduleReconnect();
       },
       onDone: () {
-        log(
-          '[ModuleInstructionStream] stream done',
-          name: 'ModuleInstructionStream',
-        );
+        logPrint('[ModuleInstructionStream] stream done');
         _streamRequested = false;
         _connectionManager.disconnect();
         _connectionManager.scheduleReconnect();

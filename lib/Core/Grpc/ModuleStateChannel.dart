@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:rxdart/rxdart.dart';
+import 'package:mind/Logger.dart';
 
 import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
@@ -83,22 +83,19 @@ class ModuleStateChannel {
             if (event.status == proto.ActivityStatus.DISCONNECTED) return;
             _processProtoEvent(event);
           case proto.StateResponse_Event.sessionError:
-            log(
-              '[ModuleStateChannel] session error: ${r.sessionError.code} — ${r.sessionError.message}',
-              name: 'ModuleStateChannel',
-            );
+            logPrint('[ModuleStateChannel] session error: ${r.sessionError.code} — ${r.sessionError.message}');
           case proto.StateResponse_Event.notSet:
             break;
         }
       },
       onError: (Object e) {
-        log('[ModuleStateChannel] session stream error: $e', name: 'ModuleStateChannel');
+        logPrint('[ModuleStateChannel] session stream error: $e');
         _closeSessionStream();
         _connectionManager.disconnect();
         _connectionManager.scheduleReconnect();
       },
       onDone: () {
-        log('[ModuleStateChannel] session stream done', name: 'ModuleStateChannel');
+        logPrint('[ModuleStateChannel] session stream done');
         _closeSessionStream();
         _connectionManager.disconnect();
         _connectionManager.scheduleReconnect();
@@ -142,7 +139,7 @@ class ModuleStateChannel {
       _isPendingStart = false;
       _state.add(ModuleState.initial());
     } else {
-      log('[ModuleStateChannel] unhandled status: $status', name: 'ModuleStateChannel', level: 900);
+      logPrint('[ModuleStateChannel] unhandled status: $status');
     }
   }
 
@@ -185,7 +182,7 @@ class ModuleStateChannel {
 
   void _sendSessionRequest(proto.StateRequest request) {
     if (_sessionSink == null) {
-      log('[ModuleStateChannel] not connected, dropping request', name: 'ModuleStateChannel');
+      logPrint('[ModuleStateChannel] not connected, dropping request');
       return;
     }
     _sessionSink!.add(request);

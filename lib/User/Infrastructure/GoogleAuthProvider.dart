@@ -1,6 +1,5 @@
-import 'dart:developer';
-
 import 'package:flutter/services.dart';
+import 'package:mind/Logger.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mind/Core/Environment.dart';
@@ -17,7 +16,7 @@ class GoogleAuthProvider implements IGoogleAuthProvider {
     } on GoogleSignInCanceledException {
       rethrow;
     } catch (e) {
-      log('[GoogleAuthProvider] GMS failed ($e), falling back to browser flow');
+      logPrint('[GoogleAuthProvider] GMS failed ($e), falling back to browser flow');
       return await _browserFlow();
     }
   }

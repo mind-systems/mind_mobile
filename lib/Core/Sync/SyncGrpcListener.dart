@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:fixnum/fixnum.dart';
+import 'package:mind/Logger.dart';
 import 'package:mind/Core/Api/Models/ChangeEvent.dart';
 import 'package:mind/Core/Database/ISyncStateDao.dart';
 import 'package:mind/Core/Grpc/generated/sync.pb.dart' as syncProto;
@@ -47,11 +47,11 @@ class SyncGrpcListener {
         final events = envelope.events.map(_mapEvent).toList();
         if (events.isEmpty) return;
         syncEngine.processEvents(events).catchError((e) {
-          log('[SyncGrpcListener] processEvents failed: $e', name: 'SyncGrpcListener');
+          logPrint('[SyncGrpcListener] processEvents failed: $e');
         });
       },
       onError: (e) {
-        log('[SyncGrpcListener] stream error: $e', name: 'SyncGrpcListener');
+        logPrint('[SyncGrpcListener] stream error: $e');
         _scheduleReconnect();
       },
       onDone: () {
@@ -69,7 +69,7 @@ class SyncGrpcListener {
 
   void _scheduleReconnect() {
     if (!_isAuthenticated) return;
-    log('[SyncGrpcListener] stream ended, reconnecting in 3s', name: 'SyncGrpcListener');
+    logPrint('[SyncGrpcListener] stream ended, reconnecting in 3s');
     _reconnectTimer = Timer(const Duration(seconds: 3), () {
       if (_isAuthenticated) _startWatching();
     });

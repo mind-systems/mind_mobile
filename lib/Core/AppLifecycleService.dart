@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'dart:developer';
+
 import 'package:flutter/widgets.dart';
+import 'package:mind/Logger.dart';
 
 class AppLifecycleService {
   final _resumeController = StreamController<void>.broadcast();
@@ -17,17 +18,17 @@ class AppLifecycleService {
   Stream<void> get onDetach => _detachController.stream;
 
   void _onResume() {
-    log('[AppLifecycleService] app resumed', name: 'AppLifecycleService');
+    logPrint('[AppLifecycleService] app resumed');
     _resumeController.add(null);
   }
 
   void _onPause() {
-    log('[AppLifecycleService] app paused', name: 'AppLifecycleService');
+    logPrint('[AppLifecycleService] app paused');
     _pauseController.add(null);
   }
 
   void _onDetach() {
-    log('[AppLifecycleService] app detached', name: 'AppLifecycleService');
+    logPrint('[AppLifecycleService] app detached');
     _detachController.add(null);
   }
 

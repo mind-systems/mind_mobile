@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:mind/BreathModule/Core/BreathSessionNotifier.dart';
+import 'package:mind/Logger.dart';
 import 'package:mind/Core/Api/ISyncApi.dart';
 import 'package:mind/Core/Api/Models/ChangeEvent.dart';
 import 'package:mind/Core/Database/IBreathSessionDao.dart';
@@ -45,18 +45,18 @@ class SyncEngine {
       final response = await syncApi.fetchChanges(lastEventId);
       if (response.fullResync) {
         if (lastEventId == 0) {
-          log('[SyncEngine] server sent fullResync for after=0, skipping to prevent loop', name: 'SyncEngine');
+          logPrint('[SyncEngine] server sent fullResync for after=0, skipping to prevent loop');
           return;
         }
-        log('[SyncEngine] ⚠️ fullResync requested by server (lastEventId=$lastEventId)', name: 'SyncEngine');
+        logPrint('[SyncEngine] ⚠️ fullResync requested by server (lastEventId=$lastEventId)');
         await _handleFullResync();
         return;
       }
       if (response.events.isEmpty) return;
-      log('[SyncEngine] processing ${response.events.length} events (cursor was $lastEventId)', name: 'SyncEngine');
+      logPrint('[SyncEngine] processing ${response.events.length} events (cursor was $lastEventId)');
       await _processEvents(response.events);
     } catch (e) {
-      log('[SyncEngine] sync failed: $e', name: 'SyncEngine');
+      logPrint('[SyncEngine] sync failed: $e');
     }
   }
 
@@ -80,7 +80,7 @@ class SyncEngine {
       if (entry.key == 'breath_session') {
         await _handleBreathSessionEvents(entry.value);
       } else {
-        log('[SyncEngine] unknown entity: ${entry.key}', name: 'SyncEngine');
+        logPrint('[SyncEngine] unknown entity: ${entry.key}');
       }
     }
     final maxEventId = events.map((e) => e.id).reduce((a, b) => a > b ? a : b);
@@ -105,11 +105,11 @@ class SyncEngine {
       const chunkSize = 50;
       final idList = upsertIds.toList();
       if (idList.length > chunkSize) {
-        log('[SyncEngine] ⚠️ large batch: ${idList.length} sessions to fetch — this suggests cursor was reset or first-run. Fetching in chunks of $chunkSize.', name: 'SyncEngine');
+        logPrint('[SyncEngine] ⚠️ large batch: ${idList.length} sessions to fetch — this suggests cursor was reset or first-run. Fetching in chunks of $chunkSize.');
       }
       for (var i = 0; i < idList.length; i += chunkSize) {
         final chunk = idList.sublist(i, (i + chunkSize).clamp(0, idList.length));
-        log('[SyncEngine] fetching batch ${i ~/ chunkSize + 1}: ${chunk.length} sessions', name: 'SyncEngine');
+        logPrint('[SyncEngine] fetching batch ${i ~/ chunkSize + 1}: ${chunk.length} sessions');
         final response = await syncApi.fetchSessionsBatch(chunk);
         await breathSessionDao.saveSessions(response.data);
       }

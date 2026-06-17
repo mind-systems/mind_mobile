@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:math' as math;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'package:mind/Core/Grpc/BackoffConfig.dart';
+import 'package:mind/Logger.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
 import 'package:mind/User/Models/AuthState.dart';
 
@@ -60,16 +60,16 @@ class GrpcConnectionManager {
     });
     _connectivitySubscription = connectivityStream.listen((results) {
       if (results.contains(ConnectivityResult.none)) {
-        log('[GrpcConnectionManager] connectivity lost, disconnecting', name: 'GrpcConnectionManager');
+        logPrint('[GrpcConnectionManager] connectivity lost, disconnecting');
         disconnect();
       } else if (_isAuthenticated) {
-        log('[GrpcConnectionManager] connectivity restored, reconnecting', name: 'GrpcConnectionManager');
+        logPrint('[GrpcConnectionManager] connectivity restored, reconnecting');
         connect();
       }
     });
     _resumeSubscription = resumeStream.listen((_) {
       if (_isAuthenticated && currentState != GrpcConnectionState.connected) {
-        log('[GrpcConnectionManager] app resumed, not connected — reconnecting', name: 'GrpcConnectionManager');
+        logPrint('[GrpcConnectionManager] app resumed, not connected — reconnecting');
         connect();
       }
     });
@@ -79,22 +79,19 @@ class GrpcConnectionManager {
 
   void connect() {
     if (currentState == GrpcConnectionState.connected || _isConnecting) {
-      log(
-        '[GrpcConnectionManager] connect() skipped: currentState=$currentState _isConnecting=$_isConnecting',
-        name: 'GrpcConnectionManager',
-      );
+      logPrint('[GrpcConnectionManager] connect() skipped: currentState=$currentState _isConnecting=$_isConnecting');
       return;
     }
     _isConnecting = true;
     _connectionState.add(GrpcConnectionState.connecting);
-    log('[GrpcConnectionManager] connect() start', name: 'GrpcConnectionManager');
+    logPrint('[GrpcConnectionManager] connect() start');
     _connectionState.add(GrpcConnectionState.connected);
-    log('[GrpcConnectionManager] connect() succeeded', name: 'GrpcConnectionManager');
+    logPrint('[GrpcConnectionManager] connect() succeeded');
     _isConnecting = false;
   }
 
   void disconnect() {
-    log('[GrpcConnectionManager] disconnect()', name: 'GrpcConnectionManager');
+    logPrint('[GrpcConnectionManager] disconnect()');
     _isConnecting = false;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
@@ -135,10 +132,7 @@ class GrpcConnectionManager {
     if (!_isAuthenticated) return;
     _reconnectTimer?.cancel();
     final delay = _nextDelay();
-    log(
-      '[GrpcConnectionManager] reconnecting in ${delay.inSeconds}s (attempt $_reconnectAttempt)',
-      name: 'GrpcConnectionManager',
-    );
+    logPrint('[GrpcConnectionManager] reconnecting in ${delay.inSeconds}s (attempt $_reconnectAttempt)');
     _reconnectTimer = _timerFactory(delay, () {
       if (_isAuthenticated) connect();
     });
