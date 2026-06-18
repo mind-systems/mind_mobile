@@ -241,7 +241,80 @@ class StreamAck extends $pb.GeneratedMessage {
   void clearTimestamp() => $_clearField(5);
 }
 
-enum StreamResponse_Event { ack, error, notSet }
+/// StreamReady is the server's first outbound frame, emitted the instant the
+/// controller subscribes — before any client sample is read. It signals the
+/// client that the server is listening and may start sending.
+/// max_samples_per_second mirrors StreamAck so the client learns the rate
+/// limit before its first send.
+/// timestamp is int64 Unix millis when the ready frame was produced.
+class StreamReady extends $pb.GeneratedMessage {
+  factory StreamReady({
+    $core.int? maxSamplesPerSecond,
+    $fixnum.Int64? timestamp,
+  }) {
+    final result = create();
+    if (maxSamplesPerSecond != null)
+      result.maxSamplesPerSecond = maxSamplesPerSecond;
+    if (timestamp != null) result.timestamp = timestamp;
+    return result;
+  }
+
+  StreamReady._();
+
+  factory StreamReady.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory StreamReady.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'StreamReady',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
+      createEmptyInstance: create)
+    ..aI(1, _omitFieldNames ? '' : 'maxSamplesPerSecond')
+    ..aInt64(2, _omitFieldNames ? '' : 'timestamp')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StreamReady clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StreamReady copyWith(void Function(StreamReady) updates) =>
+      super.copyWith((message) => updates(message as StreamReady))
+          as StreamReady;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static StreamReady create() => StreamReady._();
+  @$core.override
+  StreamReady createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static StreamReady getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StreamReady>(create);
+  static StreamReady? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get maxSamplesPerSecond => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set maxSamplesPerSecond($core.int value) => $_setSignedInt32(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasMaxSamplesPerSecond() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearMaxSamplesPerSecond() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $fixnum.Int64 get timestamp => $_getI64(1);
+  @$pb.TagNumber(2)
+  set timestamp($fixnum.Int64 value) => $_setInt64(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasTimestamp() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearTimestamp() => $_clearField(2);
+}
+
+enum StreamResponse_Event { ack, error, ready, notSet }
 
 /// StreamResponse is the server-to-client stream envelope.
 /// Each message carries exactly one event via the oneof.
@@ -250,10 +323,12 @@ class StreamResponse extends $pb.GeneratedMessage {
   factory StreamResponse({
     StreamAck? ack,
     $2.StateErrorEvent? error,
+    StreamReady? ready,
   }) {
     final result = create();
     if (ack != null) result.ack = ack;
     if (error != null) result.error = error;
+    if (ready != null) result.ready = ready;
     return result;
   }
 
@@ -270,17 +345,20 @@ class StreamResponse extends $pb.GeneratedMessage {
       _StreamResponse_EventByTag = {
     1: StreamResponse_Event.ack,
     2: StreamResponse_Event.error,
+    3: StreamResponse_Event.ready,
     0: StreamResponse_Event.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'StreamResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
-    ..oo(0, [1, 2])
+    ..oo(0, [1, 2, 3])
     ..aOM<StreamAck>(1, _omitFieldNames ? '' : 'ack',
         subBuilder: StreamAck.create)
     ..aOM<$2.StateErrorEvent>(2, _omitFieldNames ? '' : 'error',
         subBuilder: $2.StateErrorEvent.create)
+    ..aOM<StreamReady>(3, _omitFieldNames ? '' : 'ready',
+        subBuilder: StreamReady.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -304,10 +382,12 @@ class StreamResponse extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   StreamResponse_Event whichEvent() =>
       _StreamResponse_EventByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   void clearEvent() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -331,6 +411,17 @@ class StreamResponse extends $pb.GeneratedMessage {
   void clearError() => $_clearField(2);
   @$pb.TagNumber(2)
   $2.StateErrorEvent ensureError() => $_ensure(1);
+
+  @$pb.TagNumber(3)
+  StreamReady get ready => $_getN(2);
+  @$pb.TagNumber(3)
+  set ready(StreamReady value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasReady() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearReady() => $_clearField(3);
+  @$pb.TagNumber(3)
+  StreamReady ensureReady() => $_ensure(2);
 }
 
 const $core.bool _omitFieldNames =

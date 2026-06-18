@@ -12,12 +12,11 @@ class BreathModuleInstructionStream {
   int _maxSamplesPerSecond = 10;
   DateTime? _lastSendTime;
 
-  StreamSubscription<void>? _instructionReadySub;
   StreamSubscription<InstructionAck>? _dataAckSub;
 
   BreathModuleInstructionStream({required ModuleInstructionStream instructionStream})
       : _instructionStream = instructionStream {
-    _instructionReadySub = _instructionStream.readyEvents.listen((_) => flushBuffer());
+    _instructionStream.setReadyDrainHook(flushBuffer);
     _dataAckSub = _instructionStream.acks.listen(_onDataAck);
   }
 
@@ -41,7 +40,8 @@ class BreathModuleInstructionStream {
   }
 
   void flushBuffer() {
-    for (final sample in _buffer.flush()) {
+    final items = _buffer.flush();
+    for (final sample in items) {
       _instructionStream.emit(InstructionSample(
         sessionId: sample['sessionId'] as String,
         timestamp: sample['timestamp'] as int,
@@ -53,7 +53,6 @@ class BreathModuleInstructionStream {
   }
 
   void dispose() {
-    _instructionReadySub?.cancel();
     _dataAckSub?.cancel();
   }
 

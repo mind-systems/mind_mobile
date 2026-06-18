@@ -20,6 +20,15 @@ class ModuleInstructionStream {
   bool _streamRequested = false;
   bool _backoffConfirmed = false;
 
+  // ── Readiness gate ────────────────────────────────────────────────────────
+
+  bool _isReady = false;
+  final List<StreamSample> _outbox = [];
+  Timer? _readyTimer;
+  void Function()? _readyDrainHook;
+
+  static const _readyTimeout = Duration(seconds: 5);
+
   // ── Stream handles ────────────────────────────────────────────────────────
 
   StreamSubscription<StreamResponse>? _streamSub;
@@ -31,10 +40,8 @@ class ModuleInstructionStream {
   // ── Output streams ────────────────────────────────────────────────────────
 
   final _ackController = StreamController<InstructionAck>.broadcast();
-  final _readyController = StreamController<void>.broadcast();
 
   Stream<InstructionAck> get acks => _ackController.stream;
-  Stream<void> get readyEvents => _readyController.stream;
 
   // ── Connection state subscription ─────────────────────────────────────────
 
@@ -54,6 +61,9 @@ class ModuleInstructionStream {
           if (_streamRequested) _openStream();
         case GrpcConnectionState.disconnected:
           _isGrpcConnected = false;
+          _readyTimer?.cancel();
+          _isReady = false;
+          _outbox.clear();
           _streamSub?.cancel();
           _streamSub = null;
           _streamSink?.close();
@@ -66,6 +76,9 @@ class ModuleInstructionStream {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
+  // Single consumer — last registration wins.
+  void setReadyDrainHook(void Function() hook) => _readyDrainHook = hook;
+
   void emit(InstructionSample sample) {
     if (_streamSink == null) {
       if (!_isGrpcConnected) {
@@ -75,20 +88,28 @@ class ModuleInstructionStream {
       _streamRequested = true;
       _openStream();
     }
-    _streamSink!.add(_toProto(sample));
+    final proto = _toProto(sample);
+    if (_isReady) {
+      _streamSink!.add(proto);
+    } else {
+      _outbox.add(proto);
+    }
   }
 
   void dispose() {
+    _readyTimer?.cancel();
     _connectionSub.cancel();
     _streamSub?.cancel();
     _streamSink?.close();
     _ackController.close();
-    _readyController.close();
   }
 
   // ── Stream lifecycle ──────────────────────────────────────────────────────
 
   void _openStream() {
+    _readyTimer?.cancel();
+    _isReady = false;
+    _outbox.clear();
     _backoffConfirmed = false;
     _streamSink = StreamController<StreamSample>();
     final response = _instructionStreamService.streamData(_streamSink!.stream);
@@ -108,6 +129,18 @@ class ModuleInstructionStream {
               maxSamplesPerSecond: ack.maxSamplesPerSecond,
               timestamp: ack.timestamp.toInt(),
             ));
+          case StreamResponse_Event.ready:
+            _readyTimer?.cancel();
+            if (r.ready.maxSamplesPerSecond > 0) {
+              _ackController.add(InstructionAck(
+                sessionId: '',
+                receivedCount: 0,
+                droppedCount: 0,
+                maxSamplesPerSecond: r.ready.maxSamplesPerSecond,
+                timestamp: r.ready.timestamp.toInt(),
+              ));
+            }
+            _becomeReady();
           case StreamResponse_Event.error:
             logPrint('[ModuleInstructionStream] error: ${r.error.code} — ${r.error.message}');
           case StreamResponse_Event.notSet:
@@ -116,18 +149,44 @@ class ModuleInstructionStream {
       },
       onError: (Object e) {
         logPrint('[ModuleInstructionStream] stream error: $e');
+        _readyTimer?.cancel();
+        _isReady = false;
+        _outbox.clear();
         _streamRequested = false;
         _connectionManager.disconnect();
         _connectionManager.scheduleReconnect();
       },
       onDone: () {
         logPrint('[ModuleInstructionStream] stream done');
+        _readyTimer?.cancel();
+        _isReady = false;
+        _outbox.clear();
         _streamRequested = false;
         _connectionManager.disconnect();
         _connectionManager.scheduleReconnect();
       },
     );
-    _readyController.add(null);
+    _readyTimer = Timer(_readyTimeout, _onReadyTimeout);
+  }
+
+  void _onReadyTimeout() {
+    if (_isReady) return;
+    logPrint('[ModuleInstructionStream] readiness timeout — flushing without server ready');
+    _becomeReady();
+  }
+
+  void _becomeReady() {
+    _readyDrainHook?.call();
+    _isReady = true;
+    _drainOutbox();
+  }
+
+  void _drainOutbox() {
+    _outbox.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    for (final s in _outbox) {
+      _streamSink!.add(s);
+    }
+    _outbox.clear();
   }
 
   // ── Proto conversion helpers ──────────────────────────────────────────────

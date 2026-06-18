@@ -66,6 +66,26 @@ final $typed_data.Uint8List streamAckDescriptor = $convert.base64Decode(
     'ZWRDb3VudBIzChZtYXhfc2FtcGxlc19wZXJfc2Vjb25kGAQgASgFUhNtYXhTYW1wbGVzUGVyU2'
     'Vjb25kEhwKCXRpbWVzdGFtcBgFIAEoA1IJdGltZXN0YW1w');
 
+@$core.Deprecated('Use streamReadyDescriptor instead')
+const StreamReady$json = {
+  '1': 'StreamReady',
+  '2': [
+    {
+      '1': 'max_samples_per_second',
+      '3': 1,
+      '4': 1,
+      '5': 5,
+      '10': 'maxSamplesPerSecond'
+    },
+    {'1': 'timestamp', '3': 2, '4': 1, '5': 3, '10': 'timestamp'},
+  ],
+};
+
+/// Descriptor for `StreamReady`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List streamReadyDescriptor = $convert.base64Decode(
+    'CgtTdHJlYW1SZWFkeRIzChZtYXhfc2FtcGxlc19wZXJfc2Vjb25kGAEgASgFUhNtYXhTYW1wbG'
+    'VzUGVyU2Vjb25kEhwKCXRpbWVzdGFtcBgCIAEoA1IJdGltZXN0YW1w');
+
 @$core.Deprecated('Use streamResponseDescriptor instead')
 const StreamResponse$json = {
   '1': 'StreamResponse',
@@ -88,6 +108,15 @@ const StreamResponse$json = {
       '9': 0,
       '10': 'error'
     },
+    {
+      '1': 'ready',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.mind.StreamReady',
+      '9': 0,
+      '10': 'ready'
+    },
   ],
   '8': [
     {'1': 'event'},
@@ -97,4 +126,5 @@ const StreamResponse$json = {
 /// Descriptor for `StreamResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List streamResponseDescriptor = $convert.base64Decode(
     'Cg5TdHJlYW1SZXNwb25zZRIjCgNhY2sYASABKAsyDy5taW5kLlN0cmVhbUFja0gAUgNhY2sSLQ'
-    'oFZXJyb3IYAiABKAsyFS5taW5kLlN0YXRlRXJyb3JFdmVudEgAUgVlcnJvckIHCgVldmVudA==');
+    'oFZXJyb3IYAiABKAsyFS5taW5kLlN0YXRlRXJyb3JFdmVudEgAUgVlcnJvchIpCgVyZWFkeRgD'
+    'IAEoCzIRLm1pbmQuU3RyZWFtUmVhZHlIAFIFcmVhZHlCBwoFZXZlbnQ=');
