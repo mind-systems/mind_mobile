@@ -802,8 +802,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v0.1.0"
-      resolved-ref: "69fd6cc06b73cd5f20be588d4b1a7a4213e72f66"
+      ref: main
+      resolved-ref: "17dd8858740457c7bc1e0af5181ce78ff457cd84"
       url: "https://github.com/mind-systems/observe-dart.git"
     source: git
     version: "0.0.0"

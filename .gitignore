@@ -80,3 +80,6 @@ android/key.properties
 .env.*.local
 
 worktrees.json
+
+# local dev dependency overrides
+pubspec_overrides.yaml
