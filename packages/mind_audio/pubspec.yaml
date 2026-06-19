@@ -11,6 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   just_audio: ^0.10.5
+  mind_logger:
+    path: ../mind_logger
 
 dev_dependencies:
   flutter_test:

@@ -197,6 +197,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.3"
+  http:
+    dependency: transitive
+    description:
+      name: http
+      sha256: "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.6.0"
   http_multi_server:
     dependency: transitive
     description:
@@ -347,6 +355,13 @@ packages:
       relative: true
     source: path
     version: "0.0.1"
+  mind_logger:
+    dependency: "direct main"
+    description:
+      path: "../mind_logger"
+      relative: true
+    source: path
+    version: "0.0.1"
   mind_ui:
     dependency: "direct main"
     description:
@@ -378,6 +393,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "9.3.0"
+  observe:
+    dependency: transitive
+    description:
+      path: "."
+      ref: main
+      resolved-ref: "17dd8858740457c7bc1e0af5181ce78ff457cd84"
+      url: "https://github.com/mind-systems/observe-dart.git"
+    source: git
+    version: "0.0.0"
   package_config:
     dependency: transitive
     description:

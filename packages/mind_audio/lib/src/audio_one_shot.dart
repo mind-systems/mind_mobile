@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:mind_logger/mind_logger.dart';
 
 import 'audio_track.dart';
 
@@ -41,7 +41,7 @@ class AudioOneShot {
           .seek(Duration.zero)
           .then((_) => _player.play())
           .catchError((Object e) {
-        debugPrint('[AudioOneShot] play failed: $e  state=${_player.processingState}');
+        logPrint('[AudioOneShot] play failed: $e  state=${_player.processingState}');
       }),
     );
   }

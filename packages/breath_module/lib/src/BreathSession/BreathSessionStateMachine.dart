@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:mind_logger/mind_logger.dart';
 import '../ITickService.dart';
 import '../CommonModels/SetShape.dart';
 import 'Models/BreathExerciseDTO.dart';
@@ -354,7 +355,7 @@ class BreathSessionStateMachine {
     ));
 
     if (kDebugMode) {
-      debugPrint('[SM] transition: $reason, exercise: $_exerciseIndex');
+      logPrint('[SM] transition: $reason, exercise: $_exerciseIndex');
     }
   }
 
@@ -384,7 +385,7 @@ class BreathSessionStateMachine {
     ));
 
     if (kDebugMode) {
-      debugPrint('[SM] transition: $reason, exercise: $_exerciseIndex');
+      logPrint('[SM] transition: $reason, exercise: $_exerciseIndex');
     }
   }
 

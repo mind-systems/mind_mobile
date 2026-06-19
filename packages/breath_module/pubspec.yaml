@@ -16,6 +16,8 @@ dependencies:
     path: ../mind_audio
   mind_l10n:
     path: ../mind_l10n
+  mind_logger:
+    path: ../mind_logger
   mind_ui:
     path: ../mind_ui
   shimmer: any

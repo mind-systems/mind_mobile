@@ -15,3 +15,5 @@ dependencies:
   flutter_riverpod: any
   mind_l10n:
     path: ../mind_l10n
+  mind_logger:
+    path: ../mind_logger
