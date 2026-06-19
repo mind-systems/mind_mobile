@@ -46,14 +46,24 @@ class BreathModuleStateChannel {
 
   void _onState(BreathSessionState state) {
     if (state.loadState != SessionLoadState.ready) return;
-    _handleLifecycle(state.status);
+    _handleLifecycle(state);
     _handleInstruction(state);
     _previousStatus = state.status;
     _previousPhase = state.phase;
     _previousExerciseIndex = state.exerciseIndex;
   }
 
-  void _handleLifecycle(BreathSessionStatus status) {
+  void _emitMarker(String phaseName, int tickCount, int offsetMs) {
+    final sessionId = _moduleSessionId;
+    if (sessionId == null) {
+      logPrint('[BreathModuleState] dropping $phaseName marker — no moduleSessionId yet [$_sessionId]');
+      return;
+    }
+    _instructionStream.sendSample(sessionId, phaseName, tickCount, offsetMs, _wireTimestamp(offsetMs));
+  }
+
+  void _handleLifecycle(BreathSessionState state) {
+    final status = state.status;
     if (status == _previousStatus) return;
 
     final isActive = status == BreathSessionStatus.breath ||
@@ -75,11 +85,15 @@ class BreathModuleStateChannel {
       } else {
         logPrint('[BreathModuleState] BreathModuleStateChannel: session resume [$_sessionId]');
         _channel.unpause();
+        _emitMarker(state.phase.name, state.currentPhaseTotalDuration, _stopwatch.elapsedMilliseconds);
+        _previousPhase = state.phase;
+        _previousExerciseIndex = state.exerciseIndex;
       }
     } else if (wasActive && status == BreathSessionStatus.pause) {
       if (_started && !_ended) {
         logPrint('[BreathModuleState] BreathModuleStateChannel: session pause [$_sessionId]');
         _channel.pause();
+        _emitMarker('pause', 0, _stopwatch.elapsedMilliseconds);
       }
     } else if (status == BreathSessionStatus.complete) {
       if (_started && !_ended) {
