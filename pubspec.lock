@@ -768,6 +768,13 @@ packages:
       relative: true
     source: path
     version: "0.0.1"
+  mind_logger:
+    dependency: "direct main"
+    description:
+      path: "packages/mind_logger"
+      relative: true
+    source: path
+    version: "0.0.1"
   mind_ui:
     dependency: "direct main"
     description:

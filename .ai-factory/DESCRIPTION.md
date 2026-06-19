@@ -68,12 +68,13 @@ Screen + Coordinator (UI + navigation/side-effects)
 | `lib/Device/` | Device ping — `DeviceApi`, `DeviceRepository` |
 | `lib/Bci/` | BCI domain abstraction — `IBciDeviceProvider` interface + domain models (`BciDeviceInfo`, `BciConnectionState`, `BciChannelQuality`, `BciCalibrationEvent`) |
 | `packages/breath_module/` | Standalone package — all breathing presentation screens, ViewModels, service/coordinator interfaces, DTOs |
+| `packages/mind_logger/` | Standalone package — `logPrint` logging facade (re-exported by `lib/Logger.dart`) |
 | `packages/mind_ui/` | Standalone package — shared UI components (buttons, snackbar, theme tokens) |
 | `packages/mind_l10n/` | Standalone package — ARB files and generated `AppLocalizations` |
 
 ## Non-Functional Requirements
 
-- Logging: Structured via `lib/Logger.dart`
+- Logging: Structured via `packages/mind_logger` (`logPrint` facade); `lib/Logger.dart` is a thin re-export for existing app call sites
 - Error handling: `GrpcError` exceptions, typed notifier events for error propagation
 - Security: JWT stored in `flutter_secure_storage`; gRPC auth interceptor handles token attach + logout on UNAUTHENTICATED (code 16)
 - Code generation: Drift schema uses `build_runner` — run after modifying `lib/Core/Database/Database.dart`

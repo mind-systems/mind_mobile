@@ -32,6 +32,8 @@ dependencies:
     sdk: flutter
 
   # Internal packages
+  mind_logger:
+    path: packages/mind_logger
   mind_l10n:
     path: packages/mind_l10n
   mind_ui:

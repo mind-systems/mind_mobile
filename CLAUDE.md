@@ -4,7 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Logging
 
-Write **all** logs through the project logger facade `logPrint` — `import 'package:mind/Logger.dart';` then `logPrint('message')`. Never log with raw `print` / `debugPrint` / `dart:developer`'s `log` or any other logger.
+Write **all** logs through the project logger facade `logPrint`. Never log with raw `print` / `debugPrint` / `dart:developer`'s `log` or any other logger.
+
+The facade lives in `packages/mind_logger` (`package:mind_logger/mind_logger.dart`).
+
+- **App code under `lib/`** — import `package:mind/Logger.dart'` (a thin re-export; all 111 existing call sites continue to work unchanged).
+- **Module packages** (`packages/breath_module`, `packages/bci_module`, etc.) — import `package:mind_logger/mind_logger.dart` directly. This is now possible because `mind_logger` is a standalone package with no dependency on app code.
 
 ## Commands
 
