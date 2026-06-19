@@ -5,6 +5,7 @@ import 'package:fixnum/fixnum.dart';
 import 'package:mind/Logger.dart';
 import 'package:protobuf/well_known_types/google/protobuf/struct.pb.dart';
 
+import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
 import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
 import 'package:mind/Core/Grpc/generated/module_biometric_stream.pbgrpc.dart'
     as $bio;
@@ -23,6 +24,7 @@ import 'BioSample.dart';
 /// Reference: `.ai-factory/notes/28-biometric-stream-pipeline.md` "Milestone 7".
 class BiometricStreamClient {
   final $bio.ModuleBiometricStreamServiceClient _grpcStub;
+  late final StreamSubscription<GrpcConnectionState> _connectionSub;
   late final StreamSubscription<ModuleStateEvent> _lifecycleSub;
 
   String? _currentSessionId;
@@ -52,8 +54,19 @@ class BiometricStreamClient {
   BiometricStreamClient({
     required $bio.ModuleBiometricStreamServiceClient grpcStub,
     required Stream<ModuleStateEvent> moduleStateEvents,
+    required Stream<GrpcConnectionState> connectionState,
   }) : _grpcStub = grpcStub {
     _lifecycleSub = moduleStateEvents.listen(_onLifecycleEvent);
+    _connectionSub = connectionState.listen((state) {
+      switch (state) {
+        case GrpcConnectionState.connected:
+          _ensureSinkOpen();
+        case GrpcConnectionState.disconnected:
+          _teardownSink();
+        case GrpcConnectionState.connecting:
+          break;
+      }
+    });
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -88,6 +101,7 @@ class BiometricStreamClient {
   Future<void> dispose() async {
     _readyTimer?.cancel();
     _readyTimer = null;
+    await _connectionSub.cancel();
     await _lifecycleSub.cancel();
     await _responseSub?.cancel();
     await _sink?.close();

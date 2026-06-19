@@ -212,7 +212,7 @@ class App {
     bioStreamRouter.registerEmotionsSource(bciProvider);
     bioStreamRouter.registerMotionSource(bciProvider);
     final activeRrSource = ActiveRrSource([bciProvider]);
-    final biometricStreamClient = BiometricStreamClient(grpcStub: grpcClient.moduleBiometricStreamService, moduleStateEvents: moduleStateChannel.events);
+    final biometricStreamClient = BiometricStreamClient(grpcStub: grpcClient.moduleBiometricStreamService, moduleStateEvents: moduleStateChannel.events, connectionState: connectionManager.connectionState);
     final biometricBatcher = BiometricBatcher(router: bioStreamRouter, client: biometricStreamClient);
     final instructionStream = ModuleInstructionStream(connectionManager: connectionManager, instructionStreamService: grpcClient.instructionStreamService);
     final syncGrpcListener = SyncGrpcListener(syncService: grpcClient.syncService, syncEngine: syncEngine, syncStateDao: db.syncStateDao, authStream: userNotifier.stream);

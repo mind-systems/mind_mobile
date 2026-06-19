@@ -1,106 +1,62 @@
-# BCI Connection Domain — `BciConnectionState` Serial Gap
+# BCI connection domain — split link-layer from domain phase + sealed identity
 
-**Date:** 2026-06-05
-**Source:** conversation context
+**Date:** 2026-06-19
+**Source:** conversation context (supersedes the 2026-06-05 draft of this note)
+
+**Naming (fixed):** provider link-layer = `enum BciLinkStatus { down, up }`; app domain = `sealed class BciConnectionState` with a `BciActive(serial)` ancestor for all device-bound phases.
 
 ## Key Findings
 
-- `BciConnectionState` is a bare enum: `connecting` carries no device serial. Every downstream consumer that needs to know *which* device is connecting must work around this gap.
-- `BciNotifier` auto-connects known devices without going through `BciPairingService.connectDevice(serial)`, so any UI-level serial tracking based on user tap is blind to auto-connect.
-- The workaround (`_connectingSerial` mutable field in `BciPairingService`) breaks reducer purity and is fragile — auto-connect requires a heuristic fallback (`devices.length == 1`).
-- The correct fix is one level deeper: `BciConnectionState.connecting` should carry the device serial as associated data. `BciConnectionState` lives in `lib/Bci/Models/BciConnectionState.dart` (app code, not SDK), so it can be changed.
+- One flat `BciConnectionState` enum does **two unrelated jobs**: (a) the provider's link-layer stream (`IBciDeviceProvider.connectionStateStream`, where only down/up matter) and (b) the app's domain phase, which the manager owns (`connecting/impedance/calibrating/ready`). Conflating them forces the confusing `NeiryConnectionState.connected → BciConnectionState.connecting` mapping in `NeiryBciProvider` (which the manager then ignores — it only reacts to `disconnected`).
+- The enum cannot carry the connecting device's `serial`, so `BciPairingService` keeps a mutable `_connectingSerial` side-channel plus a `devices.length == 1` heuristic. The heuristic is set only on user tap; auto-connect (manager-internal, both scan-time and reconnect) never sets it → **breaks for multi-device auto-connect** (UI cannot tell which device connected). Real bug, not just a smell.
+- Correct model: `serial` is not special to `connecting` — it belongs to **every device-bound phase** (connecting/impedance/calibrating/ready). Model identity in a device-bound branch so illegal states ("connecting without serial", "disconnected with serial") are unrepresentable.
+- Decided scope: **one atomic task, #1** — split the link-layer type out AND introduce the sealed domain state in a single pass. Doing it in halves migrates the same consumers twice and needs a temporary alias (name collision on `BciConnectionState`). #3 (flat enum + nullable serial field) is rejected: it re-admits "connecting without serial" — reintroduces the bug.
 
 ## Details
 
-### The gap
+### New types
 
-`BciConnectionState` is an enum:
-
-```
-disconnected | scanning | bluetoothPermissionDenied | connecting | impedance | calibrating | ready
-```
-
-`connecting` is a bare value — no serial attached. `BciNotifier` emits `BciStateChanged(BciConnectionState.connecting)` when a connection attempt starts, but the event carries no identity. The reducer in `BciPairingService` receives it and has no way to know which device.
-
-### How it surfaced
-
-When implementing the "blue bluetooth icon for connected device" UX, the widget needed to know which cell is the connected device. The first attempt tracked this with `_pendingSerial` in widget state, set on user tap. This worked for tap-initiated connects but broke completely for auto-connect:
-
-```
-// from logs:
-isConnecting false → true | _pendingSerial=null   ← connecting started, but no tap happened
-✓ connected: setting _connectedSerial=null         ← trigger fired, serial was null
-```
-
-`BciNotifier` had already initiated the connection for a known device before the user touched anything. The `onTap` log never appeared.
-
-### The workaround and its smells
-
-To fix the immediate UX bug, `connectedSerial` was added to `BciPairingState` and `_connectingSerial` was added as a mutable field to `BciPairingService`:
-
-```dart
-class BciPairingService {
-  String? _connectingSerial;   // ← mutable side-channel
-
-  void connectDevice(String serial) {
-    _connectingSerial = serial; // ← set by command method
-    unawaited(bciNotifier.connectDevice(serial));
+- `lib/Bci/Models/BciLinkStatus.dart` (new): `enum BciLinkStatus { down, up }` — the provider's BLE link-layer state, nothing else.
+- `lib/Bci/Models/BciConnectionState.dart` (rewrite enum → sealed):
+  ```dart
+  sealed class BciConnectionState { const BciConnectionState(); }
+  class BciIdle             extends BciConnectionState { const BciIdle(); }            // was disconnected
+  class BciScanning         extends BciConnectionState { const BciScanning(); }
+  class BciPermissionDenied extends BciConnectionState { const BciPermissionDenied(); } // was bluetoothPermissionDenied
+  sealed class BciActive extends BciConnectionState {
+    final String serial;
+    const BciActive(this.serial);
   }
+  class BciConnecting  extends BciActive { const BciConnecting(super.serial); }
+  class BciImpedance   extends BciActive { const BciImpedance(super.serial); }
+  class BciCalibrating extends BciActive { const BciCalibrating(super.serial); }
+  class BciReady       extends BciActive { const BciReady(super.serial); }
+  ```
 
-  BciPairingState _reduceStateChanged(BciPairingState acc, BciConnectionState state) {
-    case BciConnectionState.connecting:
-      // fallback for auto-connect (BciNotifier bypasses connectDevice())
-      _connectingSerial ??= acc.devices.length == 1 ? acc.devices.first.serial : null;
-      return acc.copyWith(connectedSerial: _connectingSerial, ...);
-  }
-}
-```
+### Files & changes
 
-Two smells:
+- `lib/Bci/IBciDeviceProvider.dart` — `connectionStateStream` → `Stream<BciLinkStatus>`.
+- `lib/Bci/NeiryBciProvider.dart` — `_connectionStateController` → `StreamController<BciLinkStatus>`; `_onNeiryConnectionState`: `connected → up`, `disconnected`/`unsupportedConnection → down`; the explicit-disconnect emits (`:592`) → `down`. Drop the `connected → connecting` mismap.
+- `lib/Bci/BciDeviceManager.dart` — listener in `_subscribeProviderStreams` reacts to `BciLinkStatus.down` (unexpected disconnect → `_attemptReconnect`) instead of `BciConnectionState.disconnected`. `_setState` now takes a `BciConnectionState` instance; build `BciConnecting(serial)`/`BciImpedance(serial)`/`BciCalibrating(serial)`/`BciReady(serial)` in `connectDevice(serial)` (serial in scope for both tap and auto-connect — both already route through this method, `:173`/`:253`). Replace `_state == X` / direct `_state = scanning` dedup-bypass writes with the new instances and `is`-checks. `connectedSerial` getter returns `_connectedSerial`.
+- `lib/Bci/BciNotifier.dart` — unchanged in shape; `currentState`/`BciStateChanged` now flow sealed instances (field type stays `BciConnectionState`).
+- `lib/BciModule/BciPairingService.dart` — **delete** `_connectingSerial` and the `devices.length == 1` heuristic. `_reduceStateChanged` switches exhaustively on the sealed type. Derive purely: `connectedSerial = state is BciActive ? state.serial : null`; `isConnecting = state is BciConnecting`. Reducer becomes `(acc, event) → state` with no external reads.
+- `lib/BciModule/BciDataService.dart` — rewrite its 7-arm enum `switch` (`:69-84`) over the sealed variants.
 
-1. **Impure reducer.** `_reduceStateChanged` reads `_connectingSerial`, which is set by a command method, not by the incoming event. A reducer should be `(acc, event) → state` with no outside reads. Now it has temporal coupling to command invocation order.
+### Guards
 
-2. **Fragile auto-connect fallback.** `devices.length == 1` is a heuristic. If multiple devices are scanned and `BciNotifier` auto-connects, `_connectingSerial` stays null and `connectedSerial` is never set.
+- `_connectedSerial` in `BciDeviceManager` **stays** — it is the "last target serial" memory for `_attemptReconnect`, distinct from the emitted state; do NOT delete.
+- `connectedSerial` field on `BciPairingState` stays (now fed purely from `BciActive.serial`); `isConnecting` stays as an explicit UX flag (`state is BciConnecting`) for tap-gating.
+- neiry_kit untouched — `NeiryConnectionState` maps to `BciLinkStatus` only inside `NeiryBciProvider`.
+- All `switch` over `BciConnectionState` exhaustive (no `default`) so the compiler flags every site.
+- Preserve existing behavior: `_setState` dedup, the `startScan` direct-write bypass, the connect-mid-disconnect guard (`if (_state == connecting)` → `if (_state is BciConnecting)`), and reconnect flow.
 
-### Why auto-connect and user-tap diverge
+### Verify
 
-`BciPairingViewModel.onDeviceTap(serial)` → `service.connectDevice(serial)` → sets `_connectingSerial`.
-
-Auto-connect: `BciNotifier` calls its own native connect path internally. `BciPairingService.connectDevice` is never invoked. The service only learns about the connection from the `BciStateChanged(connecting)` event, which carries no serial.
-
-### The right fix
-
-`BciConnectionState.connecting` should carry the device serial:
-
-```dart
-// Option A — sealed class / union
-sealed class BciConnectionState { ... }
-class BciConnecting extends BciConnectionState {
-  final String serial;
-}
-
-// Option B — separate event from BciNotifier
-case BciDeviceConnecting(:final serial):  // in BciNotifierEvent
-```
-
-With either option the reducer becomes pure: when it sees `connecting(serial: "820566")` it sets `connectedSerial: "820566"` directly from the event. `_connectingSerial` disappears. Auto-connect and user-tap become identical paths through the same reducer branch.
-
-### Files involved
-
-| File | Role |
-|------|------|
-| `lib/Bci/Models/BciConnectionState.dart` | The enum that needs the serial — app code, changeable |
-| `lib/Bci/BciNotifier.dart` | Emits `BciStateChanged`; also triggers auto-connect for known devices |
-| `lib/BciModule/BciPairingService.dart` | Contains `_connectingSerial` side-channel and impure reducer branch |
-| `packages/bci_module/lib/src/BciPairing/Models/BciPairingState.dart` | `connectedSerial` added as workaround field |
-| `packages/bci_module/lib/src/BciPairing/Views/BciDiscoverySection.dart` | Was the symptom — had business logic in widget state |
-
-### `isConnecting` flag
-
-With `connectedSerial` now in state, `isConnecting` is partially redundant: the "connecting" phase can be expressed as `connectedSerial != null && stage == discovery`. It still has value as an explicit flag for UX (e.g. disabling tap during connecting) but is no longer the primary signal for identity.
+- Multi-device auto-connect: scan ≥2 devices incl. a known one → it auto-connects → UI highlights the correct row (`connectedSerial` = that serial), with no `devices.length == 1` dependence.
+- Tap connect: same correct serial via the same reducer branch.
+- Unexpected disconnect → auto-reconnect still works (manager `_connectedSerial` memory).
+- `BciPairingService` has no `_connectingSerial`; reducer reads only the event.
 
 ## Open Questions
 
-- Does `BciConnectionState` changing to a sealed class require changes in `neiry_kit` consumers, or is it used only inside `lib/Bci/`?
-- Does `BciNotifier` have a hook point where auto-connect serial could be emitted as a `BciDeviceConnecting` event, or would that require native SDK changes?
-- Should `isConnecting` be removed once `connectedSerial` covers the connecting phase, or kept for explicit UX gating?
+- None blocking. Earlier questions resolved: enum used only in `lib/Bci/`+`lib/BciModule/`+package event model (neiry_kit untouched); serial available at `connectDevice` for both paths; `isConnecting` kept.

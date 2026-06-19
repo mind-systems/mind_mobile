@@ -14,10 +14,9 @@ class ModuleInstructionStream {
   final GrpcConnectionManager _connectionManager;
   final ModuleInstructionStreamServiceClient _instructionStreamService;
 
-  // ── Lazy-connect flags ────────────────────────────────────────────────────
+  // ── Connect flags ─────────────────────────────────────────────────────────
 
   bool _isGrpcConnected = false;
-  bool _streamRequested = false;
   bool _backoffConfirmed = false;
 
   // ── Readiness gate ────────────────────────────────────────────────────────
@@ -58,7 +57,7 @@ class ModuleInstructionStream {
       switch (state) {
         case GrpcConnectionState.connected:
           _isGrpcConnected = true;
-          if (_streamRequested) _openStream();
+          _openStream();
         case GrpcConnectionState.disconnected:
           _isGrpcConnected = false;
           _readyTimer?.cancel();
@@ -85,7 +84,6 @@ class ModuleInstructionStream {
         logPrint('[ModuleInstructionStream] not connected, dropping sample');
         return;
       }
-      _streamRequested = true;
       _openStream();
     }
     final proto = _toProto(sample);
@@ -152,7 +150,6 @@ class ModuleInstructionStream {
         _readyTimer?.cancel();
         _isReady = false;
         _outbox.clear();
-        _streamRequested = false;
         _connectionManager.disconnect();
         _connectionManager.scheduleReconnect();
       },
@@ -161,7 +158,6 @@ class ModuleInstructionStream {
         _readyTimer?.cancel();
         _isReady = false;
         _outbox.clear();
-        _streamRequested = false;
         _connectionManager.disconnect();
         _connectionManager.scheduleReconnect();
       },
