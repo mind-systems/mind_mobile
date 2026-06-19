@@ -322,44 +322,6 @@ final $typed_data.Uint8List updateSessionRequestDescriptor = $convert.base64Deco
     'ltZV9vZl9kYXkYBSABKA4yDy5taW5kLlRpbWVPZkRheUgDUgl0aW1lT2ZEYXmIAQFCDgoMX2Rl'
     'c2NyaXB0aW9uQgwKCl9leGVyY2lzZXNCCQoHX3NoYXJlZEIOCgxfdGltZV9vZl9kYXk=');
 
-@$core.Deprecated('Use replaceSessionRequestDescriptor instead')
-const ReplaceSessionRequest$json = {
-  '1': 'ReplaceSessionRequest',
-  '2': [
-    {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
-    {'1': 'description', '3': 2, '4': 1, '5': 9, '10': 'description'},
-    {
-      '1': 'exercises',
-      '3': 3,
-      '4': 3,
-      '5': 11,
-      '6': '.mind.ExerciseDto',
-      '10': 'exercises'
-    },
-    {'1': 'shared', '3': 4, '4': 1, '5': 8, '10': 'shared'},
-    {
-      '1': 'time_of_day',
-      '3': 5,
-      '4': 1,
-      '5': 14,
-      '6': '.mind.TimeOfDay',
-      '9': 0,
-      '10': 'timeOfDay',
-      '17': true
-    },
-  ],
-  '8': [
-    {'1': '_time_of_day'},
-  ],
-};
-
-/// Descriptor for `ReplaceSessionRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List replaceSessionRequestDescriptor = $convert.base64Decode(
-    'ChVSZXBsYWNlU2Vzc2lvblJlcXVlc3QSDgoCaWQYASABKAlSAmlkEiAKC2Rlc2NyaXB0aW9uGA'
-    'IgASgJUgtkZXNjcmlwdGlvbhIvCglleGVyY2lzZXMYAyADKAsyES5taW5kLkV4ZXJjaXNlRHRv'
-    'UglleGVyY2lzZXMSFgoGc2hhcmVkGAQgASgIUgZzaGFyZWQSNAoLdGltZV9vZl9kYXkYBSABKA'
-    '4yDy5taW5kLlRpbWVPZkRheUgAUgl0aW1lT2ZEYXmIAQFCDgoMX3RpbWVfb2ZfZGF5');
-
 @$core.Deprecated('Use updateSessionSettingsRequestDescriptor instead')
 const UpdateSessionSettingsRequest$json = {
   '1': 'UpdateSessionSettingsRequest',

@@ -75,13 +75,6 @@ class BreathSessionServiceClient extends $grpc.Client {
     return $createUnaryCall(_$updateSession, request, options: options);
   }
 
-  $grpc.ResponseFuture<$0.BreathSessionDto> replaceSession(
-    $0.ReplaceSessionRequest request, {
-    $grpc.CallOptions? options,
-  }) {
-    return $createUnaryCall(_$replaceSession, request, options: options);
-  }
-
   $grpc.ResponseFuture<$0.UpdateSessionSettingsResponse> updateSessionSettings(
     $0.UpdateSessionSettingsRequest request, {
     $grpc.CallOptions? options,
@@ -127,11 +120,6 @@ class BreathSessionServiceClient extends $grpc.Client {
       $grpc.ClientMethod<$0.UpdateSessionRequest, $0.BreathSessionDto>(
           '/mind.BreathSessionService/UpdateSession',
           ($0.UpdateSessionRequest value) => value.writeToBuffer(),
-          $0.BreathSessionDto.fromBuffer);
-  static final _$replaceSession =
-      $grpc.ClientMethod<$0.ReplaceSessionRequest, $0.BreathSessionDto>(
-          '/mind.BreathSessionService/ReplaceSession',
-          ($0.ReplaceSessionRequest value) => value.writeToBuffer(),
           $0.BreathSessionDto.fromBuffer);
   static final _$updateSessionSettings = $grpc.ClientMethod<
           $0.UpdateSessionSettingsRequest, $0.UpdateSessionSettingsResponse>(
@@ -202,15 +190,6 @@ abstract class BreathSessionServiceBase extends $grpc.Service {
             false,
             ($core.List<$core.int> value) =>
                 $0.UpdateSessionRequest.fromBuffer(value),
-            ($0.BreathSessionDto value) => value.writeToBuffer()));
-    $addMethod(
-        $grpc.ServiceMethod<$0.ReplaceSessionRequest, $0.BreathSessionDto>(
-            'ReplaceSession',
-            replaceSession_Pre,
-            false,
-            false,
-            ($core.List<$core.int> value) =>
-                $0.ReplaceSessionRequest.fromBuffer(value),
             ($0.BreathSessionDto value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.UpdateSessionSettingsRequest,
             $0.UpdateSessionSettingsResponse>(
@@ -283,14 +262,6 @@ abstract class BreathSessionServiceBase extends $grpc.Service {
 
   $async.Future<$0.BreathSessionDto> updateSession(
       $grpc.ServiceCall call, $0.UpdateSessionRequest request);
-
-  $async.Future<$0.BreathSessionDto> replaceSession_Pre($grpc.ServiceCall $call,
-      $async.Future<$0.ReplaceSessionRequest> $request) async {
-    return replaceSession($call, await $request);
-  }
-
-  $async.Future<$0.BreathSessionDto> replaceSession(
-      $grpc.ServiceCall call, $0.ReplaceSessionRequest request);
 
   $async.Future<$0.UpdateSessionSettingsResponse> updateSessionSettings_Pre(
       $grpc.ServiceCall $call,

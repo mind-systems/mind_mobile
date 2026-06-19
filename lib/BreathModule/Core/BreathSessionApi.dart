@@ -27,10 +27,10 @@ class BreathSessionApi implements IBreathSessionApi {
 
   @override
   Future<BreathSession> update(String id, SaveBreathSessionRequest request) async {
-    final response = await _service.replaceSession(proto.ReplaceSessionRequest(
+    final response = await _service.updateSession(proto.UpdateSessionRequest(
       id: id,
       description: request.description,
-      exercises: _mapExercisesToProto(request.exercises),
+      exercises: proto.ExerciseList(exercises: _mapExercisesToProto(request.exercises)),
       shared: request.shared,
     ));
     return _mapSession(response);
