@@ -15,7 +15,7 @@ import 'BioSample.dart';
 ///
 /// Owns the [ModuleBiometricStreamService.streamData] bidi stream and the
 /// current-module-session gating flag. [sendBatch] is a silent no-op when there
-/// is no active session or the session is paused — by design (architecture note 26 §7).
+/// is no active session — by design (architecture note 26 §7).
 /// On send failure, samples are enqueued into a bounded drop-oldest replay ring
 /// (max 75). On stream reconnect the ring drains first before new samples are pushed.
 /// Session ended / abandoned clears the ring — samples buffered for a completed
@@ -28,7 +28,6 @@ class BiometricStreamClient {
   late final StreamSubscription<ModuleStateEvent> _lifecycleSub;
 
   String? _currentSessionId;
-  bool _isPaused = false;
 
   final Queue<BioSample> _replayRing = Queue<BioSample>();
   static const int _replayRingMax = 75;
@@ -75,15 +74,13 @@ class BiometricStreamClient {
     switch (event) {
       case ModuleSessionStarted(:final moduleSessionId):
         _currentSessionId = moduleSessionId;
-        _isPaused = false;
         _lastOpenAttempt = null;
       case ModuleSessionPaused():
-        _isPaused = true;
+        break;
       case ModuleSessionUnpaused():
-        _isPaused = false;
+        break;
       case ModuleSessionEnded() || ModuleSessionAbandoned():
         _currentSessionId = null;
-        _isPaused = false;
         _lastOpenAttempt = null;
         _replayRing.clear();
     }
@@ -92,7 +89,7 @@ class BiometricStreamClient {
   // ── Public API ────────────────────────────────────────────────────────────
 
   void sendBatch(List<BioSample> samples) {
-    if (_currentSessionId == null || _isPaused) return;
+    if (_currentSessionId == null) return;
     if (samples.isEmpty) return;
     _ensureSinkOpen();
     _encodeAndAdd(samples);
