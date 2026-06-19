@@ -6,7 +6,6 @@ import 'package:protobuf/well_known_types/google/protobuf/struct.pb.dart';
 
 import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
-import 'package:mind/Core/Grpc/InstructionAck.dart';
 import 'package:mind/Core/Grpc/InstructionSample.dart';
 import 'package:mind/Core/Grpc/generated/module_instruction_stream.pbgrpc.dart';
 
@@ -19,12 +18,16 @@ class ModuleInstructionStream {
   bool _isGrpcConnected = false;
   bool _backoffConfirmed = false;
 
+  // ── Rate-limit ────────────────────────────────────────────────────────────
+
+  int _maxSamplesPerSecond = 10;
+  DateTime? _lastSendTime;
+
   // ── Readiness gate ────────────────────────────────────────────────────────
 
   bool _isReady = false;
   final List<StreamSample> _outbox = [];
   Timer? _readyTimer;
-  void Function()? _readyDrainHook;
 
   static const _readyTimeout = Duration(seconds: 5);
 
@@ -34,13 +37,6 @@ class ModuleInstructionStream {
   StreamController<StreamSample>? _streamSink;
 
   bool get isConnected => _streamSink != null;
-  bool get isGrpcConnected => _isGrpcConnected;
-
-  // ── Output streams ────────────────────────────────────────────────────────
-
-  final _ackController = StreamController<InstructionAck>.broadcast();
-
-  Stream<InstructionAck> get acks => _ackController.stream;
 
   // ── Connection state subscription ─────────────────────────────────────────
 
@@ -62,6 +58,7 @@ class ModuleInstructionStream {
           _isGrpcConnected = false;
           _readyTimer?.cancel();
           _isReady = false;
+          _lastSendTime = null;
           _outbox.clear();
           _streamSub?.cancel();
           _streamSub = null;
@@ -75,9 +72,6 @@ class ModuleInstructionStream {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  // Single consumer — last registration wins.
-  void setReadyDrainHook(void Function() hook) => _readyDrainHook = hook;
-
   void emit(InstructionSample sample) {
     if (_streamSink == null) {
       if (!_isGrpcConnected) {
@@ -88,7 +82,17 @@ class ModuleInstructionStream {
     }
     final proto = _toProto(sample);
     if (_isReady) {
+      final minIntervalMs = 1000 ~/ _maxSamplesPerSecond;
+      if (_lastSendTime != null &&
+          DateTime.now().difference(_lastSendTime!).inMilliseconds < minIntervalMs) {
+        // Over-cap: drop. The cap is a best-effort guard — for the only current
+        // consumer (breath) phase changes are seconds apart so this branch is
+        // effectively never taken.
+        logPrint('[ModuleInstructionStream] over-cap, dropping sample');
+        return;
+      }
       _streamSink!.add(proto);
+      _lastSendTime = DateTime.now();
     } else {
       _outbox.add(proto);
     }
@@ -99,7 +103,6 @@ class ModuleInstructionStream {
     _connectionSub.cancel();
     _streamSub?.cancel();
     _streamSink?.close();
-    _ackController.close();
   }
 
   // ── Stream lifecycle ──────────────────────────────────────────────────────
@@ -107,6 +110,7 @@ class ModuleInstructionStream {
   void _openStream() {
     _readyTimer?.cancel();
     _isReady = false;
+    _lastSendTime = null;
     _outbox.clear();
     _backoffConfirmed = false;
     _streamSink = StreamController<StreamSample>();
@@ -120,23 +124,13 @@ class ModuleInstructionStream {
         switch (r.whichEvent()) {
           case StreamResponse_Event.ack:
             final ack = r.ack;
-            _ackController.add(InstructionAck(
-              sessionId: ack.sessionId,
-              receivedCount: ack.receivedCount.toInt(),
-              droppedCount: ack.droppedCount.toInt(),
-              maxSamplesPerSecond: ack.maxSamplesPerSecond,
-              timestamp: ack.timestamp.toInt(),
-            ));
+            if (ack.maxSamplesPerSecond > 0) {
+              _maxSamplesPerSecond = ack.maxSamplesPerSecond;
+            }
           case StreamResponse_Event.ready:
             _readyTimer?.cancel();
             if (r.ready.maxSamplesPerSecond > 0) {
-              _ackController.add(InstructionAck(
-                sessionId: '',
-                receivedCount: 0,
-                droppedCount: 0,
-                maxSamplesPerSecond: r.ready.maxSamplesPerSecond,
-                timestamp: r.ready.timestamp.toInt(),
-              ));
+              _maxSamplesPerSecond = r.ready.maxSamplesPerSecond;
             }
             _becomeReady();
           case StreamResponse_Event.error:
@@ -172,7 +166,6 @@ class ModuleInstructionStream {
   }
 
   void _becomeReady() {
-    _readyDrainHook?.call();
     _isReady = true;
     _drainOutbox();
   }

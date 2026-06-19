@@ -19,13 +19,13 @@ Notes 114 (gate buffers in transport outbox) and 116 (eager-connect removes lazy
 ### The change — `lib/BreathModule/Core/BreathModuleInstructionStream.dart`
 
 - Remove `InstructionBuffer _buffer`, `flushBuffer()`, the `readyEvents` subscription, and the `_canSendNow()`/`_emit()`/buffer branch in `sendSample`.
-- Relocate rate-limiting into `ModuleInstructionStream` (transport): it already consumes `maxSamplesPerSecond` via `ack`/`ready`; the rate decision and `_lastSendTime` move next to the outbox/sink. Behavior must be preserved (cap enforced, not silently dropped).
+- Relocate rate-limiting into `ModuleInstructionStream` (transport): it already consumes `maxSamplesPerSecond` via `ack`/`ready`; the rate decision and `_lastSendTime` move next to the outbox/sink. Over-cap samples are dropped (best-effort cap) and logged via `logPrint`. For breath, phase changes are seconds apart vs. the 100 ms cap so the branch is effectively never taken.
 - `sendSample` becomes a pure map + `_instructionStream.emit(...)`. Evaluate dissolving the class: if nothing but mapping remains, `BreathModuleStateChannel` can call a small converter directly into `ModuleInstructionStream.emit` and the class is deleted — decide at plan time.
 - `lib/Core/Grpc/InstructionBuffer.dart` becomes unused if no other consumer remains — delete it in that case.
 
 ### Guards
 
-- Preserve rate-limit **behavior** wherever it lands — do not drop the cap.
+- Preserve rate-limit **cap** wherever it lands. Over-cap samples are dropped (not deferred) — the cap is a best-effort guard, inert for breath in practice.
 - Do NOT touch `BreathModuleStateChannel._pendingInstruction` parking — it is inherent to the `moduleSessionId` round-trip contract, unrelated to buffering.
 - Keep the wire contract: `moduleId = 'breath'`, `instructionType = 'breath_phase'`, `data = { phase, durationMs }`.
 - Coordinate with note 104 (event-time timestamp) — both touch `sendSample`'s timestamp handling; sequence or merge so neither reverts the other.
