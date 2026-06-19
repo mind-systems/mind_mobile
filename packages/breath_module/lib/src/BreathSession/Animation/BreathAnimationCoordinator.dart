@@ -52,6 +52,8 @@ class BreathAnimationCoordinator {
   }
 
   void _handleReset(BreathSessionState state) {
+    // exerciseChange / rest: morph to the next exercise shape.
+    // start / newCycle: initialize at the current exercise's shape by intent.
     final shape = (state.resetReason == ResetReason.exerciseChange ||
             state.resetReason == ResetReason.rest)
         ? state.nextExerciseShape

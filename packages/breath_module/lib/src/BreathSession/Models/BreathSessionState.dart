@@ -4,7 +4,7 @@ import 'TimelineStep.dart';
 
 enum BreathSessionStatus { pause, breath, rest, complete }
 enum BreathPhase { inhale, hold, exhale, rest }
-enum ResetReason { newCycle, rest, exerciseChange }
+enum ResetReason { start, newCycle, rest, exerciseChange }
 enum SessionLoadState { loading, ready, error }
 
 class BreathSessionState {

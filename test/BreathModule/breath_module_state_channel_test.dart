@@ -822,14 +822,17 @@ void main() {
           const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
         );
         await Future<void>.delayed(Duration.zero);
-        // First breath emission — dispatches
+        // First breath emission — dispatches instruction
         f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
-        // Pause with different phase — !isActive guard prevents dispatch
+        // Pause with different phase — !isActive guard prevents instruction dispatch;
+        // _handleLifecycle emits the pause boundary marker (1 extra sendSample).
         f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale));
         await Future<void>.delayed(Duration.zero);
 
-        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        expect(f.instructionStream.sendSampleCalls, hasLength(2));
+        expect(f.instructionStream.sendSampleCalls[0], ('sid', 'inhale', 1)); // instruction dispatch
+        expect(f.instructionStream.sendSampleCalls[1], ('sid', 'pause', 0)); // pause boundary marker
 
         f.target.dispose();
       },

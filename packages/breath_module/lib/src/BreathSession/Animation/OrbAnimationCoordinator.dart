@@ -50,6 +50,8 @@ class OrbAnimationCoordinator {
   }
 
   void _handleReset(BreathSessionState state) {
+    // exerciseChange / rest: use the next exercise shape.
+    // start / newCycle: initialize at the current exercise's shape by intent.
     final shape = (state.resetReason == ResetReason.exerciseChange ||
             state.resetReason == ResetReason.rest)
         ? state.nextExerciseShape
@@ -66,7 +68,7 @@ class OrbAnimationCoordinator {
       return;
     }
 
-    // exerciseChange / newCycle: start animation from enriched state fields.
+    // start / exerciseChange / newCycle: start animation from enriched state fields.
     if (state.totalPhases > 0) {
       final phase = state.phase;
       if (phase == BreathPhase.inhale || phase == BreathPhase.exhale) {

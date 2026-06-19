@@ -80,6 +80,7 @@ class BreathSessionStateMachine {
   int _exerciseIndex = 0;
   int _repeatCounter = 0;
   int _cycleTick = 0;
+  bool _hasStarted = false;
 
   StreamSubscription<TickData>? _tickSubscription;
 
@@ -182,6 +183,10 @@ class BreathSessionStateMachine {
   void resume() {
     if (_state.status != BreathSessionStatus.pause) return;
     final wasResting = _state.phase == BreathPhase.rest;
+    // Emit ResetReason.start on the first activation only so animation
+    // coordinators can initialize at origin. Subsequent resumes keep null,
+    // preserving the resume-vs-start distinction.
+    final reason = _hasStarted ? null : ResetReason.start;
     // Full constructor to clear resetReason (copyWith cannot set nullable to null).
     _emit(BreathSessionStateMachineState(
       status: wasResting ? BreathSessionStatus.rest : BreathSessionStatus.breath,
@@ -190,13 +195,14 @@ class BreathSessionStateMachine {
       remainingTicks: _state.remainingTicks,
       activeStepId: _state.activeStepId,
       currentIntervalMs: _state.currentIntervalMs,
-      resetReason: null,
+      resetReason: reason,
       totalPhases: _state.totalPhases,
       currentPhaseIndex: _state.currentPhaseIndex,
       currentPhaseTotalDuration: _state.currentPhaseTotalDuration,
       currentExerciseShape: _state.currentExerciseShape,
       nextExerciseShape: _state.nextExerciseShape,
     ));
+    _hasStarted = true;
   }
 
   void complete() {
