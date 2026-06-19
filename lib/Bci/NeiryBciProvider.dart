@@ -19,7 +19,7 @@ import 'package:mind/Biometrics/Models/SensorSource.dart';
 import 'IBciDeviceProvider.dart';
 import 'Models/BciCalibrationEvent.dart';
 import 'Models/BciChannelQuality.dart';
-import 'Models/BciConnectionState.dart';
+import 'Models/BciLinkStatus.dart';
 import 'Models/BciDeviceInfo.dart';
 import 'Models/BciEmotionsData.dart';
 import 'Models/BciNfbData.dart';
@@ -41,7 +41,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   neiry.MEMSClassifier? _memsClassifier;
 
   final _connectionStateController =
-      StreamController<BciConnectionState>.broadcast();
+      StreamController<BciLinkStatus>.broadcast();
   final _signalQualityController =
       StreamController<List<BciChannelQuality>>.broadcast();
   final _batteryController = StreamController<int>.broadcast();
@@ -68,7 +68,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   // ── Stream getters ──────────────────────────────────────────────────────────
 
   @override
-  Stream<BciConnectionState> get connectionStateStream =>
+  Stream<BciLinkStatus> get connectionStateStream =>
       _connectionStateController.stream;
 
   @override
@@ -246,7 +246,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   void _onNeiryConnectionState(neiry.NeiryConnectionState s) {
     switch (s) {
       case neiry.NeiryConnectionState.connected:
-        _connectionStateController.add(BciConnectionState.connecting);
+        _connectionStateController.add(BciLinkStatus.up);
       case neiry.NeiryConnectionState.disconnected:
         // Idempotency guard: our own disconnect() already nulls _device and
         // emits; a second native event in that window is redundant noise.
@@ -254,12 +254,12 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
         // Null fields synchronously BEFORE emitting — reconnect's connect()
         // throws StateError if _device is non-null when it runs.
         _teardownAfterUnexpectedDrop();
-        _connectionStateController.add(BciConnectionState.disconnected);
+        _connectionStateController.add(BciLinkStatus.down);
       case neiry.NeiryConnectionState.unsupportedConnection:
         if (_device == null) return;
         logPrint('NeiryBciProvider: unsupported connection');
         _teardownAfterUnexpectedDrop();
-        _connectionStateController.add(BciConnectionState.disconnected);
+        _connectionStateController.add(BciLinkStatus.down);
     }
   }
 
@@ -589,7 +589,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     _device = null;
     // Emit explicitly — _connectionSub is already cancelled so the native
     // disconnected event would be missed without this.
-    _connectionStateController.add(BciConnectionState.disconnected);
+    _connectionStateController.add(BciLinkStatus.down);
   }
 
   // ── dispose() ───────────────────────────────────────────────────────────────

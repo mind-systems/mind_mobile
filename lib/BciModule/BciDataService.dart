@@ -66,8 +66,7 @@ class BciDataService implements IBciDataService {
 
       case BciStateChanged(:final state):
         switch (state) {
-          case BciConnectionState.disconnected:
-          case BciConnectionState.bluetoothPermissionDenied:
+          case BciIdle() || BciPermissionDenied():
             return acc.copyWith(
               isConnected: false,
               heartRate: null,
@@ -76,12 +75,9 @@ class BciDataService implements IBciDataService {
               batteryPercent: null,
               channels: const <BciChannelQualityDTO>[],
             );
-          case BciConnectionState.scanning:
-          case BciConnectionState.connecting:
+          case BciScanning() || BciConnecting():
             return acc.copyWith(isConnected: false);
-          case BciConnectionState.impedance:
-          case BciConnectionState.calibrating:
-          case BciConnectionState.ready:
+          case BciImpedance() || BciCalibrating() || BciReady():
             return acc.copyWith(isConnected: true);
         }
 

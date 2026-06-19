@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'Models/BciCalibrationEvent.dart';
 import 'Models/BciChannelQuality.dart';
-import 'Models/BciConnectionState.dart';
+import 'Models/BciLinkStatus.dart';
 import 'Models/BciDeviceInfo.dart';
 import 'Models/NfbCalibrationData.dart';
 
@@ -32,8 +32,13 @@ abstract interface class IBciDeviceProvider {
   /// Disconnects from the currently connected device.
   Future<void> disconnect();
 
-  /// Emits the current connection state whenever it changes.
-  Stream<BciConnectionState> get connectionStateStream;
+  /// Emits the BLE link-layer state whenever it changes.
+  ///
+  /// Emits [BciLinkStatus.up] when the device BLE connection is established
+  /// and [BciLinkStatus.down] when it drops (whether expectedly or not).
+  /// Higher-level app-domain phases (connecting / impedance / calibrating /
+  /// ready) are owned by [BciDeviceManager] and are not visible here.
+  Stream<BciLinkStatus> get connectionStateStream;
 
   /// Emits updated per-channel signal quality snapshots.
   Stream<List<BciChannelQuality>> get signalQualityStream;

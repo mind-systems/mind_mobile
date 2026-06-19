@@ -9,6 +9,7 @@ import 'package:mind/Bci/Models/BciChannelQuality.dart';
 import 'package:mind/Bci/Models/BciConnectionState.dart';
 import 'package:mind/Bci/Models/BciDeviceInfo.dart';
 import 'package:mind/Bci/Models/BciEmotionsData.dart';
+import 'package:mind/Bci/Models/BciLinkStatus.dart';
 import 'package:mind/Bci/Models/BciNfbData.dart';
 import 'package:mind/Bci/Models/BluetoothPermissionDeniedException.dart';
 import 'package:mind/Biometrics/IEegBandsSource.dart';
@@ -27,7 +28,10 @@ class BciDeviceManager {
 
   // Internal state
   bool _disposed = false;
-  BciConnectionState _state = BciConnectionState.disconnected;
+  BciConnectionState _state = BciIdle();
+  // Reconnect memory: the serial of the last successfully-targeted device.
+  // Kept across unexpected disconnects so _attemptReconnect() knows which
+  // device to look for. Cleared only on explicit disconnect().
   String? _connectedSerial;
   bool _suppressAutoReconnect = false;
   List<BciDeviceInfo> _discoveredDevices = const <BciDeviceInfo>[];
@@ -37,7 +41,7 @@ class BciDeviceManager {
   final _discoveredDevicesController = StreamController<List<BciDeviceInfo>>.broadcast();
 
   // Provider stream subscriptions (nullable, assigned in constructor via _subscribeProviderStreams)
-  StreamSubscription<BciConnectionState>? _connectionStateSub;
+  StreamSubscription<BciLinkStatus>? _connectionStateSub;
   StreamSubscription<BciCalibrationEvent>? _calibrationSub;
   StreamSubscription<List<BciDeviceInfo>>? _scanSub;
 
@@ -58,14 +62,12 @@ class BciDeviceManager {
   }
 
   void _subscribeProviderStreams() {
-    _connectionStateSub = _provider.connectionStateStream.listen((state) {
-      if (state == BciConnectionState.disconnected &&
-          _state != BciConnectionState.disconnected &&
-          _state != BciConnectionState.scanning &&
-          _state != BciConnectionState.connecting &&
-          _state != BciConnectionState.bluetoothPermissionDenied) {
+    _connectionStateSub = _provider.connectionStateStream.listen((status) {
+      // React to link-layer drops only when a device-bound phase is active.
+      // Idle / scanning / permission-denied are unaffected by BLE drops.
+      if (status == BciLinkStatus.down && _state is BciActive) {
         logPrint('BciDeviceManager: unexpected disconnect');
-        _setState(BciConnectionState.disconnected);
+        _setState(BciIdle());
         if (!_suppressAutoReconnect && _connectedSerial != null) {
           unawaited(_attemptReconnect());
         }
@@ -86,10 +88,14 @@ class BciDeviceManager {
               (Object e) => logPrint('BciDeviceManager: nfbCalibration record failed: $e'),
             ));
           }
-          if (_state == BciConnectionState.calibrating) _setState(BciConnectionState.ready);
+          if (_state is BciCalibrating) {
+            _setState(BciReady((_state as BciCalibrating).serial));
+          }
         case BciCalibrationFailed(:final reason):
           logPrint('BciDeviceManager: calibration failed: $reason');
-          if (_state == BciConnectionState.calibrating) _setState(BciConnectionState.impedance);
+          if (_state is BciCalibrating) {
+            _setState(BciImpedance((_state as BciCalibrating).serial));
+          }
       }
     });
   }
@@ -111,8 +117,21 @@ class BciDeviceManager {
 
   // ── Internal helpers ────────────────────────────────────────────────────────
 
+  /// Transitions to [next], suppressing duplicate emissions.
+  ///
+  /// Dedup compares runtime type; for [BciActive] subtypes, the [BciActive.serial]
+  /// is compared too so transitioning between the same phase on different devices
+  /// always fires. The [startScan] direct-write bypass is intentional and handled
+  /// separately — it re-emits [BciScanning] even when already scanning to ensure
+  /// fresh subscribers receive a seeding event.
   void _setState(BciConnectionState next) {
-    if (_disposed || next == _state) return;
+    if (_disposed) return;
+    if (next.runtimeType == _state.runtimeType) {
+      // Same non-Active type → already in this state, nothing to emit.
+      if (next is! BciActive) return;
+      // Same Active type + same serial → no real transition.
+      if (next.serial == (_state as BciActive).serial) return;
+    }
     _state = next;
     if (!_stateController.isClosed) _stateController.add(next);
   }
@@ -128,16 +147,16 @@ class BciDeviceManager {
     await _discoveredDevicesController.close();
   }
 
-  // ── Public API (stubs — bodies land in later tasks) ─────────────────────────
+  // ── Public API ──────────────────────────────────────────────────────────────
 
   Future<void> startScan() async {
     _suppressAutoReconnect = false;
     // Bypass _setState dedup — manager stays alive between screen sessions and
     // may already be in scanning state, which would silence the event and leave
     // the new subscriber without a fresh BciStateChanged(scanning).
-    _state = BciConnectionState.scanning;
+    _state = BciScanning();
     if (!_disposed && !_stateController.isClosed) {
-      _stateController.add(BciConnectionState.scanning);
+      _stateController.add(BciScanning());
     }
 
     unawaited(_repository.fetchKnownSerials().catchError((Object e) {
@@ -167,7 +186,7 @@ class BciDeviceManager {
         final autoConnect = discovered.firstWhereOrNull(
           (d) => cachedSerials.contains(d.serial),
         );
-        if (autoConnect != null && _state == BciConnectionState.scanning) {
+        if (autoConnect != null && _state is BciScanning) {
           await _scanSub?.cancel();
           _scanSub = null;
           await connectDevice(autoConnect.serial);
@@ -175,25 +194,25 @@ class BciDeviceManager {
       },
       onError: (Object e) {
         // startScan() bypasses _setState dedup (direct _state assignment + add),
-        // so a subsequent bluetoothPermissionDenied is always a real transition.
+        // so a subsequent BciPermissionDenied is always a real transition.
         if (e is BluetoothPermissionDeniedException) {
           logPrint('BciDeviceManager: bluetooth permission denied — cannot scan');
-          _setState(BciConnectionState.bluetoothPermissionDenied);
+          _setState(BciPermissionDenied());
         } else {
           logPrint('BciDeviceManager: scan error: $e');
-          _setState(BciConnectionState.disconnected);
+          _setState(BciIdle());
         }
       },
       onDone: () {
-        if (_state == BciConnectionState.scanning) {
-          _setState(BciConnectionState.disconnected);
+        if (_state is BciScanning) {
+          _setState(BciIdle());
         }
       },
     );
   }
 
   Future<void> connectDevice(String serial) async {
-    _setState(BciConnectionState.connecting);
+    _setState(BciConnecting(serial));
     try {
       await _provider.connect(serial);
       _connectedSerial = serial;
@@ -202,26 +221,27 @@ class BciDeviceManager {
       ));
 
       // Guard against disconnect() racing with the awaited connect call. If the user
-      // disconnected mid-flight, _state moved to disconnected and must not be overridden.
-      if (_state == BciConnectionState.connecting) {
-        _setState(BciConnectionState.impedance);
+      // disconnected mid-flight, _state moved away from BciConnecting and must not be overridden.
+      if (_state is BciConnecting) {
+        _setState(BciImpedance(serial));
       }
     } catch (e) {
       logPrint('BciDeviceManager: connect failed: $e');
-      _setState(BciConnectionState.disconnected);
+      _setState(BciIdle());
     }
   }
 
   Future<void> startCalibration() async {
-    if (_state != BciConnectionState.impedance) return;
-    _setState(BciConnectionState.calibrating);
+    if (_state is! BciImpedance) return;
+    final serial = (_state as BciImpedance).serial;
+    _setState(BciCalibrating(serial));
     try {
       await _provider.startCalibration();
       // success path: calibration events flow through _provider.calibrationStream
       // and are handled by the listener in _subscribeProviderStreams.
     } catch (e) {
       logPrint('BciDeviceManager: startCalibration failed: $e');
-      _setState(BciConnectionState.impedance);
+      _setState(BciImpedance(serial));
     }
   }
 
@@ -231,11 +251,11 @@ class BciDeviceManager {
     _scanSub = null;
     await _provider.disconnect();
     _connectedSerial = null;
-    _setState(BciConnectionState.disconnected);
+    _setState(BciIdle());
   }
 
   Future<void> _attemptReconnect() async {
-    _setState(BciConnectionState.scanning);
+    _setState(BciScanning());
     await _scanSub?.cancel();
     _scanSub = _provider.scan().listen(
       (discovered) async {
@@ -247,7 +267,7 @@ class BciDeviceManager {
         final match = discovered.firstWhereOrNull(
           (d) => d.serial == _connectedSerial,
         );
-        if (match != null && _state == BciConnectionState.scanning) {
+        if (match != null && _state is BciScanning) {
           await _scanSub?.cancel();
           _scanSub = null;
           await connectDevice(match.serial);
@@ -255,21 +275,21 @@ class BciDeviceManager {
       },
       onError: (Object e) {
         // Dedup safety: the only caller is the disconnect listener which
-        // transitions _state → disconnected before invoking _attemptReconnect(),
-        // so _setState(scanning) at line 185 always fires. If you add another
-        // caller that may leave _state already at scanning (or bluetoothPermissionDenied),
+        // transitions _state → BciIdle before invoking _attemptReconnect(),
+        // so _setState(BciScanning()) at the top always fires. If you add another
+        // caller that may leave _state already at scanning (or BciPermissionDenied),
         // audit this path.
         if (e is BluetoothPermissionDeniedException) {
           logPrint('BciDeviceManager: bluetooth permission denied — cannot reconnect');
-          _setState(BciConnectionState.bluetoothPermissionDenied);
+          _setState(BciPermissionDenied());
         } else {
           logPrint('BciDeviceManager: reconnect scan error: $e');
-          _setState(BciConnectionState.disconnected);
+          _setState(BciIdle());
         }
       },
       onDone: () {
-        if (_state == BciConnectionState.scanning && _connectedSerial != null) {
-          _setState(BciConnectionState.disconnected);
+        if (_state is BciScanning && _connectedSerial != null) {
+          _setState(BciIdle());
         }
       },
     );
