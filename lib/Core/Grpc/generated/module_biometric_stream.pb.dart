@@ -286,7 +286,77 @@ class BioStreamAck extends $pb.GeneratedMessage {
   void clearTimestamp() => $_clearField(5);
 }
 
-enum BioStreamResponse_Event { ack, error, notSet }
+/// BioStreamReady is the server's first outbound frame, emitted the instant the
+/// controller subscribes — before any client batch is read. Mirrors StreamReady
+/// from module_instruction_stream.proto.
+class BioStreamReady extends $pb.GeneratedMessage {
+  factory BioStreamReady({
+    $core.int? maxSamplesPerSecond,
+    $fixnum.Int64? timestamp,
+  }) {
+    final result = create();
+    if (maxSamplesPerSecond != null)
+      result.maxSamplesPerSecond = maxSamplesPerSecond;
+    if (timestamp != null) result.timestamp = timestamp;
+    return result;
+  }
+
+  BioStreamReady._();
+
+  factory BioStreamReady.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory BioStreamReady.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'BioStreamReady',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
+      createEmptyInstance: create)
+    ..aI(1, _omitFieldNames ? '' : 'maxSamplesPerSecond')
+    ..aInt64(2, _omitFieldNames ? '' : 'timestamp')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  BioStreamReady clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  BioStreamReady copyWith(void Function(BioStreamReady) updates) =>
+      super.copyWith((message) => updates(message as BioStreamReady))
+          as BioStreamReady;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static BioStreamReady create() => BioStreamReady._();
+  @$core.override
+  BioStreamReady createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static BioStreamReady getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<BioStreamReady>(create);
+  static BioStreamReady? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get maxSamplesPerSecond => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set maxSamplesPerSecond($core.int value) => $_setSignedInt32(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasMaxSamplesPerSecond() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearMaxSamplesPerSecond() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $fixnum.Int64 get timestamp => $_getI64(1);
+  @$pb.TagNumber(2)
+  set timestamp($fixnum.Int64 value) => $_setInt64(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasTimestamp() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearTimestamp() => $_clearField(2);
+}
+
+enum BioStreamResponse_Event { ack, error, ready, notSet }
 
 /// BioStreamResponse is the server-to-client stream envelope.
 /// Each message carries exactly one event via the oneof.
@@ -295,10 +365,12 @@ class BioStreamResponse extends $pb.GeneratedMessage {
   factory BioStreamResponse({
     BioStreamAck? ack,
     $2.StateErrorEvent? error,
+    BioStreamReady? ready,
   }) {
     final result = create();
     if (ack != null) result.ack = ack;
     if (error != null) result.error = error;
+    if (ready != null) result.ready = ready;
     return result;
   }
 
@@ -315,17 +387,20 @@ class BioStreamResponse extends $pb.GeneratedMessage {
       _BioStreamResponse_EventByTag = {
     1: BioStreamResponse_Event.ack,
     2: BioStreamResponse_Event.error,
+    3: BioStreamResponse_Event.ready,
     0: BioStreamResponse_Event.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'BioStreamResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
-    ..oo(0, [1, 2])
+    ..oo(0, [1, 2, 3])
     ..aOM<BioStreamAck>(1, _omitFieldNames ? '' : 'ack',
         subBuilder: BioStreamAck.create)
     ..aOM<$2.StateErrorEvent>(2, _omitFieldNames ? '' : 'error',
         subBuilder: $2.StateErrorEvent.create)
+    ..aOM<BioStreamReady>(3, _omitFieldNames ? '' : 'ready',
+        subBuilder: BioStreamReady.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -349,10 +424,12 @@ class BioStreamResponse extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   BioStreamResponse_Event whichEvent() =>
       _BioStreamResponse_EventByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   void clearEvent() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -376,6 +453,17 @@ class BioStreamResponse extends $pb.GeneratedMessage {
   void clearError() => $_clearField(2);
   @$pb.TagNumber(2)
   $2.StateErrorEvent ensureError() => $_ensure(1);
+
+  @$pb.TagNumber(3)
+  BioStreamReady get ready => $_getN(2);
+  @$pb.TagNumber(3)
+  set ready(BioStreamReady value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasReady() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearReady() => $_clearField(3);
+  @$pb.TagNumber(3)
+  BioStreamReady ensureReady() => $_ensure(2);
 }
 
 const $core.bool _omitFieldNames =

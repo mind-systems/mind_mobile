@@ -84,6 +84,26 @@ final $typed_data.Uint8List bioStreamAckDescriptor = $convert.base64Decode(
     'b3BwZWRDb3VudBIzChZtYXhfc2FtcGxlc19wZXJfc2Vjb25kGAQgASgFUhNtYXhTYW1wbGVzUG'
     'VyU2Vjb25kEhwKCXRpbWVzdGFtcBgFIAEoA1IJdGltZXN0YW1w');
 
+@$core.Deprecated('Use bioStreamReadyDescriptor instead')
+const BioStreamReady$json = {
+  '1': 'BioStreamReady',
+  '2': [
+    {
+      '1': 'max_samples_per_second',
+      '3': 1,
+      '4': 1,
+      '5': 5,
+      '10': 'maxSamplesPerSecond'
+    },
+    {'1': 'timestamp', '3': 2, '4': 1, '5': 3, '10': 'timestamp'},
+  ],
+};
+
+/// Descriptor for `BioStreamReady`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List bioStreamReadyDescriptor = $convert.base64Decode(
+    'Cg5CaW9TdHJlYW1SZWFkeRIzChZtYXhfc2FtcGxlc19wZXJfc2Vjb25kGAEgASgFUhNtYXhTYW'
+    '1wbGVzUGVyU2Vjb25kEhwKCXRpbWVzdGFtcBgCIAEoA1IJdGltZXN0YW1w');
+
 @$core.Deprecated('Use bioStreamResponseDescriptor instead')
 const BioStreamResponse$json = {
   '1': 'BioStreamResponse',
@@ -106,6 +126,15 @@ const BioStreamResponse$json = {
       '9': 0,
       '10': 'error'
     },
+    {
+      '1': 'ready',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.mind.BioStreamReady',
+      '9': 0,
+      '10': 'ready'
+    },
   ],
   '8': [
     {'1': 'event'},
@@ -115,5 +144,5 @@ const BioStreamResponse$json = {
 /// Descriptor for `BioStreamResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List bioStreamResponseDescriptor = $convert.base64Decode(
     'ChFCaW9TdHJlYW1SZXNwb25zZRImCgNhY2sYASABKAsyEi5taW5kLkJpb1N0cmVhbUFja0gAUg'
-    'NhY2sSLQoFZXJyb3IYAiABKAsyFS5taW5kLlN0YXRlRXJyb3JFdmVudEgAUgVlcnJvckIHCgVl'
-    'dmVudA==');
+    'NhY2sSLQoFZXJyb3IYAiABKAsyFS5taW5kLlN0YXRlRXJyb3JFdmVudEgAUgVlcnJvchIsCgVy'
+    'ZWFkeRgDIAEoCzIULm1pbmQuQmlvU3RyZWFtUmVhZHlIAFIFcmVhZHlCBwoFZXZlbnQ=');

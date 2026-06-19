@@ -40,6 +40,15 @@ class BiometricStreamClient {
   /// Timestamp of the last stream-open attempt; used for the 2-second reopen cooldown.
   DateTime? _lastOpenAttempt;
 
+  /// True once the server has emitted a `BioStreamReady` frame (or the fallback
+  /// timer has fired). Reset to false on every `_ensureSinkOpen` so the gate
+  /// re-arms for both cold-start and reconnect.
+  bool _isReady = false;
+
+  /// Fires after 5 s if no `BioStreamReady` is received; drains the replay ring
+  /// so the client degrades gracefully against an un-upgraded server.
+  Timer? _readyTimer;
+
   BiometricStreamClient({
     required $bio.ModuleBiometricStreamServiceClient grpcStub,
     required Stream<ModuleStateEvent> moduleStateEvents,
@@ -77,6 +86,8 @@ class BiometricStreamClient {
   }
 
   Future<void> dispose() async {
+    _readyTimer?.cancel();
+    _readyTimer = null;
     await _lifecycleSub.cancel();
     await _responseSub?.cancel();
     await _sink?.close();
@@ -96,6 +107,7 @@ class BiometricStreamClient {
     }
     _lastOpenAttempt = DateTime.now();
 
+    _isReady = false;
     _sink = StreamController<$bio.BioSampleBatch>();
     try {
       final response = _grpcStub.streamData(_sink!.stream);
@@ -106,6 +118,13 @@ class BiometricStreamClient {
               break; // no-op for this milestone
             case $bio.BioStreamResponse_Event.error:
               logPrint('[BiometricStreamClient] error: ${r.error.code} — ${r.error.message}');
+            case $bio.BioStreamResponse_Event.ready:
+              _isReady = true;
+              _readyTimer?.cancel();
+              _readyTimer = null;
+              final replay = _replayRing.toList();
+              _replayRing.clear();
+              if (replay.isNotEmpty) _encodeAndAdd(replay);
             case $bio.BioStreamResponse_Event.notSet:
               break;
           }
@@ -125,14 +144,20 @@ class BiometricStreamClient {
       return;
     }
 
-    if (_currentSessionId != null) {
-      final replay = _replayRing.toList();
-      _replayRing.clear();
-      if (replay.isNotEmpty) _encodeAndAdd(replay);
-    }
+    _readyTimer = Timer(const Duration(seconds: 5), () {
+      if (!_isReady) {
+        logPrint('[BiometricStreamClient] readiness timeout — draining without server ready');
+        _isReady = true;
+        final replay = _replayRing.toList();
+        _replayRing.clear();
+        if (replay.isNotEmpty) _encodeAndAdd(replay);
+      }
+    });
   }
 
   void _teardownSink() {
+    _readyTimer?.cancel();
+    _readyTimer = null;
     _responseSub?.cancel();
     _responseSub = null;
     _sink?.close();
@@ -145,6 +170,12 @@ class BiometricStreamClient {
     final sessionId = _currentSessionId;
     if (sessionId == null) return;
     if (_sink == null) {
+      for (final s in samples) {
+        _enqueueReplay(s);
+      }
+      return;
+    }
+    if (!_isReady) {
       for (final s in samples) {
         _enqueueReplay(s);
       }
