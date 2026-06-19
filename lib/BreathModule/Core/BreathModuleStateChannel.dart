@@ -18,7 +18,10 @@ class BreathModuleStateChannel {
   BreathPhase? _previousPhase;
   int? _previousExerciseIndex;
   String? _moduleSessionId;
-  ({BreathSessionState state, int ts})? _pendingInstruction;
+  ({BreathSessionState state, int offsetMs})? _pendingInstruction;
+
+  final Stopwatch _stopwatch = Stopwatch();
+  DateTime? _originWallClock;
 
   late final StreamSubscription<BreathSessionState> _stateSub;
   late final StreamSubscription<ModuleState> _channelSub;
@@ -63,6 +66,8 @@ class BreathModuleStateChannel {
     if (wasPaused && isActive) {
       if (!_started) {
         logPrint('[BreathModuleState] BreathModuleStateChannel: session start [$_sessionId]');
+        _stopwatch..reset()..start();
+        _originWallClock = DateTime.now();
         _channel.start(type: ActivityType.breath, refId: _sessionId);
         _started = true;
         _previousPhase = null;
@@ -95,21 +100,24 @@ class BreathModuleStateChannel {
         state.exerciseIndex != _previousExerciseIndex;
     if (!phaseChanged) return;
 
-    final ts = DateTime.now().millisecondsSinceEpoch;
+    final offsetMs = _stopwatch.elapsedMilliseconds;
 
     if (sessionId == null) {
-      _pendingInstruction = (state: state, ts: ts);
+      _pendingInstruction = (state: state, offsetMs: offsetMs);
       return;
     }
-    _instructionStream.sendSample(sessionId, state.phase.name, state.currentPhaseTotalDuration * state.currentIntervalMs, ts);
+    _instructionStream.sendSample(sessionId, state.phase.name, state.currentPhaseTotalDuration, offsetMs, _wireTimestamp(offsetMs));
   }
 
   void _flushPending(String sessionId) {
     final pending = _pendingInstruction;
     if (pending == null) return;
     _pendingInstruction = null;
-    _instructionStream.sendSample(sessionId, pending.state.phase.name, pending.state.currentPhaseTotalDuration * pending.state.currentIntervalMs, pending.ts);
+    _instructionStream.sendSample(sessionId, pending.state.phase.name, pending.state.currentPhaseTotalDuration, pending.offsetMs, _wireTimestamp(pending.offsetMs));
   }
+
+  int _wireTimestamp(int offsetMs) =>
+      (_originWallClock?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch) + offsetMs;
 
   void reset() {
     _moduleSessionId = null;
@@ -119,6 +127,8 @@ class BreathModuleStateChannel {
     _previousPhase = null;
     _previousExerciseIndex = null;
     _pendingInstruction = null;
+    _stopwatch..stop()..reset();
+    _originWallClock = null;
     // Subscriptions stay alive — the stream is reused across restarts.
   }
 

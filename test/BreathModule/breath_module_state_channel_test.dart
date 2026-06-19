@@ -52,8 +52,8 @@ class _FakeInstructionStream implements BreathModuleInstructionStream {
   final List<(String, String, int)> sendSampleCalls = [];
 
   @override
-  void sendSample(String sessionId, String phase, int durationMs, int timestampMs) =>
-      sendSampleCalls.add((sessionId, phase, durationMs));
+  void sendSample(String sessionId, String phase, int tickCount, int offsetMs, int timestampMs) =>
+      sendSampleCalls.add((sessionId, phase, tickCount));
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -732,7 +732,7 @@ void main() {
 
   group('BreathModuleStateChannel — instruction dispatch', () {
     test(
-      'should call instructionStream.sendSample with the moduleSessionId, phase name, and currentIntervalMs when phase changes while status=breath and a moduleSessionId is available',
+      'should call instructionStream.sendSample with the moduleSessionId, phase name, and tickCount when phase changes while status=breath and a moduleSessionId is available',
       () async {
         final f = _make();
         // Seed moduleSessionId
@@ -744,11 +744,11 @@ void main() {
         f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Phase change: inhale → exhale
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 5000, currentPhaseTotalDuration: 3));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
-        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 5000));
+        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 3));
 
         f.target.dispose();
       },
@@ -764,11 +764,11 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 5000, currentPhaseTotalDuration: 4));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
-        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'inhale', 5000));
+        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'inhale', 4));
 
         f.target.dispose();
       },
@@ -878,18 +878,18 @@ void main() {
         f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Rest with phase change — active check covers both breath and rest; 2nd dispatch
-        f.stateCtrl.add(_state(status: BreathSessionStatus.rest, phase: BreathPhase.exhale, currentIntervalMs: 6000));
+        f.stateCtrl.add(_state(status: BreathSessionStatus.rest, phase: BreathPhase.exhale, currentIntervalMs: 6000, currentPhaseTotalDuration: 5));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(2));
-        expect(f.instructionStream.sendSampleCalls.last, ('sid', 'exhale', 6000));
+        expect(f.instructionStream.sendSampleCalls.last, ('sid', 'exhale', 5));
 
         f.target.dispose();
       },
     );
 
     test(
-      'should pass currentIntervalMs through unchanged when it equals -1 (the real initial-state value)',
+      'should dispatch tickCount from currentPhaseTotalDuration regardless of currentIntervalMs value (e.g. -1 no longer poisons the payload)',
       () async {
         final f = _make();
         f.channel.stateController.add(
@@ -899,12 +899,12 @@ void main() {
         // Prime
         f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
-        // Phase change with currentIntervalMs=-1 — no defensive normalisation expected
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: -1));
+        // Phase change with currentIntervalMs=-1 — tickCount comes from currentPhaseTotalDuration, not currentIntervalMs
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: -1, currentPhaseTotalDuration: 7));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
-        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', -1));
+        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 7));
 
         f.target.dispose();
       },
@@ -933,12 +933,12 @@ void main() {
     );
 
     test(
-      'should call instructionStream.sendSample exactly once with the buffered phase and currentIntervalMs when a ModuleState with a non-null moduleSessionId arrives after a buffered phase change',
+      'should call instructionStream.sendSample exactly once with the buffered phase and tickCount when a ModuleState with a non-null moduleSessionId arrives after a buffered phase change',
       () async {
         final f = _make();
         f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000, currentPhaseTotalDuration: 6));
         await Future<void>.delayed(Duration.zero);
         // moduleSessionId becomes available — triggers _flushPending
         f.channel.stateController.add(
@@ -947,7 +947,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
-        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 5000));
+        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 6));
 
         f.target.dispose();
       },
@@ -1005,7 +1005,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         // Second phase change — lifecycle short-circuits (same status=breath), but _handleInstruction
         // still runs from _onState and overwrites _pendingInstruction with the latest state
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 6000));
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 6000, currentPhaseTotalDuration: 8));
         await Future<void>.delayed(Duration.zero);
         // Flush
         f.channel.stateController.add(
@@ -1013,7 +1013,7 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
 
-        expect(f.instructionStream.sendSampleCalls, [('sid', 'inhale', 6000)]);
+        expect(f.instructionStream.sendSampleCalls, [('sid', 'inhale', 8)]);
 
         f.target.dispose();
       },
@@ -1027,7 +1027,7 @@ void main() {
         f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
         await Future<void>.delayed(Duration.zero);
         // Phase change — buffered
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000, currentPhaseTotalDuration: 9));
         await Future<void>.delayed(Duration.zero);
         // Non-ready state — _onState returns early, _pendingInstruction is not touched
         f.stateCtrl.add(_state(
@@ -1044,7 +1044,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
-        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 5000));
+        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 9));
 
         f.target.dispose();
       },
@@ -1138,11 +1138,11 @@ void main() {
         f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Second dispatch — same phase transition as before, but _previousPhase was cleared → phaseChanged=true
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 5000, currentPhaseTotalDuration: 10));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(2));
-        expect(f.instructionStream.sendSampleCalls.last, ('sid', 'exhale', 5000));
+        expect(f.instructionStream.sendSampleCalls.last, ('sid', 'exhale', 10));
         expect(f.channel.startCalls, hasLength(2));
 
         f.target.dispose();
@@ -1176,11 +1176,11 @@ void main() {
         f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Second dispatch — same exerciseIndex transition, but _previousExerciseIndex was cleared → phaseChanged=true
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 5000, currentPhaseTotalDuration: 11));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(2));
-        expect(f.instructionStream.sendSampleCalls.last, ('sid', 'inhale', 5000));
+        expect(f.instructionStream.sendSampleCalls.last, ('sid', 'inhale', 11));
         expect(f.channel.startCalls, hasLength(2));
 
         f.target.dispose();

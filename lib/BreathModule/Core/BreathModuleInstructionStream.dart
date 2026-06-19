@@ -7,13 +7,13 @@ class BreathModuleInstructionStream {
   BreathModuleInstructionStream({required ModuleInstructionStream instructionStream})
       : _instructionStream = instructionStream;
 
-  void sendSample(String sessionId, String phase, int durationMs, int timestampMs) {
+  void sendSample(String sessionId, String phase, int tickCount, int offsetMs, int timestampMs) {
     _instructionStream.emit(InstructionSample(
       sessionId: sessionId,
       timestamp: timestampMs,
       moduleId: 'breath',
       instructionType: 'breath_phase',
-      data: {'phase': phase, 'durationMs': durationMs},
+      data: {'phase': phase, 'tickCount': tickCount, 'offsetMs': offsetMs},
     ));
   }
 }
