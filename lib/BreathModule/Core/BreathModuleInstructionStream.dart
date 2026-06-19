@@ -20,10 +20,10 @@ class BreathModuleInstructionStream {
     _dataAckSub = _instructionStream.acks.listen(_onDataAck);
   }
 
-  void sendSample(String sessionId, String phase, int durationMs) {
+  void sendSample(String sessionId, String phase, int durationMs, int timestampMs) {
     final payload = {
       'sessionId': sessionId,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'timestamp': timestampMs,
       'module_id': 'breath',
       'instruction_type': 'breath_phase',
       'data': {

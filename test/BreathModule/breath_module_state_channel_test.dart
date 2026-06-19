@@ -52,7 +52,7 @@ class _FakeInstructionStream implements BreathModuleInstructionStream {
   final List<(String, String, int)> sendSampleCalls = [];
 
   @override
-  void sendSample(String sessionId, String phase, int durationMs) =>
+  void sendSample(String sessionId, String phase, int durationMs, int timestampMs) =>
       sendSampleCalls.add((sessionId, phase, durationMs));
 
   @override

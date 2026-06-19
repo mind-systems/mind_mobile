@@ -18,7 +18,7 @@ class BreathModuleStateChannel {
   BreathPhase? _previousPhase;
   int? _previousExerciseIndex;
   String? _moduleSessionId;
-  BreathSessionState? _pendingInstruction;
+  ({BreathSessionState state, int ts})? _pendingInstruction;
 
   late final StreamSubscription<BreathSessionState> _stateSub;
   late final StreamSubscription<ModuleState> _channelSub;
@@ -95,18 +95,20 @@ class BreathModuleStateChannel {
         state.exerciseIndex != _previousExerciseIndex;
     if (!phaseChanged) return;
 
+    final ts = DateTime.now().millisecondsSinceEpoch;
+
     if (sessionId == null) {
-      _pendingInstruction = state;
+      _pendingInstruction = (state: state, ts: ts);
       return;
     }
-    _instructionStream.sendSample(sessionId, state.phase.name, state.currentPhaseTotalDuration * state.currentIntervalMs);
+    _instructionStream.sendSample(sessionId, state.phase.name, state.currentPhaseTotalDuration * state.currentIntervalMs, ts);
   }
 
   void _flushPending(String sessionId) {
     final pending = _pendingInstruction;
     if (pending == null) return;
     _pendingInstruction = null;
-    _instructionStream.sendSample(sessionId, pending.phase.name, pending.currentPhaseTotalDuration * pending.currentIntervalMs);
+    _instructionStream.sendSample(sessionId, pending.state.phase.name, pending.state.currentPhaseTotalDuration * pending.state.currentIntervalMs, pending.ts);
   }
 
   void reset() {
