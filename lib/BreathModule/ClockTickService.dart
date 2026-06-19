@@ -12,6 +12,9 @@ class ClockTickService implements ITickService {
   @override
   TickSource get source => TickSource.timer;
 
+  @override
+  int get nominalIntervalMs => 1000;
+
   void simulateTick() {
     _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
       _tickController.add(TickData(const Duration(milliseconds: 1000).inMilliseconds));

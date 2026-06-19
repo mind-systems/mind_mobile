@@ -4,6 +4,11 @@ abstract class ITickService {
   Stream<TickData> get tickStream;
   TickSource get source;
 
+  /// The nominal/configured cadence of this tick source, in milliseconds.
+  /// This is the origin interval known at construction — not a per-tick measured
+  /// delta. Use [TickData.intervalMs] for measured deltas.
+  int get nominalIntervalMs;
+
   /// Emits each time the active tick source changes.
   Stream<TickSource> get sourceChanges;
 

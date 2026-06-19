@@ -21,6 +21,13 @@ class HeartRateTickService implements ITickService {
   @override
   TickSource get source => TickSource.heartbeat;
 
+  /// Placeholder until the first measured RR interval arrives.
+  /// The service caches no last RR and has no BPM target, so 1000 ms is the
+  /// honest default before the first beat; the origin seed is overwritten on
+  /// the first real RR tick.
+  @override
+  int get nominalIntervalMs => 1000;
+
   /// Proxy for callers that need to gate UI on source availability.
   bool get hasActiveSource => _activeRrSource.hasActiveSource;
 

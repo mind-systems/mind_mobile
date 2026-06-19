@@ -29,6 +29,9 @@ class _FakeClockTickService implements ClockTickService {
   TickSource get source => TickSource.timer;
 
   @override
+  int get nominalIntervalMs => 1000;
+
+  @override
   Stream<TickSource> get sourceChanges => const Stream.empty();
 
   @override
@@ -71,6 +74,9 @@ class _FakeHeartRateTickService implements HeartRateTickService {
 
   @override
   TickSource get source => TickSource.heartbeat;
+
+  @override
+  int get nominalIntervalMs => 1000;
 
   @override
   Stream<bool> get hasActiveSourceStream => _hasActiveController.stream;

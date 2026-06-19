@@ -39,6 +39,10 @@ class SwitchableTickService implements ITickService {
   TickSource get source => _activeSource;
 
   @override
+  int get nominalIntervalMs =>
+      _activeSource == TickSource.timer ? _clock.nominalIntervalMs : _heart.nominalIntervalMs;
+
+  @override
   Stream<TickSource> get sourceChanges => _sourceChangesController.stream;
 
   @override

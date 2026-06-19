@@ -18,6 +18,9 @@ class _FakeTickService implements ITickService {
   TickSource get source => TickSource.timer;
 
   @override
+  int get nominalIntervalMs => 1000;
+
+  @override
   Stream<TickSource> get sourceChanges => const Stream.empty();
 
   @override
