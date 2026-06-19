@@ -20,10 +20,7 @@ import 'Views/SessionBottomBar.dart';
 
 /// Экран дыхательной сессии
 class BreathSessionScreen extends ConsumerStatefulWidget {
-  final VoidCallback? onRestart;
-  final VoidCallback? onDispose;
-
-  const BreathSessionScreen({this.onRestart, this.onDispose, super.key});
+  const BreathSessionScreen({super.key});
 
   static String name = 'breath_session';
   static String path = '/$name';
@@ -116,7 +113,6 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
 
   @override
   void dispose() {
-    widget.onDispose?.call();
     _coordinator.dispose();
     _orbCoordinator.dispose();
     _soundCoordinator.dispose();
@@ -398,7 +394,6 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
         child: ControlButton(
           icon: Icons.replay,
           onPressed: () {
-            widget.onRestart?.call();
             _coordinator.reset();
             _orbCoordinator.reset();
             _soundCoordinator.reset();

@@ -33,6 +33,17 @@ class BreathViewModel extends Notifier<BreathSessionState> {
 
   void Function(BreathSessionUiEvent event)? onUiEvent;
 
+  void Function()? _onModuleDispose;
+  void Function()? _onModuleReset;
+
+  void attachModuleChannel({
+    required void Function() onDispose,
+    required void Function() onReset,
+  }) {
+    _onModuleDispose = onDispose;
+    _onModuleReset = onReset;
+  }
+
   BreathSessionDTO? _sessionDTO;
 
   final ValueNotifier<int> _remainingTicks = ValueNotifier<int>(0);
@@ -65,6 +76,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
   @override
   BreathSessionState build() {
     ref.onDispose(() {
+      _onModuleDispose?.call();
       _sessionDeletionSubscription?.cancel();
       _sessionUpdateSubscription?.cancel();
       _stateMachineSubscription?.cancel();
@@ -269,6 +281,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
 
   void restartEngine() {
     if (_sessionDTO == null) return;
+    _onModuleReset?.call();
     _setupEngine(_sessionDTO!);
   }
 

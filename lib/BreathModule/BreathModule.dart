@@ -35,25 +35,21 @@ class BreathModule {
     final service = BreathSessionService(notifier: App.shared.breathSessionNotifier, userNotifier: App.shared.userNotifier);
     final coordinator = BreathSessionCoordinator(context, userNotifier: App.shared.userNotifier);
 
-    late final BreathModuleStateChannel stateChannel;
-
     return ProviderScope(
       overrides: [
         breathViewModelProvider.overrideWith(() {
           final vm = BreathViewModel(tickService: tickService, service: service, coordinator: coordinator, sessionId: sessionId);
-          stateChannel = BreathModuleStateChannel(
+          final channel = BreathModuleStateChannel(
             channel: App.shared.moduleStateChannel,
             stateStream: vm.stream,
             instructionStream: App.shared.breathInstructionStream,
             sessionId: sessionId,
           );
+          vm.attachModuleChannel(onDispose: channel.dispose, onReset: channel.reset);
           return vm;
         }),
       ],
-      child: BreathSessionScreen(
-        onRestart: () => stateChannel.reset(),
-        onDispose: () => stateChannel.dispose(),
-      ),
+      child: const BreathSessionScreen(),
     );
   }
 
