@@ -28,7 +28,7 @@ class ExerciseEditCell extends StatelessWidget {
   static const double _spaceAfterSeparator = 6.0;
 
   static const double _footerRowHeight = 24.0;
-  static const double _narrowControlRowHeight = 32.0;
+  static const double _narrowControlRowHeight = 36.0;
 
   bool _isActive(String fieldName) =>
       activeField != null &&
@@ -79,8 +79,6 @@ class ExerciseEditCell extends StatelessWidget {
             height: _narrowControlRowHeight,
             useNoBorder: true,
           ),
-
-          const SizedBox(height: _spaceBetweenControls),
 
           // ===== SEPARATOR =====
           Container(
@@ -180,43 +178,35 @@ class ExerciseEditCell extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: onSurface.withValues(alpha: 0.6),
-                  fontSize: 14,
-                ),
-              ),
+          Text(
+            label,
+            style: TextStyle(
+              color: onSurface.withValues(alpha: 0.6),
+              fontSize: 14,
             ),
           ),
-          Center(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _buildNumericDisplay(
-                  fieldName: fieldName,
-                  value: value,
-                  onSurface: onSurface,
-                  textAlign: TextAlign.right,
-                  showBorder: false,
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: showIcon
-                      ? Icon(
-                          Icons.access_time,
-                          size: 16,
-                          color: onSurface.withValues(alpha: 0.5),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ],
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildNumericDisplay(
+              fieldName: fieldName,
+              value: value,
+              onSurface: onSurface,
+              textAlign: TextAlign.right,
+              showBorder: false,
+              fieldWidth: double.infinity,
+              fieldHeight: height,
             ),
+          ),
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: showIcon
+                ? Icon(
+                    Icons.access_time,
+                    size: 16,
+                    color: onSurface.withValues(alpha: 0.5),
+                  )
+                : const SizedBox.shrink(),
           ),
         ],
       ),
@@ -230,6 +220,8 @@ class ExerciseEditCell extends StatelessWidget {
     required Color onSurface,
     required TextAlign textAlign,
     required bool showBorder,
+    double? fieldWidth,
+    double? fieldHeight,
   }) {
     final isFieldActive = _isActive(fieldName);
     final displayText = value == 0 ? '0' : value.toString();
@@ -237,8 +229,8 @@ class ExerciseEditCell extends StatelessWidget {
     return Builder(builder: (fieldContext) => GestureDetector(
       onTap: () => _tap(fieldName, value, fieldContext),
       child: SizedBox(
-        width: _inputFieldWidth,
-        height: _inputFieldHeight,
+        width: fieldWidth ?? _inputFieldWidth,
+        height: fieldHeight ?? _inputFieldHeight,
         child: Container(
           decoration: showBorder
               ? BoxDecoration(
@@ -249,7 +241,7 @@ class ExerciseEditCell extends StatelessWidget {
                         : onSurface.withValues(alpha: 0.1),
                   ),
                 )
-              : null,
+              : const BoxDecoration(),
           alignment: textAlign == TextAlign.center
               ? Alignment.center
               : Alignment.centerRight,
