@@ -43,6 +43,10 @@ class BreathSessionListService implements IBreathSessionListService {
     await notifier.refresh(pageSize);
   }
 
+  @override
+  List<BreathSessionListItemDTO> currentItems() =>
+      _mapEntries(notifier.currentState.entries);
+
   /// ---------- Mapping ----------
 
   List<BreathSessionListItemDTO> _mapEntries(List<BreathSessionListEntry> entries) {

@@ -29,6 +29,9 @@ class _FakeService implements IBreathSessionListService {
   @override
   Future<void> refresh(int pageSize) async {}
 
+  @override
+  List<BreathSessionListItemDTO> currentItems() => const [];
+
   void emit(BreathSessionListEvent event) => _controller.add(event);
 
   void completeLoad() {

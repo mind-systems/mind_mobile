@@ -31,7 +31,16 @@ class BreathSessionListViewModel extends Notifier<BreathSessionListState> {
     final subscription = service.observeChanges().listen(_onEvent);
     ref.onDispose(() => subscription.cancel());
 
-    _loadInitialPage();
+    _loadInitialPage(); // always refresh from server in background
+
+    final cached = service.currentItems();
+    if (cached.isNotEmpty) {
+      return BreathSessionListState(
+        items: _buildItemsWithSections(_transformDTOsToModels(cached)),
+        mode: BreathSessionListMode.content,
+        hasMore: true, // conservative — background load emits ListUpdatedEvent and corrects it
+      );
+    }
 
     return BreathSessionListState(
       items: [SkeletonCellModel(animated: true)],

@@ -33,6 +33,11 @@ abstract class IBreathSessionListService {
   ///
   /// [pageSize] — number of items for the first page
   Future<void> refresh(int pageSize);
+
+  /// Returns the currently cached list items, or an empty list if none
+  /// have been loaded yet. Synchronous — reads the in-memory notifier state,
+  /// no DB/network round-trip. Used to suppress the shimmer flash on re-open.
+  List<BreathSessionListItemDTO> currentItems();
 }
 
 /// Base type for all session list events
