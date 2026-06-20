@@ -137,13 +137,13 @@ abstract class AppLocalizations {
   /// No description provided for @heartTickNoSourceTitle.
   ///
   /// In en, this message translates to:
-  /// **'Connect a heart sensor'**
+  /// **'Heart rate sensor'**
   String get heartTickNoSourceTitle;
 
   /// No description provided for @heartTickNoSourceDescription.
   ///
   /// In en, this message translates to:
-  /// **'Pair a BCI device to drive the breathing rhythm from your heartbeat.'**
+  /// **'To breathe in sync with your heart, connect a heart rate sensor.'**
   String get heartTickNoSourceDescription;
 
   /// No description provided for @account.

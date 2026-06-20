@@ -97,6 +97,7 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
       floatingActionButton: FloatingActionButton(
         onPressed: _onCreateTap,
         mini: true,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         child: const Icon(Icons.add),
       ),
     );
