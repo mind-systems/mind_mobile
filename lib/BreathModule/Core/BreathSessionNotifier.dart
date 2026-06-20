@@ -98,14 +98,30 @@ class BreathSessionNotifier {
 
   void _onUserIdChanged(String _) async {
     await repository.deleteAll();
-    invalidate();
+    await invalidate();
   }
 
-  void invalidate() {
+  Future<List<BreathSessionListEntry>> _readLocalEntries() async {
+    final sessions = await repository.localSessions();
+    return buildSectionedEntries(sessions, currentUserId());
+  }
+
+  Future<void> loadLocal() async {
+    final entries = await _readLocalEntries();
+    if (entries.isEmpty) return;
     _subject.add(BreathSessionsState(
-      entries: const [],
-      nextCursor: null,
-      lastEvent: SessionsInvalidated(),
+      entries: entries,
+      nextCursor: _subject.value.nextCursor,
+      lastEvent: LocalSessionsLoaded(),
+    ));
+  }
+
+  Future<void> invalidate() async {
+    final entries = await _readLocalEntries();
+    _subject.add(BreathSessionsState(
+      entries: entries,
+      nextCursor: _subject.value.nextCursor,
+      lastEvent: LocalSessionsLoaded(),
     ));
   }
 

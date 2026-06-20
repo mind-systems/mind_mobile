@@ -87,6 +87,9 @@ class FakeBreathSessionRepository implements IBreathSessionRepository {
     deleteAllCount++;
     _sessions = [];
   }
+
+  @override
+  Future<List<BreathSession>> localSessions() async => List.of(_sessions);
 }
 
 // ---------------------------------------------------------------------------
@@ -543,7 +546,7 @@ void main() {
   });
 
   group('user change', () {
-    test('user id change calls deleteAll and emits empty entries with SessionsInvalidated', () async {
+    test('user id change calls deleteAll and emits empty entries with LocalSessionsLoaded', () async {
       final (:notifier, :repo, :authSubject) = _make(initialUser: _user1);
       repo.seed([_session('a')]);
       await notifier.load(null, 10);
@@ -554,7 +557,7 @@ void main() {
 
       expect(notifier.currentState.entries, isEmpty);
       expect(notifier.currentState.nextCursor, isNull);
-      expect(notifier.currentState.lastEvent, isA<SessionsInvalidated>());
+      expect(notifier.currentState.lastEvent, isA<LocalSessionsLoaded>());
       expect(repo.deleteAllCount, 1);
 
       notifier.dispose();

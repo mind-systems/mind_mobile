@@ -24,6 +24,11 @@ class BreathSessionRepository implements IBreathSessionRepository {
   }
 
   @override
+  Future<List<BreathSession>> localSessions() async {
+    return await _dao.getSessions();
+  }
+
+  @override
   Future<({List<BreathSessionListEntry> entries, String? nextCursor})> refresh(int pageSize) async {
     final response = await _api.fetchPage(null, pageSize);
     // Upsert — do NOT deleteAllSessions; detail/getById rely on cached rows
