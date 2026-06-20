@@ -13,8 +13,6 @@ class GoogleAuthProvider implements IGoogleAuthProvider {
   Future<({String code, String? redirectUri})> getServerAuthCode() async {
     try {
       return await _gmsFlow();
-    } on GoogleSignInCanceledException {
-      rethrow;
     } catch (e) {
       logPrint('[GoogleAuthProvider] GMS failed ($e), falling back to browser flow');
       return await _browserFlow();
@@ -22,20 +20,12 @@ class GoogleAuthProvider implements IGoogleAuthProvider {
   }
 
   Future<({String code, String? redirectUri})> _gmsFlow() async {
-    try {
-      final serverAuth =
-          await _google.authorizationClient.authorizeServer(['email']);
-      if (serverAuth == null) {
-        throw Exception('Google Sign-In did not return a serverAuthCode.');
-      }
-      return (code: serverAuth.serverAuthCode, redirectUri: null);
-    } on GoogleSignInException catch (e) {
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        throw GoogleSignInCanceledException();
-      }
-      rethrow; // non-cancel → outer catch → browser fallback
+    final serverAuth =
+        await _google.authorizationClient.authorizeServer(['email']);
+    if (serverAuth == null) {
+      throw Exception('Google Sign-In did not return a serverAuthCode.');
     }
-    // MissingPluginException, PlatformException → outer catch automatically
+    return (code: serverAuth.serverAuthCode, redirectUri: null);
   }
 
   Future<({String code, String? redirectUri})> _browserFlow() async {
