@@ -62,6 +62,7 @@ import 'package:mind/Bci/NfbCalibrationRepository.dart';
 import 'package:mind/Bci/BciNotifier.dart';
 import 'package:mind/Bci/NeiryBciProvider.dart';
 import 'package:mind/Biometrics/ActiveRrSource.dart';
+import 'package:mind/Biometrics/SmoothedRrSource.dart';
 import 'package:mind/Biometrics/BioStreamRouter.dart';
 import 'package:mind/Biometrics/BiometricBatcher.dart';
 import 'package:mind/Biometrics/BiometricStreamClient.dart';
@@ -96,6 +97,7 @@ class App {
   final BciNotifier bciNotifier;
   final BioStreamRouter bioStreamRouter;
   final ActiveRrSource activeRrSource;
+  final SmoothedRrSource smoothedRrSource;
   final BiometricStreamClient biometricStreamClient;
   final BiometricBatcher biometricBatcher;
   final SyncEngine syncEngine;
@@ -127,6 +129,7 @@ class App {
     required this.bciNotifier,
     required this.bioStreamRouter,
     required this.activeRrSource,
+    required this.smoothedRrSource,
     required this.biometricStreamClient,
     required this.biometricBatcher,
     required this.syncEngine,
@@ -212,6 +215,7 @@ class App {
     bioStreamRouter.registerEmotionsSource(bciProvider);
     bioStreamRouter.registerMotionSource(bciProvider);
     final activeRrSource = ActiveRrSource([bciProvider]);
+    final smoothedRrSource = SmoothedRrSource(activeRrSource);
     final biometricStreamClient = BiometricStreamClient(grpcStub: grpcClient.moduleBiometricStreamService, moduleStateEvents: moduleStateChannel.events, connectionState: connectionManager.connectionState);
     final biometricBatcher = BiometricBatcher(router: bioStreamRouter, client: biometricStreamClient);
     final instructionStream = ModuleInstructionStream(connectionManager: connectionManager, instructionStreamService: grpcClient.instructionStreamService);
@@ -241,6 +245,7 @@ class App {
       bciNotifier: bciNotifier,
       bioStreamRouter: bioStreamRouter,
       activeRrSource: activeRrSource,
+      smoothedRrSource: smoothedRrSource,
       biometricStreamClient: biometricStreamClient,
       biometricBatcher: biometricBatcher,
       syncEngine: syncEngine,

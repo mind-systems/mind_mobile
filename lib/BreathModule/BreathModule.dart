@@ -30,7 +30,7 @@ class BreathModule {
 
   static Widget buildSession(BuildContext context, {required String sessionId}) {
     final clock = ClockTickService()..simulateTick();
-    final heart = HeartRateTickService(activeRrSource: App.shared.activeRrSource);
+    final heart = HeartRateTickService(smoothedRrSource: App.shared.smoothedRrSource)..start();
     final tickService = SwitchableTickService(clock: clock, heart: heart);
     final service = BreathSessionService(notifier: App.shared.breathSessionNotifier, userNotifier: App.shared.userNotifier);
     final coordinator = BreathSessionCoordinator(context, userNotifier: App.shared.userNotifier);

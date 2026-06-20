@@ -88,6 +88,9 @@ class _FakeHeartRateTickService implements HeartRateTickService {
   bool trySwitchTo(TickSource target) => false;
 
   @override
+  void start() {}
+
+  @override
   void dispose() {
     disposed = true;
     _controller.close();
