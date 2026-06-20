@@ -7,8 +7,8 @@
   "delete": "Delete",
   "error": "Error",
   "comingSoon": "Coming soon",
-  "heartTickNoSourceTitle": "Connect a heart sensor",
-  "heartTickNoSourceDescription": "Pair a BCI device to drive the breathing rhythm from your heartbeat.",
+  "heartTickNoSourceTitle": "Heart rate sensor",
+  "heartTickNoSourceDescription": "To breathe in sync with your heart, connect a heart rate sensor.",
 
   "account": "Account",
   "appearance": "Appearance",

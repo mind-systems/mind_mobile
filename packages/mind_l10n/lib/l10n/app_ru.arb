@@ -7,8 +7,8 @@
   "delete": "Удалить",
   "error": "Ошибка",
   "comingSoon": "Скоро",
-  "heartTickNoSourceTitle": "Подключите датчик сердца",
-  "heartTickNoSourceDescription": "Чтобы дышать в ритм с сердцем, подключите BCI-устройство.",
+  "heartTickNoSourceTitle": "Датчик пульса",
+  "heartTickNoSourceDescription": "Чтобы дышать в ритм с сердцем, подключите датчик пульса.",
 
   "account": "Аккаунт",
   "appearance": "Внешний вид",
