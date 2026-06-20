@@ -86,6 +86,10 @@ Fixes the `activityRefId` UUID crash (`invalid input syntax for type uuid: "easy
 
 ## Visual / Cosmetic
 
+- [x] **Mute button on `BreathSessionScreen`** — `SessionBottomBar` split into `leadingActions` + `trailingActions`; mute button added to `leadingActions`, reads `_soundCoordinator.isMuted` (`ValueListenable`) and calls `toggleMute()`, icon toggles between `volume_up` / `volume_off_outlined`. Spec: none.
+
+- [x] **Orb-tap screen blackout on `BreathSessionScreen`** — Tapping `EclipseOrb` sets `_isBlackedOut = true`; a full-screen `ColoredBox(Colors.black)` fades in via `AnimatedOpacity`; tapping the black overlay restores the UI. `BreathShapeWidget` wrapped in `IgnorePointer` so it doesn't block the orb tap. Spec: none.
+
 - [x] **Expand tap target on repeat/rest fields in exercise card** — `ExerciseEditCell._buildHorizontalField` had a fixed 62×32 tap area for cycles and rest fields. Restructured the row so the field fills the full row width (from label + 8 px gap to right edge) and full row height (36 px). Spec: none.
 
 - [x] **Session timer on `MeditationSessionScreen`** — No elapsed-time display exists on the session screen. `MeditationSessionViewModel` gains `final ValueNotifier<int> elapsedSeconds = ValueNotifier(0)` and `Timer? _timer`; `start()` resets to 0 and starts `Timer.periodic(1s, (_) => elapsedSeconds.value++)`; `stop()` cancels it; `ref.onDispose` cancels + disposes. Screen wraps the existing body in an outer `Column` — `Expanded(Center(pose + button))` + `Padding(bottom:40, ValueListenableBuilder<int>)` showing `HH:MM:SS` via `_formatDuration(seconds)`. Text style: `displayMedium.copyWith(color: AppColors.warmAccentDark)` (gold, same token as orb on `BreathSessionScreen`); `FontFeature.tabularFigures()` keeps digits fixed-width. Use `ref.read` (not `ref.watch`) on the notifier — `ValueListenable` drives updates, no Riverpod rebuild per second. Spec: `.ai-factory/notes/89-meditation-session-timer.md`. [10m 54s]

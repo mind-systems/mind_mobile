@@ -227,13 +227,15 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
                                             : 0.0,
                                     duration: const Duration(milliseconds: 200),
                                     curve: Curves.easeIn,
-                                    child: BreathShapeWidget(
-                                      motionController: _motionEngine,
-                                      shapeController: _shapeShifter,
-                                      shapeColor: AppColors.accent,
-                                      pointColor: Colors.white,
-                                      strokeWidth: 3.0,
-                                      pointRadius: 6.0,
+                                    child: IgnorePointer(
+                                      child: BreathShapeWidget(
+                                        motionController: _motionEngine,
+                                        shapeController: _shapeShifter,
+                                        shapeColor: AppColors.accent,
+                                        pointColor: Colors.white,
+                                        strokeWidth: 3.0,
+                                        pointRadius: 6.0,
+                                      ),
                                     ),
                                   ),
                                 ],
