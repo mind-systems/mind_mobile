@@ -9,7 +9,6 @@ class BreathMotionEngine extends ChangeNotifier {
   double _targetVelocity = 0.0;
   double _targetDurationMs = 0.0;
   double _elapsedMs = 0.0;
-  bool _isLinearLocked = false;
   bool _isActive = false;
 
   // Фазовая структура цикла
@@ -24,8 +23,15 @@ class BreathMotionEngine extends ChangeNotifier {
 
   // Константы
   static const double _smoothingFactor = 0.2;
-  static const double _dampingFactor = 0.08;
-  static const double _velocityTolerance = 1e-6;
+  // Постоянная времени разгона скорости как ДОЛЯ длительности фазы (а не
+  // фиксированная в мс). Это делает поведение масштабно-инвариантным: разгон
+  // занимает один и тот же процент фазы хоть для 1с, хоть для 20с. 0.1 → полка
+  // достигается примерно к 25% фазы (≈2.5 постоянных времени).
+  static const double _rampTimeConstantFraction = 0.1;
+  // Ниже этого остатка времени фазы целевая скорость не пересчитывается
+  // (remainingDist/remainingTime у самого конца разносит в бесконечность) —
+  // точка докатывается на текущей скорости.
+  static const double _minRemainingTimeMs = 16.0;
 
   // Ticker
   late final Ticker _ticker;
@@ -35,8 +41,10 @@ class BreathMotionEngine extends ChangeNotifier {
     _ticker = vsync.createTicker(_onTick);
   }
 
-  // Публичные геттеры
-  double get normalizedPosition => _position.clamp(0.0, 1.0);
+  // Публичные геттеры. Позиция заворачивается по модулю 1.0, а не зажимается:
+  // на низу круга точка перетекает в следующий цикл без остановки (1.0 и 0.0 —
+  // одна и та же точка на замкнутом контуре).
+  double get normalizedPosition => _position % 1.0;
   bool get isActive => _isActive;
 
   // Конфигурация фаз
@@ -70,7 +78,6 @@ class BreathMotionEngine extends ChangeNotifier {
     _remainingPhaseTicks = ticks < 0 ? 0 : ticks;
     _targetDurationMs = _remainingPhaseTicks * _smoothedIntervalMs;
     _elapsedMs = 0.0;
-    _isLinearLocked = false;
 
     // Пересчитываем целевую скорость сразу относительно цели текущей фазы
     final double remainingDistance = _phaseTargetPosition - _position;
@@ -93,13 +100,17 @@ class BreathMotionEngine extends ChangeNotifier {
     }
   }
 
-  // Сброс позиции
-  void resetPosition([double newPosition = 0.0]) {
+  // Сброс позиции. preserveVelocity=true сохраняет текущую скорость — для
+  // границы цикла/упражнения, где движение должно перетекать в следующую
+  // итерацию без остановки. На старте сессии и при входе в отдых скорость
+  // обнуляется (точка стартует с нуля).
+  void resetPosition([double newPosition = 0.0, bool preserveVelocity = false]) {
     _position = newPosition;
-    _currentVelocity = 0.0;
-    _targetVelocity = 0.0;
+    if (!preserveVelocity) {
+      _currentVelocity = 0.0;
+      _targetVelocity = 0.0;
+    }
     _elapsedMs = 0.0;
-    _isLinearLocked = false;
 
     notifyListeners();
   }
@@ -120,53 +131,37 @@ class BreathMotionEngine extends ChangeNotifier {
     _previousElapsed = elapsed;
     _elapsedMs += deltaTimeMs;
 
-    // 2. Пересчёт целевой скорости (если не заблокирован)
-    if (!_isLinearLocked) {
-      final double remainingDistance = _phaseTargetPosition - _position;
-      final double remainingTime = _targetDurationMs - _elapsedMs;
+    // 2. Непрерывный пересчёт целевой скорости: сколько нужно, чтобы прийти
+    //    в цель фазы ровно к её концу. Без заморозки — если на разгоне
+    //    проскочили выше нужного, на следующих кадрах remainingDist/remainingTime
+    //    станет меньше и скорость плавно скатится обратно (самокоррекция).
+    final double remainingDistance = _phaseTargetPosition - _position;
+    final double remainingTime = _targetDurationMs - _elapsedMs;
 
-      if (remainingTime > 0 && remainingDistance > 0) {
-        _targetVelocity = remainingDistance / remainingTime;
-      } else {
-        _targetVelocity = 0.0;
-      }
+    if (remainingTime > _minRemainingTimeMs && remainingDistance > 0) {
+      _targetVelocity = remainingDistance / remainingTime;
     }
+    // иначе: у самого конца фазы цель не трогаем — докатываемся на текущей
+    // скорости (её перенесёт в следующую фазу перенос скорости).
 
-    // 3. Плавное изменение текущей скорости к целевой
-    final double smoothingFactor = 1.0 - exp(-_dampingFactor * deltaTimeMs);
+    // 3. Плавное изменение текущей скорости к целевой. Постоянная времени
+    //    масштабируется от длительности фазы → разгон занимает фиксированную
+    //    ДОЛЮ фазы независимо от того, 1 она секунда или 20.
+    final double tauMs = _rampTimeConstantFraction * _targetDurationMs;
+    final double damping = tauMs > 1.0 ? 1.0 / tauMs : 1.0;
+    final double smoothingFactor = 1.0 - exp(-damping * deltaTimeMs);
     final double velocityDelta = (_targetVelocity - _currentVelocity) * smoothingFactor;
     _currentVelocity += velocityDelta;
 
-    // 4. Проверка выхода на линейный режим
-    if (!_isLinearLocked && (_targetVelocity - _currentVelocity).abs() < _velocityTolerance) {
-      final double remainingDistance = _phaseTargetPosition - _position;
-      final double remainingTime = _targetDurationMs - _elapsedMs;
-
-      if (remainingTime > 0 && remainingDistance > 0) {
-        final double correctVelocity = remainingDistance / remainingTime;
-
-        if ((correctVelocity - _currentVelocity).abs() > _velocityTolerance) {
-          _currentVelocity = correctVelocity;
-          _targetVelocity = correctVelocity;
-        }
-
-        _isLinearLocked = true;
-      }
-    }
-
-    // 5. Обновление позиции
+    // 4. Обновление позиции. Позицию НЕ зажимаем на 1.0 — пусть переезжает за
+    //    низ круга (геттер заворачивает по модулю), скорость не гасим. На границе
+    //    цикла newCycle сделает resetPosition(preserveVelocity), и точка
+    //    продолжит движение в новый цикл без остановки. Шаг 2 уже перестаёт
+    //    разгонять к цели, как только её прошли (remainingDistance <= 0).
     final double deltaPosition = _currentVelocity * deltaTimeMs;
     _position += deltaPosition;
 
-    // 6. Жёсткий clamp
-    if (_position >= 1.0) {
-      _position = 1.0;
-      _currentVelocity = 0.0;
-      _targetVelocity = 0.0;
-      _isLinearLocked = false;
-    }
-
-    // 7. Уведомление слушателей
+    // 5. Уведомление слушателей
     notifyListeners();
   }
 

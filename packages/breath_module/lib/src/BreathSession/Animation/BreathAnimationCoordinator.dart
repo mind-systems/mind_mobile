@@ -11,6 +11,7 @@ class BreathAnimationCoordinator {
   void Function()? _stateListener;
 
   int? _previousRemainingTicks;
+  int? _previousPhaseIndex;
   bool _initialized = false;
 
   BreathAnimationCoordinator({
@@ -26,6 +27,7 @@ class BreathAnimationCoordinator {
 
   void _syncInitialState(BreathSessionState state) {
     _previousRemainingTicks = state.remainingTicks;
+    _previousPhaseIndex = state.currentPhaseIndex;
 
     if (state.loadState != SessionLoadState.ready) {
       motionEngine.setActive(false);
@@ -63,7 +65,12 @@ class BreathAnimationCoordinator {
       shapeShifter.morphTo(shape);
     }
 
-    motionEngine.resetPosition(0.0);
+    // Скорость передаётся через границу цикла/смены упражнения (движение
+    // перетекает в следующую итерацию). На старте сессии и при входе в отдых
+    // точка стартует с нуля.
+    final preserveVelocity = state.resetReason == ResetReason.newCycle ||
+        state.resetReason == ResetReason.exerciseChange;
+    motionEngine.resetPosition(0.0, preserveVelocity);
 
     if (state.totalPhases > 0) {
       motionEngine.setPhaseInfo(
@@ -72,6 +79,7 @@ class BreathAnimationCoordinator {
       );
       motionEngine.setRemainingPhaseTicks(state.remainingTicks);
       _previousRemainingTicks = state.remainingTicks;
+      _previousPhaseIndex = state.currentPhaseIndex;
     }
 
     motionEngine.setActive(state.status == BreathSessionStatus.breath);
@@ -100,9 +108,11 @@ class BreathAnimationCoordinator {
           );
           motionEngine.setRemainingPhaseTicks(state.remainingTicks);
           _previousRemainingTicks = state.remainingTicks;
+          _previousPhaseIndex = state.currentPhaseIndex;
         } else {
           motionEngine.setRemainingPhaseTicks(0);
           _previousRemainingTicks = 0;
+          _previousPhaseIndex = state.currentPhaseIndex;
         }
       }
       motionEngine.setActive(shouldBeActive);
@@ -120,17 +130,28 @@ class BreathAnimationCoordinator {
         currentPhaseIndex: state.currentPhaseIndex,
       );
 
-      if (state.remainingTicks != _previousRemainingTicks) {
+      // Re-arm phase duration on EITHER a remaining-tick change OR a phase
+      // boundary. The phase-index check is essential: when two adjacent phases
+      // share the same remaining-tick count at their boundary (e.g. inhale's
+      // last tick remaining=1 collides with a 1-tick exhale's start remaining=1),
+      // a remaining-only guard would skip setRemainingPhaseTicks, leaving the
+      // engine linear-locked at the previous phase's velocity — so a shorter
+      // phase never accelerates and the dot stalls short of its target.
+      final phaseChanged = state.currentPhaseIndex != _previousPhaseIndex;
+      if (state.remainingTicks != _previousRemainingTicks || phaseChanged) {
         motionEngine.setRemainingPhaseTicks(state.remainingTicks);
         _previousRemainingTicks = state.remainingTicks;
+        _previousPhaseIndex = state.currentPhaseIndex;
       }
     } else {
       _previousRemainingTicks = state.remainingTicks;
+      _previousPhaseIndex = state.currentPhaseIndex;
     }
   }
 
   void reset() {
     _previousRemainingTicks = null;
+    _previousPhaseIndex = null;
     _initialized = false;
     motionEngine.setActive(false);
   }
