@@ -6,7 +6,6 @@ import 'package:mind/BreathModule/Core/IBreathSessionRepository.dart';
 import 'package:mind/BreathModule/Core/Models/BreathSessionNotifierEvent.dart';
 import 'package:mind/BreathModule/Models/BreathListSection.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
-import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Models/User.dart';
 
@@ -17,10 +16,6 @@ import 'package:mind/User/Models/User.dart';
 class FakeBreathSessionRepository implements IBreathSessionRepository {
   List<BreathSession> _sessions = [];
   int deleteAllCount = 0;
-  /// Controls the section tag returned by fetch/refresh.
-  /// Ignored by the notifier (sections are now derived locally), but kept
-  /// so tests can control what raw entries the repo returns.
-  BreathListSection sectionForFetch = BreathListSection.mine;
 
   void seed(List<BreathSession> sessions) => _sessions = List.of(sessions);
 
@@ -28,31 +23,9 @@ class FakeBreathSessionRepository implements IBreathSessionRepository {
   Future<BreathSession> fetchById(String id) async =>
       _sessions.firstWhere((s) => s.id == id);
 
-  /// Cursor is encoded as 'offset:N' for simple simulation.
-  /// null cursor = first page (offset 0).
+  /// No-op — the notifier calls localSessions() after this returns.
   @override
-  Future<({List<BreathSessionListEntry> entries, String? nextCursor})> fetch(
-      String? cursor, int pageSize) async {
-    final offset = cursor != null ? int.parse(cursor.split(':')[1]) : 0;
-    final slice = _sessions.skip(offset).take(pageSize).toList();
-    final nextOffset = offset + slice.length;
-    final nextCursor = nextOffset < _sessions.length ? 'offset:$nextOffset' : null;
-    final entries = slice
-        .map((s) => BreathSessionListEntry(session: s, section: sectionForFetch))
-        .toList();
-    return (entries: entries, nextCursor: nextCursor);
-  }
-
-  @override
-  Future<({List<BreathSessionListEntry> entries, String? nextCursor})> refresh(
-      int pageSize) async {
-    final slice = _sessions.take(pageSize).toList();
-    final nextCursor = slice.length < _sessions.length ? 'offset:${slice.length}' : null;
-    final entries = slice
-        .map((s) => BreathSessionListEntry(session: s, section: sectionForFetch))
-        .toList();
-    return (entries: entries, nextCursor: nextCursor);
-  }
+  Future<void> refresh(int pageSize) async {}
 
   @override
   Future<BreathSession> create(BreathSession session) async {
@@ -142,12 +115,12 @@ List<String> _entryIds(BreathSessionsState state) =>
 // ---------------------------------------------------------------------------
 
 void main() {
-  group('load()', () {
-    test('null cursor replaces state entirely', () async {
+  group('refresh()', () {
+    test('populates state from local sessions after refresh', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a'), _session('b')]);
 
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
       expect(_entryIds(notifier.currentState), ['a', 'b']);
 
@@ -155,112 +128,10 @@ void main() {
       await authSubject.close();
     });
 
-    test('null cursor emits PageLoaded with correct entries', () async {
+    test('replaces state with fresh sessions', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a'), _session('b')]);
-
-      await notifier.load(null, 2);
-
-      final event = notifier.currentState.lastEvent as PageLoaded;
-      expect(event.entries.map((e) => e.session.id), ['a', 'b']);
-      expect(event.nextCursor, isNull);
-
-      notifier.dispose();
-      await authSubject.close();
-    });
-
-    test('cursor appends unique sessions, within-section order by createdAt DESC then id', () async {
-      final (:notifier, :repo, :authSubject) = _make();
-      repo.seed([_session('a'), _session('b'), _session('c')]);
-
-      await notifier.load(null, 2);
-      final cursor = notifier.currentState.nextCursor;
-      await notifier.load(cursor, 2);
-
-      final ids = _entryIds(notifier.currentState);
-      expect(ids.toSet().length, ids.length, reason: 'no duplicate ids for non-starred sessions');
-      expect(ids, containsAll(['a', 'b', 'c']));
-
-      notifier.dispose();
-      await authSubject.close();
-    });
-
-    test('null cursor updates existing entries', () async {
-      final (:notifier, :repo, :authSubject) = _make();
-      repo.seed([_session('a'), _session('b')]);
-      await notifier.load(null, 2);
-
-      repo.seed([_session('a').copyWith(description: 'updated'), _session('b')]);
-      await notifier.load(null, 2);
-
-      expect(notifier.currentState.cachedById('a')!.description, 'updated');
-
-      notifier.dispose();
-      await authSubject.close();
-    });
-
-    test('concurrent load() — second call ignored while first in flight', () async {
-      final (:notifier, :repo, :authSubject) = _make();
-      repo.seed([_session('a')]);
-
-      final f1 = notifier.load(null, 10);
-      final f2 = notifier.load(null, 10);
-      await Future.wait([f1, f2]);
-
-      expect(_entryIds(notifier.currentState), ['a']);
-
-      notifier.dispose();
-      await authSubject.close();
-    });
-
-    test('starred session yields both MINE and STARRED entries after load', () async {
-      final (:notifier, :repo, :authSubject) = _make();
-      repo.seed([_session('a', isStarred: true)]);
-
-      await notifier.load(null, 10);
-
-      final entries = notifier.currentState.entries;
-      final mineEntry = entries.where(
-        (e) => e.session.id == 'a' && e.section == BreathListSection.mine,
-      );
-      final starredEntry = entries.where(
-        (e) => e.session.id == 'a' && e.section == BreathListSection.starred,
-      );
-      expect(mineEntry.length, 1, reason: 'exactly one MINE entry for starred session');
-      expect(starredEntry.length, 1, reason: 'exactly one STARRED entry for starred session');
-      expect(entries.every((e) => e.session.isStarred), isTrue);
-
-      notifier.dispose();
-      await authSubject.close();
-    });
-
-    test('uniqueSessions OR-ing: isStarred=true wins when id appears multiple times', () async {
-      // Simulates two pages containing the same id — one page has isStarred=true,
-      // the other has isStarred=false. The merged result should treat the session as starred.
-      final (:notifier, :repo, :authSubject) = _make();
-      // Page 1: 'a' not starred; page 2 overlap: 'a' starred (different seedings).
-      repo.seed([_session('a', isStarred: false), _session('b')]);
-      await notifier.load(null, 10);
-
-      // Reload first page where 'a' is now starred — simulates server sending updated data.
-      repo.seed([_session('a', isStarred: true), _session('b')]);
-      await notifier.load(null, 10);
-
-      expect(notifier.currentState.cachedById('a')!.isStarred, isTrue);
-      final hasStarred = notifier.currentState.entries
-          .any((e) => e.session.id == 'a' && e.section == BreathListSection.starred);
-      expect(hasStarred, isTrue);
-
-      notifier.dispose();
-      await authSubject.close();
-    });
-  });
-
-  group('refresh()', () {
-    test('replaces state with fresh page', () async {
-      final (:notifier, :repo, :authSubject) = _make();
-      repo.seed([_session('a'), _session('b')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
       repo.seed([_session('x')]);
       await notifier.refresh(10);
@@ -282,13 +153,62 @@ void main() {
       notifier.dispose();
       await authSubject.close();
     });
+
+    test('concurrent refresh() — second call ignored while first in flight', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a')]);
+
+      final f1 = notifier.refresh(10);
+      final f2 = notifier.refresh(10);
+      await Future.wait([f1, f2]);
+
+      expect(_entryIds(notifier.currentState), ['a']);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('starred session yields both MINE and STARRED entries after refresh', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a', isStarred: true)]);
+
+      await notifier.refresh(10);
+
+      final entries = notifier.currentState.entries;
+      final mineEntry = entries.where(
+        (e) => e.session.id == 'a' && e.section == BreathListSection.mine,
+      );
+      final starredEntry = entries.where(
+        (e) => e.session.id == 'a' && e.section == BreathListSection.starred,
+      );
+      expect(mineEntry.length, 1, reason: 'exactly one MINE entry for starred session');
+      expect(starredEntry.length, 1, reason: 'exactly one STARRED entry for starred session');
+      expect(entries.every((e) => e.session.isStarred), isTrue);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('updates existing entries on re-refresh', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a'), _session('b')]);
+      await notifier.refresh(10);
+
+      repo.seed([_session('a').copyWith(description: 'updated'), _session('b')]);
+      await notifier.refresh(10);
+
+      expect(notifier.currentState.cachedById('a')!.description, 'updated');
+
+      notifier.dispose();
+      await authSubject.close();
+    });
   });
 
   group('create()', () {
     test('new entry is present in entries list', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
       // Use a newer createdAt so saved-new sorts first (builder sorts DESC by createdAt).
       await notifier.create(_session('new', createdAt: DateTime(2030)));
@@ -302,7 +222,7 @@ void main() {
     test('new entry sorts first when it has the newest createdAt', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
       await notifier.create(_session('new', createdAt: DateTime(2030)));
 
@@ -349,7 +269,7 @@ void main() {
     test('updates session in all entries with matching id', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
       await notifier.update(_session('a').copyWith(description: 'changed'));
 
@@ -362,7 +282,7 @@ void main() {
     test('preserves entry order', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a'), _session('b')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
       await notifier.update(_session('a').copyWith(description: 'changed'));
 
@@ -375,7 +295,7 @@ void main() {
     test('emits SessionUpdated event', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
       await notifier.update(_session('a').copyWith(description: 'changed'));
 
@@ -390,7 +310,7 @@ void main() {
     test('removes all entries with the id', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a'), _session('b')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
       await notifier.delete('a');
 
@@ -404,7 +324,7 @@ void main() {
     test('emits SessionDeleted with the id', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
       await notifier.delete('a');
 
@@ -420,7 +340,7 @@ void main() {
     test('sets isStarred=true on existing entries and adds a STARRED entry', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
       await notifier.starSession('a', starred: true);
 
@@ -438,7 +358,7 @@ void main() {
     test('unstar removes STARRED entry and MINE entry remains with isStarred=false', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
       await notifier.starSession('a', starred: true);
 
       await notifier.starSession('a', starred: false);
@@ -468,9 +388,9 @@ void main() {
       );
 
       repo.seed([_session('a', isStarred: true)]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
-      // After load: should have both MINE and STARRED entries.
+      // After refresh: should have both MINE and STARRED entries.
       expect(notifier.currentState.entries.where((e) => e.section == BreathListSection.starred).length, 1);
       expect(notifier.currentState.entries.where((e) => e.section == BreathListSection.mine).length, 1);
 
@@ -494,7 +414,7 @@ void main() {
     test('emits SessionStarred event', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
       await notifier.starSession('a', starred: true);
 
@@ -519,7 +439,7 @@ void main() {
     test('starred own session appears in both STARRED and MINE sections', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
       await notifier.starSession('a', starred: true);
 
       final entries = notifier.currentState.entries;
@@ -533,7 +453,7 @@ void main() {
     test('starred shared session appears in both STARRED and SHARED sections', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a', userId: 'other-user')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
       await notifier.starSession('a', starred: true);
 
       final entries = notifier.currentState.entries;
@@ -549,14 +469,13 @@ void main() {
     test('user id change calls deleteAll and emits empty entries with LocalSessionsLoaded', () async {
       final (:notifier, :repo, :authSubject) = _make(initialUser: _user1);
       repo.seed([_session('a')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
       expect(_entryIds(notifier.currentState), ['a']);
 
       authSubject.add(AuthenticatedState(_user2));
       await Future.delayed(Duration.zero);
 
       expect(notifier.currentState.entries, isEmpty);
-      expect(notifier.currentState.nextCursor, isNull);
       expect(notifier.currentState.lastEvent, isA<LocalSessionsLoaded>());
       expect(repo.deleteAllCount, 1);
 
@@ -567,7 +486,7 @@ void main() {
     test('same user id does NOT trigger invalidation', () async {
       final (:notifier, :repo, :authSubject) = _make(initialUser: _user1);
       repo.seed([_session('a')]);
-      await notifier.load(null, 10);
+      await notifier.refresh(10);
 
       authSubject.add(AuthenticatedState(_user1));
       await Future.delayed(Duration.zero);

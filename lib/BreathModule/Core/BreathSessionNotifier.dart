@@ -11,12 +11,10 @@ import 'package:mind/User/Models/AuthState.dart';
 
 class BreathSessionsState {
   final List<BreathSessionListEntry> entries;
-  final String? nextCursor;
   final BreathSessionNotifierEvent? lastEvent;
 
   const BreathSessionsState({
     required this.entries,
-    required this.nextCursor,
     required this.lastEvent,
   });
 
@@ -78,7 +76,7 @@ class BreathSessionNotifier {
   final String Function() currentUserId;
 
   final BehaviorSubject<BreathSessionsState> _subject = BehaviorSubject.seeded(
-    const BreathSessionsState(entries: [], nextCursor: null, lastEvent: null),
+    const BreathSessionsState(entries: [], lastEvent: null),
   );
 
   bool _isLoading = false;
@@ -111,7 +109,6 @@ class BreathSessionNotifier {
     if (entries.isEmpty) return;
     _subject.add(BreathSessionsState(
       entries: entries,
-      nextCursor: _subject.value.nextCursor,
       lastEvent: LocalSessionsLoaded(),
     ));
   }
@@ -120,7 +117,6 @@ class BreathSessionNotifier {
     final entries = await _readLocalEntries();
     _subject.add(BreathSessionsState(
       entries: entries,
-      nextCursor: _subject.value.nextCursor,
       lastEvent: LocalSessionsLoaded(),
     ));
   }
@@ -129,59 +125,23 @@ class BreathSessionNotifier {
 
   BreathSessionsState get currentState => _subject.value;
 
-  /// ---------- Pagination ----------
+  /// ---------- Refresh ----------
 
-  Future<void> load(String? cursor, int pageSize) async {
-    if (_isLoading) return;
-
-    _isLoading = true;
-
-    try {
-      final result = await repository.fetch(cursor, pageSize);
-      final state = _subject.value;
-
-      final List<BreathSession> sessions;
-
-      if (cursor == null) {
-        // First page — replace entirely
-        sessions = _uniqueSessions(result.entries);
-      } else {
-        // Append — dedup combined list
-        sessions = _uniqueSessions([...state.entries, ...result.entries]);
-      }
-
-      final updatedEntries = buildSectionedEntries(sessions, currentUserId());
-
-      _subject.add(BreathSessionsState(
-        entries: updatedEntries,
-        nextCursor: result.nextCursor,
-        lastEvent: PageLoaded(
-          entries: result.entries,
-          nextCursor: result.nextCursor,
-        ),
-      ));
-    } finally {
-      _isLoading = false;
-    }
-  }
-
+  /// Write-through full-mirror sync: loops all pages from the server into Drift,
+  /// then re-reads Drift and emits the complete local mirror.
+  /// On network failure, rethrows without touching the current state.
   Future<void> refresh(int pageSize) async {
     if (_isLoading) return;
 
     _isLoading = true;
 
     try {
-      final result = await repository.refresh(pageSize);
-      final sessions = _uniqueSessions(result.entries);
-      final updatedEntries = buildSectionedEntries(sessions, currentUserId());
+      await repository.refresh(pageSize);
+      final updatedEntries = await _readLocalEntries();
 
       _subject.add(BreathSessionsState(
         entries: updatedEntries,
-        nextCursor: result.nextCursor,
-        lastEvent: SessionsRefreshed(
-          entries: result.entries,
-          nextCursor: result.nextCursor,
-        ),
+        lastEvent: SessionsRefreshed(),
       ));
     } finally {
       _isLoading = false;
@@ -200,7 +160,6 @@ class BreathSessionNotifier {
     final updatedEntries = buildSectionedEntries(sessions, currentUserId());
     _subject.add(BreathSessionsState(
       entries: updatedEntries,
-      nextCursor: state.nextCursor,
       lastEvent: SessionCreated(saved),
     ));
     return saved;
@@ -218,7 +177,6 @@ class BreathSessionNotifier {
     }).toList();
     _subject.add(BreathSessionsState(
       entries: updatedEntries,
-      nextCursor: state.nextCursor,
       lastEvent: SessionUpdated(saved),
     ));
     return saved;
@@ -229,7 +187,7 @@ class BreathSessionNotifier {
     final state = _subject.value;
 
     // If the session is not in the entry list, skip optimistic mutation.
-    // The server write has already succeeded; the next load/refresh will sync it.
+    // The server write has already succeeded; the next refresh will sync it.
     if (!state.entries.any((e) => e.session.id == id)) return;
 
     final sessions = _uniqueSessions(state.entries)
@@ -242,7 +200,6 @@ class BreathSessionNotifier {
 
     _subject.add(BreathSessionsState(
       entries: updatedEntries,
-      nextCursor: state.nextCursor,
       lastEvent: SessionStarred(updatedSession),
     ));
   }
@@ -255,7 +212,6 @@ class BreathSessionNotifier {
 
     _subject.add(BreathSessionsState(
       entries: updatedEntries,
-      nextCursor: state.nextCursor,
       lastEvent: SessionDeleted(id),
     ));
   }

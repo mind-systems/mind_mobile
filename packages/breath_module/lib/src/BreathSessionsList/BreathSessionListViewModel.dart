@@ -8,7 +8,7 @@ import 'Models/BreathSessionListItemDTO.dart';
 import 'Models/BreathSessionListState.dart';
 import 'IBreathSessionListCoordinator.dart';
 
-enum SessionListError { loadFailed, pagingFailed, syncFailed }
+enum SessionListError { loadFailed, syncFailed }
 
 final breathSessionListViewModelProvider =
     NotifierProvider<BreathSessionListViewModel, BreathSessionListState>(() {
@@ -31,21 +31,21 @@ class BreathSessionListViewModel extends Notifier<BreathSessionListState> {
     final subscription = service.observeChanges().listen(_onEvent);
     ref.onDispose(() => subscription.cancel());
 
-    _loadInitialPage(); // always refresh from server in background
+    _loadInitialPage(); // write-through refresh in background
 
     final cached = service.currentItems();
     if (cached.isNotEmpty) {
       return BreathSessionListState(
         items: _buildItemsWithSections(_transformDTOsToModels(cached)),
         mode: BreathSessionListMode.content,
-        hasMore: true, // conservative — background load emits ListUpdatedEvent and corrects it
+        hasMore: false,
       );
     }
 
     return BreathSessionListState(
       items: [SkeletonCellModel(animated: true)],
       mode: BreathSessionListMode.initialLoading,
-      hasMore: true,
+      hasMore: false,
     );
   }
 
@@ -65,7 +65,7 @@ class BreathSessionListViewModel extends Notifier<BreathSessionListState> {
     state = BreathSessionListState(
       items: [SkeletonCellModel(animated: true)],
       mode: BreathSessionListMode.initialLoading,
-      hasMore: true,
+      hasMore: false,
     );
     _loadInitialPage();
   }
@@ -77,54 +77,37 @@ class BreathSessionListViewModel extends Notifier<BreathSessionListState> {
       state = BreathSessionListState(
         items: [SkeletonCellModel(animated: false)],
         mode: BreathSessionListMode.empty,
-        hasMore: event.hasMore,
+        hasMore: false,
       );
     } else {
       state = BreathSessionListState(
         items: _buildItemsWithSections(cells),
         mode: BreathSessionListMode.content,
-        hasMore: event.hasMore,
+        hasMore: false,
       );
     }
   }
 
   Future<void> _loadInitialPage() async {
     try {
-      await service.loadNext(pageSize);
+      await service.refresh(pageSize);
     } catch (e) {
-      onErrorEvent?.call(SessionListError.loadFailed);
-      state = BreathSessionListState(
-        items: [SkeletonCellModel(animated: false)],
-        mode: BreathSessionListMode.empty,
-        hasMore: false,
-      );
+      if (state.mode == BreathSessionListMode.initialLoading) {
+        // Nothing rendered from Drift yet — surface the error and show empty.
+        onErrorEvent?.call(SessionListError.loadFailed);
+        state = BreathSessionListState(
+          items: [SkeletonCellModel(animated: false)],
+          mode: BreathSessionListMode.empty,
+          hasMore: false,
+        );
+      }
+      // If content is already visible from Drift, fail silently.
     }
   }
 
+  /// No-op — hasMore is always false so scroll pagination never fires.
   Future<void> loadNext() async {
     if (!state.hasMore || state.isPaging) return;
-
-    // Append skeleton at the end
-    final itemsWithLoader = [...state.items, SkeletonCellModel(animated: true)];
-    state = state.copyWith(
-      items: itemsWithLoader,
-      mode: BreathSessionListMode.paging,
-    );
-
-    try {
-      await service.loadNext(pageSize);
-      // The arriving ListUpdatedEvent (full list) replaces items and clears skeleton
-    } catch (e) {
-      onErrorEvent?.call(SessionListError.pagingFailed);
-      // Remove skeleton and revert to content mode
-      final itemsWithoutLoader = state.items
-          .where((item) => item is! SkeletonCellModel)
-          .toList();
-      state = state.copyWith(
-        items: itemsWithoutLoader,
-        mode: BreathSessionListMode.content,
-      );
-    }
   }
 
   Future<void> refresh() async {

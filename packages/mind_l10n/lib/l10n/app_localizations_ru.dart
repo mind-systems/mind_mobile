@@ -121,9 +121,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get breathSessionListLoadFailed => 'Не удалось загрузить сессии';
 
   @override
-  String get breathSessionListPagingFailed => 'Не удалось загрузить ещё';
-
-  @override
   String get breathSessionListSyncFailed =>
       'Не удалось синхронизировать сессии';
 

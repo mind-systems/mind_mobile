@@ -121,9 +121,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get breathSessionListLoadFailed => 'Failed to load sessions';
 
   @override
-  String get breathSessionListPagingFailed => 'Failed to load more sessions';
-
-  @override
   String get breathSessionListSyncFailed => 'Failed to sync sessions';
 
   @override

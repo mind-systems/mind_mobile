@@ -68,6 +68,7 @@ class FakeBreathSessionApi implements IBreathSessionApi {
   String? lastDeletedId;
   String? lastFetchCursor;
   int? lastFetchPageSize;
+  int fetchCallCount = 0;
 
   FakeBreathSessionApi({List<BreathSession>? sessions})
       : _sessions = sessions ?? [];
@@ -115,6 +116,7 @@ class FakeBreathSessionApi implements IBreathSessionApi {
 
   @override
   Future<BreathSessionsListResponse> fetchPage(String? cursor, int pageSize) async {
+    fetchCallCount++;
     lastFetchCursor = cursor;
     lastFetchPageSize = pageSize;
     final offset = cursor != null ? int.parse(cursor.split(':')[1]) : 0;
@@ -183,7 +185,7 @@ void main() {
       final result = await repo.fetchById('s1');
 
       expect(result.id, 's1');
-      expect(api.lastFetchCursor, isNull); // API not called
+      expect(api.fetchCallCount, 0); // API not called
     });
 
     test('falls back to API when session not in DB', () async {
@@ -197,69 +199,8 @@ void main() {
     });
   });
 
-  group('fetch', () {
-    test('calls API with null cursor for first page', () async {
-      final dao = FakeBreathSessionDao();
-      final apiSessions = _makeSessions(10);
-      final api = FakeBreathSessionApi(sessions: apiSessions);
-      final repo = _makeRepo(dao: dao, api: api);
-
-      final result = await repo.fetch(null, 10);
-
-      expect(api.lastFetchCursor, isNull);
-      expect(result.entries.length, 10);
-      expect(result.entries.map((e) => e.session.id).first, 's1');
-    });
-
-    test('passes cursor to API for subsequent pages', () async {
-      final dao = FakeBreathSessionDao();
-      final apiSessions = _makeSessions(15);
-      final api = FakeBreathSessionApi(sessions: apiSessions);
-      final repo = _makeRepo(dao: dao, api: api);
-
-      await repo.fetch(null, 10);
-      await repo.fetch('offset:10', 10);
-
-      expect(api.lastFetchCursor, 'offset:10');
-    });
-
-    test('upserts fetched sessions into DAO', () async {
-      final dao = FakeBreathSessionDao();
-      final apiSessions = _makeSessions(5);
-      final api = FakeBreathSessionApi(sessions: apiSessions);
-      final repo = _makeRepo(dao: dao, api: api);
-
-      await repo.fetch(null, 5);
-
-      final cached = await dao.getSessions();
-      expect(cached.length, 5);
-    });
-
-    test('returns nextCursor when more pages exist', () async {
-      final dao = FakeBreathSessionDao();
-      final apiSessions = _makeSessions(15);
-      final api = FakeBreathSessionApi(sessions: apiSessions);
-      final repo = _makeRepo(dao: dao, api: api);
-
-      final result = await repo.fetch(null, 10);
-
-      expect(result.nextCursor, isNotNull);
-    });
-
-    test('returns null nextCursor on last page', () async {
-      final dao = FakeBreathSessionDao();
-      final apiSessions = _makeSessions(5);
-      final api = FakeBreathSessionApi(sessions: apiSessions);
-      final repo = _makeRepo(dao: dao, api: api);
-
-      final result = await repo.fetch(null, 10);
-
-      expect(result.nextCursor, isNull);
-    });
-  });
-
   group('refresh', () {
-    test('calls API with null cursor', () async {
+    test('calls API with null cursor for first page', () async {
       final dao = FakeBreathSessionDao();
       final apiSessions = _makeSessions(5);
       final api = FakeBreathSessionApi(sessions: apiSessions);
@@ -270,11 +211,23 @@ void main() {
       expect(api.lastFetchCursor, isNull);
     });
 
-    test('upserts sessions into DAO without deleting existing rows', () async {
+    test('loops all pages — calls API until nextCursor is null', () async {
+      final dao = FakeBreathSessionDao();
+      final apiSessions = _makeSessions(15);
+      final api = FakeBreathSessionApi(sessions: apiSessions);
+      final repo = _makeRepo(dao: dao, api: api);
+
+      await repo.refresh(10);
+
+      // 15 sessions / 10 per page = 2 calls
+      expect(api.fetchCallCount, 2);
+    });
+
+    test('upserts all pages into DAO without deleting existing rows', () async {
       final dao = FakeBreathSessionDao();
       // Pre-populate DAO with a session not in the API response (e.g. a detail-cached session)
       await dao.saveSession(_makeSession('detail-only'));
-      final apiSessions = _makeSessions(3);
+      final apiSessions = _makeSessions(15);
       final api = FakeBreathSessionApi(sessions: apiSessions);
       final repo = _makeRepo(dao: dao, api: api);
 
@@ -283,20 +236,21 @@ void main() {
       // The pre-existing session should still be in the DAO (write-through, no delete)
       final detailSession = await dao.getSessionById('detail-only');
       expect(detailSession, isNotNull);
-      // New sessions from the API should also be cached
+      // All API sessions should be cached
       final s1 = await dao.getSessionById('s1');
       expect(s1, isNotNull);
+      final s15 = await dao.getSessionById('s15');
+      expect(s15, isNotNull);
     });
 
-    test('returns entries from first page', () async {
+    test('returns Future<void>', () async {
       final dao = FakeBreathSessionDao();
       final apiSessions = _makeSessions(3);
       final api = FakeBreathSessionApi(sessions: apiSessions);
       final repo = _makeRepo(dao: dao, api: api);
 
-      final result = await repo.refresh(10);
-
-      expect(result.entries.length, 3);
+      // refresh() returns void — just ensure it completes without error
+      await expectLater(repo.refresh(10), completes);
     });
   });
 

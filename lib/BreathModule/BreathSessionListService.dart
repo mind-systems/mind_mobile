@@ -21,11 +21,11 @@ class BreathSessionListService implements IBreathSessionListService {
       if (event is SessionsInvalidated) {
         return [SessionsInvalidatedEvent()];
       }
-      // All other events → emit full-list snapshot
+      // All other events → emit full-list snapshot from the Drift mirror
       return [
         ListUpdatedEvent(
           items: _mapEntries(state.entries),
-          hasMore: state.nextCursor != null && state.nextCursor!.isNotEmpty,
+          hasMore: false,
         )
       ];
     });
@@ -33,10 +33,9 @@ class BreathSessionListService implements IBreathSessionListService {
 
   /// ---------- Pagination ----------
 
+  /// No-op — the full Drift mirror is always complete (`hasMore` is always false).
   @override
-  Future<void> loadNext(int pageSize) async {
-    await notifier.load(notifier.currentState.nextCursor, pageSize);
-  }
+  Future<void> loadNext(int pageSize) async {}
 
   @override
   Future<void> refresh(int pageSize) async {

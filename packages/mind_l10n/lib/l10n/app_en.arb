@@ -43,7 +43,6 @@
   "breathPhaseRest": "Rest",
 
   "breathSessionListLoadFailed": "Failed to load sessions",
-  "breathSessionListPagingFailed": "Failed to load more sessions",
   "breathSessionListSyncFailed": "Failed to sync sessions",
   "breathSessionListMySessions": "My Sessions",
   "breathSessionListStarredSessions": "★ Starred",

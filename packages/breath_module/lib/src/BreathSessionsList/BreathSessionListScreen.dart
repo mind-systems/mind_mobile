@@ -50,7 +50,6 @@ class _BreathSessionListViewState extends ConsumerState<BreathSessionListScreen>
       final l10n = AppLocalizations.of(context)!;
       final message = switch (error) {
         SessionListError.loadFailed => l10n.breathSessionListLoadFailed,
-        SessionListError.pagingFailed => l10n.breathSessionListPagingFailed,
         SessionListError.syncFailed => l10n.breathSessionListSyncFailed,
       };
 

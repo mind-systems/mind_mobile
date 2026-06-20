@@ -4,7 +4,6 @@ import 'package:mind/Core/Api/Models/SaveBreathSessionRequest.dart';
 import 'package:mind/Core/Api/Models/StarSessionRequest.dart';
 import 'package:mind/Core/Database/IBreathSessionDao.dart';
 import 'package:mind/BreathModule/Models/BreathSession.dart';
-import 'package:mind/BreathModule/Models/BreathSessionsListResponse.dart';
 
 class BreathSessionRepository implements IBreathSessionRepository {
   final IBreathSessionDao _dao;
@@ -28,19 +27,19 @@ class BreathSessionRepository implements IBreathSessionRepository {
     return await _dao.getSessions();
   }
 
+  /// Pages through all server sessions and upserts each page into Drift.
+  /// Never deletes existing rows — detail-cached sessions are preserved.
   @override
-  Future<({List<BreathSessionListEntry> entries, String? nextCursor})> refresh(int pageSize) async {
-    final response = await _api.fetchPage(null, pageSize);
-    // Upsert — do NOT deleteAllSessions; detail/getById rely on cached rows
-    await _dao.saveSessions(response.entries.map((e) => e.session).toList());
-    return (entries: response.entries, nextCursor: response.nextCursor);
-  }
-
-  @override
-  Future<({List<BreathSessionListEntry> entries, String? nextCursor})> fetch(String? cursor, int pageSize) async {
-    final response = await _api.fetchPage(cursor, pageSize);
-    await _dao.saveSessions(response.entries.map((e) => e.session).toList());
-    return (entries: response.entries, nextCursor: response.nextCursor);
+  Future<void> refresh(int pageSize) async {
+    String? cursor;
+    do {
+      final response = await _api.fetchPage(cursor, pageSize);
+      if (response.entries.isEmpty) break;
+      await _dao.saveSessions(response.entries.map((e) => e.session).toList());
+      cursor = (response.nextCursor != null && response.nextCursor!.isNotEmpty)
+          ? response.nextCursor
+          : null;
+    } while (cursor != null);
   }
 
   @override

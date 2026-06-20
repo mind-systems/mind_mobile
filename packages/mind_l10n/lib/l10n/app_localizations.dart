@@ -314,12 +314,6 @@ abstract class AppLocalizations {
   /// **'Failed to load sessions'**
   String get breathSessionListLoadFailed;
 
-  /// No description provided for @breathSessionListPagingFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to load more sessions'**
-  String get breathSessionListPagingFailed;
-
   /// No description provided for @breathSessionListSyncFailed.
   ///
   /// In en, this message translates to:

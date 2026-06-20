@@ -7,31 +7,27 @@ import 'Models/BreathSessionListItemDTO.dart';
 /// - Works only with DTOs and events
 ///
 /// All changes arrive via observeChanges().
-/// loadNext/refresh complete after the request finishes (for error handling);
-/// data is emitted through the stream.
+/// refresh() performs a write-through full-mirror sync; loadNext() is a no-op.
 abstract class IBreathSessionListService {
   /// Subscribe to all session list change events.
   ///
   /// Emits:
-  /// - ListUpdatedEvent (full list snapshot after any domain change)
+  /// - ListUpdatedEvent (full Drift-mirror snapshot after any domain change;
+  ///   hasMore is always false — the mirror is always complete)
   /// - SessionsInvalidatedEvent (user change)
   Stream<BreathSessionListEvent> observeChanges();
 
-  /// Load the next page using the cursor stored in the notifier.
-  /// First call (cursor==null) loads the first page.
-  ///
-  /// Result arrives via observeChanges() as ListUpdatedEvent.
-  ///
-  /// [pageSize] — number of items per page
+  /// No-op stub — the full Drift mirror is always complete and hasMore is
+  /// always false, so scroll pagination never triggers this path. Kept for
+  /// interface compatibility with the ViewModel.
   Future<void> loadNext(int pageSize);
 
-  /// Full sync (pull-to-refresh).
+  /// Write-through full-mirror sync (pull-to-refresh).
   ///
-  /// Resets to the first page.
+  /// Pages through all server sessions into Drift, then the notifier re-reads
+  /// Drift and emits a ListUpdatedEvent with the complete local mirror.
   ///
-  /// Result arrives via observeChanges() as ListUpdatedEvent.
-  ///
-  /// [pageSize] — number of items for the first page
+  /// [pageSize] — items per server page in the loop
   Future<void> refresh(int pageSize);
 
   /// Returns the currently cached list items, or an empty list if none
@@ -43,7 +39,7 @@ abstract class IBreathSessionListService {
 /// Base type for all session list events
 sealed class BreathSessionListEvent {}
 
-/// Full list snapshot — emitted after any domain change (load, refresh, create, update, delete, star)
+/// Full list snapshot — emitted after any domain change (refresh, create, update, delete, star)
 class ListUpdatedEvent extends BreathSessionListEvent {
   final List<BreathSessionListItemDTO> items;
   final bool hasMore;
