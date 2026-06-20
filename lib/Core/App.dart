@@ -173,7 +173,7 @@ class App {
 
     final initialUser = await userRepository.loadUser();
     final userNotifier = UserNotifier(repository: userRepository, logoutNotifier: logoutNotifier, initialUser: initialUser);
-    final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository, authStream: userNotifier.stream);
+    final breathSessionNotifier = BreathSessionNotifier(repository: breathSessionRepository, authStream: userNotifier.stream, currentUserId: () => userNotifier.currentUser.id);
     final syncEngine = SyncEngine(syncApi: syncApi, syncStateDao: db.syncStateDao, breathSessionDao: db.breathSessionDao, breathSessionNotifier: breathSessionNotifier, authStream: userNotifier.stream);
     await syncEngine.waitForColdStart(!initialUser.isGuest);
 

@@ -17,8 +17,9 @@ import 'package:mind/User/Models/User.dart';
 class FakeBreathSessionRepository implements IBreathSessionRepository {
   List<BreathSession> _sessions = [];
   int deleteAllCount = 0;
-  /// Controls the section tag returned by fetch/refresh. Tests that need
-  /// starred-only entries can set this to BreathListSection.starred.
+  /// Controls the section tag returned by fetch/refresh.
+  /// Ignored by the notifier (sections are now derived locally), but kept
+  /// so tests can control what raw entries the repo returns.
   BreathListSection sectionForFetch = BreathListSection.mine;
 
   void seed(List<BreathSession> sessions) => _sessions = List.of(sessions);
@@ -95,11 +96,16 @@ class FakeBreathSessionRepository implements IBreathSessionRepository {
 final _user1 = User(id: 'user-1', email: 'a@b.com', name: 'A', language: '', isGuest: false);
 final _user2 = User(id: 'user-2', email: 'c@d.com', name: 'C', language: '', isGuest: false);
 
-BreathSession _session(String id) => BreathSession(
+/// Creates an owned session (userId == _user1.id) so it resolves to MINE.
+/// Use an explicit [userId] argument to create a SHARED session.
+BreathSession _session(String id, {String? userId, bool isStarred = false, DateTime? createdAt}) =>
+    BreathSession(
       id: id,
-      userId: 'u',
+      userId: userId ?? 'user-1',
       description: 'desc-$id',
       shared: false,
+      isStarred: isStarred,
+      createdAt: createdAt,
       exercises: [],
     );
 
@@ -113,7 +119,11 @@ BreathSession _session(String id) => BreathSession(
   final authSubject = BehaviorSubject<AuthState>.seeded(
     AuthenticatedState(initialUser ?? _user1),
   );
-  final notifier = BreathSessionNotifier(repository: repo, authStream: authSubject.stream);
+  final notifier = BreathSessionNotifier(
+    repository: repo,
+    authStream: authSubject.stream,
+    currentUserId: () => authSubject.value.user.id,
+  );
   return (notifier: notifier, repo: repo, authSubject: authSubject);
 }
 
@@ -156,7 +166,7 @@ void main() {
       await authSubject.close();
     });
 
-    test('cursor appends entries without dedup', () async {
+    test('cursor appends unique sessions, within-section order by createdAt DESC then id', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a'), _session('b'), _session('c')]);
 
@@ -164,7 +174,9 @@ void main() {
       final cursor = notifier.currentState.nextCursor;
       await notifier.load(cursor, 2);
 
-      expect(_entryIds(notifier.currentState), ['a', 'b', 'c']);
+      final ids = _entryIds(notifier.currentState);
+      expect(ids.toSet().length, ids.length, reason: 'no duplicate ids for non-starred sessions');
+      expect(ids, containsAll(['a', 'b', 'c']));
 
       notifier.dispose();
       await authSubject.close();
@@ -193,6 +205,48 @@ void main() {
       await Future.wait([f1, f2]);
 
       expect(_entryIds(notifier.currentState), ['a']);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('starred session yields both MINE and STARRED entries after load', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a', isStarred: true)]);
+
+      await notifier.load(null, 10);
+
+      final entries = notifier.currentState.entries;
+      final mineEntry = entries.where(
+        (e) => e.session.id == 'a' && e.section == BreathListSection.mine,
+      );
+      final starredEntry = entries.where(
+        (e) => e.session.id == 'a' && e.section == BreathListSection.starred,
+      );
+      expect(mineEntry.length, 1, reason: 'exactly one MINE entry for starred session');
+      expect(starredEntry.length, 1, reason: 'exactly one STARRED entry for starred session');
+      expect(entries.every((e) => e.session.isStarred), isTrue);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('uniqueSessions OR-ing: isStarred=true wins when id appears multiple times', () async {
+      // Simulates two pages containing the same id — one page has isStarred=true,
+      // the other has isStarred=false. The merged result should treat the session as starred.
+      final (:notifier, :repo, :authSubject) = _make();
+      // Page 1: 'a' not starred; page 2 overlap: 'a' starred (different seedings).
+      repo.seed([_session('a', isStarred: false), _session('b')]);
+      await notifier.load(null, 10);
+
+      // Reload first page where 'a' is now starred — simulates server sending updated data.
+      repo.seed([_session('a', isStarred: true), _session('b')]);
+      await notifier.load(null, 10);
+
+      expect(notifier.currentState.cachedById('a')!.isStarred, isTrue);
+      final hasStarred = notifier.currentState.entries
+          .any((e) => e.session.id == 'a' && e.section == BreathListSection.starred);
+      expect(hasStarred, isTrue);
 
       notifier.dispose();
       await authSubject.close();
@@ -228,12 +282,26 @@ void main() {
   });
 
   group('create()', () {
-    test('prepends new entry to entries list', () async {
+    test('new entry is present in entries list', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a')]);
       await notifier.load(null, 10);
 
-      await notifier.create(_session('new'));
+      // Use a newer createdAt so saved-new sorts first (builder sorts DESC by createdAt).
+      await notifier.create(_session('new', createdAt: DateTime(2030)));
+
+      expect(_entryIds(notifier.currentState), contains('saved-new'));
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('new entry sorts first when it has the newest createdAt', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a')]);
+      await notifier.load(null, 10);
+
+      await notifier.create(_session('new', createdAt: DateTime(2030)));
 
       expect(_entryIds(notifier.currentState).first, 'saved-new');
 
@@ -346,7 +414,7 @@ void main() {
   });
 
   group('starSession()', () {
-    test('sets isStarred=true on existing entries and prepends a STARRED entry', () async {
+    test('sets isStarred=true on existing entries and adds a STARRED entry', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a')]);
       await notifier.load(null, 10);
@@ -364,7 +432,7 @@ void main() {
       await authSubject.close();
     });
 
-    test('unstar removes STARRED entry and sets isStarred=false on remaining', () async {
+    test('unstar removes STARRED entry and MINE entry remains with isStarred=false', () async {
       final (:notifier, :repo, :authSubject) = _make();
       repo.seed([_session('a')]);
       await notifier.load(null, 10);
@@ -385,24 +453,35 @@ void main() {
       await authSubject.close();
     });
 
-    test('unstar starred-only entry completes without throwing and removes the entry', () async {
-      // Simulates the case where the first loaded page contains only STARRED entries
-      // (MINE/SHARED duplicates are on a later, not-yet-loaded page).
+    test('unstar starred session removes STARRED entry and keeps MINE/SHARED entry', () async {
+      // The builder always emits a MINE/SHARED entry regardless of star status.
+      // Unstarring only removes the STARRED duplicate; ownership entry always remains.
       final repo = FakeBreathSessionRepository();
-      repo.sectionForFetch = BreathListSection.starred;
       final authSubject = BehaviorSubject<AuthState>.seeded(AuthenticatedState(_user1));
-      final notifier = BreathSessionNotifier(repository: repo, authStream: authSubject.stream);
+      final notifier = BreathSessionNotifier(
+        repository: repo,
+        authStream: authSubject.stream,
+        currentUserId: () => authSubject.value.user.id,
+      );
 
-      repo.seed([_session('a')]);
+      repo.seed([_session('a', isStarred: true)]);
       await notifier.load(null, 10);
-      // State: only one STARRED entry for 'a'
-      expect(notifier.currentState.entries.length, 1);
-      expect(notifier.currentState.entries.first.section, BreathListSection.starred);
+
+      // After load: should have both MINE and STARRED entries.
+      expect(notifier.currentState.entries.where((e) => e.section == BreathListSection.starred).length, 1);
+      expect(notifier.currentState.entries.where((e) => e.section == BreathListSection.mine).length, 1);
 
       await expectLater(notifier.starSession('a', starred: false), completes);
 
-      final hasAnyEntry = notifier.currentState.entries.any((e) => e.session.id == 'a');
-      expect(hasAnyEntry, isFalse);
+      // STARRED duplicate is gone; MINE entry remains.
+      final hasStarredEntry = notifier.currentState.entries
+          .any((e) => e.session.id == 'a' && e.section == BreathListSection.starred);
+      expect(hasStarredEntry, isFalse, reason: 'STARRED duplicate should be removed after unstar');
+
+      final hasMineEntry = notifier.currentState.entries
+          .any((e) => e.session.id == 'a' && e.section == BreathListSection.mine);
+      expect(hasMineEntry, isTrue, reason: 'MINE entry should remain after unstar');
+
       expect(notifier.currentState.lastEvent, isA<SessionStarred>());
 
       notifier.dispose();
@@ -429,6 +508,34 @@ void main() {
       await notifier.starSession('nonexistent', starred: true);
 
       expect(notifier.currentState.entries.length, initialEntryCount);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('starred own session appears in both STARRED and MINE sections', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a')]);
+      await notifier.load(null, 10);
+      await notifier.starSession('a', starred: true);
+
+      final entries = notifier.currentState.entries;
+      expect(entries.any((e) => e.session.id == 'a' && e.section == BreathListSection.mine), isTrue);
+      expect(entries.any((e) => e.session.id == 'a' && e.section == BreathListSection.starred), isTrue);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('starred shared session appears in both STARRED and SHARED sections', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a', userId: 'other-user')]);
+      await notifier.load(null, 10);
+      await notifier.starSession('a', starred: true);
+
+      final entries = notifier.currentState.entries;
+      expect(entries.any((e) => e.session.id == 'a' && e.section == BreathListSection.shared), isTrue);
+      expect(entries.any((e) => e.session.id == 'a' && e.section == BreathListSection.starred), isTrue);
 
       notifier.dispose();
       await authSubject.close();

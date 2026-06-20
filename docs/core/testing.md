@@ -80,14 +80,15 @@ class FakeBreathSessionRepository implements IBreathSessionRepository {
 When a class subscribes to a `Stream<T>` (e.g. `authStream`), inject a `StreamController` and emit events on demand:
 
 ```dart
-final authController = StreamController<AuthState>.broadcast();
+final authSubject = BehaviorSubject<AuthState>.seeded(AuthenticatedState(currentUser));
 final notifier = BreathSessionNotifier(
   repository: fakeRepo,
-  authStream: authController.stream,
+  authStream: authSubject.stream,
+  currentUserId: () => authSubject.value.user.id,
 );
 
 // In test:
-authController.add(AuthenticatedState(newUser));
+authSubject.add(AuthenticatedState(newUser));
 await Future.delayed(Duration.zero); // let the listener run
 ```
 

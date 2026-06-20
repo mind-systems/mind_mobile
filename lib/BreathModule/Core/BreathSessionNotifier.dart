@@ -30,9 +30,52 @@ class BreathSessionsState {
   }
 }
 
+/// Derives sectioned entries from a flat session list.
+/// Emits one ownership entry (MINE or SHARED) per session, plus a STARRED
+/// duplicate for every starred session.
+/// Sorts by [createdAt] DESC with a deterministic secondary tie-breaker on [id].
+List<BreathSessionListEntry> buildSectionedEntries(
+    List<BreathSession> sessions, String currentUserId) {
+  final sorted = List<BreathSession>.of(sessions)
+    ..sort((a, b) {
+      final c = b.createdAt.compareTo(a.createdAt);
+      return c != 0 ? c : a.id.compareTo(b.id);
+    });
+
+  final entries = <BreathSessionListEntry>[];
+  for (final session in sorted) {
+    final ownershipSection =
+        session.userId == currentUserId ? BreathListSection.mine : BreathListSection.shared;
+    entries.add(BreathSessionListEntry(session: session, section: ownershipSection));
+    if (session.isStarred) {
+      entries.add(BreathSessionListEntry(session: session, section: BreathListSection.starred));
+    }
+  }
+  return entries;
+}
+
+/// De-duplicates entries by session id.
+/// When the same id appears more than once, the surviving session has
+/// [isStarred] = true if **any** duplicate carries it (OR logic).
+/// All other fields come from the first occurrence.
+List<BreathSession> _uniqueSessions(List<BreathSessionListEntry> entries) {
+  final seen = <String, BreathSession>{};
+  for (final entry in entries) {
+    final s = entry.session;
+    final existing = seen[s.id];
+    if (existing == null) {
+      seen[s.id] = s;
+    } else if (s.isStarred && !existing.isStarred) {
+      seen[s.id] = existing.copyWith(isStarred: true);
+    }
+  }
+  return seen.values.toList();
+}
+
 /// Domain notifier — source of truth for breathing sessions.
 class BreathSessionNotifier {
   final IBreathSessionRepository repository;
+  final String Function() currentUserId;
 
   final BehaviorSubject<BreathSessionsState> _subject = BehaviorSubject.seeded(
     const BreathSessionsState(entries: [], nextCursor: null, lastEvent: null),
@@ -41,7 +84,11 @@ class BreathSessionNotifier {
   bool _isLoading = false;
   StreamSubscription<String>? _userSubscription;
 
-  BreathSessionNotifier({required this.repository, required Stream<AuthState> authStream}) {
+  BreathSessionNotifier({
+    required this.repository,
+    required Stream<AuthState> authStream,
+    required this.currentUserId,
+  }) {
     _userSubscription = authStream
         .map((s) => s.user.id)
         .distinct()
@@ -77,15 +124,17 @@ class BreathSessionNotifier {
       final result = await repository.fetch(cursor, pageSize);
       final state = _subject.value;
 
-      final List<BreathSessionListEntry> updatedEntries;
+      final List<BreathSession> sessions;
 
       if (cursor == null) {
         // First page — replace entirely
-        updatedEntries = result.entries;
+        sessions = _uniqueSessions(result.entries);
       } else {
-        // Append — no dedup
-        updatedEntries = [...state.entries, ...result.entries];
+        // Append — dedup combined list
+        sessions = _uniqueSessions([...state.entries, ...result.entries]);
       }
+
+      final updatedEntries = buildSectionedEntries(sessions, currentUserId());
 
       _subject.add(BreathSessionsState(
         entries: updatedEntries,
@@ -107,9 +156,11 @@ class BreathSessionNotifier {
 
     try {
       final result = await repository.refresh(pageSize);
+      final sessions = _uniqueSessions(result.entries);
+      final updatedEntries = buildSectionedEntries(sessions, currentUserId());
 
       _subject.add(BreathSessionsState(
-        entries: result.entries,
+        entries: updatedEntries,
         nextCursor: result.nextCursor,
         lastEvent: SessionsRefreshed(
           entries: result.entries,
@@ -126,8 +177,11 @@ class BreathSessionNotifier {
   Future<BreathSession> create(BreathSession session) async {
     final saved = await repository.create(session);
     final state = _subject.value;
-    final newEntry = BreathSessionListEntry(session: saved, section: BreathListSection.mine);
-    final updatedEntries = [newEntry, ...state.entries];
+    final sessions = _uniqueSessions([
+      BreathSessionListEntry(session: saved, section: BreathListSection.mine),
+      ...state.entries,
+    ]);
+    final updatedEntries = buildSectionedEntries(sessions, currentUserId());
     _subject.add(BreathSessionsState(
       entries: updatedEntries,
       nextCursor: state.nextCursor,
@@ -162,66 +216,13 @@ class BreathSessionNotifier {
     // The server write has already succeeded; the next load/refresh will sync it.
     if (!state.entries.any((e) => e.session.id == id)) return;
 
-    // Capture source before any mutation — guaranteed to exist by the guard above.
-    // Used as fallback for the event payload when unstar removes the only loaded copy.
-    final source = state.entries.firstWhere((e) => e.session.id == id).session;
+    final sessions = _uniqueSessions(state.entries)
+        .map((s) => s.id == id ? s.copyWith(isStarred: starred) : s)
+        .toList();
 
-    List<BreathSessionListEntry> updatedEntries;
+    final updatedEntries = buildSectionedEntries(sessions, currentUserId());
 
-    if (starred) {
-      // Set isStarred=true on every entry with this id
-      updatedEntries = state.entries.map((e) {
-        if (e.session.id == id) {
-          return BreathSessionListEntry(
-            session: e.session.copyWith(isStarred: true),
-            section: e.section,
-          );
-        }
-        return e;
-      }).toList();
-
-      // If no entry with section==starred exists for this id, prepend one.
-      // Safe: source exists, so firstWhere will always match.
-      final hasStarredEntry = updatedEntries.any(
-        (e) => e.session.id == id && e.section == BreathListSection.starred,
-      );
-      if (!hasStarredEntry) {
-        final base = updatedEntries.firstWhere((e) => e.session.id == id);
-        final starredEntry = BreathSessionListEntry(
-          session: base.session.copyWith(isStarred: true),
-          section: BreathListSection.starred,
-        );
-        updatedEntries = [starredEntry, ...updatedEntries];
-      }
-    } else {
-      // Remove every entry where id==id && section==starred
-      // Set isStarred=false on remaining entries with this id
-      updatedEntries = state.entries
-          .where((e) => !(e.session.id == id && e.section == BreathListSection.starred))
-          .map((e) {
-            if (e.session.id == id) {
-              return BreathSessionListEntry(
-                session: e.session.copyWith(isStarred: false),
-                section: e.section,
-              );
-            }
-            return e;
-          })
-          .toList();
-    }
-
-    // When unstarring a session that was only present as a STARRED entry (e.g. its MINE/SHARED
-    // duplicate is on an unloaded page), updatedEntries has no entry with this id after filtering.
-    // Fall back to source for the event payload — the list path ignores it anyway.
-    final updatedSession = updatedEntries
-        .firstWhere(
-          (e) => e.session.id == id,
-          orElse: () => BreathSessionListEntry(
-            session: source.copyWith(isStarred: starred),
-            section: BreathListSection.mine,
-          ),
-        )
-        .session;
+    final updatedSession = sessions.firstWhere((s) => s.id == id);
 
     _subject.add(BreathSessionsState(
       entries: updatedEntries,
