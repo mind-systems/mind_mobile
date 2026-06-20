@@ -22,7 +22,18 @@ class GrpcClient {
   StreamSubscription<void>? _detachSubscription;
 
   GrpcClient({required String host, required int port, required bool isSecure, Stream<void>? detachStream, List<ClientInterceptor> interceptors = const []})
-      : _channel = ClientChannel(host, port: port, options: ChannelOptions(credentials: isSecure ? const ChannelCredentials.secure() : const ChannelCredentials.insecure())),
+      : _channel = ClientChannel(
+          host,
+          port: port,
+          options: ChannelOptions(
+            credentials: isSecure ? const ChannelCredentials.secure() : const ChannelCredentials.insecure(),
+            keepAlive: const ClientKeepAliveOptions(
+              pingInterval: Duration(seconds: 30),
+              timeout: Duration(seconds: 20),
+              permitWithoutCalls: true,
+            ),
+          ),
+        ),
         _interceptors = interceptors {
     if (detachStream != null) {
       _detachSubscription = detachStream.listen((_) {
