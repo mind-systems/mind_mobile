@@ -21,8 +21,8 @@ import 'Models/RrInterval.dart';
 /// Silently skips any interval where [RrInterval.isArtifact] is true; does
 /// NOT log them here — [ActiveRrSource] already logs every artifact.
 ///
-/// Window size: 7 beats balances responsiveness vs. noise. A value of 9 gives
-/// smoother cadence at the cost of slightly more lag — a one-line change.
+/// Window size: 3 beats keeps the cadence close to the live heart rate — a
+/// larger window (7/9) smooths more but lags noticeably behind the heart.
 class SmoothedRrSource {
   SmoothedRrSource(ActiveRrSource source, {int window = _defaultWindow})
       : _source = source,
@@ -30,7 +30,7 @@ class SmoothedRrSource {
     _sub = source.stream.listen(_onInterval);
   }
 
-  static const int _defaultWindow = 7;
+  static const int _defaultWindow = 3;
 
   final ActiveRrSource _source;
   final int _window;

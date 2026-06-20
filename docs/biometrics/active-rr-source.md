@@ -34,6 +34,6 @@ max(2000 мс, lastIntervalMs × 2)
 
 ## Слой сглаживания SmoothedRrSource
 
-Над `ActiveRrSource` стоит синглтон `SmoothedRrSource` (`App.shared`). Он фильтрует артефакты (молча, без повторного логирования) и публикует простое скользящее среднее (SMA) последних 7 принятых интервалов. Именно `SmoothedRrSource` питает `HeartRateTickService`.
+Над `ActiveRrSource` стоит синглтон `SmoothedRrSource` (`App.shared`). Он фильтрует артефакты (молча, без повторного логирования) и публикует простое скользящее среднее (SMA) последних 3 принятых интервалов. Именно `SmoothedRrSource` питает `HeartRateTickService`.
 
 `ActiveRrSource` остаётся **сырым** — его окно тишины и политика выбора источника не изменились.

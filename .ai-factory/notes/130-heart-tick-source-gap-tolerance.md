@@ -27,7 +27,7 @@ A thin derived-metric layer over `ActiveRrSource`. Pure: no ticks, no breath kno
 - Constructor `SmoothedRrSource(ActiveRrSource source, {int window = _defaultWindow})`; subscribes to `source.stream`.
 - Maintains a ring of the last `window` **non-artifact** intervals (skip `rr.isArtifact` — this is the artifact-filter slot the docs flag as "easy to add later"); on each accepted interval recompute the simple moving average and publish it.
 - Exposes: `int? get smoothedIntervalMs` (current SMA, null before the first beat), `Stream<int> get smoothedIntervalStream` (BehaviorSubject — emits once per accepted real beat), and pass-throughs `bool get hasActiveSource => source.hasActiveSource` / `Stream<bool> get hasActiveSourceStream => source.hasActiveSourceStream`.
-- `static const int _defaultWindow = 7;` (9 is smoother / more robust to a single outlier but lags real HR changes more — one-line change).
+- `static const int _defaultWindow = 3;` (kept short so the cadence tracks the live heart rate; 7/9 smooth more but lag noticeably behind the heart — one-line change).
 - `dispose()` cancels the subscription and closes its subject. Does **not** dispose `source` (owned by `App`).
 - Wiring: `App.initialize()` creates `smoothedRrSource = SmoothedRrSource(activeRrSource)` after `activeRrSource`; `BreathModule.buildSession()` injects `App.shared.smoothedRrSource` into `HeartRateTickService` (replacing the direct `activeRrSource` injection).
 
@@ -80,7 +80,7 @@ Inject timer factories the way `ActiveRrSource` already does (note 90): a period
 
 - **Mirror `ClockTickService`**: no prime tick, no pause/lifecycle handling, metronome started at construction and never stopped on grace. Verified against the clock's actual code (`simulateTick` = `Timer.periodic`, no immediate tick; pause is gated by `BreathSessionStateMachine._onTick`). This reverses an earlier "emit a prime tick" idea.
 - **`SmoothedRrSource` is always-on/warm** (App singleton from `App.initialize()`), so the metronome reads a real period immediately; `_effectiveActive` seeds from its availability.
-- **SMA window = 7, grace = 10 s** — named constants. SMA (not EMA) for predictability and to match the "period 7/9" framing. 9 = smoother but laggier (one-line change).
+- **SMA window = 3, grace = 10 s** — named constants. SMA (not EMA) for predictability. Window tuned down from 7 to 3 after it felt laggy on-device — 3 keeps the cadence close to the live heart; 7/9 smooth more but lag (one-line change).
 
 ## Open Questions
 
