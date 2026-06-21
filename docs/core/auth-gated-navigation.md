@@ -12,29 +12,7 @@ enum AuthResult { success, cancelled }
 
 ## Как использовать
 
-### Навигация после логина
-
-```dart
-void openProfile() {
-  final authState = App.shared.userNotifier.currentState;
-  if (authState is GuestState) {
-    context.push<AuthResult>(OnboardingScreen.path).then((result) {
-      if (result == AuthResult.success && context.mounted) {
-        context.push(ProfileScreen.path);
-      }
-    });
-  } else {
-    context.push(ProfileScreen.path);
-  }
-}
-```
-
-Стек до и после:
-
-```
-До:    [Home] → push → [Home, Onboarding] → pop(success) → [Home] → push → [Home, Profile]
-После: Back из Profile возвращает на Home ✓
-```
+Профиль всегда открывается напрямую — `openProfile()` делает `context.push(ProfileScreen.path)` без проверки состояния. Гейтинг происходит внутри самого экрана через login-ячейку.
 
 ### Side effect без навигации
 

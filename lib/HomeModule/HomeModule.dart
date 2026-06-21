@@ -16,7 +16,7 @@ class HomeModule {
       resumeStream: App.shared.appLifecycleService.onResume,
       connectionStateStream: App.shared.connectionManager.connectionState,
     );
-    final coordinator = HomeCoordinator(context, userNotifier: App.shared.userNotifier);
+    final coordinator = HomeCoordinator(context);
     return ProviderScope(
       overrides: [
         homeViewModelProvider.overrideWith(
