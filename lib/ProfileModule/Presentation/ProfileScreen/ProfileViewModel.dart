@@ -31,16 +31,21 @@ class ProfileViewModel extends Notifier<ProfileState> {
     return ProfileState(
       theme: service.currentTheme,
       language: service.currentLanguage,
+      isAuthenticated: service.isAuthenticated,
     );
   }
 
   void _onEvent(ProfileEvent event) {
     switch (event) {
       case ProfileLoaded e:
-        state = state.copyWith(userName: e.user.name);
-      case ProfileSessionExpired _:
-        coordinator.dismiss();
+        state = state.copyWith(isAuthenticated: true, userName: e.user.name);
+      case ProfileGuest _:
+        state = state.copyWith(isAuthenticated: false);
     }
+  }
+
+  void onLoginTap() {
+    coordinator.login();
   }
 
   void onLogoutTap() {

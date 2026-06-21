@@ -10,4 +10,4 @@ class ProfileLoaded extends ProfileEvent {
   ProfileLoaded({required this.user});
 }
 
-class ProfileSessionExpired extends ProfileEvent {}
+class ProfileGuest extends ProfileEvent {}

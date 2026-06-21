@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 abstract class IProfileCoordinator {
   void logout();
-  void dismiss();
+  void login();
   void openMcp();
 
   void showThemePicker({

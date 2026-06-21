@@ -119,6 +119,15 @@ class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
       children: [
         BciSectionHeader(title: l10n.bciPairingCalibration),
         Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Text(
+            l10n.bciPairingCalibrationInstruction,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ),
+        Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: ElevatedButton(
             onPressed: state.stage == BciPairingStage.impedance

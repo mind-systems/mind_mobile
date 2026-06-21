@@ -67,6 +67,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logOut => 'Log out';
 
   @override
+  String get logIn => 'Log in';
+
+  @override
   String get themeDark => 'Dark';
 
   @override
@@ -314,6 +317,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bciPairingCalibration => 'Calibration';
+
+  @override
+  String get bciPairingCalibrationInstruction =>
+      'During calibration you\'ll need to close and open your eyes, guided by sound.';
 
   @override
   String get bciPairingStartCalibration => 'Start calibration';

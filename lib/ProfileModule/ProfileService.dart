@@ -1,4 +1,3 @@
-import 'package:rxdart/rxdart.dart';
 import 'package:mind/Core/AppSettings/AppSettingsNotifier.dart';
 import 'package:mind/Core/AppSettings/AppSettingsRepository.dart';
 import 'package:mind/ProfileModule/Presentation/ProfileScreen/IProfileService.dart';
@@ -23,15 +22,17 @@ class ProfileService implements IProfileService {
   }
 
   @override
+  bool get isAuthenticated => userNotifier.currentState is AuthenticatedState;
+
+  @override
   Stream<ProfileEvent> observeProfile() {
-    final expiry = userNotifier.stream
-        .where((s) => s is GuestState)
-        .map((_) => ProfileSessionExpired() as ProfileEvent)
-        .take(1);
-    final loaded = userNotifier.stream
-        .where((s) => s is! GuestState)
-        .map((s) => ProfileLoaded(user: UserDTO(name: s.user.name)) as ProfileEvent);
-    return expiry.mergeWith([loaded]);
+    return userNotifier.stream.map((s) {
+      if (s is GuestState) {
+        return ProfileGuest() as ProfileEvent;
+      } else {
+        return ProfileLoaded(user: UserDTO(name: s.user.name)) as ProfileEvent;
+      }
+    });
   }
 
   @override

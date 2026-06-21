@@ -26,6 +26,82 @@ class ProfileScreen extends ConsumerWidget {
       _ => 'English',
     };
 
+    final children = <Widget>[
+      SettingsSectionHeader(title: l10n.account),
+      if (state.isAuthenticated)
+        SettingsSection(
+          children: [
+            SettingsEditableCell(
+              title: l10n.name,
+              value: state.userName,
+              onSave: viewModel.onNameChanged,
+            ),
+          ],
+        )
+      else
+        SettingsSection(
+          children: [
+            SettingsCell(
+              title: Text(l10n.logIn),
+              onTap: viewModel.onLoginTap,
+            ),
+          ],
+        ),
+      SettingsSectionHeader(title: l10n.appearance),
+      SettingsSection(
+        children: [
+          SettingsDropdownCell(
+            title: l10n.language,
+            value: languageDisplay,
+            onTap: viewModel.onLanguageTap,
+          ),
+          SettingsDropdownCell(
+            title: l10n.theme,
+            value: themeDisplay,
+            onTap: viewModel.onThemeTap,
+          ),
+        ],
+      ),
+      if (state.isAuthenticated) ...[
+        SettingsSectionHeader(title: l10n.mcpIntegrations),
+        SettingsSection(
+          children: [
+            SettingsNavigationCell(
+              title: l10n.mcpTitle,
+              value: '',
+              onTap: viewModel.onMcpTap,
+            ),
+          ],
+        ),
+        SettingsSectionHeader(title: l10n.session),
+        SettingsSection(
+          children: [
+            SettingsCell(
+              title: Text(l10n.logOut),
+              onTap: () async {
+                final result = await AppAlert.showWithInput(
+                  context,
+                  description: l10n.logOutDescription,
+                  confirmLabel: l10n.logOut,
+                );
+                if (result.confirmed) viewModel.onLogoutTap();
+              },
+            ),
+          ],
+        ),
+      ],
+      const SizedBox(height: 40),
+      Center(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Text(
+            'v ${state.appVersion ?? '...'}',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+      ),
+    ];
+
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -33,69 +109,7 @@ class ProfileScreen extends ConsumerWidget {
             parent: BouncingScrollPhysics(),
           ),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          children: [
-            SettingsSectionHeader(title: l10n.account),
-            SettingsSection(
-              children: [
-                SettingsEditableCell(
-                  title: l10n.name,
-                  value: state.userName,
-                  onSave: viewModel.onNameChanged,
-                ),
-              ],
-            ),
-            SettingsSectionHeader(title: l10n.appearance),
-            SettingsSection(
-              children: [
-                SettingsDropdownCell(
-                  title: l10n.language,
-                  value: languageDisplay,
-                  onTap: viewModel.onLanguageTap,
-                ),
-                SettingsDropdownCell(
-                  title: l10n.theme,
-                  value: themeDisplay,
-                  onTap: viewModel.onThemeTap,
-                ),
-              ],
-            ),
-            SettingsSectionHeader(title: l10n.mcpIntegrations),
-            SettingsSection(
-              children: [
-                SettingsNavigationCell(
-                  title: l10n.mcpTitle,
-                  value: '',
-                  onTap: viewModel.onMcpTap,
-                ),
-              ],
-            ),
-            SettingsSectionHeader(title: l10n.session),
-            SettingsSection(
-              children: [
-                SettingsCell(
-                  title: Text(l10n.logOut),
-                  onTap: () async {
-                    final result = await AppAlert.showWithInput(
-                      context,
-                      description: l10n.logOutDescription,
-                      confirmLabel: l10n.logOut,
-                    );
-                    if (result.confirmed) viewModel.onLogoutTap();
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: Text(
-                  'v ${state.appVersion ?? '...'}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-            ),
-          ],
+          children: children,
         ),
       ),
     );

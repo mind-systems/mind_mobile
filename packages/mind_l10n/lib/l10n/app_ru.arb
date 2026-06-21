@@ -21,6 +21,7 @@
   "email": "Email",
   "login": "Войти",
   "logOut": "Выйти",
+  "logIn": "Войти",
 
   "themeDark": "Тёмная",
   "themeLight": "Светлая",
@@ -121,6 +122,7 @@
   "bciPairingSignalQuality": "Качество сигнала",
   "bciPairingAdjustHeadband": "Поправьте гарнитуру для хорошего контакта на всех каналах.",
   "bciPairingCalibration": "Калибровка",
+  "bciPairingCalibrationInstruction": "Во время калибровки нужно будет закрывать и открывать глаза, ориентируясь на звук.",
   "bciPairingStartCalibration": "Начать калибровку",
   "bciPairingCloseEyes": "Закройте глаза и расслабьтесь.",
   "bciPairingOpenEyes": "Откройте глаза и смотрите прямо.",

@@ -2,6 +2,7 @@ import 'package:mind/ProfileModule/Presentation/ProfileScreen/Models/ProfileDTOs
 
 abstract class IProfileService {
   Future<String> get appVersion;
+  bool get isAuthenticated;
   Stream<ProfileEvent> observeProfile();
 
   List<String> get themeOptions;

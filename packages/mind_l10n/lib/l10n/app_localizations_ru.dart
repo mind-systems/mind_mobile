@@ -67,6 +67,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get logOut => 'Выйти';
 
   @override
+  String get logIn => 'Войти';
+
+  @override
   String get themeDark => 'Тёмная';
 
   @override
@@ -316,6 +319,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get bciPairingCalibration => 'Калибровка';
+
+  @override
+  String get bciPairingCalibrationInstruction =>
+      'Во время калибровки нужно будет закрывать и открывать глаза, ориентируясь на звук.';
 
   @override
   String get bciPairingStartCalibration => 'Начать калибровку';

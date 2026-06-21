@@ -21,6 +21,7 @@
   "email": "Email",
   "login": "Login",
   "logOut": "Log out",
+  "logIn": "Log in",
 
   "themeDark": "Dark",
   "themeLight": "Light",
@@ -127,6 +128,7 @@
   "bciPairingSignalQuality": "Signal quality",
   "bciPairingAdjustHeadband": "Adjust headband for good contact on all channels.",
   "bciPairingCalibration": "Calibration",
+  "bciPairingCalibrationInstruction": "During calibration you'll need to close and open your eyes, guided by sound.",
   "bciPairingStartCalibration": "Start calibration",
   "bciPairingCloseEyes": "Close your eyes and relax.",
   "bciPairingOpenEyes": "Open your eyes and look straight ahead.",

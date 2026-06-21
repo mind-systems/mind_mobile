@@ -212,6 +212,12 @@ abstract class AppLocalizations {
   /// **'Log out'**
   String get logOut;
 
+  /// No description provided for @logIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in'**
+  String get logIn;
+
   /// No description provided for @themeDark.
   ///
   /// In en, this message translates to:
@@ -673,6 +679,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Calibration'**
   String get bciPairingCalibration;
+
+  /// No description provided for @bciPairingCalibrationInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'During calibration you\'ll need to close and open your eyes, guided by sound.'**
+  String get bciPairingCalibrationInstruction;
 
   /// No description provided for @bciPairingStartCalibration.
   ///
