@@ -299,7 +299,6 @@ class MyApp extends ConsumerWidget {
       builder: (context, child) {
         return GlobalListeners(
           sessionExpiredStream: App.shared.userNotifier.sessionExpiredStream,
-          authErrorStream: App.shared.userNotifier.authErrorStream,
           child: child!,
         );
       },

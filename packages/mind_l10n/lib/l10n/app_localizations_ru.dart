@@ -103,6 +103,12 @@ class AppLocalizationsRu extends AppLocalizations {
       'Подождите немного перед повторным запросом кода.';
 
   @override
+  String get loginNoConnectionError => 'Нет подключения к интернету';
+
+  @override
+  String get loginGoogleSignInError => 'Не удалось войти через Google';
+
+  @override
   String get logOutDescription => 'Возвращайтесь скорее';
 
   @override

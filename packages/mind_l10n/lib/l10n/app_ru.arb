@@ -35,6 +35,8 @@
   "loginCodeInvalidError": "Код недействителен или истёк",
   "loginTooManyAttemptsError": "Слишком много попыток. Запросите новый код и попробуйте через несколько минут.",
   "loginSendCodeCooldownError": "Подождите немного перед повторным запросом кода.",
+  "loginNoConnectionError": "Нет подключения к интернету",
+  "loginGoogleSignInError": "Не удалось войти через Google",
   "logOutDescription": "Возвращайтесь скорее",
 
   "breathPhaseInhale": "Вдох",

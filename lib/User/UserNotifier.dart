@@ -5,7 +5,6 @@ import 'package:mind/Logger.dart';
 
 import 'package:mind/User/LogoutNotifier.dart';
 import 'package:mind/User/Models/AuthState.dart';
-import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
 import 'package:mind/User/Models/User.dart';
 import 'package:mind/User/UserRepository.dart';
 
@@ -16,7 +15,6 @@ class UserNotifier {
 
   final BehaviorSubject<AuthState> _subject;
   final BehaviorSubject<bool> _authInProgressSubject = BehaviorSubject<bool>.seeded(false);
-  final PublishSubject<String> _authErrorSubject = PublishSubject<String>();
   final PublishSubject<void> _sessionExpiredSubject = PublishSubject<void>();
   StreamSubscription<void>? _logoutSubscription;
 
@@ -35,8 +33,6 @@ class UserNotifier {
   Stream<AuthState> get stream => _subject.stream;
 
   Stream<bool> get authInProgressStream => _authInProgressSubject.stream;
-
-  Stream<String> get authErrorStream => _authErrorSubject.stream;
 
   Stream<void> get sessionExpiredStream => _sessionExpiredSubject.stream;
 
@@ -61,13 +57,8 @@ class UserNotifier {
   }
 
   Future<void> loginWithGoogle({String? language}) async {
-    // Phase 1: Google picker + consent — no spinner
-    final ({String code, String? redirectUri}) googleAuth;
-    try {
-      googleAuth = await repository.getGoogleServerAuthCode();
-    } on GoogleSignInCanceledException {
-      return;
-    }
+    // Phase 1: Google picker + consent — no spinner; propagate all exceptions to the ViewModel
+    final googleAuth = await repository.getGoogleServerAuthCode();
 
     // Phase 2: our backend — show spinner
     _authInProgressSubject.add(true);
@@ -77,7 +68,6 @@ class UserNotifier {
       _subject.add(AuthenticatedState(authenticatedUser));
     } catch (e) {
       logPrint('[UserNotifier] loginWithGoogle error: $e');
-      _authErrorSubject.add('Failed to sign in with Google');
       rethrow;
     } finally {
       _authInProgressSubject.add(false);
@@ -116,7 +106,6 @@ class UserNotifier {
   void dispose() {
     _logoutSubscription?.cancel();
     _sessionExpiredSubject.close();
-    _authErrorSubject.close();
     _authInProgressSubject.close();
     _subject.close();
   }

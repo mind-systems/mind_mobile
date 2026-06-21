@@ -11,17 +11,14 @@ import 'package:mind_ui/mind_ui.dart';
 /// - Snackbar events via [GlobalSnackBarNotifier]
 /// - Session expiry via [sessionExpiredStream] (fires only when an authenticated
 ///   session is actually cleared — not for guest 401s)
-/// - Auth errors via [authErrorStream]
 ///
 /// Should wrap the root widget of the application.
 class GlobalListeners extends ConsumerStatefulWidget {
   final Stream<void> sessionExpiredStream;
-  final Stream<String> authErrorStream;
   final Widget child;
 
   const GlobalListeners({
     required this.sessionExpiredStream,
-    required this.authErrorStream,
     required this.child,
     super.key,
   });
@@ -32,7 +29,6 @@ class GlobalListeners extends ConsumerStatefulWidget {
 
 class _GlobalListenersState extends ConsumerState<GlobalListeners> {
   StreamSubscription<void>? _sessionExpiredSubscription;
-  StreamSubscription<String>? _authErrorSubscription;
 
   @override
   void initState() {
@@ -40,16 +36,11 @@ class _GlobalListenersState extends ConsumerState<GlobalListeners> {
     _sessionExpiredSubscription = widget.sessionExpiredStream.listen((_) {
       _showSnackBar(SnackBarEvent.error('Сессия истекла'));
     });
-
-    _authErrorSubscription = widget.authErrorStream.listen((error) {
-      _showSnackBar(SnackBarEvent.error('Ошибка входа: $error'));
-    });
   }
 
   @override
   void dispose() {
     _sessionExpiredSubscription?.cancel();
-    _authErrorSubscription?.cancel();
     super.dispose();
   }
 

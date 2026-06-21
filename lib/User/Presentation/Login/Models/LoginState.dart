@@ -3,6 +3,8 @@ enum LoginError {
   codeInvalidOrExpired,
   tooManyAttempts,
   sendCodeCooldown,
+  noConnection,
+  googleSignInFailed,
 }
 
 class LoginState {

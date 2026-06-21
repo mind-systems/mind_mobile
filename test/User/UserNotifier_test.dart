@@ -192,47 +192,6 @@ void main() {
     });
   });
 
-  group('authErrorStream', () {
-    test('does NOT emit when completePasswordlessSignIn fails', () async {
-      final errors = <String>[];
-      userNotifier.authErrorStream.listen(errors.add);
-
-      final future = userNotifier.completePasswordlessSignIn('bad-code');
-      fakeRepo.failSignIn(Exception('invalid code'));
-
-      await expectLater(future, throwsA(isA<Exception>()));
-      await Future.delayed(Duration.zero);
-
-      expect(errors, isEmpty,
-          reason: 'callers show their own localized message; no raw publish needed');
-    });
-
-    test('does NOT emit when completePasswordlessSignIn succeeds', () async {
-      final errors = <String>[];
-      userNotifier.authErrorStream.listen(errors.add);
-
-      final future = userNotifier.completePasswordlessSignIn('123456');
-      fakeRepo.succeedSignIn(_authenticatedUser);
-      await future;
-
-      await Future.delayed(Duration.zero);
-      expect(errors, isEmpty);
-    });
-
-    test('does not replay old errors (PublishSubject behavior)', () async {
-      final future = userNotifier.completePasswordlessSignIn('bad-code');
-      fakeRepo.failSignIn(Exception('old error'));
-      await expectLater(future, throwsA(isA<Exception>()));
-
-      final errors = <String>[];
-      userNotifier.authErrorStream.listen(errors.add);
-      await Future.delayed(Duration.zero);
-
-      expect(errors, isEmpty,
-          reason: 'PublishSubject should not replay past events');
-    });
-  });
-
   group('updateLanguage', () {
     test('does nothing when guest', () async {
       await userNotifier.updateLanguage('ru');

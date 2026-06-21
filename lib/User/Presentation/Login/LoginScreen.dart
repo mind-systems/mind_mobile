@@ -34,6 +34,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           LoginError.codeInvalidOrExpired => l10n.loginCodeInvalidError,
           LoginError.tooManyAttempts => l10n.loginTooManyAttemptsError,
           LoginError.sendCodeCooldown => l10n.loginSendCodeCooldownError,
+          LoginError.noConnection => l10n.loginNoConnectionError,
+          LoginError.googleSignInFailed => l10n.loginGoogleSignInError,
         };
         AppAlert.show(context, title: l10n.error, description: message);
       };

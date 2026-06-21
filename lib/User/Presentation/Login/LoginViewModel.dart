@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/User/Models/AuthState.dart';
 import 'package:mind/User/Models/GoogleSignInCanceledException.dart';
+import 'package:mind/User/Models/NoConnectionException.dart';
 import 'package:mind/User/Models/OtpLockedException.dart';
 import 'package:mind/User/Models/OtpSendCooldownException.dart';
 import 'package:mind/User/Presentation/Login/ILoginService.dart';
@@ -81,9 +82,11 @@ class LoginViewModel extends Notifier<LoginState> {
       await service.loginWithGoogle();
       // Navigation happens via onAuthenticatedEvent when UserNotifier emits AuthenticatedState
     } on GoogleSignInCanceledException {
-      // Cancellation is handled in UserNotifier; catch here as a safety net
+      // Real user cancel — stay silent
+    } on NoConnectionException {
+      onErrorEvent?.call(LoginError.noConnection);
     } catch (_) {
-      // Error is already published to authErrorStream by UserNotifier
+      onErrorEvent?.call(LoginError.googleSignInFailed);
     }
   }
 }

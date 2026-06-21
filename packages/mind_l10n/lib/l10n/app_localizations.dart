@@ -278,6 +278,18 @@ abstract class AppLocalizations {
   /// **'Please wait a moment before requesting another code.'**
   String get loginSendCodeCooldownError;
 
+  /// No description provided for @loginNoConnectionError.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection'**
+  String get loginNoConnectionError;
+
+  /// No description provided for @loginGoogleSignInError.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in failed'**
+  String get loginGoogleSignInError;
+
   /// No description provided for @logOutDescription.
   ///
   /// In en, this message translates to:

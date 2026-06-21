@@ -156,6 +156,7 @@ Detailed docs and Mermaid architecture diagrams live in `docs/`:
 - `docs/core/app-settings.md` — Theme and language persistence, server sync, AppSettingsNotifier
 - `docs/core/auth-gated-navigation.md` — Auth-gated navigation and route guards
 - `docs/core/alerts-and-snackbars.md` — When to use AppAlert vs SnackBar
+- `docs/core/error-handling.md` — Error pipeline: boundary translation → domain exceptions → presentation enums → localized display; screen vs global channel
 - `docs/core/module-system.md` — Pluggable package architecture, module boundary, wiring pattern
 - `docs/core/sync-engine.md` — Data sync: SyncEngine, cold start, socket events, cursor management
 - `docs/core/testing.md` — Testing philosophy, what to test, fake patterns, silently-failing logic targets

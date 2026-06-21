@@ -35,6 +35,8 @@
   "loginCodeInvalidError": "Code is invalid or expired",
   "loginTooManyAttemptsError": "Too many attempts. Request a new code and try again in a few minutes.",
   "loginSendCodeCooldownError": "Please wait a moment before requesting another code.",
+  "loginNoConnectionError": "No internet connection",
+  "loginGoogleSignInError": "Google sign-in failed",
   "logOutDescription": "Come back again soon",
 
   "breathPhaseInhale": "Inhale",

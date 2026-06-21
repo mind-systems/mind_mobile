@@ -103,6 +103,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Please wait a moment before requesting another code.';
 
   @override
+  String get loginNoConnectionError => 'No internet connection';
+
+  @override
+  String get loginGoogleSignInError => 'Google sign-in failed';
+
+  @override
   String get logOutDescription => 'Come back again soon';
 
   @override
