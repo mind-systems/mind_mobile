@@ -27,10 +27,12 @@ class ActivityStartCmd extends $pb.GeneratedMessage {
   factory ActivityStartCmd({
     ActivityType? activityType,
     $core.String? refId,
+    $fixnum.Int64? clientTimestampMs,
   }) {
     final result = create();
     if (activityType != null) result.activityType = activityType;
     if (refId != null) result.refId = refId;
+    if (clientTimestampMs != null) result.clientTimestampMs = clientTimestampMs;
     return result;
   }
 
@@ -50,6 +52,7 @@ class ActivityStartCmd extends $pb.GeneratedMessage {
     ..aE<ActivityType>(1, _omitFieldNames ? '' : 'activityType',
         enumValues: ActivityType.values)
     ..aOS(2, _omitFieldNames ? '' : 'refId')
+    ..aInt64(4, _omitFieldNames ? '' : 'clientTimestampMs')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -88,11 +91,28 @@ class ActivityStartCmd extends $pb.GeneratedMessage {
   $core.bool hasRefId() => $_has(1);
   @$pb.TagNumber(2)
   void clearRefId() => $_clearField(2);
+
+  /// Client wall-clock instant (Unix millis) that drives startedAt.
+  /// Optional for backward compatibility — absent means server now().
+  @$pb.TagNumber(4)
+  $fixnum.Int64 get clientTimestampMs => $_getI64(2);
+  @$pb.TagNumber(4)
+  set clientTimestampMs($fixnum.Int64 value) => $_setInt64(2, value);
+  @$pb.TagNumber(4)
+  $core.bool hasClientTimestampMs() => $_has(2);
+  @$pb.TagNumber(4)
+  void clearClientTimestampMs() => $_clearField(4);
 }
 
 /// Maps to ActivityEndDto in src/realtime/dto/activity-end.dto.ts.
 class ActivityEndCmd extends $pb.GeneratedMessage {
-  factory ActivityEndCmd() => create();
+  factory ActivityEndCmd({
+    $fixnum.Int64? clientTimestampMs,
+  }) {
+    final result = create();
+    if (clientTimestampMs != null) result.clientTimestampMs = clientTimestampMs;
+    return result;
+  }
 
   ActivityEndCmd._();
 
@@ -107,6 +127,7 @@ class ActivityEndCmd extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'ActivityEndCmd',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
+    ..aInt64(1, _omitFieldNames ? '' : 'clientTimestampMs')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -127,6 +148,17 @@ class ActivityEndCmd extends $pb.GeneratedMessage {
   static ActivityEndCmd getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ActivityEndCmd>(create);
   static ActivityEndCmd? _defaultInstance;
+
+  /// Client wall-clock instant (Unix millis) that drives endedAt.
+  /// Optional for backward compatibility — absent means server now().
+  @$pb.TagNumber(1)
+  $fixnum.Int64 get clientTimestampMs => $_getI64(0);
+  @$pb.TagNumber(1)
+  set clientTimestampMs($fixnum.Int64 value) => $_setInt64(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasClientTimestampMs() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearClientTimestampMs() => $_clearField(1);
 }
 
 /// Stop is handled inline in the gateway; no existing DTO.

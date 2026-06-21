@@ -63,9 +63,19 @@ const ActivityStartCmd$json = {
       '10': 'activityType'
     },
     {'1': 'ref_id', '3': 2, '4': 1, '5': 9, '9': 0, '10': 'refId', '17': true},
+    {
+      '1': 'client_timestamp_ms',
+      '3': 4,
+      '4': 1,
+      '5': 3,
+      '9': 1,
+      '10': 'clientTimestampMs',
+      '17': true
+    },
   ],
   '8': [
     {'1': '_ref_id'},
+    {'1': '_client_timestamp_ms'},
   ],
   '9': [
     {'1': 3, '2': 4},
@@ -75,17 +85,33 @@ const ActivityStartCmd$json = {
 /// Descriptor for `ActivityStartCmd`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List activityStartCmdDescriptor = $convert.base64Decode(
     'ChBBY3Rpdml0eVN0YXJ0Q21kEjcKDWFjdGl2aXR5X3R5cGUYASABKA4yEi5taW5kLkFjdGl2aX'
-    'R5VHlwZVIMYWN0aXZpdHlUeXBlEhoKBnJlZl9pZBgCIAEoCUgAUgVyZWZJZIgBAUIJCgdfcmVm'
-    'X2lkSgQIAxAE');
+    'R5VHlwZVIMYWN0aXZpdHlUeXBlEhoKBnJlZl9pZBgCIAEoCUgAUgVyZWZJZIgBARIzChNjbGll'
+    'bnRfdGltZXN0YW1wX21zGAQgASgDSAFSEWNsaWVudFRpbWVzdGFtcE1ziAEBQgkKB19yZWZfaW'
+    'RCFgoUX2NsaWVudF90aW1lc3RhbXBfbXNKBAgDEAQ=');
 
 @$core.Deprecated('Use activityEndCmdDescriptor instead')
 const ActivityEndCmd$json = {
   '1': 'ActivityEndCmd',
+  '2': [
+    {
+      '1': 'client_timestamp_ms',
+      '3': 1,
+      '4': 1,
+      '5': 3,
+      '9': 0,
+      '10': 'clientTimestampMs',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_client_timestamp_ms'},
+  ],
 };
 
 /// Descriptor for `ActivityEndCmd`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List activityEndCmdDescriptor =
-    $convert.base64Decode('Cg5BY3Rpdml0eUVuZENtZA==');
+final $typed_data.Uint8List activityEndCmdDescriptor = $convert.base64Decode(
+    'Cg5BY3Rpdml0eUVuZENtZBIzChNjbGllbnRfdGltZXN0YW1wX21zGAEgASgDSABSEWNsaWVudF'
+    'RpbWVzdGFtcE1ziAEBQhYKFF9jbGllbnRfdGltZXN0YW1wX21z');
 
 @$core.Deprecated('Use activityStopCmdDescriptor instead')
 const ActivityStopCmd$json = {

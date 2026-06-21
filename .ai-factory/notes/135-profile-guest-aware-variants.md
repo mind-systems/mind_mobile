@@ -37,6 +37,6 @@
 4. Cancel Onboarding → back on the guest profile, unchanged.
 5. `flutter analyze` clean; no leftover `dismiss()` / unused members.
 
-## Open Questions
+## Decisions (settled — do not re-open)
 
-- None blocking. App-settings (theme/language) for guests already works locally.
+- App-settings (theme/language) stay visible for guests and work locally (`updateLanguage` already no-ops the server call for guests). Guest screen = appearance + login cell + version only; name, MCP, logout are authenticated-only. No further variants.

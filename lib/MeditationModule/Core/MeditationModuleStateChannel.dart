@@ -36,10 +36,10 @@ class MeditationModuleStateChannel {
     if (status == _previousStatus) return;
 
     if (status == MeditationSessionStatus.active && !_started) {
-      _channel.start(type: ActivityType.meditation, refId: _refId);
+      _channel.start(type: ActivityType.meditation, refId: _refId, clientTimestampMs: DateTime.now().millisecondsSinceEpoch);
       _started = true;
     } else if (status == MeditationSessionStatus.idle && _started && !_ended) {
-      _channel.end();
+      _channel.end(clientTimestampMs: DateTime.now().millisecondsSinceEpoch);
       // Re-arm so the next Start→Stop cycle fires fresh lifecycle events.
       // Mirrors BreathModuleStateChannel.reset() (BreathModuleStateChannel.dart:110-113).
       _started = false;

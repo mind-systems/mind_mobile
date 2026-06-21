@@ -78,7 +78,7 @@ class BreathModuleStateChannel {
         logPrint('[BreathModuleState] BreathModuleStateChannel: session start [$_sessionId]');
         _stopwatch..reset()..start();
         _originWallClock = DateTime.now();
-        _channel.start(type: ActivityType.breath, refId: _sessionId);
+        _channel.start(type: ActivityType.breath, refId: _sessionId, clientTimestampMs: _originWallClock!.millisecondsSinceEpoch);
         _started = true;
         _previousPhase = null;
         _previousExerciseIndex = null;
@@ -97,8 +97,8 @@ class BreathModuleStateChannel {
       }
     } else if (status == BreathSessionStatus.complete) {
       if (_started && !_ended) {
-        logPrint('[BreathModuleState] BreathModuleStateChannel: session end [$_sessionId]');
-        _channel.end();
+        logPrint('[BreathModuleState] session complete at offset=${_stopwatch.elapsedMilliseconds}ms — sending end [$_sessionId]');
+        _channel.end(clientTimestampMs: _wireTimestamp(_stopwatch.elapsedMilliseconds));
         _ended = true;
       }
     }
@@ -120,6 +120,7 @@ class BreathModuleStateChannel {
       _pendingInstruction = (state: state, offsetMs: offsetMs);
       return;
     }
+    logPrint('[BreathModuleState] phase=${state.phase.name} ex=${state.exerciseIndex} offset=${offsetMs}ms tickCount=${state.currentPhaseTotalDuration} [$_sessionId]');
     _instructionStream.sendSample(sessionId, state.phase.name, state.currentPhaseTotalDuration, offsetMs, _wireTimestamp(offsetMs));
   }
 

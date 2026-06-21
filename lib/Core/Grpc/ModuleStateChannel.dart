@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fixnum/fixnum.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:mind/Logger.dart';
 
@@ -145,13 +146,14 @@ class ModuleStateChannel {
 
   // ── Public session commands ───────────────────────────────────────────────
 
-  void start({required ActivityType type, String? refId}) {
+  void start({required ActivityType type, String? refId, int? clientTimestampMs}) {
     if (currentState.status == ModuleStateStatus.active || _isPendingStart) return;
     _isPendingStart = true;
     _sendSessionRequest(proto.StateRequest(
       activityStart: proto.ActivityStartCmd(
         activityType: _mapActivityType(type),
         refId: refId ?? '',
+        clientTimestampMs: clientTimestampMs != null ? Int64(clientTimestampMs) : null,
       ),
     ));
   }
@@ -168,9 +170,13 @@ class ModuleStateChannel {
     _sendSessionRequest(proto.StateRequest(activityResume: proto.ActivityResumeCmd()));
   }
 
-  void end() {
+  void end({int? clientTimestampMs}) {
     if (currentState.status == ModuleStateStatus.idle) return;
-    _sendSessionRequest(proto.StateRequest(activityEnd: proto.ActivityEndCmd()));
+    _sendSessionRequest(proto.StateRequest(
+      activityEnd: proto.ActivityEndCmd(
+        clientTimestampMs: clientTimestampMs != null ? Int64(clientTimestampMs) : null,
+      ),
+    ));
   }
 
   void stop() {

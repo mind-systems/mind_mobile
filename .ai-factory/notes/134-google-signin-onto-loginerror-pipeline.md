@@ -77,6 +77,6 @@ Make `loginWithGoogle` structurally identical to `completePasswordlessSignIn` �
 4. Generic Google failure → localized `loginGoogleSignInError` alert.
 5. `grep authErrorStream lib/` returns nothing; `flutter analyze` clean (exhaustive switches compile).
 
-## Open Questions
+## Decisions (settled — do not re-open)
 
-- Final EN/RU copy for the two new keys is a product-voice decision — values above are defaults.
+- The two ARB strings are **final, use verbatim** — `loginNoConnectionError`: RU "Нет подключения к интернету", EN "No internet connection"; `loginGoogleSignInError`: RU "Не удалось войти через Google", EN "Google sign-in failed". Do not paraphrase or invent alternatives.
