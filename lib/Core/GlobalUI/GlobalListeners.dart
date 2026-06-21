@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mind/Core/GlobalUI/GlobalKeys.dart';
+import 'package:mind_l10n/mind_l10n.dart';
 import 'package:mind_ui/mind_ui.dart';
 
 /// Listens to global app events and coordinates UI presentation.
@@ -34,7 +35,7 @@ class _GlobalListenersState extends ConsumerState<GlobalListeners> {
   void initState() {
     super.initState();
     _sessionExpiredSubscription = widget.sessionExpiredStream.listen((_) {
-      _showSnackBar(SnackBarEvent.error('Сессия истекла'));
+      _showSnackBar(SnackBarEvent.error(_sessionExpiredMessage()));
     });
   }
 
@@ -56,6 +57,15 @@ class _GlobalListenersState extends ConsumerState<GlobalListeners> {
     });
 
     return widget.child;
+  }
+
+  // Session expiry arrives without UI context (the interceptor fires anywhere),
+  // so localization is resolved at show-time from the messenger's own context.
+  String _sessionExpiredMessage() {
+    const fallback = 'Session expired';
+    final context = rootScaffoldMessengerKey.currentContext;
+    if (context == null || !context.mounted) return fallback;
+    return AppLocalizations.of(context)?.sessionExpired ?? fallback;
   }
 
   void _showSnackBar(SnackBarEvent event) {

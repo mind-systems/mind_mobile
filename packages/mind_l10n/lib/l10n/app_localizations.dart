@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Coming soon'**
   String get comingSoon;
 
+  /// No description provided for @sessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Session expired'**
+  String get sessionExpired;
+
   /// No description provided for @heartTickNoSourceTitle.
   ///
   /// In en, this message translates to:

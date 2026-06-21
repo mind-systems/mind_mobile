@@ -22,7 +22,7 @@ const _kShimmerHighlightLight = Color(0xFFD0D8E8); // darker than card light
 // ── Button ──────────────────────────────────────────────────
 // Filled buttons and bordered interactive containers (login, onboarding).
 // Access via: theme.colorScheme.secondaryContainer
-const _kButtonDark  = Color(0xFF083752); // muted teal-blue
+const _kButtonDark  = Color(0xFF3E92E0); // bright blue — legible on dark navy
 const _kButtonLight = Color(0xFF3686D0); // medium blue
 
 // ── Accent ──────────────────────────────────────────────────

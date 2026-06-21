@@ -7,6 +7,7 @@
   "delete": "Удалить",
   "error": "Ошибка",
   "comingSoon": "Скоро",
+  "sessionExpired": "Сессия истекла",
   "heartTickNoSourceTitle": "Датчик пульса",
   "heartTickNoSourceDescription": "Чтобы дышать в ритм с сердцем, подключите датчик пульса.",
 

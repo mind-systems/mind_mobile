@@ -27,6 +27,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comingSoon => 'Coming soon';
 
   @override
+  String get sessionExpired => 'Session expired';
+
+  @override
   String get heartTickNoSourceTitle => 'Heart rate sensor';
 
   @override

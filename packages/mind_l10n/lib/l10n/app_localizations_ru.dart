@@ -27,6 +27,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get comingSoon => 'Скоро';
 
   @override
+  String get sessionExpired => 'Сессия истекла';
+
+  @override
   String get heartTickNoSourceTitle => 'Датчик пульса';
 
   @override
