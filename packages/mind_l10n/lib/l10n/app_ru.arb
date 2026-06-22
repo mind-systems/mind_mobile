@@ -8,6 +8,7 @@
   "error": "Ошибка",
   "comingSoon": "Скоро",
   "sessionExpired": "Сессия истекла",
+  "sessionAbandoned": "Сессия неожиданно завершилась",
   "heartTickNoSourceTitle": "Датчик пульса",
   "heartTickNoSourceDescription": "Чтобы дышать в ритм с сердцем, подключите датчик пульса.",
 

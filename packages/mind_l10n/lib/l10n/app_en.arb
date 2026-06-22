@@ -8,6 +8,7 @@
   "error": "Error",
   "comingSoon": "Coming soon",
   "sessionExpired": "Session expired",
+  "sessionAbandoned": "Session ended unexpectedly",
   "heartTickNoSourceTitle": "Heart rate sensor",
   "heartTickNoSourceDescription": "To breathe in sync with your heart, connect a heart rate sensor.",
 
