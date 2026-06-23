@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fixnum/fixnum.dart';
+import 'package:grpc/grpc.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:mind/Logger.dart';
 
@@ -71,7 +72,12 @@ class ModuleStateChannel {
   void _openSessionStream() {
     _backoffConfirmed = false;
     _sessionSink = StreamController<proto.StateRequest>();
-    final response = _moduleStateService.trackActivity(_sessionSink!.stream);
+    final liveId = currentState.moduleSessionId;
+    final options = (currentState.status == ModuleStateStatus.active &&
+            liveId != null && liveId.isNotEmpty)
+        ? CallOptions(metadata: {'module-session-id': liveId})
+        : null;
+    final response = _moduleStateService.trackActivity(_sessionSink!.stream, options: options);
     _sessionSub = response.listen(
       (proto.StateResponse r) {
         if (!_backoffConfirmed) {
