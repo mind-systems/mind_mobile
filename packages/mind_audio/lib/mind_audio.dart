@@ -3,3 +3,4 @@ export 'src/audio_catalog.dart';
 export 'src/audio_looper.dart';
 export 'src/audio_one_shot.dart';
 export 'src/audio_session_config.dart';
+export 'src/silent_keep_alive_player.dart';

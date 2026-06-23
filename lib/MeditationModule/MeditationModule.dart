@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meditation_module/meditation_module.dart';
@@ -7,6 +9,8 @@ import 'package:mind/MeditationModule/MeditationListService.dart';
 import 'package:mind/MeditationModule/MeditationNoteService.dart';
 import 'package:mind/MeditationModule/MeditationSessionCoordinator.dart';
 import 'package:mind/MeditationModule/Core/MeditationModuleStateChannel.dart';
+import 'package:mind/MeditationModule/Core/MeditationKeepAliveCoordinator.dart';
+import 'package:mind_audio/mind_audio.dart';
 
 class MeditationModule {
   static Widget buildSessionList(BuildContext context) {
@@ -24,6 +28,7 @@ class MeditationModule {
 
   static Widget buildSession(BuildContext context, {required String poseId}) {
     late final MeditationModuleStateChannel stateChannel;
+    MeditationKeepAliveCoordinator? keepAlive;
     final refId = App.shared.meditationPoseUuids[poseId] ?? poseId;
     return ProviderScope(
       overrides: [
@@ -34,6 +39,13 @@ class MeditationModule {
             stateStream: vm.stream,
             refId: refId,
           );
+          if (Platform.isIOS) {
+            final player = SilentKeepAlivePlayer(assetPath: 'assets/audio/silence.flac');
+            keepAlive = MeditationKeepAliveCoordinator(
+              stateStream: vm.stream,
+              player: player,
+            );
+          }
           return vm;
         }),
         meditationSessionCoordinatorProvider.overrideWithValue(
@@ -44,7 +56,10 @@ class MeditationModule {
           ),
         ),
       ],
-      child: MeditationSessionScreen(onDispose: () => stateChannel.dispose()),
+      child: MeditationSessionScreen(onDispose: () {
+        stateChannel.dispose();
+        keepAlive?.dispose();
+      }),
     );
   }
 }
