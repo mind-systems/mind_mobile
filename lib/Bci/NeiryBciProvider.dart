@@ -13,7 +13,6 @@ import 'package:mind/Biometrics/IMotionSource.dart';
 import 'package:mind/Biometrics/Models/CardioData.dart';
 import 'package:mind/Biometrics/Models/RrInterval.dart';
 import 'package:mind/Biometrics/Models/MotionData.dart';
-import 'package:mind/Biometrics/Models/SensorSource.dart';
 
 import 'IBciDeviceProvider.dart';
 import 'Models/BciCalibrationEvent.dart';
@@ -24,34 +23,36 @@ import 'Models/BciEmotionsData.dart';
 import 'Models/BciNfbData.dart';
 import 'Models/BluetoothPermissionDeniedException.dart';
 import 'Models/NfbCalibrationData.dart';
+import 'Ports/ClassifierFactory.dart';
+import 'Ports/ClassifierSet.dart';
 import 'Ports/DevicePort.dart';
 import 'Ports/LocatorPort.dart';
-import 'Ports/NeiryDeviceAdapter.dart';
+import 'Ports/NeiryClassifierFactory.dart';
 import 'Ports/NeiryLocatorAdapter.dart';
 import '../Logger.dart';
 
 /// Adapter that bridges `neiry_kit` to [IBciDeviceProvider].
 ///
 /// Only this file and the port adapters ([NeiryLocatorAdapter],
-/// [NeiryDeviceAdapter]) may import `neiry_kit`. All other consumers must
-/// depend on [IBciDeviceProvider] or the port interfaces, never on this class
-/// or the adapter implementations.
+/// [NeiryDeviceAdapter], [NeiryClassifierSet], [NeiryClassifierFactory]) may
+/// import `neiry_kit`. All other consumers must depend on [IBciDeviceProvider]
+/// or the port interfaces, never on this class or the adapter implementations.
 class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrIntervalSource, IEegBandsSource, IEmotionsSource, IMotionSource {
   late LocatorPort _locator;
   final LocatorPort Function() _locatorFactory;
+  final ClassifierFactory _classifierFactory;
   DevicePort? _device;
+  ClassifierSet? _classifierSet;
   bool _disposed = false;
   Future<void>? _teardownComplete;
 
-  NeiryBciProvider({LocatorPort Function()? locatorFactory})
-      : _locatorFactory = locatorFactory ?? (() => NeiryLocatorAdapter()) {
+  NeiryBciProvider({
+    LocatorPort Function()? locatorFactory,
+    ClassifierFactory? classifierFactory,
+  })  : _locatorFactory = locatorFactory ?? (() => NeiryLocatorAdapter()),
+        _classifierFactory = classifierFactory ?? NeiryClassifierFactory() {
     _locator = _locatorFactory();
   }
-
-  neiry.NfbClassifier? _nfbClassifier;
-  neiry.CardioClassifier? _cardioClassifier;
-  neiry.EmotionsClassifier? _emotionsClassifier;
-  neiry.MEMSClassifier? _memsClassifier;
 
   final _connectionStateController =
       StreamController<BciLinkStatus>.broadcast();
@@ -70,13 +71,13 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   StreamSubscription<List<BciChannelQuality>>? _resistanceSub;
   StreamSubscription<int>? _batterySub;
   StreamSubscription<neiry.CalibrationEvent>? _calibrationSub;
-  StreamSubscription<neiry.NfbUserState>? _nfbSub;
+  StreamSubscription<BciNfbData>? _nfbSub;
   StreamSubscription<String>? _nfbErrorSub;
-  StreamSubscription<neiry.CardioData>? _cardioSub;
-  StreamSubscription<neiry.RRInterval>? _rrSub;
-  StreamSubscription<neiry.EmotionsStates>? _emotionsSub;
+  StreamSubscription<CardioData>? _cardioSub;
+  StreamSubscription<RrInterval>? _rrSub;
+  StreamSubscription<BciEmotionsData>? _emotionsSub;
   StreamSubscription<String>? _emotionsErrorSub;
-  StreamSubscription<List<neiry.MemsSample>>? _memsSub;
+  StreamSubscription<MotionData>? _memsSub;
 
   // ── Stream getters ──────────────────────────────────────────────────────────
 
@@ -166,31 +167,13 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     _device = await _locator.createDevice(serial);
     try {
       await _device!.connect();
-      // Classifiers require the raw neiry.Device — access via adapter.
-      // TODO(A3): replace with ClassifierFactory port.
-      final raw = (_device as NeiryDeviceAdapter).rawDevice;
-      _nfbClassifier = neiry.NfbClassifier(raw);
-      _cardioClassifier = neiry.CardioClassifier(raw);
-      _emotionsClassifier = neiry.EmotionsClassifier(raw);
-      _memsClassifier = neiry.MEMSClassifier(raw);
+      _classifierSet = _classifierFactory.build(_device!);
       await _device!.start();
     } catch (e) {
       try {
-        await _nfbClassifier?.dispose();
+        await _classifierSet?.dispose();
       } catch (_) {}
-      _nfbClassifier = null;
-      try {
-        await _cardioClassifier?.dispose();
-      } catch (_) {}
-      _cardioClassifier = null;
-      try {
-        await _emotionsClassifier?.dispose();
-      } catch (_) {}
-      _emotionsClassifier = null;
-      try {
-        await _memsClassifier?.dispose();
-      } catch (_) {}
-      _memsClassifier = null;
+      _classifierSet = null;
       try {
         await _device?.disconnect();
         await _device?.dispose();
@@ -218,40 +201,40 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       onError: (Object e) =>
           logPrint('NeiryBciProvider: batteryStream error: $e'),
     );
-    // All four classifiers are guaranteed non-null here: connect()'s try block
-    // instantiates them before reaching this method.
-    _nfbSub = _nfbClassifier!.stateStream.listen(
-      _onNfbState,
+    // All ClassifierSet streams are guaranteed non-null here: connect()'s try
+    // block builds the set before reaching this method.
+    _nfbSub = _classifierSet!.nfbStateStream.listen(
+      _nfbController.add,
       onError: (Object e) =>
           logPrint('NeiryBciProvider: nfb stateStream error: $e'),
     );
-    _nfbErrorSub = _nfbClassifier!.errorStream.listen(
+    _nfbErrorSub = _classifierSet!.nfbErrorStream.listen(
       (e) => logPrint('NeiryBciProvider: nfb error: $e'),
       onError: (Object e) =>
           logPrint('NeiryBciProvider: nfb errorStream error: $e'),
     );
-    _cardioSub = _cardioClassifier!.stateStream.listen(
-      _onCardioState,
+    _cardioSub = _classifierSet!.cardioStateStream.listen(
+      _cardioController.add,
       onError: (Object e) =>
           logPrint('NeiryBciProvider: cardio stateStream error: $e'),
     );
-    _rrSub = _cardioClassifier!.rrStream.listen(
-      _onRrInterval,
+    _rrSub = _classifierSet!.rrStream.listen(
+      _rrController.add,
       onError: (Object e) =>
           logPrint('NeiryBciProvider: rrStream error: $e'),
     );
-    _emotionsSub = _emotionsClassifier!.stateStream.listen(
-      _onEmotionsState,
+    _emotionsSub = _classifierSet!.emotionsStateStream.listen(
+      _emotionsController.add,
       onError: (Object e) =>
           logPrint('NeiryBciProvider: emotions stateStream error: $e'),
     );
-    _emotionsErrorSub = _emotionsClassifier!.errorStream.listen(
+    _emotionsErrorSub = _classifierSet!.emotionsErrorStream.listen(
       (e) => logPrint('NeiryBciProvider: emotions error: $e'),
       onError: (Object e) =>
           logPrint('NeiryBciProvider: emotions errorStream error: $e'),
     );
-    _memsSub = _memsClassifier!.memsStream.listen(
-      _onMemsBatch,
+    _memsSub = _classifierSet!.motionStream.listen(
+      _motionController.add,
       onError: (Object e) =>
           logPrint('NeiryBciProvider: memsStream error: $e'),
     );
@@ -277,69 +260,6 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
         _teardownAfterUnexpectedDrop();
         _connectionStateController.add(BciLinkStatus.down);
     }
-  }
-
-  // ── NfbUserState → BciNfbData ───────────────────────────────────────────────
-
-  void _onNfbState(neiry.NfbUserState s) {
-    _nfbController.add(BciNfbData(
-      timestamp: s.timestamp,
-      delta: s.delta,
-      theta: s.theta,
-      alpha: s.alpha,
-      smr: s.smr,
-      beta: s.beta,
-    ));
-  }
-
-  // ── neiry.CardioData → CardioData ───────────────────────────────────────────
-
-  void _onCardioState(neiry.CardioData c) {
-    _cardioController.add(CardioData(
-      heartRate: c.heartRate,
-      metricsAvailable: c.metricsAvailable,
-      hasArtifacts: c.hasArtifacts,
-      timestamp: c.timestamp,
-      source: SensorSource.neiry,
-      hrv: null,
-    ));
-  }
-
-  // ── neiry.RRInterval → RrInterval ───────────────────────────────────────────
-
-  void _onRrInterval(neiry.RRInterval rr) {
-    _rrController.add(RrInterval(
-      intervalMs: rr.intervalMs,
-      timestamp: rr.timestamp,
-      isArtifact: rr.isArtifact,
-      source: SensorSource.neiry,
-    ));
-  }
-
-  // ── List<neiry.MemsSample> → MotionData ─────────────────────────────────────
-
-  void _onMemsBatch(List<neiry.MemsSample> batch) {
-    for (final s in batch) {
-      _motionController.add(MotionData(
-        accelerometer: s.accelerometer,
-        gyroscope: s.gyroscope,
-        timestamp: s.timestamp,
-        source: SensorSource.neiry,
-      ));
-    }
-  }
-
-  // ── EmotionsStates → BciEmotionsData ────────────────────────────────────────
-
-  void _onEmotionsState(neiry.EmotionsStates e) {
-    _emotionsController.add(BciEmotionsData(
-      timestamp: e.timestamp,
-      attention: e.attention,
-      relaxation: e.relaxation,
-      cognitiveLoad: e.cognitiveLoad,
-      cognitiveControl: e.cognitiveControl,
-      selfControl: e.selfControl,
-    ));
   }
 
   // ── startCalibration() ──────────────────────────────────────────────────────
@@ -445,7 +365,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     _locator = _locatorFactory();
   }
 
-  /// Captures device + classifier + subscription fields into locals, nulls
+  /// Captures device + classifier-set + subscription fields into locals, nulls
   /// them immediately (so reconnect sees a clean slate), then schedules the
   /// actual heavy disposal asynchronously to avoid re-entrancy while
   /// [_connectionSub]'s callback is still on the stack.
@@ -454,10 +374,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   /// stay alive so reconnect can resume emitting.
   void _teardownAfterUnexpectedDrop() {
     final device = _device;
-    final nfbClassifier = _nfbClassifier;
-    final cardioClassifier = _cardioClassifier;
-    final emotionsClassifier = _emotionsClassifier;
-    final memsClassifier = _memsClassifier;
+    final classifierSet = _classifierSet;
 
     final connectionSub = _connectionSub;
     final resistanceSub = _resistanceSub;
@@ -471,10 +388,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     final memsSub = _memsSub;
 
     _device = null;
-    _nfbClassifier = null;
-    _cardioClassifier = null;
-    _emotionsClassifier = null;
-    _memsClassifier = null;
+    _classifierSet = null;
 
     _connectionSub = null;
     _resistanceSub = null;
@@ -508,24 +422,9 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
 
         // Step 3: dispose classifiers (safe — handle still alive, no nativeRelease yet).
         try {
-          await nfbClassifier?.dispose();
+          await classifierSet?.dispose();
         } catch (e) {
-          logPrint('NeiryBciProvider: nfb dispose error: $e');
-        }
-        try {
-          await cardioClassifier?.dispose();
-        } catch (e) {
-          logPrint('NeiryBciProvider: cardio dispose error: $e');
-        }
-        try {
-          await emotionsClassifier?.dispose();
-        } catch (e) {
-          logPrint('NeiryBciProvider: emotions dispose error: $e');
-        }
-        try {
-          await memsClassifier?.dispose();
-        } catch (e) {
-          logPrint('NeiryBciProvider: mems dispose error: $e');
+          logPrint('NeiryBciProvider: classifier dispose error: $e');
         }
 
         // Step 4: nativeDisconnect + nativeRelease (Invariant C).
@@ -564,29 +463,11 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     _memsSub = null;
 
     try {
-      await _nfbClassifier?.dispose();
+      await _classifierSet?.dispose();
     } catch (e) {
-      logPrint('NeiryBciProvider: nfb dispose error: $e');
+      logPrint('NeiryBciProvider: classifier dispose error: $e');
     }
-    _nfbClassifier = null;
-    try {
-      await _cardioClassifier?.dispose();
-    } catch (e) {
-      logPrint('NeiryBciProvider: cardio dispose error: $e');
-    }
-    _cardioClassifier = null;
-    try {
-      await _emotionsClassifier?.dispose();
-    } catch (e) {
-      logPrint('NeiryBciProvider: emotions dispose error: $e');
-    }
-    _emotionsClassifier = null;
-    try {
-      await _memsClassifier?.dispose();
-    } catch (e) {
-      logPrint('NeiryBciProvider: mems dispose error: $e');
-    }
-    _memsClassifier = null;
+    _classifierSet = null;
   }
 
   @override
@@ -602,7 +483,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
         logPrint('NeiryBciProvider: stopStream error: $e');
       }
     }
-    // Steps 2+3: cancel fan-in subscriptions and dispose classifiers.
+    // Steps 2+3: cancel fan-in subscriptions and dispose classifier set.
     // Safe — SDK threads are stopped, handle still alive (no nativeRelease yet).
     await _cancelDeviceSubscriptions();
     // Step 4: nativeDisconnect + nativeRelease (Invariant C).

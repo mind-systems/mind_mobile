@@ -24,9 +24,8 @@ class NeiryDeviceAdapter implements DevicePort {
 
   /// Exposes the underlying [neiry.Device] for classifier construction.
   ///
-  /// Temporary: A3 will introduce a [ClassifierFactory] port that abstracts
-  /// classifier construction from the device handle, eliminating the need
-  /// for this getter.
+  /// Consumed by [NeiryClassifierFactory] to build the four hardware
+  /// classifiers without exposing the vendor type to the rest of the app.
   neiry.Device get rawDevice => _device;
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
