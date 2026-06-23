@@ -72,6 +72,7 @@ import 'package:mind/User/UserNotifier.dart';
 import 'package:mind/User/UserRepository.dart';
 import 'package:mind/Core/GlobalUI/GlobalListeners.dart';
 import 'package:mind/router.dart';
+import 'package:mind_audio/mind_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class App {
@@ -140,6 +141,7 @@ class App {
   static Future<void> initialize() async {
     if (logToObserver && Environment.instance.otlpEndpoint != null) { init(project: 'mind', service: 'mind_mobile', endpoint: Environment.instance.otlpEndpoint!, onError: kDebugMode ? (e) => debugPrint('observe: $e') : null); }
     WidgetsFlutterBinding.ensureInitialized();
+    await configureAudioSession();
 
     await GoogleSignIn.instance.initialize(
       clientId: Platform.isIOS
