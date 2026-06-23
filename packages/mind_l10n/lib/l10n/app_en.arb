@@ -160,5 +160,8 @@
   "meditationPoseChair": "Seated (Chair)",
   "meditationPoseSavasana": "Lying Down (Savasana)",
 
-  "meditationNotePrompt": "Write what you felt during the session — how you felt at the start, and how it changed towards the end. This will help the AI better understand your body."
+  "meditationNotePrompt": "Write what you felt during the session — how you felt at the start, and how it changed towards the end. This will help the AI better understand your body.",
+
+  "keepAliveNotificationTitle": "Session in progress",
+  "keepAliveNotificationBody": "Mind is keeping your session active"
 }

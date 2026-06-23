@@ -853,6 +853,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Write what you felt during the session — how you felt at the start, and how it changed towards the end. This will help the AI better understand your body.'**
   String get meditationNotePrompt;
+
+  /// No description provided for @keepAliveNotificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Session in progress'**
+  String get keepAliveNotificationTitle;
+
+  /// No description provided for @keepAliveNotificationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Mind is keeping your session active'**
+  String get keepAliveNotificationBody;
 }
 
 class _AppLocalizationsDelegate

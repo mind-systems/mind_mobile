@@ -407,4 +407,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get meditationNotePrompt =>
       'Write what you felt during the session — how you felt at the start, and how it changed towards the end. This will help the AI better understand your body.';
+
+  @override
+  String get keepAliveNotificationTitle => 'Session in progress';
+
+  @override
+  String get keepAliveNotificationBody => 'Mind is keeping your session active';
 }

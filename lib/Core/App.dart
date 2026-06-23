@@ -49,6 +49,8 @@ import 'package:mind/Core/Grpc/GrpcClient.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/ModuleInstructionStream.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
+import 'package:mind/Core/Background/ForegroundKeepAlive.dart';
+import 'package:mind/Core/Background/KeepAliveCoordinator.dart';
 import 'package:mind/Core/Sync/SyncEngine.dart';
 import 'package:mind/Core/Sync/SyncGrpcListener.dart';
 import 'package:mind/Bci/BciDevicesGrpcApi.dart';
@@ -104,6 +106,7 @@ class App {
   final SyncEngine syncEngine;
   final SyncGrpcListener syncGrpcListener;
   final AppLifecycleService appLifecycleService;
+  final KeepAliveCoordinator keepAliveCoordinator;
   late final MeditationPosesGrpcApi meditationPosesApi;
   late final MeditationNotesGrpcApi meditationNotesGrpcApi;
   late final MeditationNoteRepository meditationNoteRepository;
@@ -136,6 +139,7 @@ class App {
     required this.syncEngine,
     required this.syncGrpcListener,
     required this.appLifecycleService,
+    required this.keepAliveCoordinator,
   });
 
   static Future<void> initialize() async {
@@ -221,6 +225,8 @@ class App {
     final smoothedRrSource = SmoothedRrSource(activeRrSource);
     final biometricStreamClient = BiometricStreamClient(grpcStub: grpcClient.moduleBiometricStreamService, moduleStateEvents: moduleStateChannel.events, connectionState: connectionManager.connectionState);
     final biometricBatcher = BiometricBatcher(router: bioStreamRouter, client: biometricStreamClient);
+    final foregroundKeepAlive = ForegroundKeepAlive(currentLanguageCode: () => appSettingsNotifier.currentState.language);
+    final keepAliveCoordinator = KeepAliveCoordinator(foregroundKeepAlive: foregroundKeepAlive, moduleStateEvents: moduleStateChannel.events);
     final instructionStream = ModuleInstructionStream(connectionManager: connectionManager, instructionStreamService: grpcClient.instructionStreamService);
     final syncGrpcListener = SyncGrpcListener(syncService: grpcClient.syncService, syncEngine: syncEngine, syncStateDao: db.syncStateDao, authStream: userNotifier.stream);
 
@@ -254,6 +260,7 @@ class App {
       syncEngine: syncEngine,
       syncGrpcListener: syncGrpcListener,
       appLifecycleService: appLifecycleService,
+      keepAliveCoordinator: keepAliveCoordinator,
     );
 
     shared.meditationPosesApi = MeditationPosesGrpcApi(grpcClient.meditationPosesService);

@@ -409,4 +409,10 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get meditationNotePrompt =>
       'Запишите что чувствовали на протяжении сессии — что в начале, и как это изменилось к концу. Это поможет нейросети лучше понимать ваше тело.';
+
+  @override
+  String get keepAliveNotificationTitle => 'Сессия активна';
+
+  @override
+  String get keepAliveNotificationBody => 'Mind удерживает вашу сессию';
 }
