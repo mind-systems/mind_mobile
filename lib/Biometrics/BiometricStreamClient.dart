@@ -28,6 +28,7 @@ class BiometricStreamClient {
   late final StreamSubscription<ModuleStateEvent> _lifecycleSub;
 
   String? _currentSessionId;
+  bool _sessionConfirmed = false;
 
   final Queue<BioSample> _replayRing = Queue<BioSample>();
   static const int _replayRingMax = 75;
@@ -62,6 +63,7 @@ class BiometricStreamClient {
           _ensureSinkOpen();
         case GrpcConnectionState.disconnected:
           _teardownSink();
+          _sessionConfirmed = false;
         case GrpcConnectionState.connecting:
           break;
       }
@@ -74,6 +76,11 @@ class BiometricStreamClient {
     switch (event) {
       case ModuleSessionStarted(:final moduleSessionId):
         _currentSessionId = moduleSessionId;
+        _sessionConfirmed = true;
+        _lastOpenAttempt = null;
+      case ModuleSessionResumed(:final moduleSessionId):
+        _currentSessionId = moduleSessionId;
+        _sessionConfirmed = true;
         _lastOpenAttempt = null;
       case ModuleSessionPaused():
         break;
@@ -81,6 +88,7 @@ class BiometricStreamClient {
         break;
       case ModuleSessionEnded() || ModuleSessionAbandoned():
         _currentSessionId = null;
+        _sessionConfirmed = false;
         _lastOpenAttempt = null;
         _replayRing.clear();
     }
@@ -89,7 +97,7 @@ class BiometricStreamClient {
   // ── Public API ────────────────────────────────────────────────────────────
 
   void sendBatch(List<BioSample> samples) {
-    if (_currentSessionId == null) return;
+    if (_currentSessionId == null || !_sessionConfirmed) return;
     if (samples.isEmpty) return;
     _ensureSinkOpen();
     _encodeAndAdd(samples);

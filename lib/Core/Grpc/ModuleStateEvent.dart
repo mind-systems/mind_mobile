@@ -5,6 +5,11 @@ class ModuleSessionStarted extends ModuleStateEvent {
   ModuleSessionStarted({this.moduleSessionId});
 }
 
+class ModuleSessionResumed extends ModuleStateEvent {
+  final String? moduleSessionId;
+  ModuleSessionResumed({this.moduleSessionId});
+}
+
 class ModuleSessionPaused extends ModuleStateEvent {}
 
 class ModuleSessionUnpaused extends ModuleStateEvent {}

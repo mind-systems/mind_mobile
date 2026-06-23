@@ -31,6 +31,8 @@ class KeepAliveCoordinator {
         _foregroundKeepAlive.stop();
       case ModuleSessionAbandoned():
         _foregroundKeepAlive.stop();
+      case ModuleSessionResumed():
+        break;
       case ModuleSessionPaused():
         break;
       case ModuleSessionUnpaused():

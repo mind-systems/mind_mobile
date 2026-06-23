@@ -115,7 +115,14 @@ class ModuleStateChannel {
 
   void _processProtoEvent(proto.StateEvent event) {
     final status = event.status;
-    if (status == proto.ActivityStatus.ACTIVE || status == proto.ActivityStatus.RESUMED) {
+    if (status == proto.ActivityStatus.RESUMED) {
+      final isPaused = event.isPaused;
+      final moduleSessionId = event.moduleSessionId;
+      _isPendingStart = false;
+      _isPendingPause = false;
+      _state.add(ModuleState(moduleSessionId: moduleSessionId, status: ModuleStateStatus.active, isPaused: isPaused));
+      _events.add(ModuleSessionResumed(moduleSessionId: moduleSessionId));
+    } else if (status == proto.ActivityStatus.ACTIVE) {
       final isPaused = event.isPaused;
       final moduleSessionId = event.moduleSessionId;
       final wasPaused = currentState.isPaused;
