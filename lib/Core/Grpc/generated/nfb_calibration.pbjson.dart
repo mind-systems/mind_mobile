@@ -62,6 +62,13 @@ const NfbCalibrationRecord$json = {
     {'1': 'lower_frequency', '3': 11, '4': 1, '5': 2, '10': 'lowerFrequency'},
     {'1': 'upper_frequency', '3': 12, '4': 1, '5': 2, '10': 'upperFrequency'},
     {'1': 'created_at', '3': 13, '4': 1, '5': 9, '10': 'createdAt'},
+    {
+      '1': 'individual_peak_frequency',
+      '3': 14,
+      '4': 1,
+      '5': 2,
+      '10': 'individualPeakFrequency'
+    },
   ],
 };
 
@@ -77,7 +84,8 @@ final $typed_data.Uint8List nfbCalibrationRecordDescriptor = $convert.base64Deco
     'VhbF9iYW5kd2lkdGgYCSABKAJSE2luZGl2aWR1YWxCYW5kd2lkdGgSPgobaW5kaXZpZHVhbF9u'
     'b3JtYWxpemVkX3Bvd2VyGAogASgCUhlpbmRpdmlkdWFsTm9ybWFsaXplZFBvd2VyEicKD2xvd2'
     'VyX2ZyZXF1ZW5jeRgLIAEoAlIObG93ZXJGcmVxdWVuY3kSJwoPdXBwZXJfZnJlcXVlbmN5GAwg'
-    'ASgCUg51cHBlckZyZXF1ZW5jeRIdCgpjcmVhdGVkX2F0GA0gASgJUgljcmVhdGVkQXQ=');
+    'ASgCUg51cHBlckZyZXF1ZW5jeRIdCgpjcmVhdGVkX2F0GA0gASgJUgljcmVhdGVkQXQSOgoZaW'
+    '5kaXZpZHVhbF9wZWFrX2ZyZXF1ZW5jeRgOIAEoAlIXaW5kaXZpZHVhbFBlYWtGcmVxdWVuY3k=');
 
 @$core.Deprecated('Use recordNfbCalibrationRequestDescriptor instead')
 const RecordNfbCalibrationRequest$json = {
@@ -124,6 +132,13 @@ const RecordNfbCalibrationRequest$json = {
     },
     {'1': 'lower_frequency', '3': 10, '4': 1, '5': 2, '10': 'lowerFrequency'},
     {'1': 'upper_frequency', '3': 11, '4': 1, '5': 2, '10': 'upperFrequency'},
+    {
+      '1': 'individual_peak_frequency',
+      '3': 12,
+      '4': 1,
+      '5': 2,
+      '10': 'individualPeakFrequency'
+    },
   ],
 };
 
@@ -139,7 +154,8 @@ final $typed_data.Uint8List recordNfbCalibrationRequestDescriptor = $convert.bas
     'lkdGgYCCABKAJSE2luZGl2aWR1YWxCYW5kd2lkdGgSPgobaW5kaXZpZHVhbF9ub3JtYWxpemVk'
     'X3Bvd2VyGAkgASgCUhlpbmRpdmlkdWFsTm9ybWFsaXplZFBvd2VyEicKD2xvd2VyX2ZyZXF1ZW'
     '5jeRgKIAEoAlIObG93ZXJGcmVxdWVuY3kSJwoPdXBwZXJfZnJlcXVlbmN5GAsgASgCUg51cHBl'
-    'ckZyZXF1ZW5jeQ==');
+    'ckZyZXF1ZW5jeRI6ChlpbmRpdmlkdWFsX3BlYWtfZnJlcXVlbmN5GAwgASgCUhdpbmRpdmlkdW'
+    'FsUGVha0ZyZXF1ZW5jeQ==');
 
 @$core.Deprecated('Use listNfbCalibrationsRequestDescriptor instead')
 const ListNfbCalibrationsRequest$json = {

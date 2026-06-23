@@ -19,6 +19,7 @@ class NfbCalibrationGrpcApi {
       individualNormalizedPower: data.individualNormalizedPower,
       lowerFrequency: data.lowerFrequency,
       upperFrequency: data.upperFrequency,
+      individualPeakFrequency: data.individualPeakFrequency,
     ));
     // Return value (NfbCalibrationRecord) is intentionally discarded — repository
     // treats remote sync as fire-and-forget; the server-assigned id/createdAt are
@@ -39,8 +40,9 @@ class NfbCalibrationGrpcApi {
       isValid: r.isValid,
       failReason: r.failReason,
       individualFrequency: r.individualFrequency,
-      // TODO(mind_api Phase 29): use r.individualPeakFrequency with the <=0 sentinel rule.
-      individualPeakFrequency: r.individualFrequency,
+      individualPeakFrequency: r.individualPeakFrequency > 0
+          ? r.individualPeakFrequency
+          : r.individualFrequency,
       individualPeakFrequencyPower: r.individualPeakFrequencyPower,
       individualPeakFrequencySuppression: r.individualPeakFrequencySuppression,
       individualBandwidth: r.individualBandwidth,

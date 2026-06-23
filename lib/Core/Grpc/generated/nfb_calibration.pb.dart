@@ -34,6 +34,7 @@ class NfbCalibrationRecord extends $pb.GeneratedMessage {
     $core.double? lowerFrequency,
     $core.double? upperFrequency,
     $core.String? createdAt,
+    $core.double? individualPeakFrequency,
   }) {
     final result = create();
     if (id != null) result.id = id;
@@ -55,6 +56,8 @@ class NfbCalibrationRecord extends $pb.GeneratedMessage {
     if (lowerFrequency != null) result.lowerFrequency = lowerFrequency;
     if (upperFrequency != null) result.upperFrequency = upperFrequency;
     if (createdAt != null) result.createdAt = createdAt;
+    if (individualPeakFrequency != null)
+      result.individualPeakFrequency = individualPeakFrequency;
     return result;
   }
 
@@ -91,6 +94,8 @@ class NfbCalibrationRecord extends $pb.GeneratedMessage {
     ..aD(12, _omitFieldNames ? '' : 'upperFrequency',
         fieldType: $pb.PbFieldType.OF)
     ..aOS(13, _omitFieldNames ? '' : 'createdAt')
+    ..aD(14, _omitFieldNames ? '' : 'individualPeakFrequency',
+        fieldType: $pb.PbFieldType.OF)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -229,6 +234,15 @@ class NfbCalibrationRecord extends $pb.GeneratedMessage {
   $core.bool hasCreatedAt() => $_has(12);
   @$pb.TagNumber(13)
   void clearCreatedAt() => $_clearField(13);
+
+  @$pb.TagNumber(14)
+  $core.double get individualPeakFrequency => $_getN(13);
+  @$pb.TagNumber(14)
+  set individualPeakFrequency($core.double value) => $_setFloat(13, value);
+  @$pb.TagNumber(14)
+  $core.bool hasIndividualPeakFrequency() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearIndividualPeakFrequency() => $_clearField(14);
 }
 
 /// Record — auth identity comes from metadata/interceptor, not the message.
@@ -245,6 +259,7 @@ class RecordNfbCalibrationRequest extends $pb.GeneratedMessage {
     $core.double? individualNormalizedPower,
     $core.double? lowerFrequency,
     $core.double? upperFrequency,
+    $core.double? individualPeakFrequency,
   }) {
     final result = create();
     if (deviceSerial != null) result.deviceSerial = deviceSerial;
@@ -264,6 +279,8 @@ class RecordNfbCalibrationRequest extends $pb.GeneratedMessage {
       result.individualNormalizedPower = individualNormalizedPower;
     if (lowerFrequency != null) result.lowerFrequency = lowerFrequency;
     if (upperFrequency != null) result.upperFrequency = upperFrequency;
+    if (individualPeakFrequency != null)
+      result.individualPeakFrequency = individualPeakFrequency;
     return result;
   }
 
@@ -297,6 +314,8 @@ class RecordNfbCalibrationRequest extends $pb.GeneratedMessage {
     ..aD(10, _omitFieldNames ? '' : 'lowerFrequency',
         fieldType: $pb.PbFieldType.OF)
     ..aD(11, _omitFieldNames ? '' : 'upperFrequency',
+        fieldType: $pb.PbFieldType.OF)
+    ..aD(12, _omitFieldNames ? '' : 'individualPeakFrequency',
         fieldType: $pb.PbFieldType.OF)
     ..hasRequiredFields = false;
 
@@ -421,6 +440,15 @@ class RecordNfbCalibrationRequest extends $pb.GeneratedMessage {
   $core.bool hasUpperFrequency() => $_has(10);
   @$pb.TagNumber(11)
   void clearUpperFrequency() => $_clearField(11);
+
+  @$pb.TagNumber(12)
+  $core.double get individualPeakFrequency => $_getN(11);
+  @$pb.TagNumber(12)
+  set individualPeakFrequency($core.double value) => $_setFloat(11, value);
+  @$pb.TagNumber(12)
+  $core.bool hasIndividualPeakFrequency() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearIndividualPeakFrequency() => $_clearField(12);
 }
 
 /// List — auth identity comes from metadata/interceptor, not the message.
