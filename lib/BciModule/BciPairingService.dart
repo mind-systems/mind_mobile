@@ -47,6 +47,9 @@ class BciPairingService implements IBciPairingService {
   void startCalibration() => unawaited(bciNotifier.startCalibration());
 
   @override
+  void startQuickCalibration() => unawaited(bciNotifier.startQuickCalibration());
+
+  @override
   void disconnect() => unawaited(bciNotifier.disconnect());
 
   // ── Reducer ───────────────────────────────────────────────────────────────
@@ -150,16 +153,18 @@ class BciPairingService implements IBciPairingService {
           errorMessage: null,
         );
 
-      case BciCalibrating(:final serial):
+      case BciCalibrating(:final serial, :final totalStages):
         return acc.copyWith(
           stage: BciPairingStage.calibrating,
           isScanning: false,
           isConnecting: false,
           connectedSerial: serial,
           errorMessage: null,
-          calibration: const BciCalibrationProgressDTO(
+          calibration: BciCalibrationProgressDTO(
             stagesCompleted: 0,
             isComplete: false,
+            failed: false,
+            totalStages: totalStages,
           ),
         );
 
@@ -184,19 +189,44 @@ class BciPairingService implements IBciPairingService {
           calibration: BciCalibrationProgressDTO(
             stagesCompleted: stage,
             isComplete: acc.calibration?.isComplete ?? false,
+            failed: false,
+            failReason: acc.calibration?.failReason,
+            totalStages: acc.calibration?.totalStages ?? 4,
           ),
         );
 
-      case BciCalibrationCompleted():
+      case BciCalibrationCompleted(:final data):
+        if (data.isValid) {
+          return acc.copyWith(
+            calibration: BciCalibrationProgressDTO(
+              stagesCompleted: acc.calibration?.stagesCompleted ?? 0,
+              isComplete: true,
+              failed: false,
+              totalStages: acc.calibration?.totalStages ?? 4,
+            ),
+          );
+        } else {
+          return acc.copyWith(
+            calibration: BciCalibrationProgressDTO(
+              stagesCompleted: acc.calibration?.stagesCompleted ?? 0,
+              isComplete: false,
+              failed: true,
+              failReason: data.failReason,
+              totalStages: acc.calibration?.totalStages ?? 4,
+            ),
+          );
+        }
+
+      case BciCalibrationFailed(:final reason):
         return acc.copyWith(
           calibration: BciCalibrationProgressDTO(
             stagesCompleted: acc.calibration?.stagesCompleted ?? 0,
-            isComplete: true,
+            isComplete: false,
+            failed: true,
+            failReason: reason,
+            totalStages: acc.calibration?.totalStages ?? 4,
           ),
         );
-
-      case BciCalibrationFailed(:final reason):
-        return acc.copyWith(calibration: null, errorMessage: reason);
     }
   }
 }

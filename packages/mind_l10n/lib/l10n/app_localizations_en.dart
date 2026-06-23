@@ -329,6 +329,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bciPairingStartCalibration => 'Start calibration';
 
   @override
+  String get bciPairingRetryCalibration => 'Retry';
+
+  @override
+  String get bciPairingCalibrationFailedArtifacts =>
+      'Calibration failed: too much signal noise. Sit still, relax, and try again.';
+
+  @override
+  String get bciPairingCalibrationFailedPeak =>
+      'Calibration failed: couldn\'t reliably detect your individual rhythm. Please try again.';
+
+  @override
+  String get bciPairingCalibrationFailed =>
+      'Calibration failed. Please try again.';
+
+  @override
   String get bciPairingCloseEyes => 'Close your eyes and relax.';
 
   @override

@@ -50,8 +50,12 @@ class BciImpedance extends BciActive {
 }
 
 /// A calibration sequence is running on [serial].
+///
+/// [totalStages] indicates the scope of the run: 4 for the initial full
+/// calibration flow, 1 for a quick single-stage retry.
 class BciCalibrating extends BciActive {
-  const BciCalibrating(super.serial);
+  final int totalStages;
+  const BciCalibrating(super.serial, {required this.totalStages});
 }
 
 /// The device is fully connected and ready for a session.

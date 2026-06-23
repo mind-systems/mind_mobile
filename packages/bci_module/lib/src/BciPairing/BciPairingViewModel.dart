@@ -45,5 +45,7 @@ class BciPairingViewModel extends Notifier<BciPairingState> {
 
   void onStartCalibration() => service.startCalibration();
 
+  void onRetryCalibration() => service.startQuickCalibration();
+
   void onDisconnect() => service.disconnect();
 }

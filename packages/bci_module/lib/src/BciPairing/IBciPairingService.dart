@@ -19,5 +19,7 @@ abstract class IBciPairingService {
 
   void startCalibration();
 
+  void startQuickCalibration();
+
   void disconnect();
 }

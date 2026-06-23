@@ -52,6 +52,13 @@ abstract interface class IBciDeviceProvider {
   /// Requests the device to start its calibration sequence.
   Future<void> startCalibration();
 
+  /// Runs a single-stage quick calibration sequence.
+  ///
+  /// Unlike [startCalibration], which runs the full 4-stage flow, this
+  /// completes in a single stage and is safe to re-run any number of times
+  /// within the same session without reconnecting the device.
+  Future<void> startQuickCalibration();
+
   /// Imports a previously-persisted [NfbCalibrationData] into the underlying
   /// NFB calibrator so subsequent sessions can run with prior calibration
   /// results without forcing the user through another calibration sequence.

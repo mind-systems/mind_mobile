@@ -78,18 +78,21 @@ class BciDeviceManager {
         case BciCalibrationStageFinished():
           break; // stage progress forwarded to UI via public calibrationStream — no state change
         case BciCalibrationCompleted(data: final data):
-          // _connectedSerial is captured synchronously — Dart is single-threaded
-          // within a listener callback, so the null check and dereference are safe.
-          // Edge case: a late-arriving event after disconnect→reconnect-to-different-device
-          // would record under the new serial; accepted as a thin race given that
-          // calibration events fire immediately during calibrateIndividual().
-          if (data.isValid && _connectedSerial != null) {
-            unawaited(_nfbCalibrationRepository.record(_connectedSerial!, data).catchError(
-              (Object e) => logPrint('BciDeviceManager: nfbCalibration record failed: $e'),
-            ));
-          }
           if (_state is BciCalibrating) {
-            _setState(BciReady((_state as BciCalibrating).serial));
+            if (data.isValid) {
+              // _connectedSerial is captured synchronously — Dart is single-threaded
+              // within a listener callback, so the null check and dereference are safe.
+              if (_connectedSerial != null) {
+                unawaited(_nfbCalibrationRepository.record(_connectedSerial!, data).catchError(
+                  (Object e) => logPrint('BciDeviceManager: nfbCalibration record failed: $e'),
+                ));
+              }
+              _setState(BciReady((_state as BciCalibrating).serial));
+            } else {
+              // Invalid result — route back to impedance so the user can retry.
+              logPrint('BciDeviceManager: calibration result invalid: ${data.failReason}');
+              _setState(BciImpedance((_state as BciCalibrating).serial));
+            }
           }
         case BciCalibrationFailed(:final reason):
           logPrint('BciDeviceManager: calibration failed: $reason');
@@ -234,13 +237,27 @@ class BciDeviceManager {
   Future<void> startCalibration() async {
     if (_state is! BciImpedance) return;
     final serial = (_state as BciImpedance).serial;
-    _setState(BciCalibrating(serial));
+    _setState(BciCalibrating(serial, totalStages: 4));
     try {
       await _provider.startCalibration();
       // success path: calibration events flow through _provider.calibrationStream
       // and are handled by the listener in _subscribeProviderStreams.
     } catch (e) {
       logPrint('BciDeviceManager: startCalibration failed: $e');
+      _setState(BciImpedance(serial));
+    }
+  }
+
+  Future<void> startQuickCalibration() async {
+    if (_state is! BciImpedance) return;
+    final serial = (_state as BciImpedance).serial;
+    _setState(BciCalibrating(serial, totalStages: 1));
+    try {
+      await _provider.startQuickCalibration();
+      // success path: calibration events flow through _provider.calibrationStream
+      // and are handled by the listener in _subscribeProviderStreams.
+    } catch (e) {
+      logPrint('BciDeviceManager: startQuickCalibration failed: $e');
       _setState(BciImpedance(serial));
     }
   }

@@ -110,6 +110,8 @@ class BciNotifier {
 
   Future<void> startCalibration() => _manager.startCalibration();
 
+  Future<void> startQuickCalibration() => _manager.startQuickCalibration();
+
   Future<void> disconnect() => _manager.disconnect();
 
   Future<void> dispose() async {

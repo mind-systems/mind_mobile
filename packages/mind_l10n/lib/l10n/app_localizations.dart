@@ -698,6 +698,30 @@ abstract class AppLocalizations {
   /// **'Start calibration'**
   String get bciPairingStartCalibration;
 
+  /// No description provided for @bciPairingRetryCalibration.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get bciPairingRetryCalibration;
+
+  /// No description provided for @bciPairingCalibrationFailedArtifacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibration failed: too much signal noise. Sit still, relax, and try again.'**
+  String get bciPairingCalibrationFailedArtifacts;
+
+  /// No description provided for @bciPairingCalibrationFailedPeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibration failed: couldn\'t reliably detect your individual rhythm. Please try again.'**
+  String get bciPairingCalibrationFailedPeak;
+
+  /// No description provided for @bciPairingCalibrationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibration failed. Please try again.'**
+  String get bciPairingCalibrationFailed;
+
   /// No description provided for @bciPairingCloseEyes.
   ///
   /// In en, this message translates to:

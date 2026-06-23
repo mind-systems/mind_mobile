@@ -331,6 +331,21 @@ class AppLocalizationsRu extends AppLocalizations {
   String get bciPairingStartCalibration => 'Начать калибровку';
 
   @override
+  String get bciPairingRetryCalibration => 'Повторить';
+
+  @override
+  String get bciPairingCalibrationFailedArtifacts =>
+      'Калибровка не удалась: слишком много помех в сигнале. Сядьте спокойно, расслабьтесь и попробуйте снова.';
+
+  @override
+  String get bciPairingCalibrationFailedPeak =>
+      'Калибровка не удалась: не удалось надёжно определить ваш индивидуальный ритм. Попробуйте ещё раз.';
+
+  @override
+  String get bciPairingCalibrationFailed =>
+      'Калибровка не удалась. Попробуйте ещё раз.';
+
+  @override
   String get bciPairingCloseEyes => 'Закройте глаза и расслабьтесь.';
 
   @override

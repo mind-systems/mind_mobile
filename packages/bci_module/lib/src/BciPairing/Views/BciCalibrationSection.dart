@@ -79,6 +79,19 @@ class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
     return activeStage.isOdd ? l10n.bciPairingCloseEyes : l10n.bciPairingOpenEyes;
   }
 
+  // Maps a machine-readable failReason string to a localized message.
+  String _failureMessage(BuildContext context, String? failReason) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (failReason) {
+      case 'tooManyArtifacts':
+        return l10n.bciPairingCalibrationFailedArtifacts;
+      case 'peakFrequencyAtBorder':
+        return l10n.bciPairingCalibrationFailedPeak;
+      default:
+        return l10n.bciPairingCalibrationFailed;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -87,7 +100,9 @@ class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
       // ── Stage change → play chime and update tick timer ──────────────────
       final prevStages = prev?.calibration?.stagesCompleted;
       final nextStages = next.calibration?.stagesCompleted;
-      final inProgress = next.calibration != null && !next.calibration!.isComplete;
+      final inProgress = next.calibration != null &&
+          !next.calibration!.isComplete &&
+          !next.calibration!.failed;
 
       if (inProgress && prevStages != nextStages) {
         if (_chimeReady) _stageChime.play();
@@ -113,6 +128,8 @@ class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
 
     final state = ref.watch(bciPairingViewModelProvider);
 
+    final hasFailed = state.calibration?.failed == true;
+
     Widget content = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -127,10 +144,12 @@ class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
                 ),
           ),
         ),
+        // Primary "Start calibration" button — disabled once a failure is shown
+        // (Retry becomes the primary action).
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: ElevatedButton(
-            onPressed: state.stage == BciPairingStage.impedance
+            onPressed: state.stage == BciPairingStage.impedance && !hasFailed
                 ? () => ref
                     .read(bciPairingViewModelProvider.notifier)
                     .onStartCalibration()
@@ -138,14 +157,19 @@ class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
             child: Text(l10n.bciPairingStartCalibration),
           ),
         ),
-        if (state.calibration != null && !state.calibration!.isComplete) ...[
+        // In-progress block: visible while calibration is running (not failed, not complete).
+        if (state.calibration != null &&
+            !state.calibration!.isComplete &&
+            !state.calibration!.failed) ...[
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(4, (i) {
+            children: List.generate(state.calibration!.totalStages, (i) {
               final filled = i < state.calibration!.stagesCompleted;
               return Padding(
-                padding: EdgeInsets.only(right: i < 3 ? 8.0 : 0),
+                padding: EdgeInsets.only(
+                  right: i < state.calibration!.totalStages - 1 ? 8.0 : 0,
+                ),
                 child: Container(
                   width: 12,
                   height: 12,
@@ -173,6 +197,7 @@ class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
             ),
           ),
         ],
+        // Completion check — only shown when succeeded (not when failed).
         if (state.calibration?.isComplete == true) ...[
           const SizedBox(height: 16),
           Row(
@@ -183,6 +208,30 @@ class _BciCalibrationSectionState extends ConsumerState<BciCalibrationSection> {
               const SizedBox(width: 8),
               Text(l10n.bciPairingCalibrationComplete),
             ],
+          ),
+        ],
+        // Failure block with localized reason and Retry button.
+        if (hasFailed) ...[
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              _failureMessage(context, state.calibration!.failReason),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ElevatedButton(
+              onPressed: () => ref
+                  .read(bciPairingViewModelProvider.notifier)
+                  .onRetryCalibration(),
+              child: Text(l10n.bciPairingRetryCalibration),
+            ),
           ),
         ],
         const SizedBox(height: 16),
