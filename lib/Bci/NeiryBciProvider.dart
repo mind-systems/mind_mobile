@@ -32,8 +32,10 @@ import '../Logger.dart';
 /// This is the **only** file in `mind_mobile` that may import `neiry_kit`.
 /// All consumers must depend on [IBciDeviceProvider], never on this class.
 class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrIntervalSource, IEegBandsSource, IEmotionsSource, IMotionSource {
-  final _locator = neiry.DeviceLocator();
+  neiry.DeviceLocator _locator = neiry.DeviceLocator();
   neiry.Device? _device;
+  bool _disposed = false;
+  Future<void>? _teardownComplete;
 
   neiry.NfbClassifier? _nfbClassifier;
   neiry.CardioClassifier? _cardioClassifier;
@@ -101,6 +103,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
 
   @override
   Stream<List<BciDeviceInfo>> scan() async* {
+    try { await _teardownComplete; } catch (_) {}
     if (Platform.isIOS) {
       final status = await Permission.bluetooth.status;
       if (status.isPermanentlyDenied || status.isRestricted) {
@@ -145,6 +148,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
 
   @override
   Future<void> connect(String serial) async {
+    try { await _teardownComplete; } catch (_) {}
     if (_device != null) {
       throw StateError(
         'NeiryBciProvider: connect() called while already connected. '
@@ -181,6 +185,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
         await _device?.dispose();
       } catch (_) {}
       _device = null;
+      await _resetLocatorSession();
       rethrow;
     }
     _subscribeDeviceStreams();
@@ -419,6 +424,22 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
 
   // ── disconnect() ────────────────────────────────────────────────────────────
 
+  /// Disposes the current locator and replaces it with a fresh one so the
+  /// next connect() goes through a brand-new native session. The SDK caches
+  /// clCDevice per serial inside the locator and never evicts on release, so
+  /// reusing the same locator returns a stale device on reconnect.
+  /// No-op once the provider has been terminally disposed.
+  Future<void> _resetLocatorSession() async {
+    if (_disposed) return;
+    try {
+      await _locator.dispose();
+    } catch (_) {
+      // StateError on double-dispose — locator already torn down.
+    }
+    if (_disposed) return;
+    _locator = neiry.DeviceLocator();
+  }
+
   /// Captures device + classifier + subscription fields into locals, nulls
   /// them immediately (so reconnect sees a clean slate), then schedules the
   /// actual heavy disposal asynchronously to avoid re-entrancy while
@@ -461,54 +482,58 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     _emotionsErrorSub = null;
     _memsSub = null;
 
-    unawaited(Future.microtask(() async {
-      // Step 1: stopStream() = nativeUnregister + nativeStop — stops SDK background
-      // threads before any Dart subscription is cancelled (Invariant A). Native side
-      // may already be gone on unexpected drop; wrap in try/catch and continue.
-      try { await device?.stopStream(); } catch (_) {}
+    _teardownComplete = Future.microtask(() async {
+      try {
+        // Step 1: stopStream() = nativeUnregister + nativeStop — stops SDK background
+        // threads before any Dart subscription is cancelled (Invariant A). Native side
+        // may already be gone on unexpected drop; wrap in try/catch and continue.
+        try { await device?.stopStream(); } catch (_) {}
 
-      // Step 2: cancel fan-in subscriptions (safe — background threads stopped).
-      await connectionSub?.cancel();
-      await resistanceSub?.cancel();
-      await batterySub?.cancel();
-      await nfbSub?.cancel();
-      await nfbErrorSub?.cancel();
-      await cardioSub?.cancel();
-      await rrSub?.cancel();
-      await emotionsSub?.cancel();
-      await emotionsErrorSub?.cancel();
-      await memsSub?.cancel();
+        // Step 2: cancel fan-in subscriptions (safe — background threads stopped).
+        await connectionSub?.cancel();
+        await resistanceSub?.cancel();
+        await batterySub?.cancel();
+        await nfbSub?.cancel();
+        await nfbErrorSub?.cancel();
+        await cardioSub?.cancel();
+        await rrSub?.cancel();
+        await emotionsSub?.cancel();
+        await emotionsErrorSub?.cancel();
+        await memsSub?.cancel();
 
-      // Step 3: dispose classifiers (safe — handle still alive, no nativeRelease yet).
-      try {
-        await nfbClassifier?.dispose();
-      } catch (e) {
-        logPrint('NeiryBciProvider: nfb dispose error: $e');
-      }
-      try {
-        await cardioClassifier?.dispose();
-      } catch (e) {
-        logPrint('NeiryBciProvider: cardio dispose error: $e');
-      }
-      try {
-        await emotionsClassifier?.dispose();
-      } catch (e) {
-        logPrint('NeiryBciProvider: emotions dispose error: $e');
-      }
-      try {
-        await memsClassifier?.dispose();
-      } catch (e) {
-        logPrint('NeiryBciProvider: mems dispose error: $e');
-      }
+        // Step 3: dispose classifiers (safe — handle still alive, no nativeRelease yet).
+        try {
+          await nfbClassifier?.dispose();
+        } catch (e) {
+          logPrint('NeiryBciProvider: nfb dispose error: $e');
+        }
+        try {
+          await cardioClassifier?.dispose();
+        } catch (e) {
+          logPrint('NeiryBciProvider: cardio dispose error: $e');
+        }
+        try {
+          await emotionsClassifier?.dispose();
+        } catch (e) {
+          logPrint('NeiryBciProvider: emotions dispose error: $e');
+        }
+        try {
+          await memsClassifier?.dispose();
+        } catch (e) {
+          logPrint('NeiryBciProvider: mems dispose error: $e');
+        }
 
-      // Step 4: nativeDisconnect + nativeRelease (Invariant C).
-      try {
-        await device?.disconnect();
-        await device?.dispose();
-      } catch (e) {
-        logPrint('NeiryBciProvider: unexpected drop dispose error: $e');
+        // Step 4: nativeDisconnect + nativeRelease (Invariant C).
+        try {
+          await device?.disconnect();
+          await device?.dispose();
+        } catch (e) {
+          logPrint('NeiryBciProvider: unexpected drop dispose error: $e');
+        }
+      } finally {
+        await _resetLocatorSession();
       }
-    }));
+    });
   }
 
   Future<void> _cancelDeviceSubscriptions() async {
@@ -561,6 +586,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
 
   @override
   Future<void> disconnect() async {
+    try { await _teardownComplete; } catch (_) {}
     // Step 1: stopStream() = nativeUnregister + nativeStop — stops SDK background
     // threads before any Dart subscription is cancelled (Invariant A).
     // Only called when streaming is active; calling it on an unstarted device throws.
@@ -587,6 +613,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       logPrint('NeiryBciProvider: dispose error: $e');
     }
     _device = null;
+    await _resetLocatorSession();
     // Emit explicitly — _connectionSub is already cancelled so the native
     // disconnected event would be missed without this.
     _connectionStateController.add(BciLinkStatus.down);
@@ -601,6 +628,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   }
 
   Future<void> _doDispose() async {
+    _disposed = true;
     // Same invariant sequence as disconnect().
     if (_device?.isStarted == true) {
       try { await _device!.stopStream(); } catch (_) {}
@@ -615,6 +643,11 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       logPrint('NeiryBciProvider: dispose error: $e');
     }
     _device = null;
+    try {
+      await _locator.dispose();
+    } catch (_) {
+      // StateError if already disposed by a teardown path that ran first.
+    }
     _connectionStateController.close();
     _signalQualityController.close();
     _batteryController.close();
