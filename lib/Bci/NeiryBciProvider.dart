@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'dart:math' show min;
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:neiry_kit/neiry_kit.dart' as neiry;
@@ -25,17 +24,29 @@ import 'Models/BciEmotionsData.dart';
 import 'Models/BciNfbData.dart';
 import 'Models/BluetoothPermissionDeniedException.dart';
 import 'Models/NfbCalibrationData.dart';
+import 'Ports/DevicePort.dart';
+import 'Ports/LocatorPort.dart';
+import 'Ports/NeiryDeviceAdapter.dart';
+import 'Ports/NeiryLocatorAdapter.dart';
 import '../Logger.dart';
 
 /// Adapter that bridges `neiry_kit` to [IBciDeviceProvider].
 ///
-/// This is the **only** file in `mind_mobile` that may import `neiry_kit`.
-/// All consumers must depend on [IBciDeviceProvider], never on this class.
+/// Only this file and the port adapters ([NeiryLocatorAdapter],
+/// [NeiryDeviceAdapter]) may import `neiry_kit`. All other consumers must
+/// depend on [IBciDeviceProvider] or the port interfaces, never on this class
+/// or the adapter implementations.
 class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrIntervalSource, IEegBandsSource, IEmotionsSource, IMotionSource {
-  neiry.DeviceLocator _locator = neiry.DeviceLocator();
-  neiry.Device? _device;
+  late LocatorPort _locator;
+  final LocatorPort Function() _locatorFactory;
+  DevicePort? _device;
   bool _disposed = false;
   Future<void>? _teardownComplete;
+
+  NeiryBciProvider({LocatorPort Function()? locatorFactory})
+      : _locatorFactory = locatorFactory ?? (() => NeiryLocatorAdapter()) {
+    _locator = _locatorFactory();
+  }
 
   neiry.NfbClassifier? _nfbClassifier;
   neiry.CardioClassifier? _cardioClassifier;
@@ -55,8 +66,8 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   final _emotionsController = StreamController<BciEmotionsData>.broadcast();
   final _motionController = StreamController<MotionData>.broadcast();
 
-  StreamSubscription<neiry.NeiryConnectionState>? _connectionSub;
-  StreamSubscription<neiry.ResistanceData>? _resistanceSub;
+  StreamSubscription<BciLinkStatus>? _connectionSub;
+  StreamSubscription<List<BciChannelQuality>>? _resistanceSub;
   StreamSubscription<int>? _batterySub;
   StreamSubscription<neiry.CalibrationEvent>? _calibrationSub;
   StreamSubscription<neiry.NfbUserState>? _nfbSub;
@@ -138,10 +149,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       }
     }
 
-    yield* _locator
-        .requestDevices(type: neiry.NeiryDeviceType.headband, searchTime: 5)
-        .map((list) =>
-            list.map((d) => BciDeviceInfo(serial: d.serial, name: d.name)).toList());
+    yield* _locator.requestDevices(type: BciScanDeviceType.headband, searchTime: 5);
   }
 
   // ── connect() ───────────────────────────────────────────────────────────────
@@ -158,10 +166,13 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     _device = await _locator.createDevice(serial);
     try {
       await _device!.connect();
-      _nfbClassifier = neiry.NfbClassifier(_device!);
-      _cardioClassifier = neiry.CardioClassifier(_device!);
-      _emotionsClassifier = neiry.EmotionsClassifier(_device!);
-      _memsClassifier = neiry.MEMSClassifier(_device!);
+      // Classifiers require the raw neiry.Device — access via adapter.
+      // TODO(A3): replace with ClassifierFactory port.
+      final raw = (_device as NeiryDeviceAdapter).rawDevice;
+      _nfbClassifier = neiry.NfbClassifier(raw);
+      _cardioClassifier = neiry.CardioClassifier(raw);
+      _emotionsClassifier = neiry.EmotionsClassifier(raw);
+      _memsClassifier = neiry.MEMSClassifier(raw);
       await _device!.start();
     } catch (e) {
       try {
@@ -193,12 +204,12 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
 
   void _subscribeDeviceStreams() {
     _connectionSub = _device!.connectionStateStream.listen(
-      _onNeiryConnectionState,
+      _onConnectionStatus,
       onError: (Object e) =>
           logPrint('NeiryBciProvider: connectionStateStream error: $e'),
     );
     _resistanceSub = _device!.resistanceStream.listen(
-      _onResistance,
+      _signalQualityController.add,
       onError: (Object e) =>
           logPrint('NeiryBciProvider: resistanceStream error: $e'),
     );
@@ -246,13 +257,18 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     );
   }
 
-  // ── NeiryConnectionState → BciConnectionState ───────────────────────────────
+  // ── BciLinkStatus handler ───────────────────────────────────────────────────
 
-  void _onNeiryConnectionState(neiry.NeiryConnectionState s) {
-    switch (s) {
-      case neiry.NeiryConnectionState.connected:
+  /// Handles domain-level connection status events from [DevicePort.connectionStateStream].
+  ///
+  /// [BciLinkStatus.down] covers both normal disconnects and
+  /// unsupported-connection events — [NeiryDeviceAdapter] maps and logs the
+  /// latter before it reaches this handler.
+  void _onConnectionStatus(BciLinkStatus status) {
+    switch (status) {
+      case BciLinkStatus.up:
         _connectionStateController.add(BciLinkStatus.up);
-      case neiry.NeiryConnectionState.disconnected:
+      case BciLinkStatus.down:
         // Idempotency guard: our own disconnect() already nulls _device and
         // emits; a second native event in that window is redundant noise.
         if (_device == null) return;
@@ -260,46 +276,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
         // throws StateError if _device is non-null when it runs.
         _teardownAfterUnexpectedDrop();
         _connectionStateController.add(BciLinkStatus.down);
-      case neiry.NeiryConnectionState.unsupportedConnection:
-        if (_device == null) return;
-        logPrint('NeiryBciProvider: unsupported connection');
-        _teardownAfterUnexpectedDrop();
-        _connectionStateController.add(BciLinkStatus.down);
     }
-  }
-
-  // ── ResistanceData → List<BciChannelQuality> ────────────────────────────────
-
-  void _onResistance(neiry.ResistanceData r) {
-    if (r.channelNames.length != r.values.length ||
-        r.channelNames.length != r.channelCount) {
-      logPrint(
-        'NeiryBciProvider: channel count mismatch: '
-        'names=${r.channelNames.length}, values=${r.values.length}, '
-        'channelCount=${r.channelCount}',
-      );
-    }
-    final count =
-        min(min(r.channelNames.length, r.values.length), r.channelCount);
-    final qualities = <BciChannelQuality>[];
-    for (var i = 0; i < count; i++) {
-      final name = r.channelNames[i];
-      final value = r.values[i];
-      final BciSignalLevel level;
-      if (!value.isFinite || value > 1000) {
-        level = BciSignalLevel.red;
-      } else if (value > 500) {
-        level = BciSignalLevel.yellow;
-      } else {
-        level = BciSignalLevel.green;
-      }
-      qualities.add(BciChannelQuality(
-        channelName: name,
-        impedanceOhm: value,
-        level: level,
-      ));
-    }
-    _signalQualityController.add(qualities);
   }
 
   // ── NfbUserState → BciNfbData ───────────────────────────────────────────────
@@ -465,7 +442,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       // StateError on double-dispose — locator already torn down.
     }
     if (_disposed) return;
-    _locator = neiry.DeviceLocator();
+    _locator = _locatorFactory();
   }
 
   /// Captures device + classifier + subscription fields into locals, nulls
