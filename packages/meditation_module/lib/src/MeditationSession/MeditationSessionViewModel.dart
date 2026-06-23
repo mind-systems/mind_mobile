@@ -15,6 +15,7 @@ class MeditationSessionViewModel extends Notifier<MeditationSessionState> {
   final _stateController = StreamController<MeditationSessionState>.broadcast();
   final ValueNotifier<int> elapsedSeconds = ValueNotifier(0);
   Timer? _timer;
+  DateTime? _startedAt;
 
   Stream<MeditationSessionState> get stream => _stateController.stream;
 
@@ -37,14 +38,18 @@ class MeditationSessionViewModel extends Notifier<MeditationSessionState> {
   }
 
   void start() {
+    _startedAt = DateTime.now();
     elapsedSeconds.value = 0;
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => elapsedSeconds.value++);
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      elapsedSeconds.value = DateTime.now().difference(_startedAt!).inSeconds;
+    });
     state = state.copyWith(status: MeditationSessionStatus.active);
   }
 
   void stop() {
     _timer?.cancel();
     _timer = null;
+    _startedAt = null;
     state = state.copyWith(status: MeditationSessionStatus.idle);
   }
 }
