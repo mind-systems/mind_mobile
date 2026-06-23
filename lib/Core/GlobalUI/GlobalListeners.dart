@@ -12,14 +12,18 @@ import 'package:mind_ui/mind_ui.dart';
 /// - Snackbar events via [GlobalSnackBarNotifier]
 /// - Session expiry via [sessionExpiredStream] (fires only when an authenticated
 ///   session is actually cleared — not for guest 401s)
+/// - Session abandonment via [sessionAbandonedStream] (fires when the server
+///   confirms a session was abandoned while the client believed it was active)
 ///
 /// Should wrap the root widget of the application.
 class GlobalListeners extends ConsumerStatefulWidget {
   final Stream<void> sessionExpiredStream;
+  final Stream<void> sessionAbandonedStream;
   final Widget child;
 
   const GlobalListeners({
     required this.sessionExpiredStream,
+    required this.sessionAbandonedStream,
     required this.child,
     super.key,
   });
@@ -30,6 +34,7 @@ class GlobalListeners extends ConsumerStatefulWidget {
 
 class _GlobalListenersState extends ConsumerState<GlobalListeners> {
   StreamSubscription<void>? _sessionExpiredSubscription;
+  StreamSubscription<void>? _sessionAbandonedSubscription;
 
   @override
   void initState() {
@@ -37,11 +42,15 @@ class _GlobalListenersState extends ConsumerState<GlobalListeners> {
     _sessionExpiredSubscription = widget.sessionExpiredStream.listen((_) {
       _showSnackBar(SnackBarEvent.error(_sessionExpiredMessage()));
     });
+    _sessionAbandonedSubscription = widget.sessionAbandonedStream.listen((_) {
+      _showSnackBar(SnackBarEvent.error(_sessionAbandonedMessage()));
+    });
   }
 
   @override
   void dispose() {
     _sessionExpiredSubscription?.cancel();
+    _sessionAbandonedSubscription?.cancel();
     super.dispose();
   }
 
@@ -66,6 +75,13 @@ class _GlobalListenersState extends ConsumerState<GlobalListeners> {
     final context = rootScaffoldMessengerKey.currentContext;
     if (context == null || !context.mounted) return fallback;
     return AppLocalizations.of(context)?.sessionExpired ?? fallback;
+  }
+
+  String _sessionAbandonedMessage() {
+    const fallback = 'Session ended unexpectedly';
+    final context = rootScaffoldMessengerKey.currentContext;
+    if (context == null || !context.mounted) return fallback;
+    return AppLocalizations.of(context)?.sessionAbandoned ?? fallback;
   }
 
   void _showSnackBar(SnackBarEvent event) {

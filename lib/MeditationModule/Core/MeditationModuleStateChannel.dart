@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Core/Grpc/ModuleState.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
+import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
 import 'package:meditation_module/meditation_module.dart' show MeditationSessionState, MeditationSessionStatus;
 
 class MeditationModuleStateChannel {
@@ -14,6 +15,7 @@ class MeditationModuleStateChannel {
   String? _moduleSessionId;
   late final StreamSubscription<MeditationSessionState> _stateSub;
   late final StreamSubscription<ModuleState> _channelSub;
+  late final StreamSubscription<ModuleStateEvent> _eventsSub;
 
   MeditationModuleStateChannel({
     required ModuleStateChannel channel,
@@ -25,6 +27,14 @@ class MeditationModuleStateChannel {
     _channelSub = channel.state.listen((moduleState) {
       if (moduleState.moduleSessionId != null) {
         _moduleSessionId = moduleState.moduleSessionId;
+      }
+    });
+    _eventsSub = channel.events.listen((event) {
+      if (event is ModuleSessionAbandoned) {
+        _started = false;
+        _ended = false;
+        _moduleSessionId = null;
+        _previousStatus = null;
       }
     });
   }
@@ -41,7 +51,7 @@ class MeditationModuleStateChannel {
     } else if (status == MeditationSessionStatus.idle && _started && !_ended) {
       _channel.end(clientTimestampMs: DateTime.now().millisecondsSinceEpoch);
       // Re-arm so the next Start→Stop cycle fires fresh lifecycle events.
-      // Mirrors BreathModuleStateChannel.reset() (BreathModuleStateChannel.dart:110-113).
+      // Mirrors BreathModuleStateChannel.reset() (BreathModuleStateChannel.dart:137-148).
       _started = false;
       _ended = false;
     }
@@ -52,5 +62,6 @@ class MeditationModuleStateChannel {
     if (_started && !_ended) _channel.stop();
     _stateSub.cancel();
     _channelSub.cancel();
+    _eventsSub.cancel();
   }
 }

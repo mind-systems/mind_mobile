@@ -91,6 +91,9 @@ class ModuleStateChannel {
             _processProtoEvent(event);
           case proto.StateResponse_Event.sessionError:
             logPrint('[ModuleStateChannel] session error: ${r.sessionError.code} — ${r.sessionError.message}');
+            if (r.sessionError.code == 'no_active_session') {
+              _state.add(ModuleState.initial());
+            }
           case proto.StateResponse_Event.notSet:
             break;
         }

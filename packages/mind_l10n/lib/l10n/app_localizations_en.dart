@@ -30,6 +30,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionExpired => 'Session expired';
 
   @override
+  String get sessionAbandoned => 'Session ended unexpectedly';
+
+  @override
   String get heartTickNoSourceTitle => 'Heart rate sensor';
 
   @override

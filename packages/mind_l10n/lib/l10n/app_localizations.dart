@@ -140,6 +140,12 @@ abstract class AppLocalizations {
   /// **'Session expired'**
   String get sessionExpired;
 
+  /// No description provided for @sessionAbandoned.
+  ///
+  /// In en, this message translates to:
+  /// **'Session ended unexpectedly'**
+  String get sessionAbandoned;
+
   /// No description provided for @heartTickNoSourceTitle.
   ///
   /// In en, this message translates to:

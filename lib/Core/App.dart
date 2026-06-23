@@ -49,6 +49,7 @@ import 'package:mind/Core/Grpc/GrpcClient.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/ModuleInstructionStream.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
+import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
 import 'package:mind/Core/Background/ForegroundKeepAlive.dart';
 import 'package:mind/Core/Background/KeepAliveCoordinator.dart';
 import 'package:mind/Core/Sync/SyncEngine.dart';
@@ -308,6 +309,7 @@ class MyApp extends ConsumerWidget {
       builder: (context, child) {
         return GlobalListeners(
           sessionExpiredStream: App.shared.userNotifier.sessionExpiredStream,
+          sessionAbandonedStream: App.shared.moduleStateChannel.events.where((e) => e is ModuleSessionAbandoned).map((_) {}),
           child: child!,
         );
       },

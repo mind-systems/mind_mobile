@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Core/Grpc/ModuleState.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
+import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
 import 'package:mind/BreathModule/Core/BreathModuleInstructionStream.dart';
 import 'package:mind/BreathModule/Core/BreathModuleStateChannel.dart';
 import 'package:breath_module/breath_module.dart'
@@ -24,12 +25,16 @@ class _FakeChannel implements ModuleStateChannel {
   // No seeded events — SUT does not assume an initial moduleSessionId.
   // Seeding one would silently change instruction-path tests in the follow-up plan.
   final stateController = StreamController<ModuleState>.broadcast();
+  final eventsController = StreamController<ModuleStateEvent>.broadcast();
 
   @override
   Stream<ModuleState> get state => stateController.stream;
 
   @override
-  void start({required ActivityType type, String? refId}) =>
+  Stream<ModuleStateEvent> get events => eventsController.stream;
+
+  @override
+  void start({required ActivityType type, String? refId, int? clientTimestampMs}) =>
       startCalls.add((type, refId));
 
   @override
@@ -39,7 +44,7 @@ class _FakeChannel implements ModuleStateChannel {
   void pause() => pauseCount++;
 
   @override
-  void end() => endCount++;
+  void end({int? clientTimestampMs}) => endCount++;
 
   @override
   void stop() => stopCount++;

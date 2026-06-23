@@ -30,6 +30,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get sessionExpired => 'Сессия истекла';
 
   @override
+  String get sessionAbandoned => 'Сессия неожиданно завершилась';
+
+  @override
   String get heartTickNoSourceTitle => 'Датчик пульса';
 
   @override

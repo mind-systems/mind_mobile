@@ -4,6 +4,7 @@ import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Logger.dart';
 import 'package:mind/Core/Grpc/ModuleState.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
+import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
 import 'package:mind/BreathModule/Core/BreathModuleInstructionStream.dart';
 import 'package:breath_module/breath_module.dart' show BreathSessionState, BreathSessionStatus, BreathPhase, SessionLoadState;
 
@@ -25,6 +26,7 @@ class BreathModuleStateChannel {
 
   late final StreamSubscription<BreathSessionState> _stateSub;
   late final StreamSubscription<ModuleState> _channelSub;
+  late final StreamSubscription<ModuleStateEvent> _eventsSub;
 
   BreathModuleStateChannel({
     required ModuleStateChannel channel,
@@ -39,6 +41,9 @@ class BreathModuleStateChannel {
       _moduleSessionId = moduleState.moduleSessionId;
       final sessionId = moduleState.moduleSessionId;
       if (sessionId != null) _flushPending(sessionId);
+    });
+    _eventsSub = channel.events.listen((event) {
+      if (event is ModuleSessionAbandoned) reset();
     });
   }
 
@@ -154,5 +159,6 @@ class BreathModuleStateChannel {
     }
     _stateSub.cancel();
     _channelSub.cancel();
+    _eventsSub.cancel();
   }
 }
