@@ -1,0 +1,52 @@
+$ /usr/local/bin/flutter test test/BreathModule/breath_session_notifier_test.dart
+exit code: 0
+elapsed: 8.3s
+
+00:00 +0: loading /Users/max/projects/mind/mind_mobile/test/BreathModule/breath_session_notifier_test.dart
+00:00 +0: refresh() populates state from local sessions after refresh
+00:00 +1: refresh() replaces state with fresh sessions
+00:00 +2: refresh() emits SessionsRefreshed event
+00:00 +3: refresh() concurrent refresh() — second call ignored while first in flight
+00:00 +4: refresh() starred session yields both MINE and STARRED entries after refresh
+00:00 +5: refresh() updates existing entries on re-refresh
+00:00 +6: create() new entry is present in entries list
+00:00 +7: create() new entry sorts first when it has the newest createdAt
+00:00 +8: create() created entry is findable via cachedById
+00:00 +9: create() created entry has mine section
+00:00 +10: create() emits SessionCreated event
+00:00 +11: update() updates session in all entries with matching id
+00:00 +12: update() preserves entry order
+00:00 +13: update() emits SessionUpdated event
+00:00 +14: delete() removes all entries with the id
+00:00 +15: delete() emits SessionDeleted with the id
+00:00 +16: starSession() sets isStarred=true on existing entries and adds a STARRED entry
+00:00 +17: starSession() unstar removes STARRED entry and MINE entry remains with isStarred=false
+00:00 +18: starSession() unstar starred session removes STARRED entry and keeps MINE/SHARED entry
+00:00 +19: starSession() emits SessionStarred event
+00:00 +20: starSession() no-ops silently if session not found in state — no phantom entry added
+00:00 +21: starSession() starred own session appears in both STARRED and MINE sections
+00:00 +22: starSession() starred shared session appears in both STARRED and SHARED sections
+00:00 +23: refresh() — write-through delegation should call repository.refresh exactly once per refresh()
+00:00 +24: refresh() — write-through delegation should forward the page size to repository.refresh
+00:00 +25: refresh() — write-through delegation should re-read Drift after repository.refresh completes and replace stale entries
+00:00 +26: refresh() — write-through delegation should not run a second refresh() while one is in flight
+00:00 +27: loadLocal() should leave entries empty before loadLocal() is called when Drift has data
+00:00 +28: loadLocal() should populate entries from Drift after loadLocal()
+00:00 +29: loadLocal() should emit LocalSessionsLoaded event after loadLocal() with non-empty Drift
+00:00 +30: loadLocal() should return early without emitting when Drift is empty
+00:00 +31: invalidate() should re-read updated Drift state on invalidate() without calling repository.refresh
+00:00 +32: invalidate() should emit LocalSessionsLoaded event on invalidate()
+00:00 +33: invalidate() should emit empty entries on invalidate() when Drift is empty
+00:00 +34: section derivation should emit a MINE entry for a session owned by the current user
+00:00 +35: section derivation should emit a SHARED entry for a session owned by another user
+00:00 +36: section derivation should emit no STARRED entry for an unstarred session
+00:00 +37: section derivation should emit both MINE and STARRED entries for a starred owned session
+00:00 +38: section derivation should emit both SHARED and STARRED entries for a starred shared session
+00:00 +39: section derivation should order entries by createdAt DESC
+00:00 +40: section derivation should break createdAt ties by id ASC
+00:00 +41: section derivation should keep the STARRED duplicate adjacent to its ownership entry in the sorted stream
+00:00 +42: user change user id change calls deleteAll and emits empty entries with LocalSessionsLoaded
+00:00 +43: user change same user id does NOT trigger invalidation
+00:00 +44: All tests passed!
+
+TEST_PASS

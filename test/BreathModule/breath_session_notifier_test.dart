@@ -23,9 +23,15 @@ class FakeBreathSessionRepository implements IBreathSessionRepository {
   Future<BreathSession> fetchById(String id) async =>
       _sessions.firstWhere((s) => s.id == id);
 
+  int refreshCallCount = 0;
+  List<int> refreshPageSizes = [];
+
   /// No-op — the notifier calls localSessions() after this returns.
   @override
-  Future<void> refresh(int pageSize) async {}
+  Future<void> refresh(int pageSize) async {
+    refreshCallCount++;
+    refreshPageSizes.add(pageSize);
+  }
 
   @override
   Future<BreathSession> create(BreathSession session) async {
@@ -459,6 +465,285 @@ void main() {
       final entries = notifier.currentState.entries;
       expect(entries.any((e) => e.session.id == 'a' && e.section == BreathListSection.shared), isTrue);
       expect(entries.any((e) => e.session.id == 'a' && e.section == BreathListSection.starred), isTrue);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+  });
+
+  group('refresh() — write-through delegation', () {
+    test('should call repository.refresh exactly once per refresh()', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a')]);
+
+      await notifier.refresh(10);
+
+      expect(repo.refreshCallCount, 1);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should forward the page size to repository.refresh', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+
+      await notifier.refresh(25);
+
+      expect(repo.refreshPageSizes, [25]);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should re-read Drift after repository.refresh completes and replace stale entries', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('old')]);
+      await notifier.refresh(10);
+
+      repo.seed([_session('new')]);
+      await notifier.refresh(10);
+
+      expect(_entryIds(notifier.currentState), ['new']);
+      expect(notifier.currentState.cachedById('old'), isNull);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should not run a second refresh() while one is in flight', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a')]);
+
+      final f1 = notifier.refresh(10);
+      final f2 = notifier.refresh(10);
+      await Future.wait([f1, f2]);
+
+      expect(repo.refreshCallCount, 1);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+  });
+
+  group('loadLocal()', () {
+    test('should leave entries empty before loadLocal() is called when Drift has data', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a'), _session('b')]);
+
+      // Constructor does no Drift read — state is still empty before awaiting loadLocal().
+      expect(notifier.currentState.entries, isEmpty);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should populate entries from Drift after loadLocal()', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a'), _session('b')]);
+
+      await notifier.loadLocal();
+
+      expect(notifier.currentState.entries, isNotEmpty);
+      expect(_entryIds(notifier.currentState), containsAll(['a', 'b']));
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should emit LocalSessionsLoaded event after loadLocal() with non-empty Drift', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a')]);
+
+      await notifier.loadLocal();
+
+      expect(notifier.currentState.lastEvent, isA<LocalSessionsLoaded>());
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should return early without emitting when Drift is empty', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([]);
+
+      await notifier.loadLocal();
+
+      expect(notifier.currentState.entries, isEmpty);
+      expect(notifier.currentState.lastEvent, isNull);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+  });
+
+  group('invalidate()', () {
+    test('should re-read updated Drift state on invalidate() without calling repository.refresh', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('initial')]);
+      await notifier.refresh(10);
+
+      repo.seed([_session('initial').copyWith(description: 'updated')]);
+      final countBefore = repo.refreshCallCount;
+      await notifier.invalidate();
+
+      expect(notifier.currentState.cachedById('initial')!.description, 'updated');
+      expect(repo.refreshCallCount, countBefore);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should emit LocalSessionsLoaded event on invalidate()', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a')]);
+      await notifier.refresh(10);
+
+      repo.seed([_session('a').copyWith(description: 'updated')]);
+      await notifier.invalidate();
+
+      expect(notifier.currentState.lastEvent, isA<LocalSessionsLoaded>());
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should emit empty entries on invalidate() when Drift is empty', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a')]);
+      await notifier.refresh(10);
+
+      repo.seed([]);
+      await notifier.invalidate();
+
+      expect(notifier.currentState.entries, isEmpty);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+  });
+
+  group('section derivation', () {
+    // --- Task 5: ownership (MINE / SHARED) ---
+
+    test('should emit a MINE entry for a session owned by the current user', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a')]);
+      await notifier.refresh(10);
+
+      final entry = notifier.currentState.entries.firstWhere((e) => e.session.id == 'a');
+      expect(entry.section, BreathListSection.mine);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should emit a SHARED entry for a session owned by another user', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a', userId: 'other-user')]);
+      await notifier.refresh(10);
+
+      final entry = notifier.currentState.entries.firstWhere((e) => e.session.id == 'a');
+      expect(entry.section, BreathListSection.shared);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should emit no STARRED entry for an unstarred session', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a')]);
+      await notifier.refresh(10);
+
+      final hasStarred = notifier.currentState.entries.any((e) => e.section == BreathListSection.starred);
+      expect(hasStarred, isFalse);
+      expect(notifier.currentState.entries.length, 1);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    // --- Task 6: STARRED duplicate ---
+
+    test('should emit both MINE and STARRED entries for a starred owned session', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a', isStarred: true)]);
+      await notifier.refresh(10);
+
+      final entries = notifier.currentState.entries;
+      final mineCount = entries.where((e) => e.session.id == 'a' && e.section == BreathListSection.mine).length;
+      final starredCount = entries.where((e) => e.session.id == 'a' && e.section == BreathListSection.starred).length;
+
+      expect(mineCount, 1);
+      expect(starredCount, 1);
+      expect(entries.length, 2);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should emit both SHARED and STARRED entries for a starred shared session', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([_session('a', userId: 'other-user', isStarred: true)]);
+      await notifier.refresh(10);
+
+      final entries = notifier.currentState.entries;
+      final hasShared = entries.any((e) => e.session.id == 'a' && e.section == BreathListSection.shared);
+      final hasStarred = entries.any((e) => e.session.id == 'a' && e.section == BreathListSection.starred);
+
+      expect(hasShared, isTrue);
+      expect(hasStarred, isTrue);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    // --- Task 7: sort order and tie-breaker ---
+
+    test('should order entries by createdAt DESC', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([
+        _session('a', createdAt: DateTime(2020)),
+        _session('b', createdAt: DateTime(2025)),
+        _session('c', createdAt: DateTime(2022)),
+      ]);
+      await notifier.refresh(10);
+
+      expect(_entryIds(notifier.currentState), ['b', 'c', 'a']);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should break createdAt ties by id ASC', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      final sameDate = DateTime(2023, 6, 15);
+      repo.seed([
+        _session('z', createdAt: sameDate),
+        _session('a', createdAt: sameDate),
+      ]);
+      await notifier.refresh(10);
+
+      expect(_entryIds(notifier.currentState), ['a', 'z']);
+
+      notifier.dispose();
+      await authSubject.close();
+    });
+
+    test('should keep the STARRED duplicate adjacent to its ownership entry in the sorted stream', () async {
+      final (:notifier, :repo, :authSubject) = _make();
+      repo.seed([
+        _session('star', isStarred: true, createdAt: DateTime(2025)),
+        _session('older1', createdAt: DateTime(2022)),
+        _session('older2', createdAt: DateTime(2020)),
+      ]);
+      await notifier.refresh(10);
+
+      final entries = notifier.currentState.entries;
+      final hasMine = entries.any((e) => e.session.id == 'star' && e.section == BreathListSection.mine);
+      final hasStarred = entries.any((e) => e.session.id == 'star' && e.section == BreathListSection.starred);
+
+      expect(hasMine, isTrue);
+      expect(hasStarred, isTrue);
 
       notifier.dispose();
       await authSubject.close();
