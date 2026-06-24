@@ -27,6 +27,7 @@ import 'Models/NfbCalibrationData.dart';
 import 'Ports/ClassifierSet.dart';
 import 'Ports/DevicePort.dart';
 import 'Ports/LocatorPort.dart';
+import 'Ports/NeiryCalibrationMapper.dart';
 import 'Ports/NeiryLocatorAdapter.dart';
 import '../Logger.dart';
 
@@ -286,20 +287,9 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
                 BciCalibrationStageFinished(stage.index + 1),
               );
             case neiry.CalibrationCompleted(:final data):
-              final mapped = NfbCalibrationData(
-                calibratedAt: data.timestamp ?? DateTime.now(),
-                isValid: data.isValid,
-                failReason: data.failReason.name,
-                individualFrequency: data.individualFrequency,
-                individualPeakFrequency: data.individualPeakFrequency,
-                individualPeakFrequencyPower: data.individualPeakFrequencyPower,
-                individualPeakFrequencySuppression: data.individualPeakFrequencySuppression,
-                individualBandwidth: data.individualBandwidth,
-                individualNormalizedPower: data.individualNormalizedPower,
-                lowerFrequency: data.lowerFrequency,
-                upperFrequency: data.upperFrequency,
+              _emitCalibration(
+                BciCalibrationCompleted(NeiryCalibrationMapper.fromNeiry(data)),
               );
-              _emitCalibration(BciCalibrationCompleted(mapped));
           }
         },
         onError: (Object e) {
@@ -320,20 +310,9 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       _calibrationSub = null;
       try {
         final data = await neiry.NfbCalibrator.calibrateIndividualQuick();
-        final mapped = NfbCalibrationData(
-          calibratedAt: data.timestamp ?? DateTime.now(),
-          isValid: data.isValid,
-          failReason: data.failReason.name,
-          individualFrequency: data.individualFrequency,
-          individualPeakFrequency: data.individualPeakFrequency,
-          individualPeakFrequencyPower: data.individualPeakFrequencyPower,
-          individualPeakFrequencySuppression: data.individualPeakFrequencySuppression,
-          individualBandwidth: data.individualBandwidth,
-          individualNormalizedPower: data.individualNormalizedPower,
-          lowerFrequency: data.lowerFrequency,
-          upperFrequency: data.upperFrequency,
+        _emitCalibration(
+          BciCalibrationCompleted(NeiryCalibrationMapper.fromNeiry(data)),
         );
-        _emitCalibration(BciCalibrationCompleted(mapped));
       } catch (e) {
         logPrint('NeiryBciProvider: quick calibration error: $e');
         _emitCalibration(BciCalibrationFailed(e.toString()));
@@ -347,21 +326,9 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   Future<void> importCalibration(NfbCalibrationData data) {
     return _queue.enqueue(() async {
       if (_disposed) return;
-      final neiryData = neiry.IndividualNfbData(
-        timestamp: data.calibratedAt,
-        failReason: neiry.NfbCalibrationFailReason.values
-            .firstWhere((e) => e.name == data.failReason),
-        individualFrequency: data.individualFrequency,
-        individualPeakFrequency: data.individualPeakFrequency,
-        individualPeakFrequencyPower: data.individualPeakFrequencyPower,
-        individualPeakFrequencySuppression:
-            data.individualPeakFrequencySuppression,
-        individualBandwidth: data.individualBandwidth,
-        individualNormalizedPower: data.individualNormalizedPower,
-        lowerFrequency: data.lowerFrequency,
-        upperFrequency: data.upperFrequency,
+      await neiry.NfbCalibrator.importCalibrationData(
+        NeiryCalibrationMapper.toNeiry(data),
       );
-      await neiry.NfbCalibrator.importCalibrationData(neiryData);
     });
   }
 
