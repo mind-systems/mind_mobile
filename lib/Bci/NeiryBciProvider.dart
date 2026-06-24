@@ -388,32 +388,33 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     _locator = _locatorFactory();
   }
 
-  /// Captures device + classifier-set + subscription fields into locals, nulls
-  /// them immediately (so reconnect sees a clean slate), then schedules the
-  /// actual heavy disposal asynchronously to avoid re-entrancy while
-  /// [_connectionSub]'s callback is still on the stack.
-  ///
-  /// Does NOT touch [_calibrationSub] or the [StreamController]s — they must
-  /// stay alive so reconnect can resume emitting.
-  void _teardownAfterUnexpectedDrop() {
-    if (_disposed) return;
+  // ── Shared teardown helpers ─────────────────────────────────────────────────
+
+  /// Captures [_device], [_classifierSet], and the 10 fan-in subscriptions into
+  /// locals, nulls those fields, and returns the captured state.
+  /// Does NOT touch [_calibrationSub] or stream controllers.
+  ({
+    DevicePort? device,
+    ClassifierSet? classifierSet,
+    List<StreamSubscription<dynamic>?> subs,
+  }) _captureAndNullDeviceState() {
     final device = _device;
     final classifierSet = _classifierSet;
-
-    final connectionSub = _connectionSub;
-    final resistanceSub = _resistanceSub;
-    final batterySub = _batterySub;
-    final nfbSub = _nfbSub;
-    final nfbErrorSub = _nfbErrorSub;
-    final cardioSub = _cardioSub;
-    final rrSub = _rrSub;
-    final emotionsSub = _emotionsSub;
-    final emotionsErrorSub = _emotionsErrorSub;
-    final memsSub = _memsSub;
+    final subs = <StreamSubscription<dynamic>?>[
+      _connectionSub,
+      _resistanceSub,
+      _batterySub,
+      _nfbSub,
+      _nfbErrorSub,
+      _cardioSub,
+      _rrSub,
+      _emotionsSub,
+      _emotionsErrorSub,
+      _memsSub,
+    ];
 
     _device = null;
     _classifierSet = null;
-
     _connectionSub = null;
     _resistanceSub = null;
     _batterySub = null;
@@ -425,42 +426,86 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     _emotionsErrorSub = null;
     _memsSub = null;
 
-    unawaited(_queue.enqueue(() async {
-      try {
-        // Step 1: stopStream() = nativeUnregister + nativeStop — stops SDK background
-        // threads before any Dart subscription is cancelled (Invariant A). Native side
-        // may already be gone on unexpected drop; wrap in try/catch and continue.
+    return (device: device, classifierSet: classifierSet, subs: subs);
+  }
+
+  /// Runs the canonical BCI teardown sequence on captured device state.
+  /// Never reads instance fields — operates only on the passed-in locals.
+  ///
+  /// [forceStopStream]: `true` (drop) calls stopStream unconditionally and
+  /// swallows errors silently; `false` (disconnect/dispose) guards on
+  /// [DevicePort.isStarted] and logs any error.
+  /// [recreate]: `true` calls [_resetLocatorSession] in a `finally` block;
+  /// `false` skips it (terminal path owns locator disposal directly).
+  Future<void> _runOrderedTeardown({
+    required DevicePort? device,
+    required ClassifierSet? classifierSet,
+    required List<StreamSubscription<dynamic>?> subs,
+    required bool forceStopStream,
+    required bool recreate,
+  }) async {
+    try {
+      // Step 1: stopStream — stops SDK background threads before Dart
+      // subscriptions are cancelled (Invariant A). Native side may already be
+      // gone on unexpected drop; unconditional + swallow-silent in that case.
+      if (forceStopStream) {
         try { await device?.stopStream(); } catch (_) {}
-
-        // Step 2: cancel fan-in subscriptions (safe — background threads stopped).
-        await connectionSub?.cancel();
-        await resistanceSub?.cancel();
-        await batterySub?.cancel();
-        await nfbSub?.cancel();
-        await nfbErrorSub?.cancel();
-        await cardioSub?.cancel();
-        await rrSub?.cancel();
-        await emotionsSub?.cancel();
-        await emotionsErrorSub?.cancel();
-        await memsSub?.cancel();
-
-        // Step 3: dispose classifiers (safe — handle still alive, no nativeRelease yet).
+      } else if (device?.isStarted == true) {
         try {
-          await classifierSet?.dispose();
+          await device!.stopStream();
         } catch (e) {
-          logPrint('NeiryBciProvider: classifier dispose error: $e');
+          logPrint('NeiryBciProvider: stopStream error: $e');
         }
-
-        // Step 4: nativeDisconnect + nativeRelease (Invariant C).
-        try {
-          await device?.disconnect();
-          await device?.dispose();
-        } catch (e) {
-          logPrint('NeiryBciProvider: unexpected drop dispose error: $e');
-        }
-      } finally {
-        await _resetLocatorSession();
       }
+
+      // Step 2: cancel fan-in subscriptions in canonical order (safe — SDK
+      // background threads are stopped).
+      for (final sub in subs) {
+        await sub?.cancel();
+      }
+
+      // Step 3: dispose classifiers (handle still alive, no nativeRelease yet).
+      try {
+        await classifierSet?.dispose();
+      } catch (e) {
+        logPrint('NeiryBciProvider: classifier dispose error: $e');
+      }
+
+      // Step 4: nativeDisconnect + nativeRelease in one combined block
+      // (Invariant C). Keeping them in one try ensures a throwing disconnect
+      // is visible before dispose is attempted.
+      try {
+        await device?.disconnect();
+        await device?.dispose();
+      } catch (e) {
+        logPrint('NeiryBciProvider: device teardown error: $e');
+      }
+    } finally {
+      if (recreate) await _resetLocatorSession();
+    }
+  }
+
+  /// Captures device + classifier-set + subscription fields into locals, nulls
+  /// them immediately (so reconnect sees a clean slate), then schedules the
+  /// actual heavy disposal asynchronously to avoid re-entrancy while
+  /// [_connectionSub]'s callback is still on the stack.
+  ///
+  /// Does NOT touch [_calibrationSub] or the [StreamController]s — they must
+  /// stay alive so reconnect can resume emitting.
+  void _teardownAfterUnexpectedDrop() {
+    if (_disposed) return;
+    // Synchronous capture-and-null so reconnect's connect() sees a clean slate
+    // before the async teardown body runs (Invariant B).
+    final captured = _captureAndNullDeviceState();
+
+    unawaited(_queue.enqueue(() async {
+      await _runOrderedTeardown(
+        device: captured.device,
+        classifierSet: captured.classifierSet,
+        subs: captured.subs,
+        forceStopStream: true,
+        recreate: true,
+      );
     }).catchError(
       // A QueueClosedException here means dispose() closed the queue before this
       // fire-and-forget teardown's slot ran. For the normal path _doDispose's
@@ -479,66 +524,17 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     ));
   }
 
-  Future<void> _cancelDeviceSubscriptions() async {
-    await _connectionSub?.cancel();
-    _connectionSub = null;
-    await _resistanceSub?.cancel();
-    _resistanceSub = null;
-    await _batterySub?.cancel();
-    _batterySub = null;
-    await _nfbSub?.cancel();
-    _nfbSub = null;
-    await _nfbErrorSub?.cancel();
-    _nfbErrorSub = null;
-    await _cardioSub?.cancel();
-    _cardioSub = null;
-    await _rrSub?.cancel();
-    _rrSub = null;
-    await _emotionsSub?.cancel();
-    _emotionsSub = null;
-    await _emotionsErrorSub?.cancel();
-    _emotionsErrorSub = null;
-    await _memsSub?.cancel();
-    _memsSub = null;
-
-    try {
-      await _classifierSet?.dispose();
-    } catch (e) {
-      logPrint('NeiryBciProvider: classifier dispose error: $e');
-    }
-    _classifierSet = null;
-  }
-
   @override
   Future<void> disconnect() {
     return _queue.enqueue(() async {
-      // Step 1: stopStream() = nativeUnregister + nativeStop — stops SDK background
-      // threads before any Dart subscription is cancelled (Invariant A).
-      // Only called when streaming is active; calling it on an unstarted device throws.
-      if (_device?.isStarted == true) {
-        try {
-          await _device!.stopStream();
-        } catch (e) {
-          logPrint('NeiryBciProvider: stopStream error: $e');
-        }
-      }
-      // Steps 2+3: cancel fan-in subscriptions and dispose classifier set.
-      // Safe — SDK threads are stopped, handle still alive (no nativeRelease yet).
-      await _cancelDeviceSubscriptions();
-      // Step 4: nativeDisconnect + nativeRelease (Invariant C).
-      try {
-        await _device?.disconnect();
-      } catch (e) {
-        logPrint('NeiryBciProvider: disconnect error: $e');
-      }
-      // Step 5: Dart cleanup — no-op on native (already disconnected above).
-      try {
-        await _device?.dispose();
-      } catch (e) {
-        logPrint('NeiryBciProvider: dispose error: $e');
-      }
-      _device = null;
-      await _resetLocatorSession();
+      final captured = _captureAndNullDeviceState();
+      await _runOrderedTeardown(
+        device: captured.device,
+        classifierSet: captured.classifierSet,
+        subs: captured.subs,
+        forceStopStream: false,
+        recreate: true,
+      );
       // Emit explicitly — _connectionSub is already cancelled so the native
       // disconnected event would be missed without this.
       _connectionStateController.add(BciLinkStatus.down);
@@ -563,19 +559,17 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
 
     // Terminal teardown — same invariant sequence as disconnect(), but does
     // NOT call _resetLocatorSession() (no locator recreate on the terminal path).
-    if (_device?.isStarted == true) {
-      try { await _device!.stopStream(); } catch (_) {}
-    }
-    await _cancelDeviceSubscriptions();
+    final captured = _captureAndNullDeviceState();
+    // _calibrationSub is terminal-only: cancelled here, not in the shared helper.
     await _calibrationSub?.cancel();
     _calibrationSub = null;
-    try {
-      await _device?.disconnect();
-      await _device?.dispose();
-    } catch (e) {
-      logPrint('NeiryBciProvider: dispose error: $e');
-    }
-    _device = null;
+    await _runOrderedTeardown(
+      device: captured.device,
+      classifierSet: captured.classifierSet,
+      subs: captured.subs,
+      forceStopStream: false,
+      recreate: false,
+    );
     try {
       await _locator.dispose();
     } catch (_) {
