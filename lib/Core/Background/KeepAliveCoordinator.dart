@@ -10,18 +10,25 @@ import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
 /// Android-only. The subscription is a no-op on iOS (background audio handles
 /// keep-alive there). Constructed during [App.initialize()] before any session
 /// can start, so no [ModuleSessionStarted] event is missed.
+///
+/// [dispose] cancels the subscription. It exists as a test seam — production
+/// code does not call it because this coordinator lives for the app's lifetime.
 class KeepAliveCoordinator {
   KeepAliveCoordinator({
     required ForegroundKeepAlive foregroundKeepAlive,
     required Stream<ModuleStateEvent> moduleStateEvents,
+    bool Function() isAndroid = _platformIsAndroid,
   })  : _foregroundKeepAlive = foregroundKeepAlive {
-    if (!Platform.isAndroid) return;
+    if (!isAndroid()) return;
     _subscription = moduleStateEvents.listen(_onEvent);
   }
 
+  static bool _platformIsAndroid() => Platform.isAndroid;
+
   final ForegroundKeepAlive _foregroundKeepAlive;
-  // ignore: unused_field — held to keep the subscription alive (GC prevention)
   StreamSubscription<ModuleStateEvent>? _subscription;
+
+  void dispose() => _subscription?.cancel();
 
   Future<void> _onEvent(ModuleStateEvent event) async {
     switch (event) {
