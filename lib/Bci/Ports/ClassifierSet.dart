@@ -34,6 +34,7 @@ abstract interface class ClassifierSet {
   /// Per-sample motion data fanned out from the MEMS classifier's batch stream.
   Stream<MotionData> get motionStream;
 
-  /// Disposes all four classifiers. May throw if any classifier fails.
+  /// Disposes all four classifiers. Does not throw — each classifier's dispose
+  /// failure is caught and logged individually so one failure does not skip the rest.
   Future<void> dispose();
 }
