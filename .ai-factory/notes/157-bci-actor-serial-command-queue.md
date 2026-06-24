@@ -28,6 +28,7 @@ The queue serializes **between** commands; the order **inside** a command is har
 
 - **No open questions** — the three risks (deadlock / mid-queue cancellation / SDK ordering) are resolved by the three constraints above; do not re-raise them.
 - Keep the characterization suite(s) green with **no assertion edits** — a needed assertion change means the refactor changed observable behavior and is wrong.
+- **Latitude:** the suites (156 + 161) assert orphan invariants (`liveCount ≤ 1`, no replace-without-dispose) on racing paths, **not** tight reset counts — so the actor is free to *collapse* the redundant drop→`disconnect()` double-reset (`:502`) into one. That is an allowed behavior change, not an assertion break.
 - Single-resource actor around the BCI locator/device **only** — **not** an app-wide dispatcher. **Anti-goal** — out of scope, do NOT fold in: domain latches (single-writer, fed from one stream) `ModuleStateChannel._isPendingStart/_isPendingPause/_backoffConfirmed`, `Breath/MeditationModuleStateChannel._started/_ended`, `BiometricStreamClient._sessionConfirmed/_isReady`; and the cross-layer bus, the typed `ModuleStateEvent` stream on `channel.events`. Unifying those welds independent lifecycles and breaks the module boundary.
 - Last in the chain.
 
