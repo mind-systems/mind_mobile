@@ -255,8 +255,9 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   /// Handles domain-level connection status events from [DevicePort.connectionStateStream].
   ///
   /// [BciLinkStatus.down] covers both normal disconnects and
-  /// unsupported-connection events — [NeiryDeviceAdapter] maps and logs the
-  /// latter before it reaches this handler.
+  /// unsupported-connection events. [NeiryDeviceAdapter] maps both to
+  /// [BciLinkStatus.down] and logs the unsupported-connection case before the
+  /// event reaches this handler, enabling triage between the two causes.
   void _onConnectionStatus(BciLinkStatus status) {
     switch (status) {
       case BciLinkStatus.up:

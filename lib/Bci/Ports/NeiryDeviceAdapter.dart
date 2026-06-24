@@ -57,10 +57,15 @@ class NeiryDeviceAdapter implements DevicePort {
   ///
   /// Both [neiry.NeiryConnectionState.disconnected] and
   /// [neiry.NeiryConnectionState.unsupportedConnection] map to
-  /// [BciLinkStatus.down]. The idempotency guard (`if (_device == null) return`)
-  /// lives in the provider's [_onConnectionStatus], so no logging is done here
-  /// — logging inside the adapter would fire unconditionally, even during the
-  /// brief noise window that follows our own `disconnect()`.
+  /// [BciLinkStatus.down].
+  ///
+  /// The [neiry.NeiryConnectionState.unsupportedConnection] case is logged here
+  /// so it can be distinguished from a normal disconnect during triage.
+  /// The [neiry.NeiryConnectionState.disconnected] case is intentionally NOT
+  /// logged here — it fires unconditionally during the brief noise window that
+  /// follows our own `disconnect()`, which would produce spurious log entries.
+  /// The idempotency guard for that window lives in the provider's
+  /// [_onConnectionStatus].
   @override
   late final Stream<BciLinkStatus> connectionStateStream =
       _device.connectionStateStream.map((s) {
@@ -70,6 +75,7 @@ class NeiryDeviceAdapter implements DevicePort {
       case neiry.NeiryConnectionState.disconnected:
         return BciLinkStatus.down;
       case neiry.NeiryConnectionState.unsupportedConnection:
+        logPrint('NeiryDeviceAdapter: unsupportedConnection → BciLinkStatus.down');
         return BciLinkStatus.down;
     }
   });
