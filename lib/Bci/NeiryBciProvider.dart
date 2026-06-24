@@ -153,9 +153,16 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     // Enqueue the requestDevices() call so it runs on whatever _locator exists
     // *after* any in-flight teardown command completes (the fresh post-recreate
     // locator). The yield* runs outside the queue slot — it does not block it.
-    final devicesStream = await _queue.enqueue(
-      () async => _locator.requestDevices(type: BciScanDeviceType.headband, searchTime: 5),
-    );
+    final Stream<List<BciDeviceInfo>> devicesStream;
+    try {
+      devicesStream = await _queue.enqueue(
+        () async => _locator.requestDevices(type: BciScanDeviceType.headband, searchTime: 5),
+      );
+    } on QueueClosedException {
+      // dispose() closed the queue before the enqueue resolved — end the scan
+      // stream cleanly; do not propagate the closure as an error to the consumer.
+      return;
+    }
     yield* devicesStream;
   }
 

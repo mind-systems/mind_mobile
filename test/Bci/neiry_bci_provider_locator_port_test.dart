@@ -76,6 +76,9 @@ class FakeLocatorPort implements LocatorPort {
   /// Push a device list into the scan stream.
   void emitDevices(List<BciDeviceInfo> devices) =>
       _devicesController.add(devices);
+
+  /// Push an error into the scan stream.
+  void emitError(Object error) => _devicesController.addError(error);
 }
 
 // ---------------------------------------------------------------------------
@@ -148,6 +151,50 @@ void main() {
         // Just verifies that NeiryBciProvider() constructs without error.
         // (The real NeiryLocatorAdapter is wired; no assertions about behavior.)
         expect(() => NeiryBciProvider(), returnsNormally);
+      },
+    );
+
+    test(
+      'scan() ends cleanly (no error) when dispose() closes the queue before enqueue resolves',
+      () async {
+        final fake = FakeLocatorPort();
+        final provider = NeiryBciProvider(locatorFactory: () => fake);
+
+        var errored = false;
+        var done = false;
+        final sub = provider.scan().listen(
+          (_) {},
+          onError: (_) => errored = true,
+          onDone: () => done = true,
+        );
+        // dispose() immediately — _doDispose() closes the queue synchronously
+        // before its first await, so the pending enqueue slot sees _closed==true
+        // and rejects with QueueClosedException before the settle.
+        provider.dispose();
+        await Future<void>.delayed(Duration.zero); // settle AFTER dispose
+        expect(done, isTrue);
+        expect(errored, isFalse,
+            reason: 'QueueClosedException must be swallowed, not delivered to onError');
+        await sub.cancel();
+      },
+    );
+
+    test(
+      'scan() propagates non-QueueClosedException errors from the scan stream',
+      () async {
+        final fake = FakeLocatorPort();
+        final provider = NeiryBciProvider(locatorFactory: () => fake);
+
+        final errors = <Object>[];
+        final sub = provider.scan().listen((_) {}, onError: errors.add);
+        // Settle first so the generator reaches yield* and is subscribed to the
+        // fake stream before the error is emitted.
+        await Future<void>.delayed(Duration.zero);
+        fake.emitError(Exception('scan failed'));
+        await Future<void>.delayed(Duration.zero);
+        expect(errors, isNotEmpty);
+        await sub.cancel();
+        provider.dispose();
       },
     );
   });
