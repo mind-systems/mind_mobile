@@ -67,6 +67,29 @@ class _FakeInstructionStream implements BreathModuleInstructionStream {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _FakeStopwatch implements Stopwatch {
+  int elapsedMs = 0;
+  bool _isRunning = false;
+
+  @override
+  int get elapsedMilliseconds => elapsedMs;
+
+  @override
+  bool get isRunning => _isRunning;
+
+  @override
+  void reset() => elapsedMs = 0;
+
+  @override
+  void start() => _isRunning = true;
+
+  @override
+  void stop() => _isRunning = false;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────────────────────────────────────
@@ -101,23 +124,57 @@ typedef _Fixture = ({
   _FakeInstructionStream instructionStream,
   StreamController<BreathSessionState> stateCtrl,
   BreathModuleStateChannel target,
+  _FakeStopwatch? stopwatch,
+  int Function()? clockCallCount,
 });
 
-_Fixture _make({String sessionId = 'sess-1'}) {
+_Fixture _make({
+  String sessionId = 'sess-1',
+  bool useFakes = false,
+  int clockEpochMs = 1000000,
+}) {
   final channel = _FakeChannel();
   final instructionStream = _FakeInstructionStream();
   final stateCtrl = StreamController<BreathSessionState>.broadcast();
-  final target = BreathModuleStateChannel(
-    channel: channel,
-    stateStream: stateCtrl.stream,
-    instructionStream: instructionStream,
-    sessionId: sessionId,
-  );
+
+  _FakeStopwatch? fakeStopwatch;
+  int Function()? clockCallCount;
+  late BreathModuleStateChannel target;
+
+  if (useFakes) {
+    final sw = _FakeStopwatch();
+    fakeStopwatch = sw;
+    var count = 0;
+    final fixedTime = DateTime.fromMillisecondsSinceEpoch(clockEpochMs);
+    final clockFn = () {
+      count++;
+      return fixedTime;
+    };
+    clockCallCount = () => count;
+    target = BreathModuleStateChannel(
+      channel: channel,
+      stateStream: stateCtrl.stream,
+      instructionStream: instructionStream,
+      sessionId: sessionId,
+      stopwatchFactory: () => sw,
+      clock: clockFn,
+    );
+  } else {
+    target = BreathModuleStateChannel(
+      channel: channel,
+      stateStream: stateCtrl.stream,
+      instructionStream: instructionStream,
+      sessionId: sessionId,
+    );
+  }
+
   return (
     channel: channel,
     instructionStream: instructionStream,
     stateCtrl: stateCtrl,
     target: target,
+    stopwatch: fakeStopwatch,
+    clockCallCount: clockCallCount,
   );
 }
 
@@ -1242,6 +1299,463 @@ void main() {
         // moduleSessionId stays null — listener did not fire
         expect(f.target.moduleSessionId, isNull);
         expect(f.instructionStream.sendSampleCalls, isEmpty);
+      },
+    );
+  });
+
+  // ── Phase 13: offset axis ─────────────────────────────────────────────────
+
+  group('BreathModuleStateChannel — offset axis', () {
+    test(
+      'should emit instructions with strictly increasing offsetMs when the stopwatch advances between phase changes',
+      () async {
+        final f = _make(useFakes: true);
+        final sw = f.stopwatch!;
+
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // First emission: starts session, stopwatch reset to 0, instruction offset=0
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        sw.elapsedMs = 100;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.hold, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        sw.elapsedMs = 200;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 1));
+        await Future<void>.delayed(Duration.zero);
+
+        final offsets = f.instructionStream.sendSampleCalls.map((c) => c.$4).toList();
+        expect(offsets, hasLength(3));
+        expect(offsets[0], 0);
+        expect(offsets[1], 100);
+        expect(offsets[2], 200);
+        expect(offsets[1] > offsets[0], isTrue);
+        expect(offsets[2] > offsets[1], isTrue);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should emit instructions with non-decreasing (equal) offsetMs when the stopwatch does not advance between phase changes',
+      () async {
+        final f = _make(useFakes: true);
+        // elapsedMs stays at 0 throughout
+
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // Start: stopwatch reset to 0, instruction offset=0
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        // Phase change without advancing stopwatch — offset stays 0
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.hold, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        final offsets = f.instructionStream.sendSampleCalls.map((c) => c.$4).toList();
+        expect(offsets, [0, 0]);
+        expect(offsets[1] >= offsets[0], isTrue);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should measure offsetMs from session start (first post-start instruction offset is 0 because the start branch resets the stopwatch; advance the fake before the next phase change to see a non-zero offset)',
+      () async {
+        final f = _make(useFakes: true);
+        final sw = f.stopwatch!;
+
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // Start emission: stopwatch reset inside start branch → offset 0
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls.first.$4, 0);
+
+        // Advance and emit second phase change
+        sw.elapsedMs = 50;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.hold, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls.last.$4, 50);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should emit a pause marker with offsetMs > 0 when pausing after the stopwatch has advanced past zero',
+      () async {
+        final f = _make(useFakes: true);
+        final sw = f.stopwatch!;
+
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // Start
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        // Advance stopwatch, then pause
+        sw.elapsedMs = 150;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        final pauseMarker = f.instructionStream.sendSampleCalls.firstWhere((c) => c.$2 == 'pause');
+        expect(pauseMarker.$4, greaterThan(0));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should emit a pause marker with tickCount == 0 regardless of the current phase duration',
+      () async {
+        final f = _make(useFakes: true);
+        final sw = f.stopwatch!;
+
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentPhaseTotalDuration: 7));
+        await Future<void>.delayed(Duration.zero);
+
+        sw.elapsedMs = 80;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        final pauseMarker = f.instructionStream.sendSampleCalls.firstWhere((c) => c.$2 == 'pause');
+        expect(pauseMarker.$3, 0);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should emit a pause marker whose timestampMs equals originWallClockMs + offsetMs',
+      () async {
+        const originMs = 1000000;
+        final f = _make(useFakes: true, clockEpochMs: originMs);
+        final sw = f.stopwatch!;
+
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        sw.elapsedMs = 150;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        final pauseMarker = f.instructionStream.sendSampleCalls.firstWhere((c) => c.$2 == 'pause');
+        expect(pauseMarker.$5, originMs + pauseMarker.$4);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should emit the resumed phase marker with offsetMs >= the pause marker offsetMs',
+      () async {
+        final f = _make(useFakes: true);
+        final sw = f.stopwatch!;
+
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // Start
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        // Pause at P=100
+        sw.elapsedMs = 100;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        final pauseMarker = f.instructionStream.sendSampleCalls.firstWhere((c) => c.$2 == 'pause');
+
+        // Resume at R=250 > P
+        sw.elapsedMs = 250;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0, currentPhaseTotalDuration: 5));
+        await Future<void>.delayed(Duration.zero);
+
+        // Resume marker is the last dispatched sample (phase='inhale')
+        final resumeMarker = f.instructionStream.sendSampleCalls.last;
+        expect(resumeMarker.$4, greaterThanOrEqualTo(pauseMarker.$4));
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should emit the resumed phase marker with tickCount equal to currentPhaseTotalDuration (not 0)',
+      () async {
+        final f = _make(useFakes: true);
+        final sw = f.stopwatch!;
+
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        sw.elapsedMs = 100;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        sw.elapsedMs = 250;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0, currentPhaseTotalDuration: 5));
+        await Future<void>.delayed(Duration.zero);
+
+        // Resume marker is the last dispatched sample
+        final resumeMarker = f.instructionStream.sendSampleCalls.last;
+        expect(resumeMarker.$3, 5);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should dispatch exactly one sendSample on resume (the marker only, no duplicate instruction)',
+      () async {
+        final f = _make(useFakes: true);
+        final sw = f.stopwatch!;
+
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        sw.elapsedMs = 100;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        final countBeforeResume = f.instructionStream.sendSampleCalls.length;
+
+        sw.elapsedMs = 250;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0, currentPhaseTotalDuration: 5));
+        await Future<void>.delayed(Duration.zero);
+
+        // Only the resume marker is dispatched — no duplicate instruction
+        expect(f.instructionStream.sendSampleCalls.length - countBeforeResume, 1);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should call the injected clock exactly once across a single started lifecycle even when multiple instructions are dispatched',
+      () async {
+        final f = _make(useFakes: true);
+        final sw = f.stopwatch!;
+        final callCount = f.clockCallCount!;
+
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // Start: clock called once to capture _originWallClock
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        // Subsequent phase changes dispatch instructions — no further clock calls
+        sw.elapsedMs = 50;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.hold, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        sw.elapsedMs = 100;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 1));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(callCount(), 1);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should compute each instruction\'s timestampMs as originWallClockMs + that instruction\'s offsetMs',
+      () async {
+        const originMs = 1000000;
+        final f = _make(useFakes: true, clockEpochMs: originMs);
+        final sw = f.stopwatch!;
+
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        sw.elapsedMs = 50;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.hold, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        sw.elapsedMs = 100;
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 1));
+        await Future<void>.delayed(Duration.zero);
+
+        final calls = f.instructionStream.sendSampleCalls;
+        expect(calls, hasLength(3));
+        for (final call in calls) {
+          expect(call.$5, originMs + call.$4,
+              reason: 'timestampMs should equal originMs + offsetMs for phase=${call.$2}');
+        }
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should re-capture the origin wall-clock (clock called again) on the next start after reset',
+      () async {
+        final f = _make(useFakes: true);
+        final callCount = f.clockCallCount!;
+
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // First lifecycle: start → clock called once
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        expect(callCount(), 1);
+
+        // Reset clears _originWallClock and _started
+        f.target.reset();
+
+        // Second lifecycle: start → clock called again
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        expect(callCount(), 2);
+
+        f.target.dispose();
+      },
+    );
+  });
+
+  // ── Phase 14: offset axis (pending flush) ─────────────────────────────────
+
+  group('BreathModuleStateChannel — offset axis (pending flush)', () {
+    test(
+      'should flush the pending instruction with the offsetMs captured at instruction time (T1), not the stopwatch value at flush time (T2)',
+      () async {
+        const originMs = 1000000;
+        final f = _make(useFakes: true, clockEpochMs: originMs);
+        final sw = f.stopwatch!;
+
+        // No ModuleState seeded — instructions are buffered until moduleSessionId arrives
+
+        // 1. Prime: sets _previousPhase=inhale, _previousStatus=pause; no instruction
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        // 2. Start: stopwatch reset to 0, buffers instruction with offset=0
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        // 3. Advance to T1
+        const t1 = 75;
+        sw.elapsedMs = t1;
+
+        // 4. Second phase change: overwrites pending with offset=T1
+        f.stateCtrl.add(_state(
+          status: BreathSessionStatus.breath,
+          phase: BreathPhase.exhale,
+          exerciseIndex: 0,
+          currentPhaseTotalDuration: 9,
+        ));
+        await Future<void>.delayed(Duration.zero);
+
+        // 5. Advance to T2 > T1 — flush should use T1, not T2
+        const t2 = 300;
+        sw.elapsedMs = t2;
+
+        // 6. Push ModuleState → _flushPending dispatches with captured T1
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, hasLength(1));
+        expect(f.instructionStream.sendSampleCalls.first.$4, t1);
+
+        f.target.dispose();
+      },
+    );
+
+    test(
+      'should flush the pending instruction with timestampMs equal to originWallClockMs + capturedOffsetMs (T1), not recomputed from the flush-time offset',
+      () async {
+        const originMs = 1000000;
+        final f = _make(useFakes: true, clockEpochMs: originMs);
+        final sw = f.stopwatch!;
+
+        // No ModuleState seeded
+
+        // 1. Prime
+        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        // 2. Start: buffers instruction with offset=0
+        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+
+        // 3-4. Advance to T1 and emit second phase change: overwrites pending with offset=T1
+        const t1 = 75;
+        sw.elapsedMs = t1;
+        f.stateCtrl.add(_state(
+          status: BreathSessionStatus.breath,
+          phase: BreathPhase.exhale,
+          exerciseIndex: 0,
+          currentPhaseTotalDuration: 9,
+        ));
+        await Future<void>.delayed(Duration.zero);
+
+        // 5. Advance to T2 > T1
+        sw.elapsedMs = 300;
+
+        // 6. Flush
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // timestampMs must be originMs + T1 (not originMs + T2)
+        final call = f.instructionStream.sendSampleCalls.first;
+        expect(call.$5, originMs + t1);
+
+        f.target.dispose();
       },
     );
   });
