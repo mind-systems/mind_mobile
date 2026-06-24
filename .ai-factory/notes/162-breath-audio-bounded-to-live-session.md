@@ -1,5 +1,7 @@
 # Bound breath screen audio to a live module session (fix the background tick leak)
 
+> **SUPERSEDED** by [[168-breath-audio-islive]]. Same bug and same fix, but the gate moves from this note's server-derived `BreathModuleStateChannel.isSessionLive` (`_started && !_ended`, bridged via an `attachModuleChannel` callback) to the **local/offline** `BreathSessionState.isLive` (see [[167-breath-derive-lifecycle-islive]]). Kept as historical context for the mechanism (`WidgetsBindingObserver` re-add, `suspend`/`resume` reuse).
+
 **Date:** 2026-06-23
 **Source:** conversation context
 
