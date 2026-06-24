@@ -54,11 +54,14 @@ class _FakeChannel implements ModuleStateChannel {
 }
 
 class _FakeInstructionStream implements BreathModuleInstructionStream {
-  final List<(String, String, int)> sendSampleCalls = [];
+  final List<(String, String, int, int, int)> sendSampleCalls = [];
+
+  List<(String, String, int)> get phaseTickCalls =>
+      sendSampleCalls.map((c) => (c.$1, c.$2, c.$3)).toList();
 
   @override
   void sendSample(String sessionId, String phase, int tickCount, int offsetMs, int timestampMs) =>
-      sendSampleCalls.add((sessionId, phase, tickCount));
+      sendSampleCalls.add((sessionId, phase, tickCount, offsetMs, timestampMs));
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -753,7 +756,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
-        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 3));
+        expect(f.instructionStream.phaseTickCalls.first, ('sid', 'exhale', 3));
 
         f.target.dispose();
       },
@@ -773,7 +776,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
-        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'inhale', 4));
+        expect(f.instructionStream.phaseTickCalls.first, ('sid', 'inhale', 4));
 
         f.target.dispose();
       },
@@ -836,8 +839,8 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(2));
-        expect(f.instructionStream.sendSampleCalls[0], ('sid', 'inhale', 1)); // instruction dispatch
-        expect(f.instructionStream.sendSampleCalls[1], ('sid', 'pause', 0)); // pause boundary marker
+        expect(f.instructionStream.phaseTickCalls[0], ('sid', 'inhale', 1)); // instruction dispatch
+        expect(f.instructionStream.phaseTickCalls[1], ('sid', 'pause', 0)); // pause boundary marker
 
         f.target.dispose();
       },
@@ -890,7 +893,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(2));
-        expect(f.instructionStream.sendSampleCalls.last, ('sid', 'exhale', 5));
+        expect(f.instructionStream.phaseTickCalls.last, ('sid', 'exhale', 5));
 
         f.target.dispose();
       },
@@ -912,7 +915,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
-        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 7));
+        expect(f.instructionStream.phaseTickCalls.first, ('sid', 'exhale', 7));
 
         f.target.dispose();
       },
@@ -955,7 +958,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
-        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 6));
+        expect(f.instructionStream.phaseTickCalls.first, ('sid', 'exhale', 6));
 
         f.target.dispose();
       },
@@ -1021,7 +1024,7 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
 
-        expect(f.instructionStream.sendSampleCalls, [('sid', 'inhale', 8)]);
+        expect(f.instructionStream.phaseTickCalls, [('sid', 'inhale', 8)]);
 
         f.target.dispose();
       },
@@ -1052,7 +1055,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
-        expect(f.instructionStream.sendSampleCalls.first, ('sid', 'exhale', 9));
+        expect(f.instructionStream.phaseTickCalls.first, ('sid', 'exhale', 9));
 
         f.target.dispose();
       },
@@ -1150,7 +1153,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(2));
-        expect(f.instructionStream.sendSampleCalls.last, ('sid', 'exhale', 10));
+        expect(f.instructionStream.phaseTickCalls.last, ('sid', 'exhale', 10));
         expect(f.channel.startCalls, hasLength(2));
 
         f.target.dispose();
@@ -1188,7 +1191,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(2));
-        expect(f.instructionStream.sendSampleCalls.last, ('sid', 'inhale', 11));
+        expect(f.instructionStream.phaseTickCalls.last, ('sid', 'inhale', 11));
         expect(f.channel.startCalls, hasLength(2));
 
         f.target.dispose();

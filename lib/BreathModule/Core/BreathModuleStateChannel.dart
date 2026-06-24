@@ -12,6 +12,7 @@ class BreathModuleStateChannel {
   final ModuleStateChannel _channel;
   final BreathModuleInstructionStream _instructionStream;
   final String _sessionId;
+  final DateTime Function() _clock;
 
   bool _started = false;
   bool _ended = false;
@@ -21,7 +22,7 @@ class BreathModuleStateChannel {
   String? _moduleSessionId;
   ({BreathSessionState state, int offsetMs})? _pendingInstruction;
 
-  final Stopwatch _stopwatch = Stopwatch();
+  final Stopwatch _stopwatch;
   DateTime? _originWallClock;
 
   late final StreamSubscription<BreathSessionState> _stateSub;
@@ -33,9 +34,13 @@ class BreathModuleStateChannel {
     required Stream<BreathSessionState> stateStream,
     required BreathModuleInstructionStream instructionStream,
     required String sessionId,
+    Stopwatch Function() stopwatchFactory = Stopwatch.new,
+    DateTime Function() clock = DateTime.now,
   })  : _channel = channel,
         _instructionStream = instructionStream,
-        _sessionId = sessionId {
+        _sessionId = sessionId,
+        _stopwatch = stopwatchFactory(),
+        _clock = clock {
     _stateSub = stateStream.listen(_onState);
     _channelSub = channel.state.listen((moduleState) {
       _moduleSessionId = moduleState.moduleSessionId;
@@ -82,7 +87,7 @@ class BreathModuleStateChannel {
       if (!_started) {
         logPrint('[BreathModuleState] BreathModuleStateChannel: session start [$_sessionId]');
         _stopwatch..reset()..start();
-        _originWallClock = DateTime.now();
+        _originWallClock = _clock();
         _channel.start(type: ActivityType.breath, refId: _sessionId, clientTimestampMs: _originWallClock!.millisecondsSinceEpoch);
         _started = true;
         _previousPhase = null;
@@ -137,7 +142,7 @@ class BreathModuleStateChannel {
   }
 
   int _wireTimestamp(int offsetMs) =>
-      (_originWallClock?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch) + offsetMs;
+      (_originWallClock?.millisecondsSinceEpoch ?? _clock().millisecondsSinceEpoch) + offsetMs;
 
   void reset() {
     _moduleSessionId = null;
