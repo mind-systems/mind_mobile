@@ -5,9 +5,55 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/Bci/NeiryBciProvider.dart';
 import 'package:mind/Bci/Models/BciDeviceInfo.dart';
 import 'package:mind/Bci/Models/BciChannelQuality.dart';
+import 'package:mind/Bci/Models/BciEmotionsData.dart';
 import 'package:mind/Bci/Models/BciLinkStatus.dart';
+import 'package:mind/Bci/Models/BciNfbData.dart';
+import 'package:mind/Bci/Ports/ClassifierSet.dart';
 import 'package:mind/Bci/Ports/DevicePort.dart';
 import 'package:mind/Bci/Ports/LocatorPort.dart';
+import 'package:mind/Biometrics/Models/CardioData.dart';
+import 'package:mind/Biometrics/Models/MotionData.dart';
+import 'package:mind/Biometrics/Models/RrInterval.dart';
+
+// ---------------------------------------------------------------------------
+// FakeClassifierSet — minimal ClassifierSet for _StubDevicePort.
+// ---------------------------------------------------------------------------
+
+class _FakeClassifierSet implements ClassifierSet {
+  final _nfbController = StreamController<BciNfbData>.broadcast();
+  final _nfbErrorController = StreamController<String>.broadcast();
+  final _cardioController = StreamController<CardioData>.broadcast();
+  final _rrController = StreamController<RrInterval>.broadcast();
+  final _emotionsController = StreamController<BciEmotionsData>.broadcast();
+  final _emotionsErrorController = StreamController<String>.broadcast();
+  final _motionController = StreamController<MotionData>.broadcast();
+
+  @override
+  Stream<BciNfbData> get nfbStateStream => _nfbController.stream;
+  @override
+  Stream<String> get nfbErrorStream => _nfbErrorController.stream;
+  @override
+  Stream<CardioData> get cardioStateStream => _cardioController.stream;
+  @override
+  Stream<RrInterval> get rrStream => _rrController.stream;
+  @override
+  Stream<BciEmotionsData> get emotionsStateStream => _emotionsController.stream;
+  @override
+  Stream<String> get emotionsErrorStream => _emotionsErrorController.stream;
+  @override
+  Stream<MotionData> get motionStream => _motionController.stream;
+
+  @override
+  Future<void> dispose() async {
+    _nfbController.close();
+    _nfbErrorController.close();
+    _cardioController.close();
+    _rrController.close();
+    _emotionsController.close();
+    _emotionsErrorController.close();
+    _motionController.close();
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Stub DevicePort — minimal implementation; no neiry.Device under the hood.
@@ -41,6 +87,9 @@ class _StubDevicePort implements DevicePort {
 
   @override
   Stream<int> get batteryStream => const Stream.empty();
+
+  @override
+  ClassifierSet buildClassifierSet() => _FakeClassifierSet();
 }
 
 // ---------------------------------------------------------------------------

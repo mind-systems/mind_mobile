@@ -19,7 +19,6 @@ import 'package:mind/Bci/Models/BciDeviceInfo.dart';
 import 'package:mind/Bci/Models/BciEmotionsData.dart';
 import 'package:mind/Bci/Models/BciLinkStatus.dart';
 import 'package:mind/Bci/Models/BciNfbData.dart';
-import 'package:mind/Bci/Ports/ClassifierFactory.dart';
 import 'package:mind/Bci/Ports/ClassifierSet.dart';
 import 'package:mind/Bci/Ports/DevicePort.dart';
 import 'package:mind/Bci/Ports/LocatorPort.dart';
@@ -177,10 +176,8 @@ void main() {
       'not Bad state: Cannot add event after closing',
       () async {
         final registry = _RecordingLocatorRegistry();
-        final fakeSet = _FakeClassifierSet();
         final provider = NeiryBciProvider(
           locatorFactory: registry.locatorFactory,
-          classifierFactory: _FakeClassifierFactory(fakeSet),
         );
 
         // dispose() synchronously sets _disposed=true and closes the queue in
@@ -211,10 +208,8 @@ void main() {
       'not Bad state: Cannot add event after closing',
       () async {
         final registry = _RecordingLocatorRegistry();
-        final fakeSet = _FakeClassifierSet();
         final provider = NeiryBciProvider(
           locatorFactory: registry.locatorFactory,
-          classifierFactory: _FakeClassifierFactory(fakeSet),
         );
 
         provider.dispose();
@@ -242,10 +237,8 @@ void main() {
       'creates a new locator; only the original L0 is disposed',
       () async {
         final registry = _RecordingLocatorRegistry();
-        final fakeSet = _FakeClassifierSet();
         final provider = NeiryBciProvider(
           locatorFactory: registry.locatorFactory,
-          classifierFactory: _FakeClassifierFactory(fakeSet),
         );
         final l0 = registry.instances.first;
 
@@ -347,6 +340,9 @@ class _GatedFakeDevicePort implements DevicePort {
     if (!_resistanceController.isClosed) _resistanceController.close();
     if (!_batteryController.isClosed) _batteryController.close();
   }
+
+  @override
+  ClassifierSet buildClassifierSet() => _FakeClassifierSet();
 }
 
 class _RecordingLocatorPort implements LocatorPort {
@@ -453,10 +449,3 @@ class _FakeClassifierSet implements ClassifierSet {
   }
 }
 
-class _FakeClassifierFactory implements ClassifierFactory {
-  final _FakeClassifierSet classifierSet;
-  _FakeClassifierFactory(this.classifierSet);
-
-  @override
-  ClassifierSet build(DevicePort device) => classifierSet;
-}

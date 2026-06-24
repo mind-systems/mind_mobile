@@ -24,24 +24,21 @@ import 'Models/BciEmotionsData.dart';
 import 'Models/BciNfbData.dart';
 import 'Models/BluetoothPermissionDeniedException.dart';
 import 'Models/NfbCalibrationData.dart';
-import 'Ports/ClassifierFactory.dart';
 import 'Ports/ClassifierSet.dart';
 import 'Ports/DevicePort.dart';
 import 'Ports/LocatorPort.dart';
-import 'Ports/NeiryClassifierFactory.dart';
 import 'Ports/NeiryLocatorAdapter.dart';
 import '../Logger.dart';
 
 /// Adapter that bridges `neiry_kit` to [IBciDeviceProvider].
 ///
 /// Only this file and the port adapters ([NeiryLocatorAdapter],
-/// [NeiryDeviceAdapter], [NeiryClassifierSet], [NeiryClassifierFactory]) may
-/// import `neiry_kit`. All other consumers must depend on [IBciDeviceProvider]
-/// or the port interfaces, never on this class or the adapter implementations.
+/// [NeiryDeviceAdapter], [NeiryClassifierSet]) may import `neiry_kit`.
+/// All other consumers must depend on [IBciDeviceProvider] or the port
+/// interfaces, never on this class or the adapter implementations.
 class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrIntervalSource, IEegBandsSource, IEmotionsSource, IMotionSource {
   late LocatorPort _locator;
   final LocatorPort Function() _locatorFactory;
-  final ClassifierFactory _classifierFactory;
   DevicePort? _device;
   ClassifierSet? _classifierSet;
   bool _disposed = false;
@@ -49,9 +46,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
 
   NeiryBciProvider({
     LocatorPort Function()? locatorFactory,
-    ClassifierFactory? classifierFactory,
-  })  : _locatorFactory = locatorFactory ?? (() => NeiryLocatorAdapter()),
-        _classifierFactory = classifierFactory ?? NeiryClassifierFactory() {
+  })  : _locatorFactory = locatorFactory ?? (() => NeiryLocatorAdapter()) {
     _locator = _locatorFactory();
   }
 
@@ -180,7 +175,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       _device = await _locator.createDevice(serial);
       try {
         await _device!.connect();
-        _classifierSet = _classifierFactory.build(_device!);
+        _classifierSet = _device!.buildClassifierSet();
         await _device!.start();
       } catch (e) {
         try {

@@ -18,8 +18,9 @@ import 'ClassifierSet.dart';
 /// exposes their output as domain-typed streams. All vendor-to-domain mapping
 /// lives here — [NeiryBciProvider] and its subscribers never see neiry types.
 ///
-/// This is one of two files (with [NeiryClassifierFactory]) permitted to
-/// import `neiry_kit`.
+/// Constructed by [NeiryDeviceAdapter.buildClassifierSet] using the adapter's
+/// private device handle. This is one of the files permitted to import
+/// `neiry_kit`.
 class NeiryClassifierSet implements ClassifierSet {
   factory NeiryClassifierSet(neiry.Device device) {
     late final neiry.NfbClassifier nfb;

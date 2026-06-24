@@ -8,7 +8,6 @@ import 'package:mind/Bci/Models/BciDeviceInfo.dart';
 import 'package:mind/Bci/Models/BciEmotionsData.dart';
 import 'package:mind/Bci/Models/BciLinkStatus.dart';
 import 'package:mind/Bci/Models/BciNfbData.dart';
-import 'package:mind/Bci/Ports/ClassifierFactory.dart';
 import 'package:mind/Bci/Ports/ClassifierSet.dart';
 import 'package:mind/Bci/Ports/DevicePort.dart';
 import 'package:mind/Bci/Ports/LocatorPort.dart';
@@ -16,101 +15,6 @@ import 'package:mind/Biometrics/Models/CardioData.dart';
 import 'package:mind/Biometrics/Models/MotionData.dart';
 import 'package:mind/Biometrics/Models/RrInterval.dart';
 import 'package:mind/Biometrics/Models/SensorSource.dart';
-
-// ---------------------------------------------------------------------------
-// FakeDevicePort — controllable test double for DevicePort.
-// Does NOT import neiry_kit — implements only the port surface declared in
-// lib/Bci/Ports/DevicePort.dart.
-// ---------------------------------------------------------------------------
-
-class FakeDevicePort implements DevicePort {
-  final _connectionController = StreamController<BciLinkStatus>.broadcast();
-  final _resistanceController =
-      StreamController<List<BciChannelQuality>>.broadcast();
-  final _batteryController = StreamController<int>.broadcast();
-
-  int connectCallCount = 0;
-  int startCallCount = 0;
-  int stopStreamCallCount = 0;
-  int disconnectCallCount = 0;
-  int disposeCallCount = 0;
-
-  bool _isStarted = false;
-
-  @override
-  bool get isStarted => _isStarted;
-
-  @override
-  Stream<BciLinkStatus> get connectionStateStream =>
-      _connectionController.stream;
-
-  @override
-  Stream<List<BciChannelQuality>> get resistanceStream =>
-      _resistanceController.stream;
-
-  @override
-  Stream<int> get batteryStream => _batteryController.stream;
-
-  @override
-  Future<void> connect() async {
-    connectCallCount++;
-  }
-
-  @override
-  Future<void> start() async {
-    startCallCount++;
-    _isStarted = true;
-  }
-
-  @override
-  Future<void> stopStream() async {
-    stopStreamCallCount++;
-    _isStarted = false;
-  }
-
-  @override
-  Future<void> disconnect() async {
-    disconnectCallCount++;
-  }
-
-  @override
-  Future<void> dispose() async {
-    disposeCallCount++;
-    _connectionController.close();
-    _resistanceController.close();
-    _batteryController.close();
-  }
-}
-
-// ---------------------------------------------------------------------------
-// _ControlledLocatorPort — returns FakeDevicePort from createDevice().
-// ---------------------------------------------------------------------------
-
-class _ControlledLocatorPort implements LocatorPort {
-  final FakeDevicePort fakeDevice;
-  final _devicesController = StreamController<List<BciDeviceInfo>>();
-  int createDeviceCallCount = 0;
-
-  _ControlledLocatorPort(this.fakeDevice);
-
-  @override
-  Stream<List<BciDeviceInfo>> requestDevices({
-    BciScanDeviceType type = BciScanDeviceType.headband,
-    int searchTime = 5,
-  }) =>
-      _devicesController.stream;
-
-  @override
-  Future<DevicePort> createDevice(String serial) async {
-    createDeviceCallCount++;
-    return fakeDevice;
-  }
-
-  @override
-  Future<void> dispose() async {
-    if (!_devicesController.isClosed) _devicesController.close();
-  }
-}
 
 // ---------------------------------------------------------------------------
 // FakeClassifierSet — implements ClassifierSet with seven broadcast controllers
@@ -174,19 +78,112 @@ class FakeClassifierSet implements ClassifierSet {
 }
 
 // ---------------------------------------------------------------------------
-// FakeClassifierFactory — call-counted; returns the shared FakeClassifierSet.
+// FakeDevicePort — controllable test double for DevicePort.
+// Owns its FakeClassifierSet; returns it from buildClassifierSet().
 // ---------------------------------------------------------------------------
 
-class FakeClassifierFactory implements ClassifierFactory {
-  final FakeClassifierSet classifierSet;
-  int buildCallCount = 0;
+class FakeDevicePort implements DevicePort {
+  final _connectionController = StreamController<BciLinkStatus>.broadcast();
+  final _resistanceController =
+      StreamController<List<BciChannelQuality>>.broadcast();
+  final _batteryController = StreamController<int>.broadcast();
 
-  FakeClassifierFactory(this.classifierSet);
+  final FakeClassifierSet classifierSet;
+
+  int connectCallCount = 0;
+  int startCallCount = 0;
+  int stopStreamCallCount = 0;
+  int disconnectCallCount = 0;
+  int disposeCallCount = 0;
+  int buildClassifierSetCallCount = 0;
+
+  bool throwOnBuildClassifierSet = false;
+
+  bool _isStarted = false;
+
+  FakeDevicePort(this.classifierSet);
 
   @override
-  ClassifierSet build(DevicePort device) {
-    buildCallCount++;
+  bool get isStarted => _isStarted;
+
+  @override
+  Stream<BciLinkStatus> get connectionStateStream =>
+      _connectionController.stream;
+
+  @override
+  Stream<List<BciChannelQuality>> get resistanceStream =>
+      _resistanceController.stream;
+
+  @override
+  Stream<int> get batteryStream => _batteryController.stream;
+
+  @override
+  Future<void> connect() async {
+    connectCallCount++;
+  }
+
+  @override
+  Future<void> start() async {
+    startCallCount++;
+    _isStarted = true;
+  }
+
+  @override
+  Future<void> stopStream() async {
+    stopStreamCallCount++;
+    _isStarted = false;
+  }
+
+  @override
+  Future<void> disconnect() async {
+    disconnectCallCount++;
+  }
+
+  @override
+  Future<void> dispose() async {
+    disposeCallCount++;
+    _connectionController.close();
+    _resistanceController.close();
+    _batteryController.close();
+  }
+
+  @override
+  ClassifierSet buildClassifierSet() {
+    buildClassifierSetCallCount++;
+    if (throwOnBuildClassifierSet) {
+      throw StateError('FakeDevicePort: buildClassifierSet error');
+    }
     return classifierSet;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _ControlledLocatorPort — returns FakeDevicePort from createDevice().
+// ---------------------------------------------------------------------------
+
+class _ControlledLocatorPort implements LocatorPort {
+  final FakeDevicePort fakeDevice;
+  final _devicesController = StreamController<List<BciDeviceInfo>>();
+  int createDeviceCallCount = 0;
+
+  _ControlledLocatorPort(this.fakeDevice);
+
+  @override
+  Stream<List<BciDeviceInfo>> requestDevices({
+    BciScanDeviceType type = BciScanDeviceType.headband,
+    int searchTime = 5,
+  }) =>
+      _devicesController.stream;
+
+  @override
+  Future<DevicePort> createDevice(String serial) async {
+    createDeviceCallCount++;
+    return fakeDevice;
+  }
+
+  @override
+  Future<void> dispose() async {
+    if (!_devicesController.isClosed) _devicesController.close();
   }
 }
 
@@ -197,21 +194,18 @@ class FakeClassifierFactory implements ClassifierFactory {
 void main() {
   // ── Task 6 — classifier port injectability ──────────────────────────────────
 
-  group('NeiryBciProvider — ClassifierFactory/ClassifierSet injectable seam', () {
+  group('NeiryBciProvider — ClassifierSet injectable via DevicePort', () {
+    late FakeClassifierSet fakeSet;
     late FakeDevicePort fakeDevice;
     late _ControlledLocatorPort fakeLocator;
-    late FakeClassifierSet fakeSet;
-    late FakeClassifierFactory fakeFactory;
     late NeiryBciProvider provider;
 
     setUp(() {
-      fakeDevice = FakeDevicePort();
-      fakeLocator = _ControlledLocatorPort(fakeDevice);
       fakeSet = FakeClassifierSet();
-      fakeFactory = FakeClassifierFactory(fakeSet);
+      fakeDevice = FakeDevicePort(fakeSet);
+      fakeLocator = _ControlledLocatorPort(fakeDevice);
       provider = NeiryBciProvider(
         locatorFactory: () => fakeLocator,
-        classifierFactory: fakeFactory,
       );
     });
 
@@ -222,17 +216,17 @@ void main() {
     // ── Test 1: happy-path connect ────────────────────────────────────────────
 
     test(
-      'connect() with FakeDevicePort + FakeClassifierFactory completes without '
-      'throwing; build() called once; device.start() called once',
+      'connect() with FakeDevicePort completes without throwing; '
+      'buildClassifierSet() called once; device.start() called once',
       () async {
         await provider.connect('FAKE-001');
 
-        expect(fakeFactory.buildCallCount, 1,
-            reason: 'factory.build() must be called exactly once per connect()');
+        expect(fakeDevice.buildClassifierSetCallCount, 1,
+            reason: 'buildClassifierSet() must be called exactly once per connect()');
         expect(fakeDevice.startCallCount, 1,
-            reason: 'device.start() must be called once after build()');
+            reason: 'device.start() must be called once after buildClassifierSet()');
         expect(fakeDevice.connectCallCount, 1,
-            reason: 'device.connect() must be called before build()');
+            reason: 'device.connect() must be called before buildClassifierSet()');
       },
     );
 
@@ -340,31 +334,51 @@ void main() {
 
   group('NeiryBciProvider — default constructor', () {
     test(
-      'constructs without arguments (default NeiryClassifierFactory wired, '
-      'production path untouched)',
+      'constructs without arguments (production path untouched)',
       () {
         expect(() => NeiryBciProvider(), returnsNormally);
       },
     );
   });
 
-  // ── A2 regression: NeiryDeviceAdapter cast still throws TypeError ────────────
+  // ── T5 positive: non-Neiry FakeDevicePort no longer causes CastError ─────────
 
-  group('NeiryBciProvider — A2 regression (default factory + FakeDevicePort)', () {
+  group('NeiryBciProvider — T5 positive (FakeDevicePort now completes connect())', () {
     test(
-      'connect() with default NeiryClassifierFactory and FakeDevicePort throws '
-      'TypeError from the NeiryDeviceAdapter cast in build()',
+      'connect() with FakeDevicePort completes successfully — '
+      'no CastError from a NeiryDeviceAdapter downcast',
       () async {
-        final fakeDevice = FakeDevicePort();
+        final fakeSet = FakeClassifierSet();
+        final fakeDevice = FakeDevicePort(fakeSet);
+        final fakeLocator = _ControlledLocatorPort(fakeDevice);
+        final provider = NeiryBciProvider(locatorFactory: () => fakeLocator);
+
+        // T5: buildClassifierSet() is called on the DevicePort directly — no cast.
+        await expectLater(provider.connect('FAKE-001'), completes);
+
+        expect(fakeDevice.buildClassifierSetCallCount, 1);
+        expect(fakeDevice.disconnectCallCount, 0,
+            reason: 'no cleanup needed — connect succeeded');
+
+        provider.dispose();
+      },
+    );
+
+    test(
+      'when throwOnBuildClassifierSet is set, connect() fails and cleanup runs',
+      () async {
+        final fakeSet = FakeClassifierSet();
+        final fakeDevice = FakeDevicePort(fakeSet)
+          ..throwOnBuildClassifierSet = true;
         final fakeLocator = _ControlledLocatorPort(fakeDevice);
         final provider = NeiryBciProvider(locatorFactory: () => fakeLocator);
 
         await expectLater(
           provider.connect('FAKE-001'),
-          throwsA(isA<TypeError>()),
+          throwsA(isA<StateError>()),
         );
 
-        // Cleanup path still ran.
+        // Cleanup path ran.
         expect(fakeDevice.disconnectCallCount, 1);
         expect(fakeDevice.disposeCallCount, 1);
 

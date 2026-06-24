@@ -24,7 +24,6 @@ import 'package:mind/Bci/Models/BciEmotionsData.dart';
 import 'package:mind/Bci/Models/BciLinkStatus.dart';
 import 'package:mind/Bci/Models/BciNfbData.dart';
 import 'package:mind/Bci/Models/NfbCalibrationData.dart';
-import 'package:mind/Bci/Ports/ClassifierFactory.dart';
 import 'package:mind/Bci/Ports/ClassifierSet.dart';
 import 'package:mind/Bci/Ports/DevicePort.dart';
 import 'package:mind/Bci/Ports/LocatorPort.dart';
@@ -49,6 +48,9 @@ class GatedFakeDevicePort implements DevicePort {
       StreamController<List<BciChannelQuality>>.broadcast();
   final _batteryController = StreamController<int>.broadcast();
 
+  /// The classifier set owned by this device instance.
+  final FakeClassifierSet classifierSet = FakeClassifierSet();
+
   int connectCallCount = 0;
   int startCallCount = 0;
   int stopStreamCallCount = 0;
@@ -58,6 +60,7 @@ class GatedFakeDevicePort implements DevicePort {
 
   bool throwOnDisconnect = false;
   bool throwOnDispose = false;
+  bool throwOnBuildClassifierSet = false;
 
   Completer<void> stopStreamCompleter = Completer()..complete();
   Completer<void> disconnectCompleter = Completer()..complete();
@@ -120,6 +123,14 @@ class GatedFakeDevicePort implements DevicePort {
     if (!_connectionController.isClosed) _connectionController.close();
     if (!_resistanceController.isClosed) _resistanceController.close();
     if (!_batteryController.isClosed) _batteryController.close();
+  }
+
+  @override
+  ClassifierSet buildClassifierSet() {
+    if (throwOnBuildClassifierSet) {
+      throw StateError('GatedFakeDevicePort: buildClassifierSet error');
+    }
+    return classifierSet;
   }
 }
 
@@ -223,7 +234,7 @@ class RecordingLocatorRegistry {
   }
 }
 
-// ── FakeClassifierSet / FakeClassifierFactory ─────────────────────────────────
+// ── FakeClassifierSet ─────────────────────────────────────────────────────────
 
 /// Minimal ClassifierSet — enables a full connect() without neiry_kit.
 class FakeClassifierSet implements ClassifierSet {
@@ -263,14 +274,6 @@ class FakeClassifierSet implements ClassifierSet {
     _emotionsErrorController.close();
     _motionController.close();
   }
-}
-
-class FakeClassifierFactory implements ClassifierFactory {
-  final FakeClassifierSet classifierSet;
-  FakeClassifierFactory(this.classifierSet);
-
-  @override
-  ClassifierSet build(DevicePort device) => classifierSet;
 }
 
 // ── Fake gRPC APIs for Task 4 ─────────────────────────────────────────────────
@@ -328,12 +331,9 @@ class _DropSetup {
 /// - l0.disposeCompleter is fresh (unresolved)
 Future<_DropSetup> _connectThenDrop({String serial = 'TEST-001'}) async {
   final registry = RecordingLocatorRegistry();
-  final fakeSet = FakeClassifierSet();
-  final fakeFactory = FakeClassifierFactory(fakeSet);
 
   final provider = NeiryBciProvider(
     locatorFactory: registry.locatorFactory,
-    classifierFactory: fakeFactory,
   );
 
   // Initial locator is created in the constructor.
@@ -365,7 +365,7 @@ Future<_DropSetup> _connectThenDrop({String serial = 'TEST-001'}) async {
     registry: registry,
     l0: l0,
     device: device,
-    classifierSet: fakeSet,
+    classifierSet: device.classifierSet,
   );
 }
 
@@ -393,10 +393,8 @@ void main() {
       'clean connect() leaves exactly one live locator (L0) and zero orphans',
       () async {
         final registry = RecordingLocatorRegistry();
-        final fakeSet = FakeClassifierSet();
         final provider = NeiryBciProvider(
           locatorFactory: registry.locatorFactory,
-          classifierFactory: FakeClassifierFactory(fakeSet),
         );
 
         await provider.connect('TEST-001');
@@ -566,10 +564,8 @@ void main() {
       'old locator never receives requestDevices()',
       () async {
         final registry = RecordingLocatorRegistry();
-        final fakeSet = FakeClassifierSet();
         final provider = NeiryBciProvider(
           locatorFactory: registry.locatorFactory,
-          classifierFactory: FakeClassifierFactory(fakeSet),
         );
 
         final repository = BciDeviceRepository(
@@ -719,10 +715,8 @@ void main() {
       '_subscribeDeviceStreams() has no effect (no teardown, liveCount == 1)',
       () async {
         final registry = RecordingLocatorRegistry();
-        final fakeSet = FakeClassifierSet();
         final provider = NeiryBciProvider(
           locatorFactory: registry.locatorFactory,
-          classifierFactory: FakeClassifierFactory(fakeSet),
         );
 
         final l0 = registry.instances.first;
@@ -768,11 +762,10 @@ void main() {
       'connect() failure cleanup swallows disconnect()/dispose() throws; '
       'locator is still reset cleanly (old disposed, fresh created, liveCount == 1)',
       () async {
-        // NeiryClassifierFactory (default) casts the device to NeiryDeviceAdapter
-        // and throws TypeError — entering the :172 catch block. The device has
-        // throwOnDispose = true: disconnect() succeeds (:178), dispose() throws
-        // (:179) but the inner try/catch (:177-180) swallows it, then
-        // _resetLocatorSession() still runs before the TypeError is reThrown.
+        // The device's buildClassifierSet() throws StateError — entering the
+        // catch block. The device has throwOnDispose = true: disconnect()
+        // succeeds, dispose() throws but the inner try/catch swallows it, then
+        // _resetLocatorSession() still runs before the StateError is reThrown.
         final registry = RecordingLocatorRegistry();
 
         LocatorPort throwingFactory() {
@@ -785,7 +778,7 @@ void main() {
 
         await expectLater(
           provider.connect('TEST-001'),
-          throwsA(isA<TypeError>()),
+          throwsA(isA<StateError>()),
         );
 
         final l0 = registry.instances.first as _ThrowingDeviceLocatorPort;
@@ -818,15 +811,21 @@ void main() {
 // ── _ThrowingDeviceLocatorPort ────────────────────────────────────────────────
 
 /// RecordingLocatorPort that vends GatedFakeDevicePort instances with
-/// throwOnDispose = true. throwOnDisconnect is intentionally NOT set: if
-/// disconnect() throws first, dispose() is never reached (same try/catch at
-/// :177-180) and we cannot assert both call counts.
+/// throwOnBuildClassifierSet = true and throwOnDispose = true.
+///
+/// connect() on a device from this locator fails at buildClassifierSet()
+/// (StateError), exercising the catch-block cleanup path. throwOnDispose = true
+/// ensures dispose() throws and is swallowed, confirming that _resetLocatorSession()
+/// still runs. throwOnDisconnect is intentionally NOT set: if disconnect() throws
+/// first, dispose() is never reached (same try/catch) and we cannot assert both
+/// call counts.
 class _ThrowingDeviceLocatorPort extends RecordingLocatorPort {
   @override
   Future<DevicePort> createDevice(String serial) async {
     createDeviceCallCount++;
     final device = GatedFakeDevicePort()
-      ..throwOnDispose = true; // disconnect() succeeds; dispose() throws + is swallowed
+      ..throwOnBuildClassifierSet = true // triggers connect() failure
+      ..throwOnDispose = true; // dispose() throws + is swallowed
     lastCreatedDevice = device;
     return device;
   }

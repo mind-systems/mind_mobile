@@ -1,5 +1,6 @@
 import '../Models/BciChannelQuality.dart';
 import '../Models/BciLinkStatus.dart';
+import 'ClassifierSet.dart';
 
 /// Narrow port over the device surface that [NeiryBciProvider] actually calls.
 ///
@@ -18,4 +19,8 @@ abstract interface class DevicePort {
   Stream<BciLinkStatus> get connectionStateStream;
   Stream<List<BciChannelQuality>> get resistanceStream;
   Stream<int> get batteryStream;
+
+  /// Builds the classifier set bound to this device; the device must be
+  /// connected first.
+  ClassifierSet buildClassifierSet();
 }

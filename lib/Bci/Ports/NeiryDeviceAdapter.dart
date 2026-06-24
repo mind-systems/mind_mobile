@@ -6,7 +6,9 @@ import 'package:mind/Logger.dart';
 
 import '../Models/BciChannelQuality.dart';
 import '../Models/BciLinkStatus.dart';
+import 'ClassifierSet.dart';
 import 'DevicePort.dart';
+import 'NeiryClassifierSet.dart';
 
 /// Thin adapter that wraps [neiry.Device] and implements [DevicePort].
 ///
@@ -17,16 +19,17 @@ import 'DevicePort.dart';
 ///   - [batteryStream] passes through [int] unchanged
 ///
 /// All five lifecycle methods delegate directly to [neiry.Device].
+/// Also builds the classifier set via [buildClassifierSet], keeping
+/// `neiry_kit` confined to this adapter file.
 class NeiryDeviceAdapter implements DevicePort {
   NeiryDeviceAdapter(this._device);
 
   final neiry.Device _device;
 
-  /// Exposes the underlying [neiry.Device] for classifier construction.
-  ///
-  /// Consumed by [NeiryClassifierFactory] to build the four hardware
-  /// classifiers without exposing the vendor type to the rest of the app.
-  neiry.Device get rawDevice => _device;
+  // ── Classifier set ─────────────────────────────────────────────────────────
+
+  @override
+  ClassifierSet buildClassifierSet() => NeiryClassifierSet(_device);
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 

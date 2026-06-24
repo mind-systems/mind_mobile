@@ -5,9 +5,55 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/Bci/NeiryBciProvider.dart';
 import 'package:mind/Bci/Models/BciChannelQuality.dart';
 import 'package:mind/Bci/Models/BciDeviceInfo.dart';
+import 'package:mind/Bci/Models/BciEmotionsData.dart';
 import 'package:mind/Bci/Models/BciLinkStatus.dart';
+import 'package:mind/Bci/Models/BciNfbData.dart';
+import 'package:mind/Bci/Ports/ClassifierSet.dart';
 import 'package:mind/Bci/Ports/DevicePort.dart';
 import 'package:mind/Bci/Ports/LocatorPort.dart';
+import 'package:mind/Biometrics/Models/CardioData.dart';
+import 'package:mind/Biometrics/Models/MotionData.dart';
+import 'package:mind/Biometrics/Models/RrInterval.dart';
+
+// ---------------------------------------------------------------------------
+// FakeClassifierSet — minimal ClassifierSet owned by FakeDevicePort.
+// ---------------------------------------------------------------------------
+
+class FakeClassifierSet implements ClassifierSet {
+  final _nfbController = StreamController<BciNfbData>.broadcast();
+  final _nfbErrorController = StreamController<String>.broadcast();
+  final _cardioController = StreamController<CardioData>.broadcast();
+  final _rrController = StreamController<RrInterval>.broadcast();
+  final _emotionsController = StreamController<BciEmotionsData>.broadcast();
+  final _emotionsErrorController = StreamController<String>.broadcast();
+  final _motionController = StreamController<MotionData>.broadcast();
+
+  @override
+  Stream<BciNfbData> get nfbStateStream => _nfbController.stream;
+  @override
+  Stream<String> get nfbErrorStream => _nfbErrorController.stream;
+  @override
+  Stream<CardioData> get cardioStateStream => _cardioController.stream;
+  @override
+  Stream<RrInterval> get rrStream => _rrController.stream;
+  @override
+  Stream<BciEmotionsData> get emotionsStateStream => _emotionsController.stream;
+  @override
+  Stream<String> get emotionsErrorStream => _emotionsErrorController.stream;
+  @override
+  Stream<MotionData> get motionStream => _motionController.stream;
+
+  @override
+  Future<void> dispose() async {
+    _nfbController.close();
+    _nfbErrorController.close();
+    _cardioController.close();
+    _rrController.close();
+    _emotionsController.close();
+    _emotionsErrorController.close();
+    _motionController.close();
+  }
+}
 
 // ---------------------------------------------------------------------------
 // FakeDevicePort — controllable test double for DevicePort.
@@ -31,6 +77,7 @@ class FakeDevicePort implements DevicePort {
   int disposeCallCount = 0;
 
   bool _isStarted = false;
+  bool throwOnBuildClassifierSet = false;
 
   // Test-controlled async — pre-completed by default so methods return
   // immediately. Replace with a fresh unsettled Completer to gate teardown
@@ -86,6 +133,14 @@ class FakeDevicePort implements DevicePort {
     _batteryController.close();
   }
 
+  @override
+  ClassifierSet buildClassifierSet() {
+    if (throwOnBuildClassifierSet) {
+      throw StateError('FakeDevicePort: buildClassifierSet error');
+    }
+    return FakeClassifierSet();
+  }
+
   // Stream-emission helpers.
   void emitConnection(BciLinkStatus status) =>
       _connectionController.add(status);
@@ -137,20 +192,17 @@ void main() {
   group('NeiryBciProvider — DevicePort injectable seam', () {
     test(
       'connect() routes through the injected DevicePort; '
-      'NeiryDeviceAdapter cast throws; cleanup calls disconnect() + dispose()',
+      'buildClassifierSet() throw triggers cleanup (disconnect() + dispose())',
       () async {
-        final fakeDevice = FakeDevicePort();
+        final fakeDevice = FakeDevicePort()
+          ..throwOnBuildClassifierSet = true; // trigger connect() failure after connect()
         final fakeLocator = _ControlledLocatorPort(fakeDevice);
         final provider = NeiryBciProvider(locatorFactory: () => fakeLocator);
 
-        // Full connect() happy-path is A3-gated: classifier construction still
-        // requires rawDevice from a concrete NeiryDeviceAdapter. The assertion
-        // below is intentionally scoped to the seam — verify createDevice is
-        // called, connect() is forwarded to the fake, and the catch-block
-        // cleanup at NeiryBciProvider.dart:177-200 runs.
+        // buildClassifierSet() throws StateError — the catch-block cleanup runs.
         await expectLater(
           provider.connect('FAKE-001'),
-          throwsA(isA<TypeError>()),
+          throwsA(isA<StateError>()),
         );
 
         // Seam was reached exactly once.
@@ -159,7 +211,7 @@ void main() {
         // connect() was forwarded to the DevicePort.
         expect(fakeDevice.connectCallCount, 1,
             reason: 'connect() must be forwarded to the DevicePort');
-        // Cleanup path ran (NeiryBciProvider.dart:195-196).
+        // Cleanup path ran.
         expect(fakeDevice.disconnectCallCount, 1,
             reason: 'disconnect() must be called in the catch-block cleanup');
         expect(fakeDevice.disposeCallCount, 1,

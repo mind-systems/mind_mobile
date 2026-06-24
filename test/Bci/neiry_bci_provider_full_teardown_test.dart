@@ -18,7 +18,6 @@ import 'package:mind/Bci/Models/BciDeviceInfo.dart';
 import 'package:mind/Bci/Models/BciEmotionsData.dart';
 import 'package:mind/Bci/Models/BciLinkStatus.dart';
 import 'package:mind/Bci/Models/BciNfbData.dart';
-import 'package:mind/Bci/Ports/ClassifierFactory.dart';
 import 'package:mind/Bci/Ports/ClassifierSet.dart';
 import 'package:mind/Bci/Ports/DevicePort.dart';
 import 'package:mind/Bci/Ports/LocatorPort.dart';
@@ -141,6 +140,9 @@ class GatedFakeDevicePort implements DevicePort {
 
   final TeardownOrder _order;
 
+  /// The classifier set owned by this device instance.
+  late final FakeClassifierSet classifierSet;
+
   int connectCallCount = 0;
   int startCallCount = 0;
   int stopStreamCallCount = 0;
@@ -156,7 +158,9 @@ class GatedFakeDevicePort implements DevicePort {
   Completer<void> disconnectCompleter = Completer()..complete();
   Completer<void> disposeCompleter = Completer()..complete();
 
-  GatedFakeDevicePort(this._order);
+  GatedFakeDevicePort(this._order) {
+    classifierSet = FakeClassifierSet(_order);
+  }
 
   @override
   bool get isStarted => _isStarted;
@@ -228,6 +232,9 @@ class GatedFakeDevicePort implements DevicePort {
     if (!_resistanceController.isClosed) _resistanceController.close();
     if (!_batteryController.isClosed) _batteryController.close();
   }
+
+  @override
+  ClassifierSet buildClassifierSet() => classifierSet;
 }
 
 // ── FakeClassifierSet ─────────────────────────────────────────────────────────
@@ -307,16 +314,6 @@ class FakeClassifierSet implements ClassifierSet {
     if (!_emotionsErrorController.isClosed) _emotionsErrorController.close();
     if (!_motionController.isClosed) _motionController.close();
   }
-}
-
-// ── FakeClassifierFactory ─────────────────────────────────────────────────────
-
-class FakeClassifierFactory implements ClassifierFactory {
-  final FakeClassifierSet classifierSet;
-  FakeClassifierFactory(this.classifierSet);
-
-  @override
-  ClassifierSet build(DevicePort device) => classifierSet;
 }
 
 // ── RecordingLocatorPort ──────────────────────────────────────────────────────
@@ -458,10 +455,8 @@ class _DropSetup {
 Future<_DropSetup> _connectThenDrop({String serial = 'TEST-001'}) async {
   final order = TeardownOrder();
   final registry = RecordingLocatorRegistry(order);
-  final fakeSet = FakeClassifierSet(order);
   final provider = NeiryBciProvider(
     locatorFactory: registry.locatorFactory,
-    classifierFactory: FakeClassifierFactory(fakeSet),
   );
 
   final l0 = registry.instances.first;
@@ -485,7 +480,7 @@ Future<_DropSetup> _connectThenDrop({String serial = 'TEST-001'}) async {
     registry: registry,
     l0: l0,
     device: device,
-    classifierSet: fakeSet,
+    classifierSet: device.classifierSet,
     order: order,
   );
 }
@@ -510,10 +505,8 @@ Future<_DropSetup> _connectThenDropRunToCompletion(
     {String serial = 'TEST-001'}) async {
   final order = TeardownOrder();
   final registry = RecordingLocatorRegistry(order);
-  final fakeSet = FakeClassifierSet(order);
   final provider = NeiryBciProvider(
     locatorFactory: registry.locatorFactory,
-    classifierFactory: FakeClassifierFactory(fakeSet),
   );
 
   final l0 = registry.instances.first;
@@ -533,7 +526,7 @@ Future<_DropSetup> _connectThenDropRunToCompletion(
     registry: registry,
     l0: l0,
     device: device,
-    classifierSet: fakeSet,
+    classifierSet: device.classifierSet,
     order: order,
   );
 }
@@ -628,10 +621,8 @@ void main() {
 
         final order = TeardownOrder();
         final registry = RecordingLocatorRegistry(order);
-        final fakeSet = FakeClassifierSet(order);
         final provider = NeiryBciProvider(
           locatorFactory: registry.locatorFactory,
-          classifierFactory: FakeClassifierFactory(fakeSet),
         );
         final l0 = registry.instances.first;
 
@@ -679,8 +670,9 @@ void main() {
         // cancel() threw after the inner cancel, so _connectionSub is cancelled.
         // But the remaining 9 fan-in subs and classifierSet were never
         // cancelled/disposed — their controllers are still open.
-        l0.lastCreatedDevice?.closeControllers();
-        fakeSet.closeControllers();
+        final originalDevice = l0.lastCreatedDevice;
+        originalDevice?.closeControllers();
+        originalDevice?.classifierSet.closeControllers();
 
         provider.dispose();
         await Future<void>.delayed(Duration.zero);

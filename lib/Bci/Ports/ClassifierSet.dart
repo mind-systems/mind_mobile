@@ -10,7 +10,8 @@ import '../../Biometrics/Models/MotionData.dart';
 /// and MEMS classifiers. A fake can implement this interface without depending
 /// on `neiry_kit`.
 ///
-/// Concrete implementation: [NeiryClassifierSet] (A3).
+/// Concrete implementation: [NeiryClassifierSet]. Constructed via
+/// [DevicePort.buildClassifierSet].
 abstract interface class ClassifierSet {
   /// NFB band amplitudes from the NFB classifier's state stream.
   Stream<BciNfbData> get nfbStateStream;
