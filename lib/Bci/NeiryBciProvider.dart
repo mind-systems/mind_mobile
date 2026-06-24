@@ -272,86 +272,100 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   // ── startCalibration() ──────────────────────────────────────────────────────
 
   @override
-  Future<void> startCalibration() async {
-    _calibrationSub?.cancel();
-    _calibrationSub = neiry.NfbCalibrator.calibrateIndividual().listen(
-      (event) {
-        switch (event) {
-          case neiry.CalibrationStageFinished(:final stage):
-            _calibrationController.add(
-              BciCalibrationStageFinished(stage.index + 1),
-            );
-          case neiry.CalibrationCompleted(:final data):
-            final mapped = NfbCalibrationData(
-              calibratedAt: data.timestamp ?? DateTime.now(),
-              isValid: data.isValid,
-              failReason: data.failReason.name,
-              individualFrequency: data.individualFrequency,
-              individualPeakFrequency: data.individualPeakFrequency,
-              individualPeakFrequencyPower: data.individualPeakFrequencyPower,
-              individualPeakFrequencySuppression: data.individualPeakFrequencySuppression,
-              individualBandwidth: data.individualBandwidth,
-              individualNormalizedPower: data.individualNormalizedPower,
-              lowerFrequency: data.lowerFrequency,
-              upperFrequency: data.upperFrequency,
-            );
-            _calibrationController.add(BciCalibrationCompleted(mapped));
-        }
-      },
-      onError: (Object e) {
-        logPrint('NeiryBciProvider: calibration error: $e');
-        _calibrationController.add(BciCalibrationFailed(e.toString()));
-      },
-    );
+  Future<void> startCalibration() {
+    return _queue.enqueue(() async {
+      if (_disposed) return;
+      await _calibrationSub?.cancel();
+      _calibrationSub = neiry.NfbCalibrator.calibrateIndividual().listen(
+        (event) {
+          switch (event) {
+            case neiry.CalibrationStageFinished(:final stage):
+              _emitCalibration(
+                BciCalibrationStageFinished(stage.index + 1),
+              );
+            case neiry.CalibrationCompleted(:final data):
+              final mapped = NfbCalibrationData(
+                calibratedAt: data.timestamp ?? DateTime.now(),
+                isValid: data.isValid,
+                failReason: data.failReason.name,
+                individualFrequency: data.individualFrequency,
+                individualPeakFrequency: data.individualPeakFrequency,
+                individualPeakFrequencyPower: data.individualPeakFrequencyPower,
+                individualPeakFrequencySuppression: data.individualPeakFrequencySuppression,
+                individualBandwidth: data.individualBandwidth,
+                individualNormalizedPower: data.individualNormalizedPower,
+                lowerFrequency: data.lowerFrequency,
+                upperFrequency: data.upperFrequency,
+              );
+              _emitCalibration(BciCalibrationCompleted(mapped));
+          }
+        },
+        onError: (Object e) {
+          logPrint('NeiryBciProvider: calibration error: $e');
+          _emitCalibration(BciCalibrationFailed(e.toString()));
+        },
+      );
+    });
   }
 
   // ── startQuickCalibration() ─────────────────────────────────────────────────
 
   @override
-  Future<void> startQuickCalibration() async {
-    await _calibrationSub?.cancel();
-    _calibrationSub = null;
-    try {
-      final data = await neiry.NfbCalibrator.calibrateIndividualQuick();
-      final mapped = NfbCalibrationData(
-        calibratedAt: data.timestamp ?? DateTime.now(),
-        isValid: data.isValid,
-        failReason: data.failReason.name,
-        individualFrequency: data.individualFrequency,
-        individualPeakFrequency: data.individualPeakFrequency,
-        individualPeakFrequencyPower: data.individualPeakFrequencyPower,
-        individualPeakFrequencySuppression: data.individualPeakFrequencySuppression,
-        individualBandwidth: data.individualBandwidth,
-        individualNormalizedPower: data.individualNormalizedPower,
-        lowerFrequency: data.lowerFrequency,
-        upperFrequency: data.upperFrequency,
-      );
-      _calibrationController.add(BciCalibrationCompleted(mapped));
-    } catch (e) {
-      logPrint('NeiryBciProvider: quick calibration error: $e');
-      _calibrationController.add(BciCalibrationFailed(e.toString()));
-    }
+  Future<void> startQuickCalibration() {
+    return _queue.enqueue(() async {
+      if (_disposed) return;
+      await _calibrationSub?.cancel();
+      _calibrationSub = null;
+      try {
+        final data = await neiry.NfbCalibrator.calibrateIndividualQuick();
+        final mapped = NfbCalibrationData(
+          calibratedAt: data.timestamp ?? DateTime.now(),
+          isValid: data.isValid,
+          failReason: data.failReason.name,
+          individualFrequency: data.individualFrequency,
+          individualPeakFrequency: data.individualPeakFrequency,
+          individualPeakFrequencyPower: data.individualPeakFrequencyPower,
+          individualPeakFrequencySuppression: data.individualPeakFrequencySuppression,
+          individualBandwidth: data.individualBandwidth,
+          individualNormalizedPower: data.individualNormalizedPower,
+          lowerFrequency: data.lowerFrequency,
+          upperFrequency: data.upperFrequency,
+        );
+        _emitCalibration(BciCalibrationCompleted(mapped));
+      } catch (e) {
+        logPrint('NeiryBciProvider: quick calibration error: $e');
+        _emitCalibration(BciCalibrationFailed(e.toString()));
+      }
+    });
   }
 
   // ── importCalibration() ────────────────────────────────────────────────────
 
   @override
-  Future<void> importCalibration(NfbCalibrationData data) async {
-    final neiryData = neiry.IndividualNfbData(
-      timestamp: data.calibratedAt,
-      failReason: neiry.NfbCalibrationFailReason.values
-          .firstWhere((e) => e.name == data.failReason),
-      individualFrequency: data.individualFrequency,
-      individualPeakFrequency: data.individualPeakFrequency,
-      individualPeakFrequencyPower: data.individualPeakFrequencyPower,
-      individualPeakFrequencySuppression:
-          data.individualPeakFrequencySuppression,
-      individualBandwidth: data.individualBandwidth,
-      individualNormalizedPower: data.individualNormalizedPower,
-      lowerFrequency: data.lowerFrequency,
-      upperFrequency: data.upperFrequency,
-    );
-    await neiry.NfbCalibrator.importCalibrationData(neiryData);
+  Future<void> importCalibration(NfbCalibrationData data) {
+    return _queue.enqueue(() async {
+      if (_disposed) return;
+      final neiryData = neiry.IndividualNfbData(
+        timestamp: data.calibratedAt,
+        failReason: neiry.NfbCalibrationFailReason.values
+            .firstWhere((e) => e.name == data.failReason),
+        individualFrequency: data.individualFrequency,
+        individualPeakFrequency: data.individualPeakFrequency,
+        individualPeakFrequencyPower: data.individualPeakFrequencyPower,
+        individualPeakFrequencySuppression:
+            data.individualPeakFrequencySuppression,
+        individualBandwidth: data.individualBandwidth,
+        individualNormalizedPower: data.individualNormalizedPower,
+        lowerFrequency: data.lowerFrequency,
+        upperFrequency: data.upperFrequency,
+      );
+      await neiry.NfbCalibrator.importCalibrationData(neiryData);
+    });
+  }
+
+  void _emitCalibration(BciCalibrationEvent event) {
+    if (_disposed || _calibrationController.isClosed) return;
+    _calibrationController.add(event);
   }
 
   // ── disconnect() ────────────────────────────────────────────────────────────

@@ -169,6 +169,71 @@ void main() {
     );
   });
 
+  // ── Post-dispose calibration safety ──────────────────────────────────────
+
+  group('NeiryBciProvider — post-dispose calibration safety', () {
+    test(
+      'startQuickCalibration() after dispose() yields QueueClosedException, '
+      'not Bad state: Cannot add event after closing',
+      () async {
+        final registry = _RecordingLocatorRegistry();
+        final fakeSet = _FakeClassifierSet();
+        final provider = NeiryBciProvider(
+          locatorFactory: registry.locatorFactory,
+          classifierFactory: _FakeClassifierFactory(fakeSet),
+        );
+
+        // dispose() synchronously sets _disposed=true and closes the queue in
+        // _doDispose() before the first await.
+        provider.dispose();
+        // Let _doDispose() run to completion (closes controllers, locator).
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        // Pre-fix: this would crash with 'Bad state: Cannot add event after
+        // closing' because the body ran directly against closed controllers.
+        // Post-fix: the queue is closed → enqueue() returns QueueClosedException
+        // immediately; no add to any controller is attempted.
+        Object? caught;
+        try {
+          await provider.startQuickCalibration();
+        } on QueueClosedException catch (e) {
+          caught = e;
+        }
+        expect(caught, isA<QueueClosedException>(),
+            reason: 'must reject with QueueClosedException, not crash with '
+                'add-after-close');
+      },
+    );
+
+    test(
+      'startCalibration() after dispose() yields QueueClosedException, '
+      'not Bad state: Cannot add event after closing',
+      () async {
+        final registry = _RecordingLocatorRegistry();
+        final fakeSet = _FakeClassifierSet();
+        final provider = NeiryBciProvider(
+          locatorFactory: registry.locatorFactory,
+          classifierFactory: _FakeClassifierFactory(fakeSet),
+        );
+
+        provider.dispose();
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        Object? caught;
+        try {
+          await provider.startCalibration();
+        } on QueueClosedException catch (e) {
+          caught = e;
+        }
+        expect(caught, isA<QueueClosedException>(),
+            reason: 'must reject with QueueClosedException, not crash with '
+                'add-after-close');
+      },
+    );
+  });
+
   // ── Provider-level no-recreate-on-dispose ─────────────────────────────────
 
   group('NeiryBciProvider — no orphaned locator recreate on dispose', () {
