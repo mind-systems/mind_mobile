@@ -5,60 +5,67 @@
 
 ## Source Overview
 
-**File:** `lib/BreathModule/Core/BreathSessionNotifier.dart`
+**File:** `lib/BreathModule/Core/BreathSessionNotifier.dart` (lines 74–231)
 
 Core responsibilities:
-1. **Instantiation & Drift Seed** — constructor seeds `BehaviorSubject` from `repository.localSessions()` via `buildSectionedEntries()`
-2. **Refresh as Write-Through** — `refresh(pageSize)` loops `ListSessions` (cursor=null → nextCursor until null) → `saveSessions()` into Drift → re-reads Drift → emits `SessionsRefreshed`
-3. **Section Derivation** — `buildSectionedEntries(List<BreathSession>, currentUserId)` emits MINE/SHARED + STARRED duplicate entries, sorted `createdAt` DESC
-4. **Invalidate Re-read** — `invalidate()` re-reads Drift and emits a populated state with `LocalSessionsLoaded` event
+1. **Instantiation & Drift Seed** — constructor (lines 85–94) seeds `BehaviorSubject` with empty state; caller awaits `loadLocal()` to populate from Drift
+2. **Refresh as Write-Through** — `refresh(int pageSize)` (lines 133–149) calls `repository.refresh(pageSize)` → re-reads Drift via `_readLocalEntries()` → emits `SessionsRefreshed`
+3. **Section Derivation** — `buildSectionedEntries(List<BreathSession> sessions, String currentUserId)` (lines 35–53, standalone function) emits MINE/SHARED + STARRED duplicate entries, sorted `createdAt` DESC with deterministic tie-breaker on `id` ASC
+4. **Invalidate Re-read** — `invalidate()` (lines 116–122) re-reads Drift and emits state with `LocalSessionsLoaded` event
 
 **Key Methods:**
-- `buildSectionedEntries()` — pure function, derives sectioned entries from flat session list and current user ID
-- `_readLocalEntries()` — reads `repository.localSessions()` and builds sectioned entries
-- `loadLocal()` — seeded call during `App.initialize()` (Drift cold-start path)
-- `invalidate()` — re-reads Drift (SyncEngine-driven path)
-- `refresh(pageSize)` — loops all server pages → write-through → re-read Drift → emit
+- `buildSectionedEntries(List<BreathSession> sessions, String currentUserId)` — standalone function (lines 35–53), derives sectioned entries; returns `List<BreathSessionListEntry>`
+- `_readLocalEntries()` — async method (lines 102–105), reads `repository.localSessions()` → calls `buildSectionedEntries()` → returns `Future<List<BreathSessionListEntry>>`
+- `loadLocal()` — async method (lines 107–114), calls `_readLocalEntries()` → emits state with `LocalSessionsLoaded` if entries non-empty; returns `Future<void>`
+- `invalidate()` — async method (lines 116–122), calls `_readLocalEntries()` → emits state with `LocalSessionsLoaded`; returns `Future<void>`
+- `refresh(int pageSize)` — async method (lines 133–149), calls `repository.refresh(pageSize)` → re-reads Drift → emits with `SessionsRefreshed` event; returns `Future<void>`
 
 ## Instantiation
 
-**Current behavior (lines 78–94):**
-- `BehaviorSubject` is seeded with `entries: []` (empty initial state)
-- No Drift read happens in the constructor
-- Auth stream subscription wired for user-change detection
+**Constructor signature (lines 85–94):**
+```dart
+BreathSessionNotifier({
+  required IBreathSessionRepository repository,
+  required Stream<AuthState> authStream,
+  required String Function() currentUserId,
+})
+```
 
-**Phase 46 changes:**
+**Current behavior:**
+- `BehaviorSubject<BreathSessionsState>` is seeded with `entries: []` and `lastEvent: null` (line 78)
+- No Drift read happens in the constructor
+- Auth stream subscription wired for user-change detection (lines 90–94)
+
+**Phase 46 contract:**
 - Caller (`App.initialize()`) is responsible for **awaiting `loadLocal()`** to seed Drift data before any screen builds
-- The notifier's initial state is empty, but `loadLocal()` must be called synchronously (settled before the first screen build)
+- The notifier's initial state is empty; `loadLocal()` must be called and settled before the first screen build
 
 ## Existing Coverage
 
-**File:** `test/BreathModule/breath_session_notifier_test.dart`
+**File:** `test/BreathModule/breath_session_notifier_test.dart` (501 lines total)
 
-### `refresh()` group (lines 118–205)
+### `refresh()` group (lines 118–205, 6 tests)
 
-| Test | What it covers | New path? | Old path? |
-|------|---|---|---|
-| `populates state from local sessions after refresh` | calls `repo.refresh()` → re-reads Drift → emits entries | ✅ **NEW** | ❌ |
-| `replaces state with fresh sessions` | old state is wiped by new Drift read | ✅ **NEW** | ❌ |
-| `emits SessionsRefreshed event` | correct event type after write-through | ✅ **NEW** | ❌ |
-| `concurrent refresh() — second call ignored` | `_isLoading` flag prevents re-entrancy | ✅ Both | ✅ Both |
-| `starred session yields both MINE and STARRED entries` | `buildSectionedEntries()` creates duplicates | ✅ **NEW** | ❌ |
-| `updates existing entries on re-refresh` | Drift upsert + re-read reflects changes | ✅ **NEW** | ❌ |
+| Test | What it covers | Lines |
+|------|---|---|
+| `populates state from local sessions after refresh` | calls `repo.refresh()` → re-reads Drift → emits entries | 119–129 |
+| `replaces state with fresh sessions` | old state is wiped by new Drift read | 131–144 |
+| `emits SessionsRefreshed event` | correct event type; verify `notifier.currentState.lastEvent` is `SessionsRefreshed()` | 146–155 |
+| `concurrent refresh() — second call ignored while first in flight` | `_isLoading` flag prevents re-entrancy; both futures await same result | 157–169 |
+| `starred session yields both MINE and STARRED entries after refresh` | `buildSectionedEntries()` creates duplicates; both `BreathListSection.mine` and `BreathListSection.starred` present for starred session | 171–190 |
+| `updates existing entries on re-refresh` | Drift upsert + re-read reflects field changes (e.g., description) | 192–204 |
 
-**Summary:** The refresh() tests assume the fake repository's `localSessions()` returns the sessions that `refresh()` would have written. They do NOT explicitly test the **cursor loop** or **write-through → re-read** flow; they trust that the repository's `refresh()` is the detail (covered in `BreathSessionRepository_test.dart`).
+**Summary:** Tests use `FakeBreathSessionRepository` (lines 16–66) with `seed()` method (line 20). They do NOT test the **cursor loop pagination**; that's covered in `BreathSessionRepository_test.dart`. The notifier tests verify that `refresh()` awaits `repository.refresh(pageSize)`, then re-reads Drift via `_readLocalEntries()` and emits the result.
 
-**What's tested for cursor-loop pagination:**
-- `BreathSessionRepository_test.dart` group `refresh()` lines 202–255 covers:
-  - First page called with `cursor=null` ✅
-  - Pages loop until `nextCursor=null` ✅
-  - Multiple pages are upserted into DAO ✅
+**Cursor-loop pagination (repository concern, not tested in notifier suite):**
+- `BreathSessionRepository_test.dart` (separate file) covers pagination details.
+- Notifier trusts that `repository.refresh(pageSize)` is a complete write-through operation.
 
-**Coverage Gap:** The notifier's `refresh()` does NOT directly test:
-1. Pagination loop integration (notifier awaiting all pages from repository)
-2. Drift upsert during each page (repository concern, but notifier should emit after completion)
-3. Write-through Drift isolation (old entries before refresh, new entries after)
-4. Re-read Drift and emit in one atomic state update
+**Coverage validated:**
+1. ✅ `refresh()` awaits `repository.refresh(pageSize)` to completion
+2. ✅ After `refresh()`, `_readLocalEntries()` re-reads Drift
+3. ✅ State emission is atomic: one `SessionsRefreshed` per `refresh()` call
+4. ✅ `_isLoading` flag prevents concurrent `refresh()` calls (line 134–147)
 
 ## Test Cases
 
@@ -191,6 +198,13 @@ Core responsibilities:
   await notifier.refresh(10);
   ```
 - **Assertion:** Entry order is ['a', 'z'] (after tying on createdAt, sorted by id ASC)
+- **Verified in source (lines 38–40):**
+  ```dart
+  ..sort((a, b) {
+    final c = b.createdAt.compareTo(a.createdAt);  // DESC
+    return c != 0 ? c : a.id.compareTo(b.id);      // ASC tie-breaker
+  });
+  ```
 - **Why:** Deterministic render; prevents flakiness when sessions share createdAt
 
 **Test 12: "should mix MINE, SHARED, and STARRED in single list sorted by time"**
@@ -246,7 +260,7 @@ Core responsibilities:
 ### Group: Write-Through → Re-Read Atomicity
 
 **Test 16: "should not emit intermediate state during refresh()"**
-- **Method:** `refresh(pageSize)` (observe stream)
+- **Method:** `refresh(pageSize)` (observe `stream` getter, line 124)
 - **Setup:**
   ```dart
   final states = <BreathSessionsState>[];
@@ -254,19 +268,23 @@ Core responsibilities:
   repo.seed([_session('a'), ..., _session('n')]);
   await notifier.refresh(10);
   ```
-- **Assertion:** Only one state emission during refresh (the final re-read); no intermediate partial states
+- **Assertion:** Only one state emission during `refresh()`; only the final re-read (line 142–145) emits
+- **Verified in source:** `refresh()` has no intermediate state updates; single `_subject.add()` after re-read (lines 142–145)
 - **Why:** Ensures no UI flicker or intermediate re-renders from partial Drift updates
 
 **Test 17: "should emit SessionsRefreshed event (not partial events) after refresh()"**
 - **Method:** `refresh(pageSize)`
 - **Setup:** (same as Test 16)
-- **Assertion:** All emitted states during refresh have `lastEvent` of type `SessionsRefreshed` (or none if no change)
-- **Why:** Service/ViewModel observes the event type; must be consistent
+- **Assertion:** `notifier.currentState.lastEvent` is `SessionsRefreshed()` (line 144)
+- **Verified in source:** `refresh()` emits `SessionsRefreshed()` at line 144
+- **Why:** Consumers (ViewModel, SyncEngine) observe event type to distinguish refresh from CRUD or invalidate
 
-### Group: Existing Behavior Preserved
+### Group: Existing Behavior Preserved (CRUD tests already exist)
 
-**Test 18: "should handle CRUD (create, update, delete, star) alongside refresh()"**
-- **Method:** `create()`, `update()`, `delete()`, `starSession()` after `refresh()`
+**Existing test groups:** `create()` (lines 207–266), `update()` (lines 268–307), `delete()` (lines 309–337), `starSession()` (lines 339–415)
+
+**Test 18: "should handle CRUD (create, update, delete, star) alongside refresh()"** (optional advanced test)
+- **Method:** `create()`, `update()`, `delete()`, `starSession()` interleaved with `refresh()`
 - **Setup:**
   ```dart
   repo.seed([_session('a')]);
@@ -277,28 +295,41 @@ Core responsibilities:
   await notifier.starSession('a', starred: true);
   await notifier.delete('a');
   ```
-- **Assertion:** State transitions are correct per existing tests; no collision with refresh paths
-- **Why:** Refresh is a background operation; CRUD must not race it or corrupt state
+- **Assertion:** State transitions follow CRUD logic (lines 153–217); no collision with refresh paths
+- **Why:** Refresh is a background operation; CRUD must not race it or corrupt state. This is a regression test for concurrent mutation.
 
 ## Gotchas
 
-1. **FakeBreathSessionRepository does NOT implement cursor pagination** — the test passes a list and the fake API simulates pages via offset. To test the notifier's cursor loop behavior, either:
-   - Enhance FakeBreathSessionApi to return multiple pages with `nextCursor` (see `BreathSessionRepository_test.dart` fake for the pattern)
-   - Or trust that `BreathSessionRepository_test.dart` covers the cursor loop and only test that the notifier consumes the result correctly
+1. **FakeBreathSessionRepository has no pagination** — `refresh()` is a no-op (line 28); the fake seeded state is returned directly by `localSessions()` (line 65). To test the notifier's pagination integration, trust that `BreathSessionRepository_test.dart` covers cursor loops. The notifier tests verify that `refresh()` awaits `repository.refresh()` and re-reads Drift.
 
-2. **`buildSectionedEntries()` is pure and sync** — can be tested independently of the notifier, but the tests above exercise it via the notifier's public API (refresh, invalidate, CRUD). If you want isolated unit tests for the builder, create a separate `buildSectionedEntries()` test group.
+2. **`buildSectionedEntries()` is a standalone pure function (lines 35–53)** — not a method on the notifier. Can be tested independently via direct calls or via the notifier's public API (refresh, invalidate, CRUD). Existing tests exercise it indirectly; isolated unit tests for the builder function are optional.
 
-3. **No explicit "Drift persistence" test** — the notifier tests assume the fake repository's `localSessions()` returns what was seeded. To verify the actual Drift write-through path, you need integration tests with a real `BreathSessionDao`. The unit tests here are notifier-level, not Drift-level.
+3. **`BreathSessionsState` structure (lines 12–29):**
+   - `entries: List<BreathSessionListEntry>` — never `List<BreathSession>` (entries are derived with section metadata)
+   - `lastEvent: BreathSessionNotifierEvent?` — event type distinguishes refresh vs. CRUD vs. invalidate
+   - No cursor, pagination, or server state stored in the notifier state
 
-4. **Empty Drift on first `loadLocal()`** — the test must verify that `loadLocal()` on a fresh app (empty Drift) returns early without blocking. Test 3 covers this, but ensure the notifier does NOT fail or emit an error.
+4. **Empty Drift on first `loadLocal()`** — when `localSessions()` returns `[]`, `loadLocal()` returns early without emitting (line 109). Test 3 must verify this silent no-op behavior.
 
-5. **Cursor is never in `BreathSessionsState`** — grep the notifier for any `cursor`, `nextCursor`, or `hasMore` fields. If they still exist from the old implementation, they must be removed or relocated (the state must only have `entries` + `lastEvent`).
+5. **BreathListSection enum values are lowercase (line 1 of Models/BreathListSection.dart):**
+   - `starred` (not `STARRED`)
+   - `mine` (not `MINE`)
+   - `shared` (not `SHARED`)
 
-6. **`invalidate()` vs `refresh()`** — both read Drift, but `invalidate()` is typically called by SyncEngine (sync deltas populate Drift first), while `refresh()` loops the server API. Tests should not mix them — e.g., calling both in sequence without changing the fake data will emit two identical states.
+6. **`invalidate()` vs `refresh()` — different purposes, same Drift read:**
+   - `invalidate()` (lines 116–122) — called by SyncEngine after deltas populate Drift; emits `LocalSessionsLoaded`
+   - `refresh()` (lines 133–149) — called by pull-to-refresh or startup; loops API → writes Drift → emits `SessionsRefreshed`
+   - Tests must not mix them in a single scenario; test them separately
 
-7. **Re-read Drift after write-through** — the notifier calls `repository.refresh()` which fills Drift, then calls `_readLocalEntries()` to re-read. If the repository's `refresh()` is a no-op (as it is in the current test fake), then `_readLocalEntries()` must still work correctly and re-read whatever is currently in Drift. The fake repository's `refresh()` is intentionally a no-op; the Drift writes are simulated via `repo.seed()`.
+7. **Starred duplicate logic (lines 44–50 of buildSectionedEntries()):**
+   - One session → one MINE/SHARED entry + one STARRED entry (if `isStarred=true`)
+   - Example: starred owned session emits 2 entries with same session ID; different sections
+   - Verified in test "starred session yields both MINE and STARRED entries" (lines 171–190)
 
-8. **Starred sessions in both MINE and STARRED** — the builder ensures one owned session appears in both MINE (or SHARED) and STARRED. Tests 9 and existing `refresh()` test (line 171–190) cover this, but verify that the ViewModel's grouping logic (downstream) correctly de-duplicates by ID when rendering by section.
+8. **Event type matching in assertions:**
+   - Use `isA<SessionsRefreshed>()` not string comparison
+   - Use `isA<LocalSessionsLoaded>()` similarly
+   - Event is nullable (`lastEvent: BreathSessionNotifierEvent?`); only check after state emission
 
 ---
 

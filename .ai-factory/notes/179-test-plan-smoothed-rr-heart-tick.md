@@ -25,7 +25,7 @@
   - Seeds `_effectiveActive` BehaviorSubject from `smoothedRrSource.hasActiveSource`
   - Tracks `_droppedReplay` to distinguish warm-path replay from genuine emissions
   - Emits ticks via `_tickController` broadcast stream
-  - Real heartbeats only update `_currentPeriodMs` and reset 10s `_coastGraceWindow`
+  - Real heartbeats only update `_currentPeriodMs` and reset 10s `_graceWindow`
   - Grace expiry flips `_effectiveActive` to false (SwitchableTickService auto-falls back to ClockTickService)
   - Clamps period to [250–3000] ms to prevent busy-loop
   - Does not dispose SmoothedRrSource (shared with other consumers)
@@ -380,17 +380,16 @@ heartTicks.start();  // must call to begin metronome
 
 ## Refactor Required
 
-**Scope:** `HeartRateTickService` only. `SmoothedRrSource` is already clean (injectable `window`).
-
-**What to refactor:** Add a `Duration graceWindow` constructor parameter to `HeartRateTickService` (default `const Duration(seconds: 10)`). Replace the hardcoded `Duration(seconds: 10)` used in `_armGrace`/`_onGraceExpired` with `graceWindow`.
-
-**Post-refactor API:**
+**Status:** Already implemented. `HeartRateTickService` constructor already has:
 ```dart
-HeartRateTickService(
-  SmoothedRrSource smoothedRr, {
-  Duration graceWindow = const Duration(seconds: 10),
+HeartRateTickService({
+  required SmoothedRrSource smoothedRrSource,
   Timer Function(Duration, void Function()) timerFactory = Timer.new,
-})
+  Duration graceWindow = const Duration(seconds: 10),
+})  : _timerFactory = timerFactory,
+      _graceWindow = graceWindow { ... }
 ```
+
+**No refactor needed.** The `graceWindow` parameter is already injected (named, optional, default 10s), and field is correctly named `_graceWindow`.
 
 **What the test implementer gets:** Pass `graceWindow: Duration(milliseconds: 50)` for fast grace-expiry tests that verify `_effectiveActive` → false → `SwitchableTickService` auto-fallback without 10 s real waits. `timerFactory` is already injectable — no additional change needed.

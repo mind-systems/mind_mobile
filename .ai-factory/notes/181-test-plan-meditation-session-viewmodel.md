@@ -12,16 +12,18 @@
 
 The `MeditationSessionViewModel` is a Riverpod `Notifier<MeditationSessionState>` that manages a meditation session lifecycle. It exposes:
 
-- **`elapsedSeconds`:** `ValueNotifier<int>` — wall-clock elapsed time, computed as `DateTime.now().difference(_startedAt).inSeconds`
+- **`elapsedSeconds`:** `ValueNotifier<int>` — wall-clock elapsed time, computed as `_clock().difference(_startedAt).inSeconds` (resets to 0 on `start()`)
 - **`stream`:** `Stream<MeditationSessionState>` — emits state changes (status: `idle` ↔ `active`)
 - **`build()`:** initializes state to `MeditationSessionState.initial(poseId: poseId)`, sets up disposal callbacks
-- **`start()`:** sets `_startedAt = DateTime.now()`, arms 1-second periodic timer, sets status to `active`
-- **`stop()`:** cancels timer, clears `_startedAt`, sets status to `idle`
+- **`start()`:** sets `_startedAt = _clock()`, arms 1-second periodic timer, resets `elapsedSeconds.value = 0`, sets status to `active`
+- **`stop()`:** cancels timer, clears `_startedAt`, sets status to `idle` (does NOT reset `elapsedSeconds`)
 
-**Key timer mechanism (line 43–45):**
+**Key timer mechanism (lines 48–51):**
 ```dart
-_timer = Timer.periodic(const Duration(seconds: 1), (_) {
-  elapsedSeconds.value = DateTime.now().difference(_startedAt!).inSeconds;
+_startedAt = _clock();  // line 48
+elapsedSeconds.value = 0;  // line 49
+_timer = _timerFactory(const Duration(seconds: 1), (_) {  // line 50
+  elapsedSeconds.value = _clock().difference(_startedAt!).inSeconds;  // line 51
 });
 ```
 
@@ -39,24 +41,34 @@ The ViewModel is instantiated via Riverpod:
 
 ```dart
 final meditationSessionViewModelProvider =
-    NotifierProvider<MeditationSessionViewModel, MeditationSessionState>([…]);
+    NotifierProvider<MeditationSessionViewModel, MeditationSessionState>(() {
+  throw UnimplementedError('must be overridden via ProviderScope');
+});
 ```
 
-For testing, we inject via `ProviderScope` or mock the provider. Constructor accepts `{required this.poseId}`.
+For testing, we inject via `ProviderScope` or mock the provider. Constructor (lines 12–17):
 
-**Dependencies injected:** None explicitly. `DateTime.now()` and `Timer.periodic()` are hardcoded (see Gotchas).
+```dart
+MeditationSessionViewModel({
+  required this.poseId,
+  DateTime Function() clock = DateTime.now,
+  Timer Function(Duration, void Function(Timer)) timerFactory = Timer.periodic,
+})
+```
+
+**Dependencies injected explicitly:** Three parameters—`poseId` (required), `clock` (injectable with default), and `timerFactory` (injectable with default). NO service dependency.
 
 ---
 
 ## Existing Coverage
 
-**None.** The meditation_module test/ directory is empty.
+**None.** The meditation_module test/ directory does not exist. Must create `packages/meditation_module/test/` and `packages/meditation_module/test/meditation_session_viewmodel_test.dart`.
 
 ---
 
 ## Test Cases
 
-All tests require `flutter_test` and `fake_async` package (already available in main app tests). Create `packages/meditation_module/test/meditation_session_viewmodel_test.dart`.
+All tests require `flutter_test` and `fake_async` package. `fake_async` is in the root pubspec.yaml (v1.3.3) but must be added to `packages/meditation_module/pubspec.yaml` as a dev dependency. Create `packages/meditation_module/test/meditation_session_viewmodel_test.dart`.
 
 ### Group 1: Initialization & Disposal
 
@@ -297,53 +309,23 @@ testWidgets('REGRESSION: elapsedSeconds must use wall-clock delta, not accumulat
 
 ## Gotchas
 
-### Critical Blocker: DateTime.now() is NOT injected
+### Status: DateTime.now() IS ALREADY INJECTED
 
-**Issue:** Line 41 and 44 hardcode `DateTime.now()`:
+**RESOLVED (no action needed):** Lines 14–16 show `DateTime` and `Timer` are already injectable:
 ```dart
-_startedAt = DateTime.now();  // line 41
-elapsedSeconds.value = DateTime.now().difference(_startedAt!).inSeconds;  // line 44
+MeditationSessionViewModel({
+  required this.poseId,
+  DateTime Function() clock = DateTime.now,  // line 14 — injectable with default
+  Timer Function(Duration, void Function(Timer)) timerFactory = Timer.periodic,  // line 15 — injectable
+})
 ```
 
-**Impact:** Tests running in real-time (without `FakeAsync`) will have **flaky wall-clock-delta tests** because:
-- Test 2.2 (catch-up after suspension) cannot be written without injecting a clock or using `FakeAsync`
-- Test 5.1 (regression guard) will silently pass even if the code is broken, unless run under `FakeAsync`
+**Current code uses `_clock()`** on line 48 (not hardcoded `DateTime.now()`). The "Critical Blocker" section from the initial test plan was based on code that has already been refactored. No further refactoring needed.
 
-**Solution required for proper testing:**
-1. Extract `DateTime.now()` into a getter or injectable dependency
-2. OR commit to always running these tests under `FakeAsync`
-
-**Minimal refactor (Option A — preferred):**
-```dart
-DateTime _getCurrentTime() => DateTime.now();
-
-void start() {
-  _startedAt = _getCurrentTime();
-  elapsedSeconds.value = 0;
-  _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-    elapsedSeconds.value = _getCurrentTime().difference(_startedAt!).inSeconds;
-  });
-  state = state.copyWith(status: MeditationSessionStatus.active);
-}
-```
-
-Then in tests, extend/mock the class to override `_getCurrentTime()`.
-
-**Minimal refactor (Option B — dependency injection in constructor):**
-```dart
-class MeditationSessionViewModel extends Notifier<MeditationSessionState> {
-  MeditationSessionViewModel({
-    required this.poseId,
-    DateTime Function()? getCurrentTime,
-  }) : _getCurrentTime = getCurrentTime ?? (() => DateTime.now());
-
-  final String poseId;
-  final DateTime Function() _getCurrentTime;
-  // ...
-}
-```
-
-**For now:** All tests 2.1, 2.2, and 5.1 **must use `FakeAsync`** to guarantee correctness. Tests 1–4 can run without injection.
+**Tests 2.1, 2.2, and 5.1 can now:**
+1. Inject a fake clock directly in the constructor without subclassing
+2. Example: `MeditationSessionViewModel(poseId: 'test', clock: () => fakeTime)`
+3. Still use `FakeAsync` for advanced scenarios (e.g., timer callback ordering verification)
 
 ---
 
@@ -385,22 +367,23 @@ The current design preserves the last elapsed value after `stop()`. If the spec 
 
 ---
 
-## Refactor Required
+## Refactor Status: ALREADY COMPLETE
 
-**What to refactor:** Add two constructor parameters to `MeditationSessionViewModel`:
-- `DateTime Function() clock` (default `DateTime.now`) — replaces `DateTime.now()` in `start()` for `_startedAt`.
-- `Timer Function(Duration, void Function(Timer)) timerFactory` (default `Timer.periodic`) — replaces the inline `Timer.periodic` construction.
+**No refactoring needed.** The constructor (lines 12–17) already has injectable `clock` and `timerFactory` parameters with sensible defaults.
 
-**Post-refactor API:**
+**Current API (already supports testing):**
 ```dart
-MeditationSessionViewModel(
-  IMeditationSessionService service, {
+MeditationSessionViewModel({
+  required this.poseId,
   DateTime Function() clock = DateTime.now,
   Timer Function(Duration, void Function(Timer)) timerFactory = Timer.periodic,
 })
 ```
 
-**What the test implementer gets:** 
-- Pass a `FakeClock` that returns controlled `DateTime` values to verify `elapsedSeconds = now − _startedAt` vs the old `++` accumulator.
-- Pass a `FakeTimerFactory` that invokes callbacks synchronously to control when "ticks" fire without real 1 s waits.
-- A key regression guard test: advance the fake clock by 30 s but fire only 5 timer callbacks → `elapsedSeconds` must be 30 (wall-clock delta), not 5 (accumulator).
+**What test implementers get (already available):**
+- Pass a fake clock function: `MeditationSessionViewModel(poseId: 'test', clock: () => DateTime(2026, 6, 24, 12, 0, 0))`
+- Pass a fake timer factory to control callback timing without real 1-second waits
+- Can verify `elapsedSeconds = now − _startedAt` (wall-clock delta) by controlling clock advance independent of timer callback firing
+- Key regression guard: advance fake clock by 30 s but fire only 5 timer callbacks → `elapsedSeconds` must be 30 (wall-clock), not 5 (accumulator)
+
+**No IMeditationSessionService in constructor.** The ViewModel is self-contained for session timing; it does not depend on an external service.

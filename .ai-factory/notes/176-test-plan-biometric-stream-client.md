@@ -18,12 +18,14 @@
 
 ## Instantiation
 
-Construct the client with:
+Construct the client with (all parameters named, lines 61–66 of `BiometricStreamClient.dart`):
 ```dart
 final client = BiometricStreamClient(
   grpcStub: mockGrpcStub,
   moduleStateEvents: lifecycleController.stream,
   connectionState: connectionController.stream,
+  clock: () => DateTime.now(),  // optional; default: DateTime.now
+  readyTimeout: const Duration(seconds: 5),  // optional; default: 5s
 );
 ```
 
@@ -371,15 +373,15 @@ None. `BiometricBatcher` (a separate class downstream) has tests; this class has
 - `DateTime Function() clock` (default `DateTime.now`) — replaces the two `DateTime.now()` calls in `_ensureSinkOpen` for the 2 s cooldown check.
 - `Duration readyTimeout` (default `const Duration(seconds: 5)`) — replaces the hardcoded `const Duration(seconds: 5)` in the fallback-timer construction.
 
-**Post-refactor API:**
+**Current API** (refactor already done; see `BiometricStreamClient.dart` line 61–66):
 ```dart
-BiometricStreamClient(
-  BiometricStreamServiceClient grpcStub,
-  Stream<GrpcConnectionState> connectionState,
-  Stream<ModuleStateEvent> moduleStateEvents, {
+BiometricStreamClient({
+  required $bio.ModuleBiometricStreamServiceClient grpcStub,
+  required Stream<ModuleStateEvent> moduleStateEvents,
+  required Stream<GrpcConnectionState> connectionState,
   DateTime Function() clock = DateTime.now,
   Duration readyTimeout = const Duration(seconds: 5),
 })
 ```
 
-**What the test implementer gets:** Inject a fake clock to advance time past the 2 s cooldown without waiting; pass `readyTimeout: Duration(milliseconds: 10)` for sub-10 ms fallback-timer tests.
+**What the test implementer gets:** Inject a fake clock via `clock: () => fakeTime` to advance time past the 2 s cooldown without waiting; pass `readyTimeout: Duration(milliseconds: 10)` for sub-10 ms fallback-timer tests. Defaults: `clock = DateTime.now`, `readyTimeout = 5 seconds`.

@@ -32,7 +32,7 @@ The constructor has a **Platform guard** (`if (!Platform.isAndroid) return;`). T
 - On Android: subscription is created, listening to `moduleStateEvents`.
 - On iOS: no subscription is created; the object becomes inert.
 
-**Testing challenge:** Unit tests run in Dart VM, so `Platform.isAndroid` is typically false. To test the Android path, mock `Platform.isAndroid` using a technique like `overridePlatformAsync()` from `package:flutter_test`, or use `debugDefaultTargetPlatformOverride` from `dart:io`.
+**Testing challenge:** Unit tests run in Dart VM, so `Platform.isAndroid` is typically false. To test the Android path, use `debugDefaultTargetPlatformOverride = TargetPlatform.android` from `flutter/foundation.dart` before coordinator construction (requires `setUpAll` or per-test setup), then reset after. This is the canonical approach for platform checks in `flutter_test`.
 
 ---
 
@@ -61,8 +61,8 @@ None. No test file exists for `KeepAliveCoordinator`.
 **TC 1.2:** "should propagate Future completion from start() (allow await on side effect)"
 - Setup: Mock `ForegroundKeepAlive.start()` to return a Future that completes after a delay.
 - Action: Emit `ModuleSessionStarted`.
-- Assert: The returned Future completes (or we can log the call without awaiting in the coordinator, but verify the call happens).
-  - *Note:* `_onEvent()` is synchronous and doesn't await, so `start()` is fire-and-forget. This test may verify that start() was called, not that the Future was awaited.
+- Assert: The returned Future completes (or verify the call happens).
+  - *Note:* `_onEvent()` IS async (line 26: `Future<void> _onEvent(ModuleStateEvent event) async`) and IS awaited by listen (line 19: `_subscription = moduleStateEvents.listen(_onEvent);`), so this is NOT fire-and-forget. Tests can await Future.microtask() after emission to ensure completion.
 
 **TC 1.3:** "should handle multiple consecutive ModuleSessionStarted events (idempotency at coordinator level)"
 - Setup: Mock `ForegroundKeepAlive.start()` to track call count.
@@ -194,7 +194,7 @@ None. No test file exists for `KeepAliveCoordinator`.
    - Or write a wrapper class for platform detection and inject it (not done in current code, so this test will require a workaround).
    - **Practical approach:** Test the Android path with `debugDefaultTargetPlatformOverride = TargetPlatform.android` before coordinator construction, and reset after each test.
 
-2. **Fire-and-forget futures:** The `_onEvent()` method is synchronous and does not await `start()` or `stop()`. Tests must verify that the methods are *called*, not that their Futures are awaited or complete. If the Future fails silently, the coordinator won't propagate the error.
+2. **Async listener:** The `_onEvent()` method is async (line 26) and awaits `start()` and `stop()` (lines 29, 31, 33). The StreamController.listen callback receives this async callback naturally. Tests must verify methods are called AND can await Future.microtask() to let async handlers complete before assertions.
 
 3. **No explicit dispose:** The coordinator holds a subscription forever (via the `_subscription` field). To avoid subscription leaks in tests, ensure mock streams complete or close properly after each test.
 
@@ -210,17 +210,20 @@ None. No test file exists for `KeepAliveCoordinator`.
 
 ```dart
 import 'dart:async';
-import 'dart:io' show Platform, TargetPlatform;
+import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mind/Core/Background/KeepAliveCoordinator.dart';
 import 'package:mind/Core/Background/ForegroundKeepAlive.dart';
 import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
 
 // --- Fake ForegroundKeepAlive ---
-class _FakeForegroundKeepAlive implements ForegroundKeepAlive {
+// ForegroundKeepAlive is a concrete class (not an interface), so fake by extension.
+class _FakeForegroundKeepAlive extends ForegroundKeepAlive {
   final List<String> callLog = [];
+
+  _FakeForegroundKeepAlive() : super(currentLanguageCode: () => 'en');
 
   @override
   Future<void> start() async {
@@ -235,12 +238,20 @@ class _FakeForegroundKeepAlive implements ForegroundKeepAlive {
 
 void main() {
   group('KeepAliveCoordinator', () {
+    setUp(() {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    });
+
+    tearDown(() {
+      debugDefaultTargetPlatformOverride = null;
+    });
+
     // Group 1: ModuleSessionStarted → start()
     // Group 2: ModuleSessionEnded → stop()
     // Group 3: ModuleSessionAbandoned → stop()
     // Group 4: No-op events
     // Group 5: Event sequencing
-    // Group 6: Platform guard
+    // Group 6: Platform guard (override debugDefaultTargetPlatformOverride per-test)
     // Group 7: Lifecycle
   });
 }
@@ -249,24 +260,13 @@ void main() {
 
 ## Refactor Required
 
-**What to refactor:** In `KeepAliveCoordinator`, change the stream-listener body to `await` the `ForegroundKeepAlive.start()` and `.stop()` calls:
+**No refactoring needed:** The code already awaits (KeepAliveCoordinator.dart line 26: `Future<void> _onEvent(ModuleStateEvent event) async`, lines 29/31/33 use `await`). The listener at line 19 passes this async callback to `.listen()`, which naturally handles async event handlers.
 
-```dart
-// before
-_moduleStateEvents.listen((event) {
-  if (event is ModuleSessionStarted) _foregroundKeepAlive.start();
-  if (event is ModuleSessionEnded || event is ModuleSessionAbandoned) _foregroundKeepAlive.stop();
-});
-
-// after
-_moduleStateEvents.listen((event) async {
-  if (event is ModuleSessionStarted) await _foregroundKeepAlive.start();
-  if (event is ModuleSessionEnded || event is ModuleSessionAbandoned) await _foregroundKeepAlive.stop();
-});
-```
-
-**Post-refactor API:** Unchanged externally — only the listener body changes. `ForegroundKeepAlive` is already constructor-injected so tests can pass a fake.
-
-**What the test implementer gets:** `await`-able event delivery means tests can `await eventController.add(ModuleSessionStarted())` and then synchronously assert `fakeFgs.started == true` without arbitrary delays.
-
-**Note on Platform.isAndroid:** The static check is in the constructor (`if (!Platform.isAndroid) return;`). Tests can instantiate and call the coordinator on non-Android; the subscription is simply not set up. This is acceptable — test the logic via a conditional-compile override or accept that the tests only exercise the Platform.isAndroid=true path by stubbing the check.
+**Test implementation notes:**
+- `ForegroundKeepAlive` is a concrete class (not an interface; see line 17 in ForegroundKeepAlive.dart). Tests must subclass it or use a full mock package.
+- Constructor signature (line 18): `ForegroundKeepAlive({required String Function() currentLanguageCode})`.
+- Method signatures (lines 31, 82): both are `Future<void>` and fully async (both await internally).
+- Platform check in constructor (line 18): `if (!Platform.isAndroid) return;` uses `dart:io show Platform`, no TargetPlatform.
+- Tests override `debugDefaultTargetPlatformOverride` (from `flutter/foundation.dart`) per-test to control Platform.isAndroid in unit tests.
+- Event handler (line 26-41): uses switch with pattern matching (line 27); all case branches match ModuleStateEvent subtypes (ModuleSessionStarted, ModuleSessionEnded, ModuleSessionAbandoned, ModuleSessionResumed, ModuleSessionPaused, ModuleSessionUnpaused) — all 6 exist.
+- Subscription held via `_subscription` (line 24) for GC prevention; no dispose method.

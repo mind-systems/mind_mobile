@@ -138,8 +138,14 @@ class FakeBciDeviceProvider implements IBciDeviceProvider {
   
   @override
   Stream<BciLinkStatus> get connectionStateStream => _connectionStateController.stream;
+
+  @override
   Stream<List<BciChannelQuality>> get signalQualityStream => _signalQualityController.stream;
+
+  @override
   Stream<int> get batteryStream => _batteryController.stream;
+
+  @override
   Stream<BciCalibrationEvent> get calibrationStream => _calibrationController.stream;
   
   void emitConnectionStatus(BciLinkStatus status) => _connectionStateController.add(status);
@@ -204,7 +210,11 @@ class FakeNfbCalibrationRepository implements NfbCalibrationRepository {
       history(serial).firstWhereOrNull((d) => d.isValid);
   
   @override
-  Future<void> record(String serial, NfbCalibrationData data, {bool awaitApiSync = false}) async {
+  Future<void> record(
+    String serial,
+    NfbCalibrationData data, {
+    @visibleForTesting bool awaitApiSync = false,
+  }) async {
     recordCallCount++;
     if (recordThrows != null) throw recordThrows!;
     final existing = history(serial);
@@ -244,12 +254,12 @@ class FakeHeartRateSource implements IHeartRateSource {
 
 #### 1.2 Should bypass dedup and re-emit BciScanning on consecutive startScan() calls
 - **What:** Called twice with manager already in BciScanning — second call must re-emit.
-- **Branch:** `startScan()` line 160–162 (direct write bypass)
+- **Branch:** `startScan()` line 160–163 (direct write bypass)
 - **Setup:** startScan() → wait for emit → startScan() again
 - **Assert:** 
   - First emit is BciScanning
-  - Dedup check at line 132–136 would normally suppress (same type, not Active)
-  - Direct-write bypass at line 160 re-emits anyway
+  - Dedup check at line 132–137 would normally suppress (same type, not Active)
+  - Direct-write bypass at line 160–162 re-emits anyway
   - Second emit received on stateStream
 
 #### 1.3 Should transition BciScanning → BciConnecting on device found + connectDevice()
@@ -293,7 +303,7 @@ class FakeHeartRateSource implements IHeartRateSource {
   - Call startCalibration()
 - **Assert:** 
   - stateStream emits BciCalibrating('TEST-001', totalStages: 4)
-  - line 240: `totalStages: 4`
+  - Line 240: `_setState(BciCalibrating(serial, totalStages: 4))`
 
 #### 1.7 Should transition BciImpedance → BciCalibrating(1) on startQuickCalibration()
 - **What:** Begin single-stage quick retry.
@@ -303,7 +313,7 @@ class FakeHeartRateSource implements IHeartRateSource {
   - Call startQuickCalibration()
 - **Assert:** 
   - stateStream emits BciCalibrating('TEST-001', totalStages: 1)
-  - line 254: `totalStages: 1`
+  - Line 254: `_setState(BciCalibrating(serial, totalStages: 1))`
 
 #### 1.8 Should suppress startCalibration() if not in BciImpedance
 - **What:** Caller is in wrong state, method returns early.
@@ -320,7 +330,7 @@ class FakeHeartRateSource implements IHeartRateSource {
 - **Branch:** `_subscribeProviderStreams()` line 76–103, case 80–90
 - **Setup:** 
   - Manager in BciCalibrating('TEST-001', totalStages: 4)
-  - Provider emits BciCalibrationCompleted(data with isValid: true)
+  - Provider emits BciCalibrationCompleted(data: NfbCalibrationData with isValid: true)
 - **Assert:** 
   - stateStream emits BciReady('TEST-001')
   - nfbCalibrationRepository.record() was called with the data
@@ -330,21 +340,21 @@ class FakeHeartRateSource implements IHeartRateSource {
 - **Branch:** `_subscribeProviderStreams()` line 76–103, case 91–95
 - **Setup:** 
   - Manager in BciCalibrating('TEST-001', totalStages: 4)
-  - Provider emits BciCalibrationCompleted(data with isValid: false, failReason: "tooManyArtifacts")
+  - Provider emits BciCalibrationCompleted(data: NfbCalibrationData with isValid: false)
 - **Assert:** 
   - stateStream emits BciImpedance('TEST-001'), NOT BciReady
-  - nfbCalibrationRepository.record() NOT called (line 85 checks isValid first)
-  - Line 94: `_setState(BciImpedance(...))`
+  - nfbCalibrationRepository.record() NOT called (line 82 `if (data.isValid)` guard)
+  - Line 94: `_setState(BciImpedance((...state as BciCalibrating).serial))`
 
 #### 1.11 Should transition BciCalibrating → BciImpedance on calibration failure
 - **What:** `BciCalibrationFailed` event.
 - **Branch:** `_subscribeProviderStreams()` line 97–101
 - **Setup:** 
   - Manager in BciCalibrating('TEST-001', totalStages: 4)
-  - Provider emits BciCalibrationFailed("device_error")
+  - Provider emits BciCalibrationFailed(reason: "device_error")
 - **Assert:** 
   - stateStream emits BciImpedance('TEST-001')
-  - Line 100: `_setState(BciImpedance(...))`
+  - Line 100: `_setState(BciImpedance((_state as BciCalibrating).serial))`
 
 #### 1.12 Should suppress duplicate state emissions (dedup by type + serial)
 - **What:** Same state type, same serial (for Active subclasses) = no emit.
@@ -353,28 +363,28 @@ class FakeHeartRateSource implements IHeartRateSource {
   - Manager in BciConnecting('TEST-001')
   - Call _setState(BciConnecting('TEST-001')) again
 - **Assert:** 
-  - stateStream does NOT emit (lines 134–136)
+  - stateStream does NOT emit (lines 132–136)
   - state getter still returns BciConnecting('TEST-001')
 
 #### 1.13 Should allow state transition between different Active subtypes with same serial
 - **What:** BciConnecting('TEST-001') → BciImpedance('TEST-001') is a real transition (different type).
-- **Branch:** `_setState()` line 132–137
+- **Branch:** `_setState()` line 130–140
 - **Setup:** 
   - Manager in BciConnecting('TEST-001')
   - Call _setState(BciImpedance('TEST-001'))
 - **Assert:** 
   - stateStream emits BciImpedance('TEST-001')
-  - Line 132: type check passes (different types)
+  - Line 132: runtimeType check differs (BciConnecting ≠ BciImpedance) → emit fires
 
 #### 1.14 Should allow transition between same Active type but different serial
 - **What:** BciConnecting('TEST-001') → BciConnecting('TEST-002') is a real transition (different serial).
-- **Branch:** `_setState()` line 134–136
+- **Branch:** `_setState()` line 130–140
 - **Setup:** 
   - Manager in BciConnecting('TEST-001')
   - Call _setState(BciConnecting('TEST-002'))
 - **Assert:** 
   - stateStream emits BciConnecting('TEST-002')
-  - serial comparison fires emit
+  - Line 136: serial comparison `next.serial == (_state as BciActive).serial` differs → emit fires
 
 ---
 
@@ -401,13 +411,13 @@ class FakeHeartRateSource implements IHeartRateSource {
 
 #### 2.3 Should clear connectedSerial on disconnect()
 - **What:** Explicit disconnect nullifies the serial.
-- **Branch:** `disconnect()` line 265–272, line 270
+- **Branch:** `disconnect()` line 265–272
 - **Setup:** 
   - connectDevice('SERIAL-A') → BciImpedance
   - Call disconnect()
 - **Assert:** 
-  - connectedSerial == null
-  - _suppressAutoReconnect == true
+  - connectedSerial == null (Line 270: `_connectedSerial = null`)
+  - _suppressAutoReconnect == true (Line 266)
 
 #### 2.4 Should use connectedSerial for reconnect lookup
 - **What:** After drop, reconnect scan looks for the same serial.
@@ -426,24 +436,24 @@ class FakeHeartRateSource implements IHeartRateSource {
 
 #### 3.1 Should trigger auto-reconnect on unexpected drop while BciActive
 - **What:** `BciLinkStatus.down` while state is BciActive → calls _attemptReconnect().
-- **Branch:** `_subscribeProviderStreams()` line 64–75
+- **Branch:** `_subscribeProviderStreams()` line 65–75
 - **Setup:** 
   - connectDevice('TEST-001') → BciImpedance
   - Provider emits BciLinkStatus.down
 - **Assert:** 
-  - state transitions to BciScanning
-  - _attemptReconnect() microtask fires
+  - state transitions to BciIdle (Line 70: `_setState(BciIdle())`)
+  - _attemptReconnect() microtask fires (Line 72: `unawaited(_attemptReconnect())`)
 
 #### 3.2 Should NOT trigger auto-reconnect after explicit disconnect()
 - **What:** `_suppressAutoReconnect = true` prevents reconnect.
 - **Branch:** `_subscribeProviderStreams()` line 71, `disconnect()` line 266
 - **Setup:** 
   - connectDevice('TEST-001') → BciImpedance
-  - Call disconnect() (sets _suppressAutoReconnect = true)
+  - Call disconnect() (sets _suppressAutoReconnect = true at line 266)
   - Provider emits BciLinkStatus.down (simulated race)
 - **Assert:** 
-  - Line 71: `if (!_suppressAutoReconnect ...)` skips unawaited(_attemptReconnect())
-  - state remains BciIdle
+  - Line 71: `if (!_suppressAutoReconnect && _connectedSerial != null)` guard blocks reconnect
+  - state transitions to BciIdle (line 70) but no unawaited reconnect
 
 #### 3.3 Should NOT trigger auto-reconnect if _connectedSerial is null
 - **What:** Can't reconnect without a remembered serial.
@@ -462,16 +472,17 @@ class FakeHeartRateSource implements IHeartRateSource {
   - Manager in BciScanning
   - Provider emits BciLinkStatus.down
 - **Assert:** 
-  - Line 68: `if (status == BciLinkStatus.down && _state is BciActive)` fails
-  - Nothing happens
+  - Line 68: `if (status == BciLinkStatus.down && _state is BciActive)` guard fails (BciScanning is not BciActive)
+  - Listener body skipped entirely
 
 #### 3.5 Should ignore BciLinkStatus.up event
 - **What:** Up events are only emitted by provider; manager doesn't react.
-- **Branch:** `_subscribeProviderStreams()` line 68 (only checks .down)
+- **Branch:** `_subscribeProviderStreams()` line 65–75 (only checks `.down`)
 - **Setup:** 
   - Manager in BciImpedance('TEST-001')
   - Provider emits BciLinkStatus.up
 - **Assert:** 
+  - Line 68 condition `status == BciLinkStatus.down` fails
   - No state change
 
 #### 3.6 Should scan for the remembered serial during reconnect
@@ -487,17 +498,17 @@ class FakeHeartRateSource implements IHeartRateSource {
 
 #### 3.7 Should transition to BciScanning on reconnect start
 - **What:** Auto-reconnect begins with a scan.
-- **Branch:** `_attemptReconnect()` line 275
+- **Branch:** `_attemptReconnect()` line 274–313
 - **Setup:** 
   - connectDevice('TEST-001') → BciImpedance
   - Emit down
 - **Assert:** 
+  - Line 275: `_setState(BciScanning())`
   - state emits BciScanning
-  - _state is BciScanning
 
 #### 3.8 Should transition to BciIdle if reconnect scan completes without finding device
 - **What:** Scan terminates (onDone) but device not found.
-- **Branch:** `_attemptReconnect()` line 307–310
+- **Branch:** `_attemptReconnect()` line 307–312
 - **Setup:** 
   - connectDevice('TEST-001') → BciImpedance
   - Emit down → reconnect fires
@@ -505,11 +516,11 @@ class FakeHeartRateSource implements IHeartRateSource {
   - Provider scan completes (onDone fires)
 - **Assert:** 
   - state transitions to BciIdle
-  - Line 309: `if (_state is BciScanning && _connectedSerial != null)`
+  - Line 308–309: `if (_state is BciScanning && _connectedSerial != null) _setState(BciIdle())`
 
 #### 3.9 Should handle scan error during reconnect (non-permission exception)
 - **What:** Provider scan throws (e.g., BLE error).
-- **Branch:** `_attemptReconnect()` line 293–305, case non-permission
+- **Branch:** `_attemptReconnect()` line 293–306
 - **Setup:** 
   - connectDevice('TEST-001') → BciImpedance
   - Emit down → reconnect fires
@@ -524,7 +535,7 @@ class FakeHeartRateSource implements IHeartRateSource {
 - **Setup:** 
   - connectDevice('TEST-001') → BciImpedance
   - Emit down → reconnect fires
-  - Provider scan throws BluetoothPermissionDeniedException
+  - Provider scan throws BluetoothPermissionDeniedException (from `lib/Bci/Models/BluetoothPermissionDeniedException.dart` line 14)
 - **Assert:** 
   - state transitions to BciPermissionDenied
   - Line 301: `_setState(BciPermissionDenied())`
@@ -546,23 +557,23 @@ class FakeHeartRateSource implements IHeartRateSource {
 
 #### 4.1 Should NOT record calibration when isValid=false
 - **What:** Invalid results skip nfbCalibrationRepository.record().
-- **Branch:** `_subscribeProviderStreams()` line 82–90, guards
+- **Branch:** `_subscribeProviderStreams()` line 80–96
 - **Setup:** 
   - Manager in BciCalibrating
-  - Provider emits BciCalibrationCompleted with isValid: false
+  - Provider emits BciCalibrationCompleted(data: NfbCalibrationData with isValid: false)
 - **Assert:** 
   - nfbCalibrationRepository.record() call count == 0
-  - Line 85: `if (data.isValid)` guard prevents recording
+  - Line 82: `if (data.isValid)` guard prevents recording
 
 #### 4.2 Should record valid calibration result
 - **What:** Valid results are persisted.
-- **Branch:** `_subscribeProviderStreams()` line 82–90
+- **Branch:** `_subscribeProviderStreams()` line 80–96
 - **Setup:** 
   - Manager in BciCalibrating('TEST-001')
-  - Provider emits BciCalibrationCompleted with isValid: true, failReason: "none"
+  - Provider emits BciCalibrationCompleted(data: NfbCalibrationData with isValid: true)
 - **Assert:** 
   - nfbCalibrationRepository.record('TEST-001', data) called once
-  - Line 86: unawaited(...record())
+  - Line 86–88: `unawaited(_nfbCalibrationRepository.record(_connectedSerial!, data).catchError(...))`
 
 #### 4.3 Should swallow calibration record error
 - **What:** If recording throws, error is logged but doesn't bubble up.
@@ -570,46 +581,45 @@ class FakeHeartRateSource implements IHeartRateSource {
 - **Setup:** 
   - Manager in BciCalibrating('TEST-001')
   - nfbCalibrationRepository.record() throws TimeoutException
-  - Provider emits BciCalibrationCompleted(isValid: true)
+  - Provider emits BciCalibrationCompleted(data: NfbCalibrationData with isValid: true)
 - **Assert:** 
-  - catchError at line 87 catches it
-  - Log line: 'BciDeviceManager: nfbCalibration record failed: ...'
-  - State still transitions to BciReady
+  - catchError at line 87 catches it and logs
+  - State still transitions to BciReady (line 90)
 
 #### 4.4 Should use captured connectedSerial for calibration record
-- **What:** Serial is captured at the top of the listener (line 83 comment).
-- **Branch:** `_subscribeProviderStreams()` line 85
+- **What:** Serial is captured synchronously (Dart single-threaded within listener callback).
+- **Branch:** `_subscribeProviderStreams()` line 83–88
 - **Setup:** 
   - connectDevice('SERIAL-A') → BciImpedance
   - startCalibration() → BciCalibrating
-  - Provider emits BciCalibrationCompleted(isValid: true)
+  - Provider emits BciCalibrationCompleted(data: NfbCalibrationData with isValid: true)
 - **Assert:** 
   - nfbCalibrationRepository.record('SERIAL-A', ...) called
-  - Line 85–86: _connectedSerial captured in the listener, not re-read
+  - Lines 83–84: comment documents synchronous capture safety
 
 #### 4.5 Should ignore calibration stage progress (no state change)
 - **What:** `BciCalibrationStageFinished` is forwarded to UI but doesn't change app state.
 - **Branch:** `_subscribeProviderStreams()` line 77–79
 - **Setup:** 
   - Manager in BciCalibrating('TEST-001', totalStages: 4)
-  - Provider emits BciCalibrationStageFinished(1)
+  - Provider emits BciCalibrationStageFinished(stage: 1)
 - **Assert:** 
   - state remains BciCalibrating (no emit)
-  - Line 79: `break` — not handled by manager
+  - Line 79: `break` — case is skipped
 
 #### 4.6 Should ignore calibration events when not in BciCalibrating
 - **What:** Events outside the calibrating phase are dropped.
-- **Branch:** `_subscribeProviderStreams()` line 81, 99
+- **Branch:** `_subscribeProviderStreams()` line 76–103
 - **Setup:** 
   - Manager in BciImpedance('TEST-001')
-  - Provider emits BciCalibrationCompleted(isValid: true)
+  - Provider emits BciCalibrationCompleted(data: NfbCalibrationData with isValid: true)
 - **Assert:** 
   - Line 81: `if (_state is BciCalibrating)` guard fails
   - No state change
 
 #### 4.7 Should swallow provider exception on startCalibration failure
 - **What:** Provider throws → manager catches and transitions back to impedance.
-- **Branch:** `startCalibration()` line 237–249, line 245–248
+- **Branch:** `startCalibration()` line 237–249
 - **Setup:** 
   - Manager in BciImpedance('TEST-001')
   - Provider.startCalibration() throws StateError
@@ -635,24 +645,24 @@ class FakeHeartRateSource implements IHeartRateSource {
 
 #### 5.1 Should guard against disconnect() racing with connect() in-flight
 - **What:** User disconnects while connect awaits.
-- **Branch:** `connectDevice()` line 228–230
+- **Branch:** `connectDevice()` line 217–235
 - **Setup:** 
   - Call connectDevice('TEST-001') but don't await
   - Simultaneously call disconnect()
   - Provider.connect() eventually succeeds
 - **Assert:** 
-  - Line 228: `if (_state is BciConnecting)` gate ensures we don't override user's disconnect
+  - Line 228: `if (_state is BciConnecting)` gate prevents override
   - state remains BciIdle
 
 #### 5.2 Should cancel scan subscription on auto-connect
 - **What:** Scan terminates when a cached device is found and connected.
-- **Branch:** `startScan()` line 193–194
+- **Branch:** `startScan()` line 189–196
 - **Setup:** 
   - startScan() active, subscribed to provider.scan()
-  - Device found in cache → auto-connect fires
+  - Device found in cache → auto-connect fires (line 195)
 - **Assert:** 
-  - Line 193: `await _scanSub?.cancel()` called
-  - _scanSub = null
+  - Line 193: `await _scanSub?.cancel()`
+  - Line 194: `_scanSub = null`
 
 #### 5.3 Should ignore calibration completion if _connectedSerial is null
 - **What:** Edge case: calibration completes but we lost track of which device (defensive).
@@ -682,8 +692,8 @@ class FakeHeartRateSource implements IHeartRateSource {
   - Provider.connect() succeeds
   - repository.registerDevice() throws
 - **Assert:** 
-  - catchError at line 223 swallows it
-  - state still transitions to BciImpedance
+  - catchError at line 223 logs and swallows
+  - state still transitions to BciImpedance (line 229)
 
 #### 5.6 Should handle permission denied during startScan
 - **What:** User hasn't granted Bluetooth permission.
@@ -740,24 +750,24 @@ class FakeHeartRateSource implements IHeartRateSource {
 
 #### 6.2 Should emit discoveredDevicesStream on scan results
 - **What:** Scan discoveries propagate to UI.
-- **Branch:** `startScan()` line 180–185
+- **Branch:** `startScan()` line 179–186
 - **Setup:** 
   - startScan()
   - Provider scan emits [device1, device2]
 - **Assert:** 
-  - discoveredDevicesStream emits the list
-  - _discoveredDevices updated
+  - discoveredDevicesStream emits the list (line 184)
+  - _discoveredDevices updated (line 182)
 
 #### 6.3 Should not emit closed streams after dispose
 - **What:** After dispose(), stream controllers are closed.
-- **Branch:** `dispose()` line 149–150
+- **Branch:** `dispose()` line 144–151
 - **Setup:** 
   - Subscribe to stateStream
   - Call dispose()
   - Try to receive further emissions
 - **Assert:** 
   - Subscription receives done event
-  - Controllers are closed
+  - Lines 149–150: `await _stateController.close()`, `await _discoveredDevicesController.close()`
 
 ---
 
@@ -804,7 +814,7 @@ class FakeHeartRateSource implements IHeartRateSource {
    - calibrationStream is persistent (unlike scan)
 
 8. **Error swallowing strategy**:
-   - registerDevice errors swallowed (line 223)
-   - nfbCalibrationRepository.record errors swallowed (line 87)
-   - startCalibration/startQuickCalibration errors transition back to BciImpedance
-   - No error state in BciConnectionState — errors are logged silently
+   - registerDevice errors swallowed at line 223 with catchError log
+   - nfbCalibrationRepository.record errors swallowed at line 87 with catchError log
+   - startCalibration/startQuickCalibration errors catch at lines 245–248 and 259–262, transition back to BciImpedance
+   - No error state in BciConnectionState — errors are logged silently via logPrint

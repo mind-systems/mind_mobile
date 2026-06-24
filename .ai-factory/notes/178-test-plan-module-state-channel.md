@@ -20,13 +20,14 @@ ModuleStateChannel({
   required proto.ModuleStateServiceClient moduleStateService,
   required GrpcConnectionManager connectionManager,
   required Stream<AuthState> authStream,
-})
+})  : _moduleStateService = moduleStateService,
+      _connectionManager = connectionManager
 ```
 
-Three required dependencies:
-1. **moduleStateService**: gRPC client stub — calls `trackActivity(request, options:)` and returns `ResponseStream<StateResponse>`
-2. **connectionManager**: emits `GrpcConnectionState` (connecting/connected/disconnected) and exposes `confirmConnected()` / `disconnect()` / `scheduleReconnect()`
-3. **authStream**: `Stream<AuthState>` — triggers `_reset()` on `GuestState`
+Three required dependencies (ModuleStateChannel.dart:49–53):
+1. **moduleStateService**: `proto.ModuleStateServiceClient` — calls `trackActivity(stream, options:)` at line 80, returns `ResponseStream<proto.StateResponse>`
+2. **connectionManager**: `GrpcConnectionManager` — emits `Stream<GrpcConnectionState>` via `.connectionState` (line 55); exposes `.confirmConnected()` (line 85, GrpcConnectionManager.dart:104), `.disconnect()` (line 104, GrpcConnectionManager.dart:93), `.scheduleReconnect()` (line 105, GrpcConnectionManager.dart:111)
+3. **authStream**: `Stream<AuthState>` — triggers `_reset()` on `GuestState` (line 66)
 
 ## Existing Coverage
 
@@ -53,26 +54,26 @@ Both tests wrap `ModuleStateChannel` in a module-specific state channel (e.g., `
 
 - **Setup:** Create StateResponse with sessionState.status=RESUMED, moduleSessionId='test-sid'
 - **Trigger:** Emit via fake response stream
-- **Assert:** Events stream receives exactly one ModuleSessionResumed(moduleSessionId: 'test-sid')
-- **State check:** currentState.status == ModuleStateStatus.active, currentState.moduleSessionId == 'test-sid'
+- **Assert:** Events stream receives exactly one ModuleSessionResumed(moduleSessionId: 'test-sid') (ModuleSessionResumed declared ModuleStateEvent.dart:8–10)
+- **State check:** currentState.status == ModuleStateStatus.active, currentState.moduleSessionId == 'test-sid' (ModuleState.dart:1–11; ModuleStateStatus enum at line 1; ModuleState.active constructor at line 8; state updated at ModuleStateChannel.dart:132)
 
 #### should clear isPendingStart and isPendingPause flags on RESUMED
 
-- **Setup:** Set _isPendingStart=true and _isPendingPause=true (via prior command attempt or internal flag)
-- **Trigger:** Emit RESUMED event
-- **Assert:** Subsequent state transitions are processed (no guard blocks them); _isPendingStart and _isPendingPause are false (verified indirectly by observing normal lifecycle behavior)
+- **Setup:** Set _isPendingStart=true and _isPendingPause=true (private fields at ModuleStateChannel.dart:31–32)
+- **Trigger:** Emit RESUMED event (ActivityStatus.RESUMED defined as proto enum value 6 in module_state.pbenum.dart:59–60)
+- **Assert:** Both flags reset to false (lines 130–131 in _processProtoEvent RESUMED branch); subsequent state transitions are processed without guard blocks
 
 #### should handle RESUMED with isPaused=true
 
-- **Setup:** Emit RESUMED with isPaused=true
-- **Trigger:** Receive event
-- **Assert:** currentState.isPaused == true; ModuleSessionResumed emitted with correct moduleSessionId
+- **Setup:** Emit StateResponse with sessionState.status=RESUMED, sessionState.isPaused=true, sessionState.moduleSessionId='test-id'
+- **Trigger:** Receive event via trackActivity stream
+- **Assert:** currentState.isPaused == true (ModuleState.dart:6, default isPaused=false at line 8); ModuleSessionResumed(moduleSessionId: 'test-id') emitted (ModuleStateChannel.dart:133)
 
 #### should handle RESUMED with isPaused=false
 
-- **Setup:** Emit RESUMED with isPaused=false
-- **Trigger:** Receive event
-- **Assert:** currentState.isPaused == false; ModuleSessionResumed emitted
+- **Setup:** Emit StateResponse with sessionState.status=RESUMED, sessionState.isPaused=false
+- **Trigger:** Receive event via trackActivity stream
+- **Assert:** currentState.isPaused == false (line 132 sets isPaused: isPaused); ModuleSessionResumed emitted at line 133
 
 ### Group 2: Proto-Event Processing — ABANDONED
 
@@ -80,31 +81,31 @@ Both tests wrap `ModuleStateChannel` in a module-specific state channel (e.g., `
 
 #### should emit ModuleSessionAbandoned and reset state when proto.ActivityStatus.ABANDONED arrives
 
-- **Setup:** Initialize with active session (moduleSessionId='active-id')
-- **Trigger:** Emit ABANDONED event
-- **Assert:** Events stream receives ModuleSessionAbandoned; currentState == ModuleState.initial()
+- **Setup:** Initialize with active session (moduleSessionId='active-id'); currentState.status=active
+- **Trigger:** Emit StateResponse with sessionState.status=ABANDONED (proto enum value 4 at module_state.pbenum.dart:55–56)
+- **Assert:** Events stream receives ModuleSessionAbandoned (declared ModuleStateEvent.dart:19); currentState == ModuleState.initial() (line 150 in _processProtoEvent)
 
 #### should reset moduleSessionId to null on ABANDONED
 
-- **Setup:** currentState holds moduleSessionId='live-id'
-- **Trigger:** Emit ABANDONED
-- **Assert:** currentState.moduleSessionId == null; subsequent state reads return null
+- **Setup:** currentState holds moduleSessionId='live-id' (ModuleState.dart:4)
+- **Trigger:** Emit StateResponse with sessionState.status=ABANDONED
+- **Assert:** currentState == ModuleState.initial() (line 150); moduleSessionId field is null per ModuleState.initial() at ModuleState.dart:10–11
 
 ### Group 3: Session Error — no_active_session Demotion
 
 **Branch:** Line 92–96 in `_openSessionStream`
 
-#### should silently reset to ModuleState.initial() when sessionError with code='no_active_session' arrives (no log, no event emission)
+#### should silently reset to ModuleState.initial() when sessionError with code='no_active_session' arrives
 
-- **Setup:** Establish connected session stream
-- **Trigger:** Emit StateResponse with sessionError.code='no_active_session', sessionError.message='<any>'
-- **Assert:** currentState == ModuleState.initial(); no event emitted; only log line "[ModuleStateChannel] session error: no_active_session — ..." is produced (silent defensive reset, per note 154)
+- **Setup:** Establish connected session stream; currentState.status=active
+- **Trigger:** Emit StateResponse with sessionError.code='no_active_session', sessionError.message='<any>' (StateErrorEvent.dart fields: code at module_state.pb.dart:413)
+- **Assert:** currentState == ModuleState.initial() (line 95); log line produced at line 93: "[ModuleStateChannel] session error: no_active_session — ..."; no ModuleStateEvent emitted (only state.add occurs, no events.add)
 
 #### should not emit any ModuleStateEvent when no_active_session error is received
 
-- **Setup:** Stream listener collecting events
-- **Trigger:** Receive no_active_session error
-- **Assert:** Events stream receives no messages (only internal state.add() occurs)
+- **Setup:** Stream listener collecting events (via channel.events PublishSubject at ModuleStateChannel.dart:23)
+- **Trigger:** Receive StateResponse with sessionError.code='no_active_session'
+- **Assert:** Events stream receives no messages; only state BehaviorSubject updated at line 95 (no events.add() call in the error handler lines 92–96)
 
 ### Group 4: Metadata Attachment — module-session-id Header
 
@@ -112,33 +113,33 @@ Both tests wrap `ModuleStateChannel` in a module-specific state channel (e.g., `
 
 #### should attach module-session-id metadata when opening stream with active status and non-empty moduleSessionId
 
-- **Setup:** currentState = ModuleState(moduleSessionId: 'live-123', status: active)
-- **Trigger:** Emit connection-state=connected (calls _openSessionStream)
-- **Assert:** moduleStateService.trackActivity was called with CallOptions(metadata: {'module-session-id': 'live-123'})
+- **Setup:** currentState = ModuleState(moduleSessionId: 'live-123', status: active); connectionManager.connectionState emits connected
+- **Trigger:** Emit connection-state=connected (triggers _openSessionStream at line 58)
+- **Assert:** moduleStateService.trackActivity called at line 80 with CallOptions(metadata: {'module-session-id': 'live-123'}); metadata guard at lines 76–79: status == ModuleStateStatus.active AND liveId != null AND liveId.isNotEmpty
 
 #### should not attach module-session-id metadata when status != active
 
 - **Setup:** currentState = ModuleState(moduleSessionId: 'live-123', status: idle)
-- **Trigger:** Emit connection-state=connected
-- **Assert:** moduleStateService.trackActivity was called with options=null (or no metadata)
+- **Trigger:** Emit connection-state=connected (calls _openSessionStream at line 58)
+- **Assert:** moduleStateService.trackActivity called at line 80 with options=null (guard at line 76: status == ModuleStateStatus.active fails)
 
 #### should not attach module-session-id metadata when moduleSessionId is null
 
 - **Setup:** currentState = ModuleState(moduleSessionId: null, status: active)
-- **Trigger:** Emit connection-state=connected
-- **Assert:** moduleStateService.trackActivity was called with options=null
+- **Trigger:** Emit connection-state=connected (calls _openSessionStream at line 58)
+- **Assert:** moduleStateService.trackActivity called at line 80 with options=null (guard at line 77: liveId != null fails)
 
 #### should not attach module-session-id metadata when moduleSessionId is empty string
 
 - **Setup:** currentState = ModuleState(moduleSessionId: '', status: active)
-- **Trigger:** Emit connection-state=connected
-- **Assert:** moduleStateService.trackActivity was called with options=null
+- **Trigger:** Emit connection-state=connected (calls _openSessionStream at line 58)
+- **Assert:** moduleStateService.trackActivity called at line 80 with options=null (guard at line 77: liveId.isNotEmpty fails for empty string)
 
-#### should attach module-session-id metadata only on first _openSessionStream call after connection (connection-state=connecting → connected)
+#### should attach module-session-id metadata on each _openSessionStream call based on current state
 
-- **Setup:** Initial state is idle; moduleState stream emits active+moduleSessionId='s1'
-- **Trigger:** connectionState.add(connected)
-- **Assert:** trackActivity called once with metadata; subsequent calls to _openSessionStream (e.g., on reconnect) re-attach the current moduleSessionId
+- **Setup:** Initial state is idle; currentState.moduleSessionId=null; then state transitions to active with moduleSessionId='s1'
+- **Trigger:** connectionState.add(connected) → _openSessionStream called (line 58)
+- **Assert:** trackActivity called at line 80 with metadata based on currentState at call time (line 75: liveId = currentState.moduleSessionId); _backoffConfirmed reset to false at line 73 on each _openSessionStream call
 
 ### Group 5: Client Timestamp Forwarding
 
@@ -146,33 +147,33 @@ Both tests wrap `ModuleStateChannel` in a module-specific state channel (e.g., `
 
 #### should forward clientTimestampMs from start() to proto.ActivityStartCmd
 
-- **Setup:** Create channel, wire connection/auth streams
-- **Trigger:** Call channel.start(type: breath, refId: 'sess-1', clientTimestampMs: 1234567890)
-- **Assert:** Captured StateRequest contains activityStart.clientTimestampMs == Int64(1234567890)
+- **Setup:** Create channel, wire connection/auth streams, establish connected state
+- **Trigger:** Call channel.start(type: ActivityType.breath, refId: 'sess-1', clientTimestampMs: 1234567890) (ModuleStateChannel.dart:165)
+- **Assert:** Captured StateRequest.activityStart.clientTimestampMs == Int64(1234567890) (line 172 wraps clientTimestampMs in Int64(); ActivityStartCmd.dart field at module_state.pb.dart:98, type $fixnum.Int64)
 
 #### should send Int64.ZERO if clientTimestampMs=0 is passed to start()
 
-- **Setup:** Call start with clientTimestampMs: 0
-- **Trigger:** Capture StateRequest
-- **Assert:** activityStart.clientTimestampMs == Int64(0) (not null; zero is a valid timestamp)
+- **Setup:** Call start(type: breath, refId: '', clientTimestampMs: 0) (line 165)
+- **Trigger:** Capture StateRequest via _sessionSink.add at line 210
+- **Assert:** activityStart.clientTimestampMs == Int64(0) (line 172: clientTimestampMs != null check means 0 is treated as truthy, Int64(0) sent, not null)
 
 #### should not set clientTimestampMs field if start() is called without clientTimestampMs argument
 
-- **Setup:** Call start(type: breath, refId: 'sess-1') — no clientTimestampMs
-- **Trigger:** Capture StateRequest
-- **Assert:** activityStart.clientTimestampMs is unset/default (or proto field is null/zero depending on protobuf encoding)
+- **Setup:** Call start(type: breath, refId: 'sess-1') — clientTimestampMs omitted (optional, defaults to null at line 165)
+- **Trigger:** Capture StateRequest via _sessionSink.add at line 210
+- **Assert:** activityStart.clientTimestampMs is not set (line 172: clientTimestampMs != null check fails, null is passed to ActivityStartCmd constructor; proto field uninitialized per module_state.pb.dart:113 factory)
 
 #### should forward clientTimestampMs from end() to proto.ActivityEndCmd
 
-- **Setup:** Start a session first, then call end(clientTimestampMs: 9876543210)
-- **Trigger:** Capture StateRequest
-- **Assert:** activityEnd.clientTimestampMs == Int64(9876543210)
+- **Setup:** Start a session first (channel.start(...)), then call end(clientTimestampMs: 9876543210) (line 189)
+- **Trigger:** Capture StateRequest via _sessionSink.add at line 210
+- **Assert:** activityEnd.clientTimestampMs == Int64(9876543210) (line 193: clientTimestampMs != null check, Int64 wrapping; ActivityEndCmd field at module_state.pb.dart:155, type $fixnum.Int64)
 
 #### should not set clientTimestampMs in ActivityEndCmd if end() is called without clientTimestampMs
 
-- **Setup:** Call end() with no clientTimestampMs
-- **Trigger:** Capture StateRequest
-- **Assert:** activityEnd.clientTimestampMs is unset
+- **Setup:** Call end() with no clientTimestampMs argument (optional, defaults to null at line 189)
+- **Trigger:** Capture StateRequest via _sessionSink.add at line 210
+- **Assert:** activityEnd.clientTimestampMs is not set (line 193: clientTimestampMs != null check fails, null passed to ActivityEndCmd; proto field uninitialized per module_state.pb.dart:113)
 
 ### Group 6: State Transitions — ACTIVE / COMPLETED / INTERRUPTED / ACTIVITY_STATUS_UNSPECIFIED
 
@@ -180,33 +181,33 @@ Both tests wrap `ModuleStateChannel` in a module-specific state channel (e.g., `
 
 #### should handle ACTIVE as before (emit ModuleSessionStarted on first active, ModuleSessionPaused on pause, ModuleSessionUnpaused on resume)
 
-- **Setup:** Emit ACTIVE with status transitions (idle→active, active+paused→active+!paused)
-- **Trigger:** Receive events
-- **Assert:** Verify ModuleSessionStarted, ModuleSessionPaused, ModuleSessionUnpaused are emitted appropriately
+- **Setup:** Emit ACTIVE (proto enum value 1 at module_state.pbenum.dart:49–50) with status transitions (idle→active, active+paused→active+!paused)
+- **Trigger:** Receive StateResponse with sessionState.status=ACTIVE via trackActivity stream
+- **Assert:** ModuleSessionStarted emitted on first active (line 143); ModuleSessionPaused emitted when isPaused transitions true (line 145); ModuleSessionUnpaused emitted when isPaused transitions false (line 147)
 
 #### should emit ModuleSessionEnded when COMPLETED arrives
 
-- **Setup:** Initialize with active session
-- **Trigger:** Emit COMPLETED
-- **Assert:** Events stream receives ModuleSessionEnded; state reset to initial
+- **Setup:** Initialize with active session (currentState.status=active)
+- **Trigger:** Emit StateResponse with sessionState.status=COMPLETED (proto enum value 3 at module_state.pbenum.dart:53–54)
+- **Assert:** Events stream receives ModuleSessionEnded (declared ModuleStateEvent.dart:17); state reset to initial (line 150–151)
 
 #### should emit ModuleSessionEnded when INTERRUPTED arrives
 
-- **Setup:** Initialize with active session
-- **Trigger:** Emit INTERRUPTED
-- **Assert:** Events stream receives ModuleSessionEnded; state reset to initial
+- **Setup:** Initialize with active session (currentState.status=active)
+- **Trigger:** Emit StateResponse with sessionState.status=INTERRUPTED (proto enum value 5 at module_state.pbenum.dart:57–58)
+- **Assert:** Events stream receives ModuleSessionEnded; state reset to initial (line 149–151)
 
 #### should reset to initial state when ACTIVITY_STATUS_UNSPECIFIED arrives
 
-- **Setup:** Initialize with active session
-- **Trigger:** Emit ACTIVITY_STATUS_UNSPECIFIED
-- **Assert:** currentState == ModuleState.initial(); _isPendingStart=false, _isPendingPause=false
+- **Setup:** Initialize with active session (currentState.status=active)
+- **Trigger:** Emit StateResponse with sessionState.status=ACTIVITY_STATUS_UNSPECIFIED (proto enum value 0, sentinel, at module_state.pbenum.dart:47–48)
+- **Assert:** currentState == ModuleState.initial() (line 157); _isPendingStart=false, _isPendingPause=false (line 156, both reset)
 
 #### should log unhandled status when an unknown ActivityStatus is received
 
-- **Setup:** Mock logPrint or capture logs
-- **Trigger:** Emit StateResponse with unknown/future status value
-- **Assert:** Log contains "[ModuleStateChannel] unhandled status: ..."
+- **Setup:** Mock logPrint or capture logs; create StateResponse with sessionState.status=unknown (future enum value not yet handled by switch)
+- **Trigger:** Emit via trackActivity stream
+- **Assert:** Log at line 159: "[ModuleStateChannel] unhandled status: $status"
 
 ### Group 7: Stream Lifecycle — Connection State Transitions
 
@@ -214,51 +215,51 @@ Both tests wrap `ModuleStateChannel` in a module-specific state channel (e.g., `
 
 #### should open session stream when connectionState=connected
 
-- **Setup:** Construct channel with mocked connectionManager
-- **Trigger:** connectionManager.connectionState.add(connected)
-- **Assert:** moduleStateService.trackActivity was called; _sessionSub is not null; _sessionSink is not null
+- **Setup:** Construct channel with mocked connectionManager (GrpcConnectionManager.dart provides connectionState Stream)
+- **Trigger:** connectionManager.connectionState.add(GrpcConnectionState.connected)
+- **Assert:** moduleStateService.trackActivity called at line 80; _sessionSub assigned at line 81; _sessionSink assigned at line 74; isConnected==true (line 40)
 
 #### should close session stream when connectionState=disconnected
 
-- **Setup:** Initialize in connected state
-- **Trigger:** connectionManager.connectionState.add(disconnected)
-- **Assert:** _sessionSub is cancelled; _sessionSink is closed; isConnected == false
+- **Setup:** Initialize in connected state (_sessionSub != null, _sessionSink != null)
+- **Trigger:** connectionManager.connectionState.add(GrpcConnectionState.disconnected)
+- **Assert:** _closeSessionStream called at line 60; _sessionSub cancelled at line 117; _sessionSink closed at line 119; isConnected==false (line 40 checks _sessionSub != null)
 
 #### should do nothing on connectionState=connecting
 
-- **Setup:** Construct channel
-- **Trigger:** connectionManager.connectionState.add(connecting)
-- **Assert:** No stream operations; _sessionSub and _sessionSink remain null (or unchanged)
+- **Setup:** Construct channel; _sessionSub=null, _sessionSink=null (initial state)
+- **Trigger:** connectionManager.connectionState.add(GrpcConnectionState.connecting)
+- **Assert:** switch case at line 61 hits break (no-op); _sessionSub and _sessionSink remain null
 
 #### should confirm connection on first successful proto event after backoff (confirmConnected called once)
 
-- **Setup:** Initialize with connected state
-- **Trigger:** Emit first StateResponse via trackActivity
-- **Assert:** connectionManager.confirmConnected() called exactly once; _backoffConfirmed toggled to true
+- **Setup:** Initialize with connected state (connectionState=connected, _openSessionStream called at line 58); _backoffConfirmed=false at line 73
+- **Trigger:** Emit first StateResponse via trackActivity stream
+- **Assert:** connectionManager.confirmConnected() called at line 85 exactly once; _backoffConfirmed set to true at line 84
 
 #### should not call confirmConnected again on subsequent events
 
-- **Setup:** Emit first event (confirmConnected called), then emit second event
-- **Trigger:** Receive events
-- **Assert:** confirmConnected called only once (guard at line 83-85)
+- **Setup:** Emit first StateResponse (confirmConnected called at line 85, _backoffConfirmed set to true at line 84), then emit second StateResponse
+- **Trigger:** Receive second event via stream.listen at line 82
+- **Assert:** confirmConnected not called again (guard at line 83: if (!_backoffConfirmed) fails because it's now true)
 
 #### should disconnect and schedule reconnect on session stream error
 
-- **Setup:** Initialize in connected state
-- **Trigger:** trackActivity stream.listen onError callback fires with exception
-- **Assert:** connectionManager.disconnect() called; connectionManager.scheduleReconnect() called; _sessionSub cancelled; log "[ModuleStateChannel] session stream error: ..."
+- **Setup:** Initialize in connected state (_sessionSub assigned at line 81)
+- **Trigger:** trackActivity stream fires onError callback with exception (line 101)
+- **Assert:** _closeSessionStream called at line 103; connectionManager.disconnect() at line 104 (GrpcConnectionManager.dart:93); connectionManager.scheduleReconnect() at line 105 (GrpcConnectionManager.dart:111); log at line 102: "[ModuleStateChannel] session stream error: $e"
 
 #### should disconnect and schedule reconnect on session stream done
 
-- **Setup:** Initialize in connected state
-- **Trigger:** trackActivity stream.listen onDone callback fires
-- **Assert:** connectionManager.disconnect() called; connectionManager.scheduleReconnect() called; _sessionSub cancelled; log "[ModuleStateChannel] session stream done"
+- **Setup:** Initialize in connected state (_sessionSub assigned at line 81)
+- **Trigger:** trackActivity stream fires onDone callback (line 107)
+- **Assert:** _closeSessionStream called at line 109; connectionManager.disconnect() at line 110 (GrpcConnectionManager.dart:93); connectionManager.scheduleReconnect() at line 111 (GrpcConnectionManager.dart:111); log at line 108: "[ModuleStateChannel] session stream done"
 
 #### should filter DISCONNECTED status silently (return without processing)
 
-- **Setup:** Emit StateResponse with sessionState.status=DISCONNECTED
-- **Trigger:** Receive event
-- **Assert:** _processProtoEvent returns early (line 90); no state change; no event emission
+- **Setup:** Emit StateResponse with sessionState.status=DISCONNECTED (proto enum value 2 at module_state.pbenum.dart:51–52)
+- **Trigger:** Receive event via stream.listen at line 82
+- **Assert:** switch at line 87 branches sessionState case (line 88), then line 90 check (event.status == proto.ActivityStatus.DISCONNECTED) is true, return statement at line 90 exits without calling _processProtoEvent; no state change; no event emission
 
 ### Group 8: Auth State Transitions
 
@@ -266,21 +267,21 @@ Both tests wrap `ModuleStateChannel` in a module-specific state channel (e.g., `
 
 #### should reset state when authStream emits GuestState
 
-- **Setup:** Initialize in active state with moduleSessionId='test'
-- **Trigger:** authStream.add(GuestState(...))
-- **Assert:** currentState == ModuleState.initial(); _isPendingStart=false, _isPendingPause=false
+- **Setup:** Initialize in active state with moduleSessionId='test' (ModuleState(moduleSessionId: 'test', status: active)); authStream listener at line 65
+- **Trigger:** authStream.add(GuestState(...)) (exact type from User/Models/AuthState.dart)
+- **Assert:** _reset() called at line 66; currentState == ModuleState.initial() (line 225); _isPendingStart=false (line 223), _isPendingPause=false (line 224)
 
 #### should not reset state when authStream emits AuthenticatedState
 
-- **Setup:** Initialize in active state
-- **Trigger:** authStream.add(AuthenticatedState(...))
-- **Assert:** currentState unchanged
+- **Setup:** Initialize in active state (currentState.status=active)
+- **Trigger:** authStream.add(AuthenticatedState(...)) (exact type from User/Models/AuthState.dart)
+- **Assert:** authStream listener at line 65 checks if (auth is GuestState) — false for AuthenticatedState, so _reset() not called; currentState unchanged
 
 #### should react to guest logout even if session stream is disconnected
 
-- **Setup:** Initialize, then trigger connectionState=disconnected
+- **Setup:** Initialize in active state; connectionManager.connectionState.add(GrpcConnectionState.disconnected) — _closeSessionStream called at line 60, _sessionSub=null, _sessionSink=null
 - **Trigger:** authStream.add(GuestState(...))
-- **Assert:** currentState reset to initial; no stream errors logged
+- **Assert:** _reset() called at line 66 regardless of connection state; currentState == ModuleState.initial() (line 225); _sendSessionRequest guard at line 206 prevents any attempted send
 
 ### Group 9: Request Sending — _sendSessionRequest Guard
 
@@ -288,15 +289,15 @@ Both tests wrap `ModuleStateChannel` in a module-specific state channel (e.g., `
 
 #### should drop request if _sessionSink is null (not connected)
 
-- **Setup:** Construct channel but keep connectionState=disconnected (_sessionSink=null)
-- **Trigger:** Call start(), pause(), unpause(), end(), stop()
-- **Assert:** Log "[ModuleStateChannel] not connected, dropping request"; _sessionSink.add never called
+- **Setup:** Construct channel; connectionState=disconnected (or never set to connected) — _sessionSink=null
+- **Trigger:** Call start(type: breath), pause(), unpause(), end(), or stop()
+- **Assert:** _sendSessionRequest called at lines 174, 180, 186, 194, 200 respectively; guard at line 206 (_sessionSink == null) is true; log at line 207: "[ModuleStateChannel] not connected, dropping request"; _sessionSink.add never executed
 
 #### should send request if _sessionSink is not null
 
-- **Setup:** Initialize in connected state
-- **Trigger:** Call start(type: breath, refId: 'sess-1')
-- **Assert:** _sessionSink.add(StateRequest) called exactly once; no log
+- **Setup:** Initialize in connected state; _sessionSink = StreamController<proto.StateRequest>() at line 74, not null
+- **Trigger:** Call start(type: ActivityType.breath, refId: 'sess-1') (line 165); _sendSessionRequest at line 174
+- **Assert:** Guard at line 206 (_sessionSink == null) is false; _sessionSink!.add(request) at line 210 called exactly once with StateRequest; no log produced
 
 ### Group 10: Disposal and Cleanup
 
@@ -304,46 +305,46 @@ Both tests wrap `ModuleStateChannel` in a module-specific state channel (e.g., `
 
 #### should cancel connectionState subscription on dispose
 
-- **Setup:** Construct and dispose
-- **Trigger:** Call connectionManager.connectionState.add(disconnected) after dispose
-- **Assert:** No stream operations occur; _closeSessionStream not called again
+- **Setup:** Construct channel (_connectionSub = ... at line 55); call dispose()
+- **Trigger:** Call connectionManager.connectionState.add(GrpcConnectionState.disconnected) after dispose
+- **Assert:** _connectionSub.cancel() at line 231 cancels the subscription; no listener fires; _openSessionStream or _closeSessionStream not called again
 
 #### should cancel authState subscription on dispose
 
-- **Setup:** Construct and dispose
+- **Setup:** Construct channel (_authSub = ... at line 65); call dispose()
 - **Trigger:** authStream.add(GuestState(...)) after dispose
-- **Assert:** _reset() not called; state unchanged
+- **Assert:** _authSub.cancel() at line 232 cancels the subscription; no listener fires; _reset() not called; state unchanged
 
 #### should close session stream on dispose
 
-- **Setup:** Initialize in connected state
-- **Trigger:** Call dispose()
-- **Assert:** _sessionSub cancelled; _sessionSink closed; isConnected == false
+- **Setup:** Initialize in connected state (_sessionSub != null, _sessionSink != null from _openSessionStream at line 58)
+- **Trigger:** Call dispose() (line 230)
+- **Assert:** _closeSessionStream() at line 233; _sessionSub.cancel() at line 117; _sessionSink.close() at line 119; isConnected==false (line 40 checks _sessionSub != null)
 
 #### should close state and events BehaviorSubject/PublishSubject on dispose
 
-- **Setup:** Construct channel
-- **Trigger:** Call dispose()
-- **Assert:** Listeners on state and events receive done event (stream closed); no further events can be emitted
+- **Setup:** Construct channel; attach listeners to state (line 25: _state.stream) and events (line 26: _events.stream)
+- **Trigger:** Call dispose() (line 230)
+- **Assert:** _state.close() at line 234 (BehaviorSubject<ModuleState>, line 22); _events.close() at line 235 (PublishSubject<ModuleStateEvent>, line 23); listeners receive done/close event; no further events can be emitted
 
 ## Gotchas
 
-1. **Int64 conversion:** clientTimestampMs is wrapped in `Int64(...)` in proto messages. Fake stream responses must also use Int64 for comparison.
+1. **Int64 conversion:** clientTimestampMs is wrapped in `Int64(...)` (line 172 in start(), line 193 in end()) before passing to ActivityStartCmd/ActivityEndCmd proto messages. Fake stream responses must also use Int64 (fixnum.Int64) for comparison (module_state.pb.dart:98, 155).
 
-2. **CallOptions metadata:** gRPC metadata is a Map<String, String>. The fake moduleStateService must capture the options parameter and expose it for assertion (e.g., via a recorded call log).
+2. **CallOptions metadata:** gRPC metadata is a Map<String, String>. At line 78, CallOptions(metadata: {'module-session-id': liveId}) creates the options map. The fake moduleStateService must capture the options parameter at line 80 (trackActivity call) and expose it for assertion (e.g., via a recorded call log).
 
-3. **Proto enum values:** ActivityStatus.ACTIVITY_STATUS_UNSPECIFIED is sentinel 0; RESUMED is 6. Both must be imported and used correctly in tests.
+3. **Proto enum values:** ActivityStatus values from module_state.pbenum.dart: ACTIVITY_STATUS_UNSPECIFIED=0 (line 47), ACTIVE=1 (line 49), DISCONNECTED=2 (line 51), COMPLETED=3 (line 53), ABANDONED=4 (line 55), INTERRUPTED=5 (line 57), RESUMED=6 (line 59). Must be imported as proto.ActivityStatus and used correctly in tests.
 
-4. **Backoff guard:** The `_backoffConfirmed` flag is set to false on _openSessionStream and toggled true on first response. Tests opening a new stream must emit at least one event to verify confirmConnected was called.
+4. **Backoff guard:** The `_backoffConfirmed` field (line 33) is set to false on _openSessionStream (line 73) and toggled true on first response (line 84). Tests opening a new stream must emit at least one StateResponse to verify confirmConnected was called at line 85.
 
-5. **DISCONNECTED filtering:** Line 90 returns early and **never calls _processProtoEvent**; this is a silent filter. Tests must verify no event emission, not just check for a no-op in _processProtoEvent.
+5. **DISCONNECTED filtering:** Line 90 returns early (if event.status == proto.ActivityStatus.DISCONNECTED) return; and **never calls _processProtoEvent** at line 91. This is a silent filter applied before _processProtoEvent. Tests must verify no event emission and no state change, not just check for a no-op in _processProtoEvent.
 
-6. **no_active_session demotion:** This error code resets state silently without emitting a ModuleStateEvent. Distinguish from other sessionError codes that should log and potentially trigger reconnect (not currently handled, but document as a gotcha).
+6. **no_active_session demotion:** This error code (checked at line 94: if (r.sessionError.code == 'no_active_session')) resets state silently at line 95 (state.add(ModuleState.initial())) without emitting a ModuleStateEvent (no events.add() call). Log is produced at line 93 for all sessionError responses. Distinguish from other sessionError codes that should log but currently don't trigger reconnect (per current implementation at lines 92–96).
 
-7. **Metadata attachment decision:** The guard at line 76–77 checks both `status == active` AND `liveId != null && liveId.isNotEmpty`. All three conditions must align for metadata to attach. Empty string is treated like null.
+7. **Metadata attachment decision:** The guard at lines 76–77 checks three conditions: (1) currentState.status == ModuleStateStatus.active (line 76), (2) liveId != null (line 77), (3) liveId.isNotEmpty (line 77). All three must be true for metadata to attach at line 78. Empty string is treated like null (line 77 condition fails on empty string).
 
-8. **Pending guards:** `_isPendingStart` and `_isPendingPause` prevent duplicate requests. Tests confirming these are cleared must observe that a *different* command works (e.g., after RESUMED clears _isPendingStart, a subsequent pause should be allowed even if it was previously guarded).
+8. **Pending guards:** `_isPendingStart` (line 31) and `_isPendingPause` (line 32) prevent duplicate requests. start() returns early at line 166 if (currentState.status == active || _isPendingStart). pause() returns early at line 178 if (currentState.isPaused || _isPendingPause). Tests confirming these are cleared must observe that a different command works (e.g., after RESUMED clears _isPendingStart at line 130, a subsequent pause should be allowed even if it was previously guarded).
 
-9. **Subscription lifetime:** The _connectionSub and _authSub are late-initialized in the constructor and must remain alive across connection cycles. Tests resetting state must verify subscriptions survive (e.g., by emitting another event post-reset).
+9. **Subscription lifetime:** The _connectionSub (late final at line 44) and _authSub (late final at line 45) are late-initialized in the constructor (lines 55, 65) and must remain alive across connection cycles. dispose() cancels them at lines 231–232. Tests resetting state must verify subscriptions survive (e.g., by emitting another event post-reset to confirm listeners still fire).
 
-10. **StateResponse.whichEvent():** This oneof discriminator determines which event type is populated. Must use the proto API correctly to create test responses with only one event set (sessionState, sessionError, or notSet).
+10. **StateResponse.whichEvent():** At line 87, r.whichEvent() is called on StateResponse (module_state.pb.dart:654–655). Returns StateResponse_Event enum (line 592): sessionState, sessionError, or notSet. Must use the proto API correctly to create test responses with only one event set. StateResponse factory at module_state.pb.dart:597 accepts sessionState and sessionError; use only one to match proto oneof semantics.
