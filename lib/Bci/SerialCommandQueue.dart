@@ -61,31 +61,22 @@ class SerialCommandQueue {
       return completer.future;
     }
 
-    _tail = _tail.then<void>(
-      (_) async {
-        // Re-check after previous command settled — close() may have been
-        // called between enqueue time and this slot becoming active.
-        if (_closed) {
-          completer.completeError(
-            QueueClosedException('SerialCommandQueue: command dropped (queue closed)'),
-          );
-          return;
-        }
-        try {
-          final result = await command();
-          completer.complete(result);
-        } catch (e, st) {
-          completer.completeError(e, st);
-        }
-      },
-      onError: (Object e, StackTrace st) {
-        // _tail is designed to never reject; this handler is a safety net.
-        // Drop the command and keep the queue alive.
+    _tail = _tail.then<void>((_) async {
+      // Re-check after previous command settled — close() may have been
+      // called between enqueue time and this slot becoming active.
+      if (_closed) {
         completer.completeError(
-          StateError('SerialCommandQueue: unexpected queue rejection: $e'),
+          QueueClosedException('SerialCommandQueue: command dropped (queue closed)'),
         );
-      },
-    );
+        return;
+      }
+      try {
+        final result = await command();
+        completer.complete(result);
+      } catch (e, st) {
+        completer.completeError(e, st);
+      }
+    });
 
     return completer.future;
   }
