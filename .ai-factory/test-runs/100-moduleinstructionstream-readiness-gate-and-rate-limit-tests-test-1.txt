@@ -1,0 +1,51 @@
+$ /usr/local/bin/flutter test test/Core/Grpc/module_instruction_stream_test.dart
+exit code: 0
+elapsed: 8.0s
+
+00:00 +0: loading /Users/max/projects/mind/mind_mobile/test/Core/Grpc/module_instruction_stream_test.dart
+00:00 +0: ModuleInstructionStream — connection-driven stream lifecycle should construct without throwing and report isConnected=false before any connection state is emitted
+00:00 +1: ModuleInstructionStream — connection-driven stream lifecycle should open the stream and report isConnected=true when connectionState emits connected
+00:00 +2: ModuleInstructionStream — connection-driven stream lifecycle should do nothing on connectionState=connecting (no streamData call, isConnected stays false)
+00:00 +3: ModuleInstructionStream — connection-driven stream lifecycle should call streamData again opening a fresh stream when connected is emitted after a disconnect
+00:00 +4: ModuleInstructionStream — pre-ready emit buffering should not write any sample to the gRPC request stream when emit is called before a ready frame is received
+00:00 +5: ModuleInstructionStream — pre-ready emit buffering should buffer multiple pre-ready emits without sending any of them to the wire
+00:00 +6: ModuleInstructionStream — ready frame drains outbox should drain all buffered samples to the request stream when a ready frame is received
+00:00 +7: ModuleInstructionStream — ready frame drains outbox should drain the outbox sorted by sample timestamp, not by emission order
+00:00 +8: ModuleInstructionStream — ready frame drains outbox should send a sample emitted after ready directly to the wire without buffering
+00:00 +9: ModuleInstructionStream — ready frame drains outbox should map InstructionSample fields onto the StreamSample that reaches the wire
+00:00 +10: ModuleInstructionStream — reconnect re-arms readiness gate should re-buffer a post-reconnect emit instead of sending it directly, proving _isReady was reset to false on reconnect
+00:00 +11: ModuleInstructionStream — reconnect re-arms readiness gate should clear the outbox on disconnect so buffered pre-ready samples are dropped and never sent after reconnect
+00:00 +12: ModuleInstructionStream — reconnect re-arms readiness gate should drain only post-reconnect buffered samples after the reconnect stream receives its own ready frame
+00:00 +13: ModuleInstructionStream — rate-limiting should drop the second sample when two emits occur less than 1000/maxSamplesPerSecond apart
+[20:03:14.79] [ModuleInstructionStream] over-cap, dropping sample
+00:00 +14: ModuleInstructionStream — rate-limiting should send both samples when the second emit is at least the minimum interval after the first
+00:00 +15: ModuleInstructionStream — rate-limiting should not apply the rate-limit to the first post-ready emit (no prior _lastSendTime)
+00:00 +16: ModuleInstructionStream — rate-limiting should reset the rate-limit timing on reconnect so the first emit after reconnect is never dropped
+00:00 +17: ModuleInstructionStream — rate-limiting should adopt maxSamplesPerSecond from a ready frame and apply the new interval to subsequent emits
+[20:03:14.81] [ModuleInstructionStream] over-cap, dropping sample
+00:00 +18: ModuleInstructionStream — rate-limiting should adopt maxSamplesPerSecond from an ack frame and apply the new interval to subsequent emits
+[20:03:14.82] [ModuleInstructionStream] over-cap, dropping sample
+00:00 +19: ModuleInstructionStream — 5 s fallback timer should flush buffered samples to the wire when 5 seconds elapse without a ready frame
+[20:03:14.83] [ModuleInstructionStream] readiness timeout — flushing without server ready
+00:00 +20: ModuleInstructionStream — 5 s fallback timer should treat the stream as ready after the fallback fires so a subsequent emit goes directly to the wire
+[20:03:14.83] [ModuleInstructionStream] readiness timeout — flushing without server ready
+00:00 +21: ModuleInstructionStream — 5 s fallback timer should not double-flush when a real ready frame arrives after the fallback already fired
+[20:03:14.84] [ModuleInstructionStream] readiness timeout — flushing without server ready
+00:00 +22: ModuleInstructionStream — 5 s fallback timer should not run the fallback flush when a ready frame arrives before 5 seconds elapse
+00:00 +23: ModuleInstructionStream — emit() connectivity guard and lazy open should drop the sample and not open a stream when emit is called while disconnected (sink null, not gRPC-connected)
+[20:03:14.85] [ModuleInstructionStream] not connected, dropping sample
+00:00 +24: ModuleInstructionStream — emit() connectivity guard and lazy open should open a stream lazily when emit is called while connected but no stream is open yet
+00:00 +25: ModuleInstructionStream — stream error and done paths should call disconnect and scheduleReconnect on the connection manager when the response stream errors
+[20:03:14.86] [ModuleInstructionStream] stream error: Exception: transport error
+00:00 +26: ModuleInstructionStream — stream error and done paths should call disconnect and scheduleReconnect when the response stream is done
+[20:03:14.86] [ModuleInstructionStream] stream done
+00:00 +27: ModuleInstructionStream — stream error and done paths should reset _isReady to false on stream error, verified by a subsequent emit buffering instead of sending
+[20:03:14.87] [ModuleInstructionStream] stream error: Exception: boom
+00:00 +28: ModuleInstructionStream — stream error and done paths should call confirmConnected exactly once on the first received frame and not again on the second
+00:00 +29: ModuleInstructionStream — dispose teardown should cancel the connection-state subscription on dispose, verified by emitting connected afterward and observing no new streamData call
+00:00 +30: ModuleInstructionStream — dispose teardown should close the request sink on dispose, verified by the captured request stream completing (onDone)
+00:00 +31: ModuleInstructionStream — dispose teardown should cancel the fallback timer on dispose so no flush occurs after disposal
+00:00 +32: ModuleInstructionStream — dispose teardown should be safe to call dispose without an open stream (no prior connection) and not throw
+00:00 +33: All tests passed!
+
+TEST_PASS
