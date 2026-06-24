@@ -9,9 +9,16 @@ final meditationSessionViewModelProvider =
 });
 
 class MeditationSessionViewModel extends Notifier<MeditationSessionState> {
-  MeditationSessionViewModel({required this.poseId});
+  MeditationSessionViewModel({
+    required this.poseId,
+    DateTime Function() clock = DateTime.now,
+    Timer Function(Duration, void Function(Timer)) timerFactory = Timer.periodic,
+  })  : _clock = clock,
+        _timerFactory = timerFactory;
 
   final String poseId;
+  final DateTime Function() _clock;
+  final Timer Function(Duration, void Function(Timer)) _timerFactory;
   final _stateController = StreamController<MeditationSessionState>.broadcast();
   final ValueNotifier<int> elapsedSeconds = ValueNotifier(0);
   Timer? _timer;
@@ -38,10 +45,10 @@ class MeditationSessionViewModel extends Notifier<MeditationSessionState> {
   }
 
   void start() {
-    _startedAt = DateTime.now();
+    _startedAt = _clock();
     elapsedSeconds.value = 0;
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      elapsedSeconds.value = DateTime.now().difference(_startedAt!).inSeconds;
+    _timer = _timerFactory(const Duration(seconds: 1), (_) {
+      elapsedSeconds.value = _clock().difference(_startedAt!).inSeconds;
     });
     state = state.copyWith(status: MeditationSessionStatus.active);
   }
