@@ -317,7 +317,7 @@ Consolidated findings of two independent reviews of the Phase 55 actor refactor.
 
 ## Test Infra
 
-- [ ] **Make `ModuleInstructionStream` testable: inject Clock for rate-limit timing** — `emit()` calls `DateTime.now()` directly on two lines for rate-limit enforcement (`_lastSendTime` comparison and assignment), making it impossible to test rate-limiting deterministically without real time passing. Add a `DateTime Function() clock` constructor parameter (default `DateTime.now`) matching the pattern used in `ActiveRrSource`. The fallback-timer Duration is already a constant. Test plan: `.ai-factory/notes/175-test-plan-module-instruction-stream.md`.
+- [x] **Make `ModuleInstructionStream` testable: inject Clock for rate-limit timing** — `emit()` calls `DateTime.now()` directly on two lines for rate-limit enforcement (`_lastSendTime` comparison and assignment), making it impossible to test rate-limiting deterministically without real time passing. Add a `DateTime Function() clock` constructor parameter (default `DateTime.now`) matching the pattern used in `ActiveRrSource`. The fallback-timer Duration is already a constant. Test plan: `.ai-factory/notes/175-test-plan-module-instruction-stream.md`. [4m 5s]
 
 - [ ] **Make `BiometricStreamClient` testable: inject Clock + cooldown/timeout Durations** — `_ensureSinkOpen` calls `DateTime.now()` twice for the 2 s reopen-cooldown check; the 5 s readiness fallback timer Duration is hardcoded. Add a `DateTime Function() clock` constructor parameter (default `DateTime.now`) and a `Duration readyTimeout` parameter (default `Duration(seconds: 5)`) so tests can drive both deterministically. Test plan: `.ai-factory/notes/176-test-plan-biometric-stream-client.md`.
 

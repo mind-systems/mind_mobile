@@ -13,6 +13,10 @@ class ModuleInstructionStream {
   final GrpcConnectionManager _connectionManager;
   final ModuleInstructionStreamServiceClient _instructionStreamService;
 
+  // ── Clock ─────────────────────────────────────────────────────────────────
+
+  final DateTime Function() _clock;
+
   // ── Connect flags ─────────────────────────────────────────────────────────
 
   bool _isGrpcConnected = false;
@@ -47,8 +51,10 @@ class ModuleInstructionStream {
   ModuleInstructionStream({
     required GrpcConnectionManager connectionManager,
     required ModuleInstructionStreamServiceClient instructionStreamService,
+    DateTime Function() clock = DateTime.now,
   })  : _connectionManager = connectionManager,
-        _instructionStreamService = instructionStreamService {
+        _instructionStreamService = instructionStreamService,
+        _clock = clock {
     _connectionSub = connectionManager.connectionState.listen((state) {
       switch (state) {
         case GrpcConnectionState.connected:
@@ -84,7 +90,7 @@ class ModuleInstructionStream {
     if (_isReady) {
       final minIntervalMs = 1000 ~/ _maxSamplesPerSecond;
       if (_lastSendTime != null &&
-          DateTime.now().difference(_lastSendTime!).inMilliseconds < minIntervalMs) {
+          _clock().difference(_lastSendTime!).inMilliseconds < minIntervalMs) {
         // Over-cap: drop. The cap is a best-effort guard — for the only current
         // consumer (breath) phase changes are seconds apart so this branch is
         // effectively never taken.
@@ -92,7 +98,7 @@ class ModuleInstructionStream {
         return;
       }
       _streamSink!.add(proto);
-      _lastSendTime = DateTime.now();
+      _lastSendTime = _clock();
     } else {
       _outbox.add(proto);
     }
