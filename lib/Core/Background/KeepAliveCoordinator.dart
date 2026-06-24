@@ -23,14 +23,14 @@ class KeepAliveCoordinator {
   // ignore: unused_field — held to keep the subscription alive (GC prevention)
   StreamSubscription<ModuleStateEvent>? _subscription;
 
-  void _onEvent(ModuleStateEvent event) {
+  Future<void> _onEvent(ModuleStateEvent event) async {
     switch (event) {
       case ModuleSessionStarted():
-        _foregroundKeepAlive.start();
+        await _foregroundKeepAlive.start();
       case ModuleSessionEnded():
-        _foregroundKeepAlive.stop();
+        await _foregroundKeepAlive.stop();
       case ModuleSessionAbandoned():
-        _foregroundKeepAlive.stop();
+        await _foregroundKeepAlive.stop();
       case ModuleSessionResumed():
         break;
       case ModuleSessionPaused():
