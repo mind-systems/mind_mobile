@@ -15,6 +15,7 @@ import 'package:mind/Biometrics/Models/RrInterval.dart';
 import 'package:mind/Biometrics/Models/MotionData.dart';
 
 import 'IBciDeviceProvider.dart';
+import 'SerialCommandQueue.dart';
 import 'Models/BciCalibrationEvent.dart';
 import 'Models/BciChannelQuality.dart';
 import 'Models/BciLinkStatus.dart';
@@ -44,7 +45,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   DevicePort? _device;
   ClassifierSet? _classifierSet;
   bool _disposed = false;
-  Future<void>? _teardownComplete;
+  final SerialCommandQueue _queue = SerialCommandQueue();
 
   NeiryBciProvider({
     LocatorPort Function()? locatorFactory,
@@ -115,7 +116,6 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
 
   @override
   Stream<List<BciDeviceInfo>> scan() async* {
-    try { await _teardownComplete; } catch (_) {}
     if (Platform.isIOS) {
       final status = await Permission.bluetooth.status;
       if (status.isPermanentlyDenied || status.isRestricted) {
@@ -150,39 +150,46 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       }
     }
 
-    yield* _locator.requestDevices(type: BciScanDeviceType.headband, searchTime: 5);
+    // Enqueue the requestDevices() call so it runs on whatever _locator exists
+    // *after* any in-flight teardown command completes (the fresh post-recreate
+    // locator). The yield* runs outside the queue slot — it does not block it.
+    final devicesStream = await _queue.enqueue(
+      () async => _locator.requestDevices(type: BciScanDeviceType.headband, searchTime: 5),
+    );
+    yield* devicesStream;
   }
 
   // ── connect() ───────────────────────────────────────────────────────────────
 
   @override
-  Future<void> connect(String serial) async {
-    try { await _teardownComplete; } catch (_) {}
-    if (_device != null) {
-      throw StateError(
-        'NeiryBciProvider: connect() called while already connected. '
-        'Call disconnect() first.',
-      );
-    }
-    _device = await _locator.createDevice(serial);
-    try {
-      await _device!.connect();
-      _classifierSet = _classifierFactory.build(_device!);
-      await _device!.start();
-    } catch (e) {
+  Future<void> connect(String serial) {
+    return _queue.enqueue(() async {
+      if (_device != null) {
+        throw StateError(
+          'NeiryBciProvider: connect() called while already connected. '
+          'Call disconnect() first.',
+        );
+      }
+      _device = await _locator.createDevice(serial);
       try {
-        await _classifierSet?.dispose();
-      } catch (_) {}
-      _classifierSet = null;
-      try {
-        await _device?.disconnect();
-        await _device?.dispose();
-      } catch (_) {}
-      _device = null;
-      await _resetLocatorSession();
-      rethrow;
-    }
-    _subscribeDeviceStreams();
+        await _device!.connect();
+        _classifierSet = _classifierFactory.build(_device!);
+        await _device!.start();
+      } catch (e) {
+        try {
+          await _classifierSet?.dispose();
+        } catch (_) {}
+        _classifierSet = null;
+        try {
+          await _device?.disconnect();
+          await _device?.dispose();
+        } catch (_) {}
+        _device = null;
+        await _resetLocatorSession();
+        rethrow;
+      }
+      _subscribeDeviceStreams();
+    });
   }
 
   void _subscribeDeviceStreams() {
@@ -373,6 +380,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   /// Does NOT touch [_calibrationSub] or the [StreamController]s — they must
   /// stay alive so reconnect can resume emitting.
   void _teardownAfterUnexpectedDrop() {
+    if (_disposed) return;
     final device = _device;
     final classifierSet = _classifierSet;
 
@@ -401,7 +409,7 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
     _emotionsErrorSub = null;
     _memsSub = null;
 
-    _teardownComplete = Future.microtask(() async {
+    unawaited(_queue.enqueue(() async {
       try {
         // Step 1: stopStream() = nativeUnregister + nativeStop — stops SDK background
         // threads before any Dart subscription is cancelled (Invariant A). Native side
@@ -437,7 +445,17 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       } finally {
         await _resetLocatorSession();
       }
-    });
+    }).catchError(
+      // A QueueClosedException here means dispose() closed the queue before this
+      // fire-and-forget teardown's slot ran. For the normal path _doDispose's
+      // terminal teardown owns cleanup. In the narrow dispose-races-an-in-flight-
+      // disconnect window, the device/subs captured (and nulled) above are a
+      // knowingly-accepted leak (see C1 reviews) — too rare to justify the riskier
+      // capture-inside-the-command fix, which would break the double-drop idempotency.
+      // Swallow only the drop; a real teardown-body error still surfaces (test: below).
+      (Object e) {},
+      test: (Object e) => e is QueueClosedException,
+    ));
   }
 
   Future<void> _cancelDeviceSubscriptions() async {
@@ -471,38 +489,39 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
   }
 
   @override
-  Future<void> disconnect() async {
-    try { await _teardownComplete; } catch (_) {}
-    // Step 1: stopStream() = nativeUnregister + nativeStop — stops SDK background
-    // threads before any Dart subscription is cancelled (Invariant A).
-    // Only called when streaming is active; calling it on an unstarted device throws.
-    if (_device?.isStarted == true) {
-      try {
-        await _device!.stopStream();
-      } catch (e) {
-        logPrint('NeiryBciProvider: stopStream error: $e');
+  Future<void> disconnect() {
+    return _queue.enqueue(() async {
+      // Step 1: stopStream() = nativeUnregister + nativeStop — stops SDK background
+      // threads before any Dart subscription is cancelled (Invariant A).
+      // Only called when streaming is active; calling it on an unstarted device throws.
+      if (_device?.isStarted == true) {
+        try {
+          await _device!.stopStream();
+        } catch (e) {
+          logPrint('NeiryBciProvider: stopStream error: $e');
+        }
       }
-    }
-    // Steps 2+3: cancel fan-in subscriptions and dispose classifier set.
-    // Safe — SDK threads are stopped, handle still alive (no nativeRelease yet).
-    await _cancelDeviceSubscriptions();
-    // Step 4: nativeDisconnect + nativeRelease (Invariant C).
-    try {
-      await _device?.disconnect();
-    } catch (e) {
-      logPrint('NeiryBciProvider: disconnect error: $e');
-    }
-    // Step 5: Dart cleanup — no-op on native (already disconnected above).
-    try {
-      await _device?.dispose();
-    } catch (e) {
-      logPrint('NeiryBciProvider: dispose error: $e');
-    }
-    _device = null;
-    await _resetLocatorSession();
-    // Emit explicitly — _connectionSub is already cancelled so the native
-    // disconnected event would be missed without this.
-    _connectionStateController.add(BciLinkStatus.down);
+      // Steps 2+3: cancel fan-in subscriptions and dispose classifier set.
+      // Safe — SDK threads are stopped, handle still alive (no nativeRelease yet).
+      await _cancelDeviceSubscriptions();
+      // Step 4: nativeDisconnect + nativeRelease (Invariant C).
+      try {
+        await _device?.disconnect();
+      } catch (e) {
+        logPrint('NeiryBciProvider: disconnect error: $e');
+      }
+      // Step 5: Dart cleanup — no-op on native (already disconnected above).
+      try {
+        await _device?.dispose();
+      } catch (e) {
+        logPrint('NeiryBciProvider: dispose error: $e');
+      }
+      _device = null;
+      await _resetLocatorSession();
+      // Emit explicitly — _connectionSub is already cancelled so the native
+      // disconnected event would be missed without this.
+      _connectionStateController.add(BciLinkStatus.down);
+    });
   }
 
   // ── dispose() ───────────────────────────────────────────────────────────────
@@ -515,7 +534,14 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
 
   Future<void> _doDispose() async {
     _disposed = true;
-    // Same invariant sequence as disconnect().
+    // Close the queue to new enqueues and drop any unstarted tail commands
+    // (poison-pill). Then wait for the currently-executing command (if any)
+    // to finish so the terminal teardown below does not interleave with it.
+    _queue.close();
+    await _queue.idle;
+
+    // Terminal teardown — same invariant sequence as disconnect(), but does
+    // NOT call _resetLocatorSession() (no locator recreate on the terminal path).
     if (_device?.isStarted == true) {
       try { await _device!.stopStream(); } catch (_) {}
     }
