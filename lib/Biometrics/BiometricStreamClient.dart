@@ -47,15 +47,26 @@ class BiometricStreamClient {
   /// re-arms for both cold-start and reconnect.
   bool _isReady = false;
 
-  /// Fires after 5 s if no `BioStreamReady` is received; drains the replay ring
-  /// so the client degrades gracefully against an un-upgraded server.
+  /// Fires after [_readyTimeout] if no `BioStreamReady` is received; drains the
+  /// replay ring so the client degrades gracefully against an un-upgraded server.
   Timer? _readyTimer;
+
+  /// Time source used for the 2-second reopen cooldown. Defaults to [DateTime.now].
+  final DateTime Function() _clock;
+
+  /// How long to wait for a `BioStreamReady` frame before draining the replay
+  /// ring without it. Defaults to 5 seconds.
+  final Duration _readyTimeout;
 
   BiometricStreamClient({
     required $bio.ModuleBiometricStreamServiceClient grpcStub,
     required Stream<ModuleStateEvent> moduleStateEvents,
     required Stream<GrpcConnectionState> connectionState,
-  }) : _grpcStub = grpcStub {
+    DateTime Function() clock = DateTime.now,
+    Duration readyTimeout = const Duration(seconds: 5),
+  })  : _grpcStub = grpcStub,
+        _clock = clock,
+        _readyTimeout = readyTimeout {
     _lifecycleSub = moduleStateEvents.listen(_onLifecycleEvent);
     _connectionSub = connectionState.listen((state) {
       switch (state) {
@@ -121,10 +132,10 @@ class BiometricStreamClient {
     if (_sink != null) return;
 
     if (_lastOpenAttempt != null &&
-        DateTime.now().difference(_lastOpenAttempt!) < const Duration(seconds: 2)) {
+        _clock().difference(_lastOpenAttempt!) < const Duration(seconds: 2)) {
       return;
     }
-    _lastOpenAttempt = DateTime.now();
+    _lastOpenAttempt = _clock();
 
     _isReady = false;
     _sink = StreamController<$bio.BioSampleBatch>();
@@ -163,7 +174,7 @@ class BiometricStreamClient {
       return;
     }
 
-    _readyTimer = Timer(const Duration(seconds: 5), () {
+    _readyTimer = Timer(_readyTimeout, () {
       if (!_isReady) {
         logPrint('[BiometricStreamClient] readiness timeout — draining without server ready');
         _isReady = true;
