@@ -1,0 +1,32 @@
+$ /usr/local/bin/flutter test test/Biometrics/biometric_stream_client_test.dart
+exit code: 0
+elapsed: 9.3s
+
+00:00 +0: loading /Users/max/projects/mind/mind_mobile/test/Biometrics/biometric_stream_client_test.dart
+00:00 +0: BiometricStreamClient — session gate should be a no-op when no session has started
+00:00 +1: BiometricStreamClient — session gate should send after ModuleSessionStarted confirms the session
+00:00 +2: BiometricStreamClient — session gate should be a no-op with an empty sample list when a session is confirmed
+00:00 +3: BiometricStreamClient — session gate should drop sendBatch after disconnect clears session confirmation
+00:00 +4: BiometricStreamClient — session gate should re-confirm and pass through on ModuleSessionResumed after a disconnect
+00:00 +5: BiometricStreamClient — pause does not gate sends should keep sending while paused
+00:00 +6: BiometricStreamClient — pause does not gate sends should keep sending after unpause
+00:00 +7: BiometricStreamClient — readiness gate and drain should buffer samples to the replay ring while the stream is open but not ready
+00:00 +8: BiometricStreamClient — readiness gate and drain should drain the buffered ring in FIFO order when the server emits ready
+00:00 +9: BiometricStreamClient — readiness gate and drain should send directly to the sink once ready
+00:00 +10: BiometricStreamClient — readiness gate and drain should not re-send drained samples
+00:00 +11: BiometricStreamClient — reconnect re-gates should re-gate after reconnect so post-reconnect samples buffer until a new ready
+00:00 +12: BiometricStreamClient — replay ring cap should retain exactly 75 samples and drop the oldest when over capacity
+00:00 +13: BiometricStreamClient — replay ring cap should preserve FIFO order of the retained window after dropping
+00:00 +14: BiometricStreamClient — reopen cooldown should open the stream on the first send without cooldown delay
+00:00 +15: BiometricStreamClient — reopen cooldown should not reopen within 2 s of a teardown
+00:00 +16: BiometricStreamClient — reopen cooldown should allow reopen after 2 s have elapsed
+00:00 +17: BiometricStreamClient — reopen cooldown should reset the cooldown on ModuleSessionStarted so stream reopens immediately
+00:00 +18: BiometricStreamClient — readiness fallback timer should auto-drain the replay ring when no ready arrives within readyTimeout
+[20:38:33.13] [BiometricStreamClient] readiness timeout — draining without server ready
+00:00 +19: BiometricStreamClient — readiness fallback timer should send directly after the fallback fires
+[20:38:33.15] [BiometricStreamClient] readiness timeout — draining without server ready
+00:00 +20: BiometricStreamClient — readiness fallback timer should log a readiness-timeout warning when the fallback fires
+00:00 +21: BiometricStreamClient — readiness fallback timer should NOT fire the fallback when ready arrives first
+00:00 +22: All tests passed!
+
+TEST_PASS
