@@ -1,0 +1,27 @@
+$ /usr/local/bin/flutter test test/MeditationModule/meditation_session_viewmodel_timer_test.dart
+exit code: 0
+elapsed: 7.5s
+
+00:00 +0: loading /Users/max/projects/mind/mind_mobile/test/MeditationModule/meditation_session_viewmodel_timer_test.dart
+00:00 +0: MeditationSessionViewModel — start() arming & clock capture should set status to active when start() is called
+00:00 +1: MeditationSessionViewModel — start() arming & clock capture should reset elapsedSeconds to 0 when start() is called
+00:00 +2: MeditationSessionViewModel — start() arming & clock capture should arm exactly one periodic timer with a 1-second interval when start() is called
+00:00 +3: MeditationSessionViewModel — start() arming & clock capture should capture _startedAt from clock() at start so the first fire counts from that instant
+00:00 +4: MeditationSessionViewModel — start() arming & clock capture should emit the active state to the stream when start() is called
+00:00 +5: MeditationSessionViewModel — timer callback wall-clock delta should set elapsedSeconds to the wall-clock delta on each timer fire
+00:00 +6: MeditationSessionViewModel — timer callback wall-clock delta should report 30 when clock advances 30s but only 5 callbacks fire
+00:00 +7: MeditationSessionViewModel — timer callback wall-clock delta should recompute from the delta and ignore externally mutated elapsedSeconds when a tick fires
+00:00 +8: MeditationSessionViewModel — timer callback wall-clock delta should read the same _startedAt for multiple fires in rapid succession with no clock change
+00:00 +9: MeditationSessionViewModel — timer callback wall-clock delta should monotonically increase elapsedSeconds across successive fires as the clock advances
+00:00 +10: MeditationSessionViewModel — stop() teardown should cancel the armed timer when stop() is called
+00:00 +11: MeditationSessionViewModel — stop() teardown should set status to idle when stop() is called
+00:00 +12: MeditationSessionViewModel — stop() teardown should preserve the last elapsedSeconds value after stop()
+00:00 +13: MeditationSessionViewModel — stop() teardown should emit the idle state to the stream when stop() is called
+00:00 +14: MeditationSessionViewModel — stop() teardown should clear _startedAt so no further elapsed updates occur after stop()
+00:00 +15: MeditationSessionViewModel — restart after stop() should reset elapsedSeconds to 0 when start() is called again after stop()
+00:00 +16: MeditationSessionViewModel — restart after stop() should re-arm a fresh periodic timer on restart
+00:00 +17: MeditationSessionViewModel — restart after stop() should re-capture _startedAt from the current clock on restart
+00:00 +18: MeditationSessionViewModel — restart after stop() should set status back to active on restart
+00:00 +19: All tests passed!
+
+TEST_PASS
