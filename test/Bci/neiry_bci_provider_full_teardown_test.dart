@@ -617,11 +617,13 @@ void main() {
 
     test(
       'throwing connection-sub cancel: propagates to finally; '
-      'recreate still reached; StateError surfaces as unhandled async error',
+      'recreate still reached; throwing cancel is logged and swallowed, '
+      'no unhandled async error',
       () async {
         // Zone binding: connect() must run in the same zone as the test body so
         // the stream listener is registered in that zone. The teardown microtask
-        // runs in the listener-time zone; unhandled rejections are delivered there.
+        // runs in the listener-time zone; the broadened catchError now catches the
+        // throw and logs it — no unhandled zone rejection is produced.
         final asyncErrors = <Object>[];
 
         final order = TeardownOrder();
@@ -669,14 +671,10 @@ void main() {
         expect(registry.liveCount, 1, reason: 'only L1 is live');
         registry.assertNoOrphan();
 
-        // The injected StateError surfaces as an unhandled async error.
-        expect(asyncErrors, isNotEmpty,
-            reason: 'throwing cancel should surface as unhandled async error in zone');
-        expect(
-          asyncErrors.any((e) => e is StateError),
-          isTrue,
-          reason: 'captured error should be the injected StateError',
-        );
+        // The injected StateError is now caught by the broadened catchError,
+        // logged via logPrint, and swallowed — no unhandled async error reaches the zone.
+        expect(asyncErrors, isEmpty,
+            reason: 'throwing cancel is now logged and swallowed, not surfaced as an unhandled async error');
 
         // cancel() threw after the inner cancel, so _connectionSub is cancelled.
         // But the remaining 9 fan-in subs and classifierSet were never

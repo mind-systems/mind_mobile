@@ -466,9 +466,14 @@ class NeiryBciProvider implements IBciDeviceProvider, IHeartRateSource, IRrInter
       // disconnect window, the device/subs captured (and nulled) above are a
       // knowingly-accepted leak (see C1 reviews) — too rare to justify the riskier
       // capture-inside-the-command fix, which would break the double-drop idempotency.
-      // Swallow only the drop; a real teardown-body error still surfaces (test: below).
-      (Object e) {},
-      test: (Object e) => e is QueueClosedException,
+      // Any other error (e.g. a throwing sub.cancel() or a recreate failure) is
+      // logged and swallowed — top-level safety net so teardown never escapes as an
+      // unhandled zone error.
+      (Object e) {
+        if (e is! QueueClosedException) {
+          logPrint('NeiryBciProvider: unexpected drop teardown error: $e');
+        }
+      },
     ));
   }
 
