@@ -16,7 +16,7 @@ import 'package:mind/Biometrics/SmoothedRrSource.dart';
 /// fire at the current [_currentPeriodMs]. This lets the cadence update on
 /// every genuine beat without restarting from scratch.
 ///
-/// Grace window: if no genuine beat arrives within [_coastGraceWindow] (10 s),
+/// Grace window: if no genuine beat arrives within the grace window (default 10 s),
 /// [_effectiveActive] flips to false. [SwitchableTickService] reacts and
 /// auto-falls back to [ClockTickService]. The metronome is NOT stopped — it
 /// coasts at the last known period so a reconnecting sensor restores the cadence
@@ -28,7 +28,9 @@ class HeartRateTickService implements ITickService {
   HeartRateTickService({
     required SmoothedRrSource smoothedRrSource,
     Timer Function(Duration, void Function()) timerFactory = Timer.new,
-  })  : _timerFactory = timerFactory {
+    Duration graceWindow = const Duration(seconds: 10),
+  })  : _timerFactory = timerFactory,
+        _graceWindow = graceWindow {
     // Seed effective-active from the current availability of the smoothed source.
     _effectiveActive = BehaviorSubject<bool>.seeded(smoothedRrSource.hasActiveSource);
 
@@ -51,8 +53,7 @@ class HeartRateTickService implements ITickService {
     _smoothedSub = smoothedRrSource.smoothedIntervalStream.listen(_onSmoothed);
   }
 
-  static const Duration _coastGraceWindow = Duration(seconds: 10);
-
+  final Duration _graceWindow;
   final Timer Function(Duration, void Function()) _timerFactory;
 
   late final BehaviorSubject<bool> _effectiveActive;
@@ -148,7 +149,7 @@ class HeartRateTickService implements ITickService {
 
   void _armGrace() {
     _graceTimer?.cancel();
-    _graceTimer = _timerFactory(_coastGraceWindow, _onGraceExpired);
+    _graceTimer = _timerFactory(_graceWindow, _onGraceExpired);
   }
 
   void _onGraceExpired() {
