@@ -8,6 +8,7 @@ import 'package:mind/Biometrics/Models/SensorSource.dart';
 
 import '../Models/BciNfbData.dart';
 import '../Models/BciEmotionsData.dart';
+import 'BuildAllOrDispose.dart';
 import 'ClassifierSet.dart';
 
 /// Thin adapter that wraps the four neiry classifiers and implements [ClassifierSet].
@@ -20,11 +21,33 @@ import 'ClassifierSet.dart';
 /// This is one of two files (with [NeiryClassifierFactory]) permitted to
 /// import `neiry_kit`.
 class NeiryClassifierSet implements ClassifierSet {
-  NeiryClassifierSet(neiry.Device device)
-      : _nfb = neiry.NfbClassifier(device),
-        _cardio = neiry.CardioClassifier(device),
-        _emotions = neiry.EmotionsClassifier(device),
-        _mems = neiry.MEMSClassifier(device);
+  factory NeiryClassifierSet(neiry.Device device) {
+    late final neiry.NfbClassifier nfb;
+    late final neiry.CardioClassifier cardio;
+    late final neiry.EmotionsClassifier emotions;
+    late final neiry.MEMSClassifier mems;
+    buildAllOrDispose([
+      () {
+        nfb = neiry.NfbClassifier(device);
+        return nfb.dispose;
+      },
+      () {
+        cardio = neiry.CardioClassifier(device);
+        return cardio.dispose;
+      },
+      () {
+        emotions = neiry.EmotionsClassifier(device);
+        return emotions.dispose;
+      },
+      () {
+        mems = neiry.MEMSClassifier(device);
+        return mems.dispose;
+      },
+    ]);
+    return NeiryClassifierSet._(nfb, cardio, emotions, mems);
+  }
+
+  NeiryClassifierSet._(this._nfb, this._cardio, this._emotions, this._mems);
 
   final neiry.NfbClassifier _nfb;
   final neiry.CardioClassifier _cardio;
