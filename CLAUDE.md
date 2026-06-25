@@ -14,14 +14,14 @@ The facade lives in `packages/mind_logger` (`package:mind_logger/mind_logger.dar
 ## Commands
 
 ```bash
-# Run (dev flavor)
-flutter run --flavor dev -t lib/main_dev.dart
+# Run (staging flavor)
+flutter run --flavor staging -t lib/main_staging.dart
 
 # Run (prod flavor)
 flutter run --flavor prod -t lib/main_prod.dart
 
 # Build APK
-flutter build apk --flavor dev -t lib/main_dev.dart --release
+flutter build apk --flavor staging -t lib/main_staging.dart --release
 flutter build apk --flavor prod -t lib/main_prod.dart --release
 
 # Run tests

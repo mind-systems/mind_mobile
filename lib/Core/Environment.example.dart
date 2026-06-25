@@ -47,35 +47,35 @@ class Environment {
 
   static Environment get instance => _instance;
 
-  static void initDev() {
+  static void initStaging() {
     _instance = Environment._(
-      name: 'Development',
-      deeplinkUrl: 'https://YOUR_DEV_DEEPLINK_URL',
-      linkDomain: 'YOUR_DEV_LINK_DOMAIN',
+      name: 'Staging',
+      deeplinkUrl: 'https://YOUR_STAGING_DEEPLINK_URL',
+      linkDomain: 'YOUR_STAGING_LINK_DOMAIN',
       iosBundleId: 'YOUR_DEV_IOS_BUNDLE_ID',
       androidPackageName: 'YOUR_DEV_ANDROID_PACKAGE_NAME',
       isProduction: false,
-      googleIosClientId: 'YOUR_DEV_IOS_CLIENT_ID.apps.googleusercontent.com',
-      googleAndroidClientId: 'YOUR_DEV_ANDROID_CLIENT_ID.apps.googleusercontent.com',
-      googleServerClientId: 'YOUR_DEV_SERVER_CLIENT_ID.apps.googleusercontent.com',
-      googleIosClientIdPlain: 'YOUR_DEV_IOS_CLIENT_ID',
-      googleServerClientIdPlain: 'YOUR_DEV_SERVER_CLIENT_ID',
-      googleOAuthCallbackScheme: 'com.googleusercontent.apps.YOUR_DEV_IOS_CLIENT_ID',
-      deeplinkScheme: 'mind-dev',
-      grpcHost: 'YOUR_DEV_GRPC_HOST',
+      googleIosClientId: 'YOUR_STAGING_IOS_CLIENT_ID.apps.googleusercontent.com',
+      googleAndroidClientId: 'YOUR_STAGING_ANDROID_CLIENT_ID.apps.googleusercontent.com',
+      googleServerClientId: 'YOUR_STAGING_SERVER_CLIENT_ID.apps.googleusercontent.com',
+      googleIosClientIdPlain: 'YOUR_STAGING_IOS_CLIENT_ID',
+      googleServerClientIdPlain: 'YOUR_STAGING_SERVER_CLIENT_ID',
+      googleOAuthCallbackScheme: 'com.googleusercontent.apps.YOUR_STAGING_IOS_CLIENT_ID',
+      deeplinkScheme: 'mind-staging',
+      grpcHost: 'YOUR_STAGING_GRPC_HOST',
       grpcPort: 443,
       grpcSecure: true,
-      apiBaseUrl: 'https://YOUR_DEV_API_URL',
+      apiBaseUrl: 'https://YOUR_STAGING_API_URL',
     );
-    if (kDebugMode) overrideForLocal();
+    if (kDebugMode) overrideForDev();
   }
 
-  static void overrideForLocal() {
-    _instance.grpcHost = 'YOUR_LOCAL_IP';
+  static void overrideForDev() {
+    _instance.grpcHost = 'YOUR_DEV_IP';
     _instance.grpcPort = 50051;
     _instance.grpcSecure = false;
-    _instance.apiBaseUrl = 'http://YOUR_LOCAL_IP:3001';
-    _instance.otlpEndpoint = 'http://YOUR_LOCAL_IP:3100/otlp/v1/logs';
+    _instance.apiBaseUrl = 'http://YOUR_DEV_IP:3001';
+    _instance.otlpEndpoint = 'http://YOUR_DEV_IP:3100/otlp/v1/logs';
   }
 
   static void initProd() {

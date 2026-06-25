@@ -59,7 +59,7 @@ class FakeUserRepository implements UserRepository {
 void main() {
   setUpAll(() {
     TestWidgetsFlutterBinding.ensureInitialized();
-    Environment.initDev();
+    Environment.initStaging();
   });
 
   late FakeUserRepository fakeRepo;

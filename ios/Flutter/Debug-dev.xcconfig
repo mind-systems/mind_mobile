@@ -1,5 +1,5 @@
 #include "Debug.xcconfig"
 
 REVERSED_CLIENT_ID=com.googleusercontent.apps.713251873631-nibqcan83cp6i5l722s556fr83pjn7qc
-DISPLAY_NAME=Mind Dev
-DEEPLINK_SCHEME=mind-dev
+DISPLAY_NAME=Mind Staging
+DEEPLINK_SCHEME=mind-staging

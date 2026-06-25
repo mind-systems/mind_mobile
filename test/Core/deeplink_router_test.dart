@@ -4,7 +4,7 @@ import 'package:mind/Core/Environment.dart';
 import 'package:mind/Core/Handlers/BreathSessionDeeplinkHandler.dart';
 
 void main() {
-  setUpAll(() => Environment.initDev());
+  setUpAll(() => Environment.initStaging());
 
   group('BreathSessionDeeplinkHandler', () {
     late BreathSessionDeeplinkHandler handler;

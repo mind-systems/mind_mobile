@@ -2,7 +2,7 @@ import 'package:mind/Core/App.dart';
 import 'package:mind/Core/Environment.dart';
 
 void main() async {
-  Environment.initDev();
+  Environment.initStaging();
 
   await App.initialize();
 }

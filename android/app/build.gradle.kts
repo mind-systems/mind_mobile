@@ -37,21 +37,16 @@ android {
             // Debug signing - используется по умолчанию для debug builds
         }
 
-        // Для dev flavor (development builds)
-        create("dev") {
+        // Для staging flavor
+        create("staging") {
             val keystorePropertiesFile = rootProject.file("keystore.properties")
-            if (keystorePropertiesFile.exists()) {
-                val keystoreProperties = Properties()
-                keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+            val keystoreProperties = Properties()
+            keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 
-                storeFile = file(keystoreProperties["devStoreFile"] as String)
-                storePassword = keystoreProperties["devStorePassword"] as String
-                keyAlias = keystoreProperties["devKeyAlias"] as String
-                keyPassword = keystoreProperties["devKeyPassword"] as String
-            } else {
-                // Fallback to debug signing если нет keystore.properties
-                println("⚠️  keystore.properties not found, using debug signing for dev")
-            }
+            storeFile = file(keystoreProperties["stagingStoreFile"] as String)
+            storePassword = keystoreProperties["stagingStorePassword"] as String
+            keyAlias = keystoreProperties["stagingKeyAlias"] as String
+            keyPassword = keystoreProperties["stagingKeyPassword"] as String
         }
 
         // Для prod release builds
@@ -75,15 +70,15 @@ android {
     flavorDimensions += "environment"
 
     productFlavors {
-        create("dev") {
+        create("staging") {
             dimension = "environment"
             applicationIdSuffix = ".dev"
-            versionNameSuffix = "-dev"
-            // Dev flavor ВСЕГДА использует dev signing config (критично для Google Sign-In SHA-1)
-            // Если keystore.properties нет, dev config будет пустой и сработает fallback на debug
+            versionNameSuffix = "-staging"
+            // Staging flavor ВСЕГДА использует staging signing config (критично для Google Sign-In SHA-1)
+            // Если keystore.properties нет, staging config будет пустой и сработает fallback на debug
             val keystorePropertiesFile = rootProject.file("keystore.properties")
             signingConfig = if (keystorePropertiesFile.exists()) {
-                signingConfigs.getByName("dev")
+                signingConfigs.getByName("staging")
             } else {
                 // Используем debug signing если нет keystore.properties
                 signingConfigs.getByName("debug")
@@ -98,8 +93,8 @@ android {
 
     // === SOURCE SETS для разных иконок ===
     // sourceSets {
-    //     getByName("dev") {
-    //         res.srcDirs("src/dev/res")
+    //     getByName("staging") {
+    //         res.srcDirs("src/staging/res")
     //     }
     //     getByName("main") {
     //         res.srcDirs("src/main/res")
@@ -109,8 +104,8 @@ android {
     buildTypes {
         debug {
             // Debug по умолчанию использует Android debug key
-            // Но для dev flavor будет переопределено ниже на dev key
-            signingConfig = signingConfigs.getByName("dev")
+            // Но для staging flavor будет переопределено ниже на staging key
+            signingConfig = signingConfigs.getByName("staging")
         }
 
         release {

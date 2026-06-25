@@ -75,13 +75,13 @@ URL scheme для Google Sign-In (reversed client ID) уже прописан в
 
 ```bash
 # Development
-flutter run --flavor dev -t lib/main_dev.dart
+flutter run --flavor staging -t lib/main_staging.dart
 
 # Production
 flutter run --flavor prod -t lib/main_prod.dart
 
 # Release builds
-flutter build apk --flavor dev -t lib/main_dev.dart --release
+flutter build apk --flavor staging -t lib/main_staging.dart --release
 flutter build apk --flavor prod -t lib/main_prod.dart --release
 ```
 
