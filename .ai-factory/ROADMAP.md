@@ -11,7 +11,7 @@ The breath "heart" tick path couples smoothing (`SmoothedRrSource`), staleness (
 
 ---STOP---
 
-## Breath lifecycle state machine — extract status/lifecycle from the tick FSM (TDD, Option A)
+## Phase 58 —  Breath lifecycle state machine — extract status/lifecycle from the tick FSM (TDD, Option A)
 
 The breath module has a mature **tick** FSM (`BreathSessionStateMachine` progression) but no real **lifecycle** FSM. `BreathSessionStatus {pause,breath,rest,complete}` (`BreathSessionState.dart:5`) is a Cartesian smear of (lifecycle × phase-kind): `pause` means BOTH "not started" AND "manually paused" — discriminated only by the out-of-band `_hasStarted` (`BreathSessionStateMachine.dart:83`) — and breath/rest is encoded twice (in `status` and in `phase`). "Is the activity live" is reconstructed **three times** — `_hasStarted` (SM), `_started/_ended` (`BreathModuleStateChannel`), `ModuleState{idle,active}` (server) — so keep-alive has no clean local/offline signal. Plan: derive a clean local `isLive`, migrate consumers onto it (fixing the offline keep-alive gap), then surgically extract an owned lifecycle FSM — all under a characterization golden master at the **activity boundary**, with the **output schema** (`BreathSessionState` fields) as the versioned contract. The server adapter (`BreathModuleStateChannel`) is **not** re-architected — it stays server-gated and merely stops parsing `status` meanings, receiving an explicit `stop|pause|play`. Phases unnumbered (fluid). Supersedes Phase 56 (note 162) — its audio fix folds into the consumer-migration task below.
 
@@ -37,8 +37,17 @@ The breath module has a mature **tick** FSM (`BreathSessionStateMachine` progres
 
 ---STOP---
 
-## Phase 58 — Meditation session screen layout
+## Phase 59 — Meditation session screen layout
 
 - [ ] **Swap timer and start button positions in `MeditationSessionScreen`** — Currently the `Expanded` center section renders [pose image → button] and the timer lives at the bottom (`Padding(bottom: 40)`). Swap so the center section renders [pose image → timer] and the button moves to the very bottom with the same `bottom: 40` padding. File: `packages/meditation_module/lib/src/MeditationSession/MeditationSessionScreen.dart`.
+
+---STOP---
+
+## Phase 60 — Module session notes migration
+
+Migrates the notes feature from the meditation-specific `MeditationNotesService` proto contract to the generic `ModuleSessionNotesService`. The local Drift layer and gRPC adapter are split into two independent tasks so the Drift rename can ship now without waiting for the backend.
+
+- [ ] **Rename local data layer: `MeditationNotes` → `ModuleSessionNotes`, drop `poseId` column** — Today `lib/Core/Database/MeditationNotesDao.dart` defines the `MeditationNotes` Drift table with a redundant `poseId` column (pose is already in `module_sessions.activityRefId`). Rename file → `ModuleSessionNotesDao.dart`, class → `ModuleSessionNotes`, DAO → `ModuleSessionNotesDao`, drop `poseId` column. Rename `MeditationNoteRepository` → `ModuleSessionNoteRepository` (remove `poseId` param from `save()`), `MeditationNoteService` → `ModuleSessionNoteService` (drop `_poseSlug` field, update `_syncToServer` to pass `poseId: ''` as a bridge to the old gRPC adapter), `IMeditationNoteService` → `IModuleSessionNoteService`. Update `Database.dart`: `schemaVersion` 5→6, part directive, `@DriftDatabase` annotation, migration step 5 (`DROP TABLE meditation_notes` + `createTable(moduleSessionNotes)`). Update `App.dart` and `MeditationModule.dart`. Run `build_runner build`. Spec: `.ai-factory/notes/11-module-session-notes-local-layer-rename.md`.
+- [ ] **Replace proto + rename gRPC adapter** — Blocked on mind_api Phase 53 task 1. Delete `proto/meditation_notes.proto`, copy `mind_api/proto/module_session_notes.proto`, run `scripts/gen_proto.sh`, delete old generated `meditation_notes.pb*.dart`. Rename `MeditationNotesGrpcApi` → `ModuleSessionNotesGrpcApi` (remove `poseId` param, update import to new stubs). In `GrpcClient.dart`: rename field + type to `ModuleSessionNotesServiceClient`. In `App.dart`: rename `meditationNotesGrpcApi` → `moduleSessionNotesGrpcApi`. In `ModuleSessionNoteService._syncToServer`: remove `poseId: ''` bridge, call `moduleSessionNotesGrpcApi` without `poseId`. Proto field invariant: `note_text` stays at field 4 in `ModuleSessionNote`, field 3 in `CreateNoteRequest` (gap at old `pose_id` position — never renumber). Spec: `.ai-factory/notes/12-module-session-notes-proto-grpc-rename.md`.
 
 ---STOP---
