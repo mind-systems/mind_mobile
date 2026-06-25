@@ -8,7 +8,9 @@
 idle ──(active)──▶ active ──(idle)──▶ idle
 ```
 
-Переход `idle → active` (нажатие Start) вызывает `channel.start(type: ActivityType.meditation, refId: poseUuid)`. Переход `active → idle` (нажатие Stop) вызывает `channel.end()`. Флаги `_started` и `_ended` гарантируют единственный вызов каждой команды за жизнь объекта. После каждого `active → idle` канал ре-армируется — следующее нажатие Start создаёт новую активность.
+Переход `idle → active` (нажатие Start) вызывает `channel.start(type: ActivityType.meditation, refId: poseUuid, clientTimestampMs: DateTime.now().millisecondsSinceEpoch)`. Переход `active → idle` (нажатие Stop) вызывает `channel.end(clientTimestampMs: DateTime.now().millisecondsSinceEpoch)`. Флаги `_started` и `_ended` гарантируют единственный вызов каждой команды за жизнь объекта. После каждого `active → idle` канал ре-армируется — следующее нажатие Start создаёт новую активность.
+
+Если сервер прислал событие `ABANDONED` (grace-период истёк), `MeditationModuleStateChannel` ре-армируется автоматически: сбрасывает `_started`, `_ended`, `_moduleSessionId` и `_previousStatus` без уничтожения объекта. Глобальный снекбар отображается через `GlobalListeners` — это общая реакция уровня приложения, не специфичная для медитации.
 
 `refId` — UUID позы из серверного каталога `meditation_poses`, не slug. `MeditationModule.buildSession()` разрешает slug в UUID через `App.shared.meditationPoseUuids` перед передачей в канал. UUID кэш заполняется при открытии списка поз через `MeditationListService.refresh()`.
 
@@ -42,6 +44,8 @@ idle ──(active)──▶ active ──(idle)──▶ idle
 | `activity:pause` / `activity:resume` | ✅ | ❌ |
 | Автопауза при уходе в фон | ✅ | ❌ — запись биометрики продолжается в фоне намеренно |
 | Ожидание `moduleSessionId` для flush инструкций | ✅ | ❌ |
+| `clientTimestampMs` в `start` / `end` | ✅ | ✅ |
+| Сброс при `ABANDONED` | ✅ | ✅ |
 
 Биометрический pipeline гейтируется теми же событиями `ModuleStateChannel` — дополнительной настройки не требуется.
 
@@ -52,9 +56,10 @@ MeditationSessionScreen
   └─ MeditationSessionViewModel.stream (idle / active)
         ↓ подписка в конструкторе
 MeditationModuleStateChannel
-  ├─ channel.start(type: meditation, refId: poseUuid)  ← при idle → active
-  ├─ channel.end()                                     ← при active → idle (+ ре-арм)
-  └─ _moduleSessionId ← из channel.state subscription
+  ├─ channel.start(type: meditation, refId: poseUuid, clientTimestampMs: now)  ← при idle → active
+  ├─ channel.end(clientTimestampMs: now)                                        ← при active → idle (+ ре-арм)
+  ├─ _moduleSessionId ← из channel.state subscription
+  └─ reset() при ModuleSessionAbandoned ← из channel.events subscription
 
 MeditationModule.buildSession()
   ├─ создаёт канал, подписывает на vm.stream

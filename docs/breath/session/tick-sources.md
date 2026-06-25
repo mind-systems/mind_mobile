@@ -5,7 +5,7 @@
 ## Контракты
 
 ```
-ITickService  — эмитит TickData(durationMs); принадлежит BreathViewModel
+ITickService  — эмитит TickData(intervalMs); принадлежит BreathViewModel
                source: TickSource  — идентификатор активного источника
                sourceChanges: Stream<TickSource>  — единая точка синхронизации смены источника
                trySwitchTo(TickSource): bool  — запрос на переключение; false если источник недоступен
@@ -21,7 +21,7 @@ ITickService  — эмитит TickData(durationMs); принадлежит Brea
 TickSource.timer → ClockTickService: Timer.periodic(1000 мс)
 ```
 
-Метроном на основе `Timer.periodic`. Первый тик вызывается немедленно через `simulateTick()` для инициализации начального состояния стейт-машины.
+Метроном на основе `Timer.periodic`, запускаемый через `simulateTick()`. Первый тик наступает через 1000 мс — нет мгновенного/prime-тика при старте.
 
 ### HeartRateTickService
 

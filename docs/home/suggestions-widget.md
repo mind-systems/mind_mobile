@@ -20,13 +20,17 @@ Enum `DayPeriod` — чистый Dart, без зависимости от Flutt
 
 `HomeViewModel` (Riverpod `Notifier`) запрашивает рекомендации и статистику при инициализации и хранит результат в `HomeState`. Виджеты `SuggestionsCard` и `StatsCard` подписаны на `homeViewModelProvider` и перестраиваются при изменении состояния.
 
+При сетевой ошибке (таймаут или gRPC `UNAVAILABLE`) флаг загрузки не сбрасывается — шиммер остаётся видимым. ViewModel ставит таймер с экспоненциальным откатом (база 2 с, максимум 30 с) и повторяет запрос. Такой подход предотвращает мигание пустого состояния при кратковременных сбоях сети. При любой другой ошибке флаг сбрасывается и ошибка публикуется в состоянии.
+
 Сервис также предоставляет `observeChanges()` — поток событий, на который подписан ViewModel:
 
 | Событие | Источник | Реакция ViewModel |
 |---------|----------|-------------------|
 | `StatsInvalidated` | Завершение сессии модуля (`ModuleSessionEnded` из `moduleStateChannel`) | Перезагрузка статистики |
-| `HomeSessionExpired` | `UserNotifier` перешёл в `GuestState` | Сброс состояния в начальное |
+| `HomeSessionExpired` | `UserNotifier` перешёл в `GuestState` | Отмена таймеров повтора, сброс состояния в начальное |
 | `HomeAuthenticated` | `UserNotifier` перешёл в `AuthenticatedState` | Загрузка рекомендаций и статистики |
+| `HomeAppResumed` | Приложение вышло из фона (`resumeStream`) | Перезагрузка рекомендаций и статистики |
+| `HomeGrpcReconnected` | gRPC-канал перешёл в `connected` из другого состояния (`connectionStateStream`) | Загрузка рекомендаций и статистики |
 
 Точка сборки — `HomeModule.buildHomeScreen()`. Метод создаёт конкретные `HomeService` и `HomeCoordinator`, инжектит зависимости из `App.shared` и возвращает `ProviderScope` с переопределённым `homeViewModelProvider`.
 

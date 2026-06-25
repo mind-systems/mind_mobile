@@ -52,7 +52,7 @@ fadeDurationMs = clamp(k × nextPhaseMs^0.65, minFadeMs, maxFadeMs)
 ```
 
 Константы: `k = 3.83`, `minFadeMs = 150`, `maxFadeMs = 1500`.  
-Ориентиры: 1 с → ≈160 мс, 4 с → ≈1000 мс, 8 с+ → 1500 мс (кап).
+Ориентиры: 1 с → ≈341 мс, 2 с → ≈536 мс, 4 с → ≈843 мс, 8 с → ≈1320 мс, ~10.5 с+ → 1500 мс (кап).
 
 ## Тик-звуки
 
@@ -69,13 +69,7 @@ TickSource.heartbeat → assets/audio/tick_heartbeat.ogg
 
 ## Фоновый режим
 
-`_BreathSessionScreenState` реализует `WidgetsBindingObserver`.
-
-| Событие жизненного цикла | Действие |
-|--------------------------|----------|
-| `AppLifecycleState.paused` | `soundCoordinator.suspend()` — глушит тики (`_isSuspended = true`), не трогает петлевые плееры; если сессия активна (`breath`/`rest`) — `viewModel.pause()`, что через `_onStateChanged` фейдирует петлю до 0 |
-| `AppLifecycleState.resumed` | `soundCoordinator.resume()` — следующий тик воспроизведётся нормально; сессия не возобновляется автоматически |
-| `AppLifecycleState.inactive` | Игнорируется — кратковременные прерывания (шторка уведомлений) не останавливают сессию |
+`_BreathSessionScreenState` не реализует `WidgetsBindingObserver` и не реагирует на события жизненного цикла приложения. Дыхательный цикл продолжает работать при переходе в фон: на iOS аудио-сессия удерживает процесс активным, на Android работает foreground service. Пауза возможна только по явному действию пользователя.
 
 ## Граница владения
 
@@ -88,6 +82,4 @@ BreathModule.buildSession()
 BreathSoundCoordinator
   ├─ подписан на BreathViewModel.stream (сырой поток, каждый тик)
   └─ подписан на tickService.tickStream (через ViewModel)
-
-suspend() / resume() ← вызываются из _BreathSessionScreenState.didChangeAppLifecycleState
 ```

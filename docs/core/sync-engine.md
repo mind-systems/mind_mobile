@@ -35,7 +35,7 @@ SyncApi (gRPC unary)              SyncGrpcListener (gRPC server-streaming)
 3. **Batch-рефетч** — upserts загружаются пачками по 50 через `SyncApi.fetchSessionsBatch()`, который вызывает `BreathSessionService/BatchGetSessions`.
 4. **Запись в Drift** — загруженные записи upsert'ятся, удалённые — удаляются.
 5. **Курсор** — `lastEventId` обновляется до максимального `id` среди обработанных событий (только если он больше текущего).
-6. **Инвалидация** — `breathSessionNotifier.invalidate()` сигнализирует ViewModels о необходимости перечитать данные из Drift.
+6. **Инвалидация** — `breathSessionNotifier.invalidate()` перечитывает Drift и немедленно публикует обновлённое состояние в потоке нотифаера.
 
 ## Cold Start Sync
 
@@ -52,7 +52,7 @@ SyncApi (gRPC unary)              SyncGrpcListener (gRPC server-streaming)
 3. Сбрасывает курсор до нуля.
 4. Инвалидирует `breathSessionNotifier`.
 
-Повторный рефетч не запускается — обычная пагинация подгружает данные по мере того, как пользователь просматривает список.
+Повторный рефетч не запускается автоматически — список сессий останется пустым до тех пор, пока UI не запросит `BreathSessionNotifier.refresh()`, который выполнит полный write-through синк с сервером и заново заполнит Drift.
 
 ## SyncGrpcListener
 
@@ -84,9 +84,10 @@ SyncApi (gRPC unary)              SyncGrpcListener (gRPC server-streaming)
 
 ```
 SyncApi(grpcClient.syncService, grpcClient.breathSessionService)
+  → BreathSessionNotifier.loadLocal()   ← seeds UI from Drift before any network call
   → SyncEngine(syncApi, syncStateDao, breathSessionDao, breathSessionNotifier, authStream: userNotifier.stream)
     → waitForColdStart (блокирует до 5 сек, если аутентифицирован)
   → SyncGrpcListener(syncService, syncEngine, syncStateDao, authStream: userNotifier.stream)
 ```
 
-`SyncGrpcListener` создаётся после завершения cold-start, поэтому стриминговая подписка открывается только тогда, когда начальный курсор уже установлен. Оба объекта живут всё время жизни приложения — явный dispose не требуется.
+`BreathSessionNotifier.loadLocal()` вызывается до запуска `SyncEngine`, поэтому список сессий заполняется из локального Drift-кэша немедленно — пользователь видит данные ещё до завершения сетевого синка. `SyncGrpcListener` создаётся после завершения cold-start, поэтому стриминговая подписка открывается только тогда, когда начальный курсор уже установлен. Оба объекта живут всё время жизни приложения — явный dispose не требуется.

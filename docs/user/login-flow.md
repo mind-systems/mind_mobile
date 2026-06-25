@@ -29,4 +29,15 @@
 
 ## Ошибки
 
+Ошибки логина — и Google, и OTP — передаются через единый `LoginError` enum. `LoginViewModel` принимает их через `onErrorEvent` и передаёт в координатор, который показывает локализованный снэкбар.
+
+### Google Sign-In
+
+`GoogleAuthProvider.getServerAuthCode()` различает три случая:
+- Пользователь отменил (`GoogleSignInCanceledException`) — логин прерывается без ошибки.
+- Сетевая ошибка GMS — выбрасывается `NoConnectionException`; `LoginViewModel` передаёт `LoginError.noConnection`.
+- Любая другая ошибка — `LoginError.googleSignInFailed`.
+
+### Email (OTP)
+
 Если аутентификация через диплинк падает, `AuthCodeDeeplinkHandler` показывает локализованный снэкбар напрямую через `rootScaffoldMessengerKey` — даже если экран входа уже закрыт. При превышении лимита попыток (`OtpLockedException`) отображается `loginTooManyAttemptsError`; для любой другой ошибки (истёкшая или уже использованная ссылка) — `loginCodeInvalidError`.
