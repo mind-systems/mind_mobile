@@ -245,28 +245,30 @@ When adding a new feature `FooModule`:
 | Feature | Hashes |
 |---------|--------|
 | **Breath** | |
-| Breathing session (phase state machine, pause/resume/restart, mute, screen blackout) | ad5be30 |
-| Session constructor (create and edit custom exercises) | |
-| Session list and library (pagination, starred, grouping) | b19b90a |
+| Breathing session (phase state machine, pause/resume/restart, mute, blackout, dot motion) | ad5be30 b17fe81 |
+| Session constructor (create and edit custom exercises) | 9e7d7d3 |
+| Session list and library (pagination, starred, offline-first Drift-backed, grouping) | b19b90a 123f982 52316c5 |
 | Session complexity indicator | 688c732 |
-| Breath session audio (crossfade, ticks, suspend/resume, mind_audio package) | d73bd27 8b343b2 |
-| Heart rate tick source (BLE-driven session timing) | f2b5f13 |
-| Meditation module (pose list, session tracking, lifecycle) | 31af4f8 |
+| Breath session audio (crossfade, ticks, suspend/resume, mind_audio package) | d73bd27 8b343b2 31aa876 |
+| Heart rate tick source (BLE-driven timing, smoothed-RR metronome, gap tolerance) | f2b5f13 67e57d5 |
+| Meditation module (pose list, session notes, tracking, lifecycle) | 31af4f8 ab5c6bf |
+| Session background keep-alive (iOS audio session + Android FGS, survive lock screen) | d12c85e |
 | **BCI** | |
-| BCI device pairing (scan, connect, impedance, calibration) | 4e489da |
-| BCI data screen (NFB bands, emotions, cardio, per-metric normalization) | 8b56a59 |
-| NFB calibration persistence (local cache + server sync, auto-restore on connect) | 7957993 |
-| Biometric streaming (router, batcher, gRPC sink, capability mixins) | 1675ada |
+| BCI device pairing (scan, connect, impedance, calibration, retry, sealed state hierarchy) | 4e489da cb7e4d2 55ef93b a15f7ee |
+| BCI data screen (NFB bands, emotions, cardio, horizontal bars, per-metric normalization) | 8b56a59 bc75a35 bea0dd2 |
+| NFB calibration persistence (local cache + server sync, individualPeakFrequency) | 7957993 f2e67d0 |
+| Biometric streaming (router, batcher, gRPC sink, session gating, pause-through) | 1675ada 3d33ac9 c1b661f |
 | **Auth & User** | |
-| Authentication (Google Sign-In + passwordless email OTP + lockout handling) | 06640c6 |
+| Authentication (Google Sign-In + passwordless OTP + lockout + guest-aware profile) | 06640c6 05efb61 d4d5315 |
 | Personal access tokens (MCP / API integrations) | 3bc36cb |
 | **HomeScreen & UX** | |
 | Time-of-day suggestions carousel | 95c5d6a |
 | App settings (theme, language, server sync) | 62a360f |
 | Session statistics | bdc8455 |
 | **Infrastructure** | |
-| gRPC API | 7a71587 |
-| Real-time data sync (sync engine, reconnect reload, shimmer placeholders) | 48fab6a e128ccc |
-| Live module session | 7199841 |
+| gRPC API (transport, keepalive, outbound traceparent) | 7a71587 8a297ba |
+| Real-time data sync (sync engine, reconnect reload, shimmer on errors) | 48fab6a e128ccc 8f9a2ee |
+| Live module session (readiness gate, eager tunnels, offset timeline, ABANDONED handling) | 7199841 bbab6bc b2dadbe d945f14 d165f37 |
+| Structured logging to Loki (OTLP sink, traceparent, mind_logger shared package) | 64402b8 |
 | **Internal** | |
-| Roadmap drop history | d73bd27 ece2859 |
+| Roadmap drop history | d73bd27 ece2859 7df3de2 756ab9d 7658cf5 1cb7df7 |
