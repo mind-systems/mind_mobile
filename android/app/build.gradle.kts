@@ -87,7 +87,7 @@ android {
 
         create("prod") {
             dimension = "environment"
-            // Prod использует signing из buildTypes (debug или release)
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -103,14 +103,10 @@ android {
 
     buildTypes {
         debug {
-            // Debug по умолчанию использует Android debug key
-            // Но для staging flavor будет переопределено ниже на staging key
-            signingConfig = signingConfigs.getByName("staging")
+            signingConfig = null
         }
 
         release {
-            // Prod использует release keystore
-            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -119,6 +115,14 @@ android {
         }
     }
 
+}
+
+androidComponents {
+    onVariants { variant ->
+        val flavor = variant.flavorName ?: return@onVariants
+        val configName = if (flavor == "staging") "staging" else "release"
+        variant.signingConfig?.setConfig(android.signingConfigs.getByName(configName))
+    }
 }
 
 flutter {
