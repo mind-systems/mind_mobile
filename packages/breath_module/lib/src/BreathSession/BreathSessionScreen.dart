@@ -31,7 +31,7 @@ class BreathSessionScreen extends ConsumerStatefulWidget {
 }
 
 class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late final BreathMotionEngine _motionEngine;
   late final BreathShapeShifter _shapeShifter;
   late final BreathAnimationCoordinator _coordinator;
@@ -47,6 +47,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     // Создаём motionEngine
     _motionEngine = BreathMotionEngine(this);
@@ -112,6 +113,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _coordinator.dispose();
     _orbCoordinator.dispose();
     _soundCoordinator.dispose();
@@ -119,6 +121,20 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
     _shapeShifter.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+        if (!ref.read(breathViewModelProvider).isLive) {
+          _soundCoordinator.suspend();
+        }
+      case AppLifecycleState.resumed:
+        _soundCoordinator.resume();
+      default:
+        break;
+    }
   }
 
   void _scrollToActive(String? activeStepId) {
