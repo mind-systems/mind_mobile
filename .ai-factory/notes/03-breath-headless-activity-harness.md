@@ -39,6 +39,20 @@ Confirm `IBreathSessionCoordinator` (`openConstructor`/`shareSession`/`dismiss`)
 - Do **NOT** reuse `BreathModule.buildSession` — it is `App.shared`-fused and returns a Widget.
 - Riverpod: dispose the `ProviderContainer` in `tearDown` so `BreathViewModel.build()`'s `ref.onDispose` (`BreathSessionViewModel.dart:77-88`) runs (cancels subs, disposes the SM + tick service).
 
+## Seam audit verdict
+
+Every dependency `BreathModule.buildSession()` injects is fakeable headless. Audit result for each seam:
+
+| Seam | Kind | How faked |
+|------|------|-----------|
+| `ITickService` | Declared abstract interface (`packages/breath_module/lib/src/ITickService.dart`) | `implements ITickService` — no `noSuchMethod` needed; all five members implemented explicitly |
+| `IBreathSessionService` | Declared abstract interface | `implements IBreathSessionService` — all four members implemented explicitly |
+| `IBreathSessionCoordinator` | Declared abstract interface | `implements IBreathSessionCoordinator` — all three members implemented explicitly |
+| `ModuleStateChannel` | **Concrete class** (not a declared abstract interface) | `implements ModuleStateChannel` + `noSuchMethod` override — Dart's implicit per-class interface mechanism; all callable members are either explicitly overridden or handled by `noSuchMethod` |
+| `BreathModuleInstructionStream` | **Concrete class** (not a declared abstract interface) | `implements BreathModuleInstructionStream` + `noSuchMethod` override — same mechanism as above |
+
+**Verdict: no interface extraction needed.** The existing fakes in `test/BreathModule/breath_module_state_channel_test.dart` (`_FakeChannel`, `_FakeInstructionStream`) and `test/BreathModule/Presentation/BreathSession/breath_session_state_machine_test.dart` (`FakeTickService`) and `test/BreathModule/Presentation/BreathSession/breath_view_model_publication_test.dart` (`_FakeCoordinator`, `_FakeSessionService`) prove all five seams are fakeable today. No touched consumer injects a concrete type that requires an additional interface extraction.
+
 ## Verify
 
 - Harness constructs under a plain `flutter test` with no platform bindings.
