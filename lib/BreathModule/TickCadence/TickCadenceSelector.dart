@@ -50,15 +50,18 @@ class TickCadenceSelector implements ITickCadenceSource {
   Stream<int> get smoothedPeriodMs => _periodController.stream;
 
   /// Delegates to the currently-selected source. When no source is usable,
-  /// falls back to `sources.first.currentPeriodMs` (with a single source this
-  /// is always [RrTickCadenceSource.currentPeriodMs], preserving the
-  /// construction-time seed for the metronome).
-  ///
-  /// TODO(note-164): With a second source (HR) the fallback should prefer
-  /// the highest-priority source that has a non-null snapshot rather than
-  /// unconditionally using sources.first. Revisit when HR source is added.
+  /// returns the snapshot of the first source (in priority order) that has a
+  /// non-null [currentPeriodMs], falling back to `sources.first.currentPeriodMs`
+  /// only if none have one yet (cold path).
   @override
-  int? get currentPeriodMs => (_activeSource ?? _sources.first).currentPeriodMs;
+  int? get currentPeriodMs {
+    if (_activeSource != null) return _activeSource!.currentPeriodMs;
+    for (final source in _sources) {
+      final ms = source.currentPeriodMs;
+      if (ms != null) return ms;
+    }
+    return _sources.first.currentPeriodMs;
+  }
 
   @override
   bool get isUsable => _isUsable.value;

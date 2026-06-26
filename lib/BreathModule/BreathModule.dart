@@ -9,6 +9,7 @@ import 'package:mind/BreathModule/BreathSessionService.dart';
 import 'package:mind/BreathModule/ClockTickService.dart';
 import 'package:mind/BreathModule/HeartRateTickService.dart';
 import 'package:mind/BreathModule/SwitchableTickService.dart';
+import 'package:mind/BreathModule/TickCadence/HeartRateTickCadenceSource.dart';
 import 'package:mind/BreathModule/TickCadence/RrTickCadenceSource.dart';
 import 'package:mind/BreathModule/TickCadence/TickCadenceSelector.dart';
 import 'package:mind/BreathModule/Core/BreathModuleStateChannel.dart';
@@ -33,7 +34,8 @@ class BreathModule {
   static Widget buildSession(BuildContext context, {required String sessionId}) {
     final clock = ClockTickService()..simulateTick();
     final rrCadence = RrTickCadenceSource(App.shared.smoothedRrSource);
-    final selector = TickCadenceSelector([rrCadence]);
+    final hrCadence = HeartRateTickCadenceSource(App.shared.heartRateSource);
+    final selector = TickCadenceSelector([rrCadence, hrCadence]); // index 0 = RR preferred, 1 = HR fallback
     final heart = HeartRateTickService(cadence: selector)..start();
     final tickService = SwitchableTickService(clock: clock, heart: heart);
     final service = BreathSessionService(notifier: App.shared.breathSessionNotifier, userNotifier: App.shared.userNotifier);
