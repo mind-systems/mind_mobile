@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mind_logger/mind_logger.dart';
 import '../ITickService.dart';
 import '../CommonModels/SetShape.dart';
+import 'BreathLifecycleMachine.dart';
 import 'Models/BreathExerciseDTO.dart';
 import 'Models/BreathSessionDTO.dart';
 import 'Models/BreathSessionState.dart';
@@ -86,7 +87,7 @@ class BreathSessionStateMachine {
   int _exerciseIndex = 0;
   int _repeatCounter = 0;
   int _cycleTick = 0;
-  bool _hasStarted = false;
+  final BreathLifecycleMachine _lifecycle = BreathLifecycleMachine();
 
   StreamSubscription<TickData>? _tickSubscription;
 
@@ -169,6 +170,7 @@ class BreathSessionStateMachine {
 
   void pause() {
     if (_state.status == BreathSessionStatus.complete) return;
+    _lifecycle.pause();
     // Full constructor to clear resetReason (copyWith cannot set nullable to null).
     _emit(BreathSessionStateMachineState(
       status: BreathSessionStatus.pause,
@@ -192,7 +194,8 @@ class BreathSessionStateMachine {
     // Emit ResetReason.start on the first activation only so animation
     // coordinators can initialize at origin. Subsequent resumes keep null,
     // preserving the resume-vs-start distinction.
-    final reason = _hasStarted ? null : ResetReason.start;
+    final reason = _lifecycle.isNotStarted ? ResetReason.start : null;
+    _lifecycle.run();
     // Full constructor to clear resetReason (copyWith cannot set nullable to null).
     _emit(BreathSessionStateMachineState(
       status: wasResting ? BreathSessionStatus.rest : BreathSessionStatus.breath,
@@ -208,10 +211,10 @@ class BreathSessionStateMachine {
       currentExerciseShape: _state.currentExerciseShape,
       nextExerciseShape: _state.nextExerciseShape,
     ));
-    _hasStarted = true;
   }
 
   void complete() {
+    _lifecycle.complete();
     // `remainingTicks: 0` — at completion no time remains in any phase. The
     // engine never emits a boundary 0 state during normal phase transitions
     // (it skips straight from the last tick into `_advanceExercise`), so the
@@ -240,10 +243,7 @@ class BreathSessionStateMachine {
 
   void _onTick(TickData tickData) {
     // No first emit here — currentIntervalMs is folded into the single emit below.
-    if (_state.status == BreathSessionStatus.pause ||
-        _state.status == BreathSessionStatus.complete) {
-      return;
-    }
+    if (!_lifecycle.isRunning) return;
 
     switch (_state.status) {
       case BreathSessionStatus.breath:
@@ -484,28 +484,9 @@ class BreathSessionStateMachine {
 
   // ===== Internal =====
 
-  /// Derives the lifecycle value from the emitted [status] and the current
-  /// [_hasStarted] flag, implementing the single source-of-truth derivation rule:
-  ///
-  ///   status == complete              → completed
-  ///   status ∈ {breath, rest}        → running  (independent of _hasStarted)
-  ///   status == pause && _hasStarted  → paused
-  ///   status == pause && !_hasStarted → notStarted
-  BreathLifecycle _lifecycleFor(BreathSessionStatus status) {
-    switch (status) {
-      case BreathSessionStatus.complete:
-        return BreathLifecycle.completed;
-      case BreathSessionStatus.breath:
-      case BreathSessionStatus.rest:
-        return BreathLifecycle.running;
-      case BreathSessionStatus.pause:
-        return _hasStarted ? BreathLifecycle.paused : BreathLifecycle.notStarted;
-    }
-  }
-
-  /// Stamps [newState] with the derived lifecycle before publishing.
+  /// Stamps [newState] with the current owned lifecycle before publishing.
   void _emit(BreathSessionStateMachineState newState) {
-    _state = newState.copyWith(lifecycle: _lifecycleFor(newState.status));
+    _state = newState.copyWith(lifecycle: _lifecycle.current);
     _stateController.add(_state);
   }
 

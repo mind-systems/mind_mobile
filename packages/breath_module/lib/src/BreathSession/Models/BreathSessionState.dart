@@ -7,12 +7,13 @@ enum BreathPhase { inhale, hold, exhale, rest }
 enum ResetReason { start, newCycle, rest, exerciseChange }
 enum SessionLoadState { loading, ready, error }
 
-/// Coarse lifecycle signal derived from `(status, _hasStarted)`.
+/// Coarse lifecycle signal owned by [BreathLifecycleMachine] and stamped onto
+/// each emission by the engine.
 ///
-/// - [notStarted] — session created, never resumed (status=pause, !_hasStarted).
-/// - [running] — actively breathing (status ∈ {breath, rest}).
-/// - [paused] — manually paused after at least one resume (status=pause, _hasStarted).
-/// - [completed] — session finished (status=complete).
+/// - [notStarted] — session created, never resumed.
+/// - [running] — actively breathing.
+/// - [paused] — manually paused after at least one resume.
+/// - [completed] — session finished.
 ///
 /// `isLive` is true for [running] and [paused] — the keep-alive window holds
 /// through a manual pause so biometric/tracking channels stay open.
@@ -48,7 +49,7 @@ class BreathSessionState {
   final SetShape? nextExerciseShape;
   final TickSource tickSource;
 
-  // Lifecycle signal (Phase 2 — derived from status + _hasStarted at emit time)
+  // Lifecycle signal (Phase 2 — sourced from BreathLifecycleMachine at emit time)
   final BreathLifecycle lifecycle;
 
   /// `true` while the session is actively running or manually paused.
