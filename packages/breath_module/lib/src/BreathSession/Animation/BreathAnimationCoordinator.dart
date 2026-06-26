@@ -43,7 +43,7 @@ class BreathAnimationCoordinator {
     } else {
       motionEngine.setRemainingPhaseTicks(0);
     }
-    motionEngine.setActive(state.status == BreathSessionStatus.breath);
+    motionEngine.setActive(state.lifecycle == BreathLifecycle.running && state.phase != BreathPhase.rest);
   }
 
   void _handleFirstReady(BreathSessionState state) {
@@ -82,7 +82,7 @@ class BreathAnimationCoordinator {
       _previousPhaseIndex = state.currentPhaseIndex;
     }
 
-    motionEngine.setActive(state.status == BreathSessionStatus.breath);
+    motionEngine.setActive(state.lifecycle == BreathLifecycle.running && state.phase != BreathPhase.rest);
   }
 
   void _onStateChanged(BreathSessionState state) {
@@ -98,7 +98,7 @@ class BreathAnimationCoordinator {
     }
 
     // 1. Activity
-    final shouldBeActive = state.status == BreathSessionStatus.breath;
+    final shouldBeActive = state.lifecycle == BreathLifecycle.running && state.phase != BreathPhase.rest;
     if (shouldBeActive != motionEngine.isActive) {
       if (shouldBeActive) {
         if (state.totalPhases > 0) {
@@ -124,7 +124,7 @@ class BreathAnimationCoordinator {
     }
 
     // 3. Phase structure and remaining ticks
-    if (state.status == BreathSessionStatus.breath && state.totalPhases > 0) {
+    if (state.lifecycle == BreathLifecycle.running && state.phase != BreathPhase.rest && state.totalPhases > 0) {
       motionEngine.setPhaseInfo(
         totalPhases: state.totalPhases,
         currentPhaseIndex: state.currentPhaseIndex,

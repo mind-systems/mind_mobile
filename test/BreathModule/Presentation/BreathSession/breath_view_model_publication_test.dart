@@ -5,10 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:breath_module/breath_module.dart'
     show
         BreathExerciseDTO,
+        BreathLifecycle,
         BreathPhase,
         BreathSessionDTO,
         BreathSessionState,
-        BreathSessionStatus,
         BreathStepDTO,
         BreathViewModel,
         IBreathSessionCoordinator,
@@ -230,7 +230,7 @@ void main() {
 
       // Two structural publications: phase flip (tick 2) + complete (tick 4).
       expect(published.length, 2);
-      expect(published.last.status, BreathSessionStatus.complete);
+      expect(published.last.lifecycle, BreathLifecycle.completed);
     });
   });
 

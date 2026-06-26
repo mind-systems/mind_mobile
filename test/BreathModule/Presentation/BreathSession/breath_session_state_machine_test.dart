@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:breath_module/breath_module.dart' show ITickService, TickData, TickSource, BreathSessionStateMachine, BreathSessionStateMachineState, BreathExerciseDTO, BreathSessionDTO, BreathSessionStatus, BreathStepDTO, BreathPhase;
+import 'package:breath_module/breath_module.dart' show ITickService, TickData, TickSource, BreathSessionStateMachine, BreathSessionStateMachineState, BreathExerciseDTO, BreathSessionDTO, BreathLifecycle, BreathStepDTO, BreathPhase;
 
 // ---------------------------------------------------------------------------
 // Fake tick service — emits ticks on demand
@@ -135,8 +135,8 @@ void main() {
 
         // Engine must be in complete state
         expect(
-          stateMachine.currentState.status,
-          BreathSessionStatus.complete,
+          stateMachine.currentState.lifecycle,
+          BreathLifecycle.completed,
           reason: 'Engine should reach complete status',
         );
 
@@ -180,7 +180,7 @@ void main() {
 
         await Future<void>.delayed(Duration.zero);
 
-        expect(stateMachine.currentState.status, BreathSessionStatus.complete);
+        expect(stateMachine.currentState.lifecycle, BreathLifecycle.completed);
         expect(() => stateMachine.currentExercise, returnsNormally);
         // Last valid exercise is ex2 (index 1)
         expect(stateMachine.currentExercise, same(ex2));
@@ -196,7 +196,7 @@ void main() {
       ticks = FakeTickService();
       stateMachine = BreathSessionStateMachine(session: session, tickService: ticks);
 
-      expect(stateMachine.currentState.status, BreathSessionStatus.pause);
+      expect(stateMachine.currentState.lifecycle, BreathLifecycle.notStarted);
     });
 
     test('resume transitions to breath status', () async {
@@ -208,7 +208,7 @@ void main() {
       ticks.tick();
       await Future<void>.delayed(Duration.zero);
 
-      expect(stateMachine.currentState.status, BreathSessionStatus.breath);
+      expect(stateMachine.currentState.lifecycle, BreathLifecycle.running);
     });
 
     test('pause stops tick processing', () async {
@@ -229,7 +229,7 @@ void main() {
 
       // Phase progress should not change while paused
       expect(stateMachine.currentState.phase, stateAfterPause.phase);
-      expect(stateMachine.currentState.status, BreathSessionStatus.pause);
+      expect(stateMachine.currentState.lifecycle, BreathLifecycle.paused);
     });
 
     test('complete() immediately sets status to complete', () {
@@ -239,7 +239,7 @@ void main() {
 
       stateMachine.complete();
 
-      expect(stateMachine.currentState.status, BreathSessionStatus.complete);
+      expect(stateMachine.currentState.lifecycle, BreathLifecycle.completed);
     });
 
     // -----------------------------------------------------------------------

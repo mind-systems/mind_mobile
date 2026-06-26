@@ -17,7 +17,7 @@ class BreathSoundCoordinator {
 
   void Function()? _stateListener;
   BreathPhase? _currentPhase;
-  BreathSessionStatus? _currentStatus;
+  BreathLifecycle? _currentLifecycle;
   bool _isSuspended = false;
   bool _isInitialized = false;
   bool _isDisposed = false;
@@ -101,7 +101,7 @@ class BreathSoundCoordinator {
     _looper.stop();
     _oneShot.stop();
     _currentPhase = null;
-    _currentStatus = null;
+    _currentLifecycle = null;
   }
 
   void toggleMute() {
@@ -111,7 +111,7 @@ class BreathSoundCoordinator {
       _looper.fadeOut(const Duration(milliseconds: 300));
       _oneShot.stop();
     } else {
-      if (_currentStatus == BreathSessionStatus.breath &&
+      if (_currentLifecycle == BreathLifecycle.running &&
           _currentPhase != null &&
           _phaseAssets.containsKey(_currentPhase)) {
         _looper.crossfadeTo(
@@ -152,28 +152,31 @@ class BreathSoundCoordinator {
       unawaited(_oneShot.load(AudioTrack(_tickAssets[_currentTickSource]!)));
     }
 
-    // 3. Status changes
-    if (state.status != _currentStatus) {
-      _currentStatus = state.status;
+    // 3. Lifecycle changes
+    if (state.lifecycle != _currentLifecycle) {
+      _currentLifecycle = state.lifecycle;
       // Track phase unconditionally so toggleMute restores the correct track.
-      final bool phaseChangedForBreath = state.status == BreathSessionStatus.breath &&
+      final bool phaseChangedForRunning = state.lifecycle == BreathLifecycle.running &&
           _phaseAssets.containsKey(state.phase) &&
           state.phase != _currentPhase;
-      if (phaseChangedForBreath) _currentPhase = state.phase;
+      if (phaseChangedForRunning) _currentPhase = state.phase;
       if (!isMuted.value) {
-        switch (state.status) {
-          case BreathSessionStatus.pause:
+        switch (state.lifecycle) {
+          case BreathLifecycle.notStarted:
+          case BreathLifecycle.paused:
             _looper.fadeOut(const Duration(milliseconds: 200));
-          case BreathSessionStatus.breath:
-            if (phaseChangedForBreath) {
+          case BreathLifecycle.completed:
+            _looper.fadeOut(const Duration(milliseconds: 500));
+          case BreathLifecycle.running:
+            if (state.phase == BreathPhase.rest) {
+              // Rest has no audio asset — fade out.
+              _looper.fadeOut(const Duration(milliseconds: 500));
+            } else if (phaseChangedForRunning) {
               final fadeDuration = _computeFadeDuration(state);
               _looper.crossfadeTo(_phaseOrder.indexOf(state.phase), fadeDuration);
             } else {
               _looper.fadeIn(const Duration(milliseconds: 200));
             }
-          case BreathSessionStatus.complete:
-          case BreathSessionStatus.rest:
-            _looper.fadeOut(const Duration(milliseconds: 500));
         }
       }
       return;
@@ -197,9 +200,9 @@ class BreathSoundCoordinator {
   void _onTick() {
     if (_isSuspended) return;
     if (isMuted.value) return;
-    final allowTick = _currentStatus == BreathSessionStatus.pause ||
-        _currentStatus == BreathSessionStatus.rest ||
-        (_currentStatus == BreathSessionStatus.breath &&
+    final allowTick = _currentLifecycle == BreathLifecycle.notStarted ||
+        _currentLifecycle == BreathLifecycle.paused ||
+        (_currentLifecycle == BreathLifecycle.running &&
             _currentPhase == BreathPhase.rest);
     if (!allowTick) return;
     _oneShot.play();

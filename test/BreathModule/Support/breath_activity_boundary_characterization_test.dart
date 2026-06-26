@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:breath_module/breath_module.dart'
-    show BreathSessionState, BreathSessionStatus, BreathPhase, ResetReason;
+    show BreathSessionState, BreathLifecycle, BreathPhase, ResetReason;
 import 'BreathActivityHarness.dart';
 import '../Fakes/BreathActivityFakes.dart';
 
@@ -10,7 +10,7 @@ import '../Fakes/BreathActivityFakes.dart';
 // Asserts only the fields the caller provides, so each call reads as an
 // input→output tuple:
 //
-//   expectState(s, status: BreathSessionStatus.breath, resetReason: ResetReason.start)
+//   expectState(s, lifecycle: BreathLifecycle.running, resetReason: ResetReason.start)
 //
 // resetReason uses a sentinel (_unset) so that:
 //   - expectState(s, resetReason: null)  → asserts s.resetReason == null
@@ -21,14 +21,14 @@ const _unset = Object();
 
 void expectState(
   BreathSessionState s, {
-  BreathSessionStatus? status,
+  BreathLifecycle? lifecycle,
   BreathPhase? phase,
   int? exerciseIndex,
   Object? resetReason = _unset,
   int? remainingTicks,
 }) {
-  if (status != null) {
-    expect(s.status, status, reason: 'status mismatch');
+  if (lifecycle != null) {
+    expect(s.lifecycle, lifecycle, reason: 'lifecycle mismatch');
   }
   if (phase != null) {
     expect(s.phase, phase, reason: 'phase mismatch');
@@ -70,7 +70,7 @@ void main() {
     );
     expectState(
       harness.states.first,
-      status: BreathSessionStatus.pause,
+      lifecycle: BreathLifecycle.notStarted,
       phase: BreathPhase.inhale,
       exerciseIndex: 0,
       remainingTicks: 2,
@@ -93,7 +93,7 @@ void main() {
         await pumpEventQueue();
         expectState(
           harness.states.last,
-          status: BreathSessionStatus.breath,
+          lifecycle: BreathLifecycle.running,
           phase: BreathPhase.inhale,
           resetReason: ResetReason.start,
         );
@@ -103,7 +103,7 @@ void main() {
         await pumpEventQueue();
         expectState(
           harness.states.last,
-          status: BreathSessionStatus.pause,
+          lifecycle: BreathLifecycle.paused,
           resetReason: null,
         );
 
@@ -112,7 +112,7 @@ void main() {
         await pumpEventQueue();
         expectState(
           harness.states.last,
-          status: BreathSessionStatus.breath,
+          lifecycle: BreathLifecycle.running,
           resetReason: null,
         );
       },
@@ -157,7 +157,7 @@ void main() {
         // Last emission must be complete at exerciseIndex=1 with remainingTicks=0
         expectState(
           harness.states.last,
-          status: BreathSessionStatus.complete,
+          lifecycle: BreathLifecycle.completed,
           exerciseIndex: 1,
           remainingTicks: 0,
         );
@@ -169,7 +169,7 @@ void main() {
 
         expectState(
           harness.states.last,
-          status: BreathSessionStatus.pause,
+          lifecycle: BreathLifecycle.notStarted,
           phase: BreathPhase.inhale,
           exerciseIndex: 0,
           remainingTicks: 2,
@@ -211,7 +211,7 @@ void main() {
         );
         expectState(
           harness.states.last,
-          status: BreathSessionStatus.pause,
+          lifecycle: BreathLifecycle.notStarted,
           phase: BreathPhase.inhale,
           exerciseIndex: 0,
           remainingTicks: 2,
@@ -243,7 +243,7 @@ void main() {
         );
         expectState(
           harness.states.last,
-          status: BreathSessionStatus.complete,
+          lifecycle: BreathLifecycle.completed,
         );
       },
     );

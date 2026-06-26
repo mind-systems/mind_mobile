@@ -101,7 +101,7 @@ class OrbAnimationCoordinator {
     }
 
     // Non-breath status (pause, complete, idle) — freeze orb at current position.
-    if (state.status != BreathSessionStatus.breath) {
+    if (!(state.lifecycle == BreathLifecycle.running && state.phase != BreathPhase.rest)) {
       _animController.stop();
       return;
     }

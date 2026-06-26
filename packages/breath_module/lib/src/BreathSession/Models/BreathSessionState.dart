@@ -2,7 +2,6 @@ import '../../CommonModels/SetShape.dart';
 import '../../CommonModels/TickSource.dart';
 import 'TimelineStep.dart';
 
-enum BreathSessionStatus { pause, breath, rest, complete }
 enum BreathPhase { inhale, hold, exhale, rest }
 enum ResetReason { start, newCycle, rest, exerciseChange }
 enum SessionLoadState { loading, ready, error }
@@ -21,7 +20,6 @@ enum BreathLifecycle { notStarted, running, paused, completed }
 
 class BreathSessionState {
   final SessionLoadState loadState;
-  final BreathSessionStatus status;
   final BreathPhase phase;
 
   /// Индекс текущего упражнения в сессии
@@ -60,7 +58,6 @@ class BreathSessionState {
 
   const BreathSessionState({
     required this.loadState,
-    required this.status,
     required this.phase,
     required this.exerciseIndex,
     required this.remainingTicks,
@@ -81,7 +78,6 @@ class BreathSessionState {
 
   factory BreathSessionState.initial() => const BreathSessionState(
     loadState: SessionLoadState.loading,
-    status: BreathSessionStatus.pause,
     phase: BreathPhase.inhale,
     exerciseIndex: 0,
     remainingTicks: 0,
@@ -116,7 +112,6 @@ class BreathSessionState {
   /// intact on the producer side.
   bool equalsIgnoringTickFields(BreathSessionState other) {
     return loadState == other.loadState &&
-        status == other.status &&
         phase == other.phase &&
         exerciseIndex == other.exerciseIndex &&
         activeStepId == other.activeStepId &&
@@ -134,7 +129,6 @@ class BreathSessionState {
 
   BreathSessionState copyWith({
     SessionLoadState? loadState,
-    BreathSessionStatus? status,
     BreathPhase? phase,
     int? exerciseIndex,
     int? remainingTicks,
@@ -156,7 +150,6 @@ class BreathSessionState {
   }) {
     return BreathSessionState(
       loadState: loadState ?? this.loadState,
-      status: status ?? this.status,
       phase: phase ?? this.phase,
       exerciseIndex: exerciseIndex ?? this.exerciseIndex,
       remainingTicks: remainingTicks ?? this.remainingTicks,

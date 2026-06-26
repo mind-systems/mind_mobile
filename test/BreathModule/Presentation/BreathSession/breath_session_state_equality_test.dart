@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:breath_module/breath_module.dart'
     show
         BreathSessionState,
-        BreathSessionStatus,
+        BreathLifecycle,
         BreathPhase,
         ResetReason,
         SessionLoadState,
@@ -28,7 +28,7 @@ final _sharedTimeline = <TimelineStep>[
 BreathSessionState _state({List<TimelineStep>? timelineSteps}) {
   return BreathSessionState(
     loadState: SessionLoadState.ready,
-    status: BreathSessionStatus.breath,
+    lifecycle: BreathLifecycle.running,
     phase: BreathPhase.exhale,
     exerciseIndex: 3,
     remainingTicks: 9,
@@ -71,7 +71,7 @@ void main() {
       final a = _state();
       final b = BreathSessionState(
         loadState: a.loadState,
-        status: a.status,
+        lifecycle: a.lifecycle,
         phase: a.phase,
         exerciseIndex: a.exerciseIndex,
         remainingTicks: a.remainingTicks,
@@ -97,7 +97,7 @@ void main() {
       final a = _state();
       final b = BreathSessionState(
         loadState: a.loadState,
-        status: a.status,
+        lifecycle: a.lifecycle,
         phase: a.phase,
         exerciseIndex: a.exerciseIndex,
         remainingTicks: 1,
@@ -137,9 +137,9 @@ void main() {
       expect(a.equalsIgnoringTickFields(b), isFalse);
     });
 
-    test('should return false when only status differs', () {
+    test('should return false when only lifecycle differs', () {
       final a = _state();
-      final b = a.copyWith(status: BreathSessionStatus.pause);
+      final b = a.copyWith(lifecycle: BreathLifecycle.paused);
       expect(a.equalsIgnoringTickFields(b), isFalse);
     });
 

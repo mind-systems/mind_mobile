@@ -247,12 +247,12 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
 
                       Consumer(
                         builder: (context, ref, _) {
-                          final (steps, activeStepId, status) = ref.watch(
+                          final (steps, activeStepId, lifecycle) = ref.watch(
                             breathViewModelProvider.select(
                               (s) => (
                                 s.timelineSteps,
                                 s.activeStepId,
-                                s.status,
+                                s.lifecycle,
                               ),
                             ),
                           );
@@ -263,7 +263,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
                               steps: steps,
                               activeStepId: activeStepId,
                               scrollController: _scrollController,
-                              status: status,
+                              lifecycle: lifecycle,
                               itemHeight: layout.itemHeight,
                               remainingTicksListenable:
                                   ref
@@ -276,15 +276,15 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
 
                       Consumer(
                         builder: (context, ref, _) {
-                          final (status, loadState) = ref.watch(
+                          final (lifecycle, loadState) = ref.watch(
                             breathViewModelProvider.select(
-                              (s) => (s.status, s.loadState),
+                              (s) => (s.lifecycle, s.loadState),
                             ),
                           );
                           return Padding(
                             padding: EdgeInsets.all(layout.buttonPadding),
                             child: _buildControlButton(
-                              status: status,
+                              lifecycle: lifecycle,
                               loadState: loadState,
                               viewModel: viewModel,
                               buttonSize: layout.buttonSize,
@@ -383,13 +383,13 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
   }
 
   Widget _buildControlButton({
-    required BreathSessionStatus status,
+    required BreathLifecycle lifecycle,
     required SessionLoadState loadState,
     required BreathViewModel viewModel,
     required double buttonSize,
     required double iconSize,
   }) {
-    if (status == BreathSessionStatus.complete) {
+    if (lifecycle == BreathLifecycle.completed) {
       return SizedBox(
         width: buttonSize,
         height: buttonSize,
@@ -407,7 +407,7 @@ class _BreathSessionScreenState extends ConsumerState<BreathSessionScreen>
       );
     }
 
-    final isPaused = status == BreathSessionStatus.pause;
+    final isPaused = lifecycle != BreathLifecycle.running;
     final isLoading = loadState != SessionLoadState.ready;
 
     return SizedBox(

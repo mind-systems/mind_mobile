@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:breath_module/breath_module.dart' show BreathSessionStatus;
+import 'package:breath_module/breath_module.dart' show BreathLifecycle, BreathPhase;
 import 'BreathActivityHarness.dart';
 
 void main() {
@@ -35,13 +35,13 @@ void main() {
         // it reaches complete status. Both must appear in the recorded sequence.
 
         expect(
-          harness.states.any((s) => s.status == BreathSessionStatus.breath),
+          harness.states.any((s) => s.lifecycle == BreathLifecycle.running && s.phase != BreathPhase.rest),
           isTrue,
           reason: 'state sequence should contain at least one breath status',
         );
         expect(
-          harness.states.last.status,
-          BreathSessionStatus.complete,
+          harness.states.last.lifecycle,
+          BreathLifecycle.completed,
           reason: 'final state must be complete',
         );
 

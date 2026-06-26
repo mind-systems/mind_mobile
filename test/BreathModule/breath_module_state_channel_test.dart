@@ -9,7 +9,7 @@ import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
 import 'package:mind/BreathModule/Core/BreathModuleInstructionStream.dart';
 import 'package:mind/BreathModule/Core/BreathModuleStateChannel.dart';
 import 'package:breath_module/breath_module.dart'
-    show BreathSessionState, BreathSessionStatus, BreathLifecycle, BreathPhase, SessionLoadState;
+    show BreathSessionState, BreathLifecycle, BreathPhase, SessionLoadState;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Fakes
@@ -100,30 +100,16 @@ class _FakeStopwatch implements Stopwatch {
 /// are scoped to lifecycle tests; neither field is read by _handleLifecycle.
 /// Revisit when instruction-stream tests are added — the real initial state
 /// uses currentIntervalMs: -1, and positive defaults may mask off-by-one bugs.
-///
-/// [lifecycle] is derived from [status] when not explicitly provided:
-///   breath | rest → running, complete → completed, pause → paused.
-/// A single faked `pause` state cannot distinguish [BreathLifecycle.notStarted]
-/// from [BreathLifecycle.paused], but the channel treats both identically in the
-/// "was inactive" check — so `pause → paused` is the correct default and the
-/// only constraint (a pause following an active state must be `paused`) is
-/// satisfied because the real state machine stamps `paused` in that case.
 BreathSessionState _state({
-  required BreathSessionStatus status,
+  required BreathLifecycle lifecycle,
   BreathPhase phase = BreathPhase.inhale,
   int exerciseIndex = 0,
   SessionLoadState loadState = SessionLoadState.ready,
   int currentIntervalMs = 4000,
   int currentPhaseTotalDuration = 1,
 }) {
-  final lifecycle = switch (status) {
-    BreathSessionStatus.breath || BreathSessionStatus.rest => BreathLifecycle.running,
-    BreathSessionStatus.complete => BreathLifecycle.completed,
-    BreathSessionStatus.pause => BreathLifecycle.paused,
-  };
   return BreathSessionState(
     loadState: loadState,
-    status: status,
     phase: phase,
     exerciseIndex: exerciseIndex,
     remainingTicks: 0,
@@ -214,7 +200,7 @@ void main() {
       'should call channel.start with ActivityType.breath and the constructor sessionId when the first emitted state has status=breath',
       () async {
         final f = _make(sessionId: 'my-session');
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.startCalls, hasLength(1));
@@ -229,9 +215,9 @@ void main() {
       'should call channel.start with ActivityType.breath and the constructor sessionId when transitioning from pause to breath for the first time',
       () async {
         final f = _make(sessionId: 'my-session');
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.startCalls, hasLength(1));
@@ -246,7 +232,7 @@ void main() {
       'should not call unpause or pause when start is dispatched on the first active transition',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.unpauseCount, 0);
@@ -260,9 +246,9 @@ void main() {
       'should not re-invoke start when the same breath state is emitted twice in a row',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.startCalls, hasLength(1));
@@ -279,11 +265,11 @@ void main() {
       'should call unpause exactly once when transitioning pause -> breath after start has already happened',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.unpauseCount, 1);
@@ -296,11 +282,11 @@ void main() {
       'should call unpause exactly once when transitioning pause -> rest after start has already happened',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.rest));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.unpauseCount, 1);
@@ -313,11 +299,11 @@ void main() {
       'should not call start again on a pause -> breath transition once a session has already been started',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         // start called once (initial), not again on resume
@@ -331,7 +317,7 @@ void main() {
       'should call start (not unpause) when the very first emission is status=rest with no prior emission',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.rest));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.startCalls, hasLength(1));
@@ -345,9 +331,9 @@ void main() {
       'should not call start, unpause, or pause when transitioning breath -> rest while active',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.rest));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         // Only one start call total (from the initial breath emission)
@@ -363,11 +349,11 @@ void main() {
       'should not call start, unpause, or pause when transitioning rest -> breath while active',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.rest));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         // Only one start call total; active↔active transitions are silent
@@ -387,9 +373,9 @@ void main() {
       'should call channel.pause exactly once when transitioning breath -> pause',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.pauseCount, 1);
@@ -402,11 +388,11 @@ void main() {
       'should call channel.pause exactly once when transitioning rest -> pause',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.rest));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.pauseCount, 1);
@@ -419,7 +405,7 @@ void main() {
       'should not call pause when the very first emission is status=pause (wasActive=false short-circuits the pause branch)',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.pauseCount, 0);
@@ -432,9 +418,9 @@ void main() {
       'should not call pause when transitioning pause -> pause (status-unchanged short-circuit at the top of _handleLifecycle)',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.pauseCount, 0);
@@ -451,9 +437,9 @@ void main() {
       'should call channel.end exactly once when transitioning breath -> complete',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.complete));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.completed));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.endCount, 1);
@@ -466,11 +452,11 @@ void main() {
       'should call channel.end exactly once when transitioning rest -> complete',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.rest));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.complete));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.completed));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.endCount, 1);
@@ -483,11 +469,11 @@ void main() {
       'should call channel.end exactly once when transitioning pause -> complete after the session was started',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.complete));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.completed));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.endCount, 1);
@@ -500,11 +486,11 @@ void main() {
       'should not call channel.end on a second complete emission (status-unchanged short-circuit)',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.complete));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.completed));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.complete));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.completed));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.endCount, 1);
@@ -517,7 +503,7 @@ void main() {
       'should not call channel.end when complete is emitted before any start (the _started guard in the complete branch suppresses end)',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.complete));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.completed));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.endCount, 0);
@@ -530,13 +516,13 @@ void main() {
       'should not call channel.end a second time when a complete -> pause -> complete sequence is emitted (the _ended guard prevents duplicate end)',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.complete));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.completed));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.complete));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.completed));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.endCount, 1);
@@ -554,7 +540,7 @@ void main() {
       () async {
         final f = _make();
         f.stateCtrl.add(_state(
-          status: BreathSessionStatus.breath,
+          lifecycle: BreathLifecycle.running,
           loadState: SessionLoadState.loading,
         ));
         await Future<void>.delayed(Duration.zero);
@@ -569,10 +555,10 @@ void main() {
       'should not call pause when a state with status=pause and loadState=loading is emitted between two ready breath states',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
         f.stateCtrl.add(_state(
-          status: BreathSessionStatus.pause,
+          lifecycle: BreathLifecycle.paused,
           loadState: SessionLoadState.loading,
         ));
         await Future<void>.delayed(Duration.zero);
@@ -587,10 +573,10 @@ void main() {
       'should not call end when a state with status=complete and loadState=error is emitted',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
         f.stateCtrl.add(_state(
-          status: BreathSessionStatus.complete,
+          lifecycle: BreathLifecycle.completed,
           loadState: SessionLoadState.error,
         ));
         await Future<void>.delayed(Duration.zero);
@@ -605,16 +591,16 @@ void main() {
       'should not update _previousStatus when a non-ready emission is filtered, verified by emitting ready breath -> non-ready pause -> ready breath and asserting no unpause call was dispatched between the two breath emissions',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
         // Non-ready pause is filtered; _previousStatus must stay breath
         f.stateCtrl.add(_state(
-          status: BreathSessionStatus.pause,
+          lifecycle: BreathLifecycle.paused,
           loadState: SessionLoadState.loading,
         ));
         await Future<void>.delayed(Duration.zero);
         // If _previousStatus had been updated to pause, this breath would trigger unpause
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.unpauseCount, 0);
@@ -627,16 +613,16 @@ void main() {
       'should resume dispatching lifecycle calls correctly once a ready emission follows a filtered one, verified by ready breath -> non-ready breath -> ready pause emitting exactly one pause',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
         // Non-ready breath is filtered; _previousStatus stays breath
         f.stateCtrl.add(_state(
-          status: BreathSessionStatus.breath,
+          lifecycle: BreathLifecycle.running,
           loadState: SessionLoadState.loading,
         ));
         await Future<void>.delayed(Duration.zero);
         // Ready pause — wasActive (previousStatus=breath) triggers pause
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.pauseCount, 1);
@@ -664,7 +650,7 @@ void main() {
       () async {
         final f = _make();
         f.stateCtrl.add(_state(
-          status: BreathSessionStatus.breath,
+          lifecycle: BreathLifecycle.running,
           loadState: SessionLoadState.loading,
         ));
         await Future<void>.delayed(Duration.zero);
@@ -678,7 +664,7 @@ void main() {
       'should call channel.stop exactly once when dispose is invoked while the session is started and not yet ended (breath -> dispose)',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
         f.target.dispose();
 
@@ -690,9 +676,9 @@ void main() {
       'should call channel.stop exactly once when dispose is invoked while the session is paused after being started (breath -> pause -> dispose)',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
         f.target.dispose();
 
@@ -704,9 +690,9 @@ void main() {
       'should not call channel.stop when dispose is invoked after the session has already completed (breath -> complete -> dispose)',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.complete));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.completed));
         await Future<void>.delayed(Duration.zero);
         f.target.dispose();
 
@@ -718,11 +704,11 @@ void main() {
       'should not dispatch any further lifecycle calls when state emissions arrive after dispose has run',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
         f.target.dispose();
         // _stateSub is cancelled; further emissions must not reach _onState
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.pauseCount, 0);
@@ -737,12 +723,12 @@ void main() {
       'should call channel.start (not unpause) on the next breath emission after reset, even if the session had previously been started',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused));
         await Future<void>.delayed(Duration.zero);
         f.target.reset();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         // start called twice (initial + post-reset); unpause never called
@@ -757,10 +743,10 @@ void main() {
       'should call channel.start (not unpause) on the next rest emission after reset, exercising the wasPaused=null branch',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
         f.target.reset();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.rest));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.startCalls, hasLength(2));
@@ -774,10 +760,10 @@ void main() {
       'should not call channel.end when complete is emitted after reset with no fresh start in between',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
         f.target.reset();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.complete));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.completed));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.channel.endCount, 0);
@@ -791,13 +777,13 @@ void main() {
       () async {
         final f = _make();
         // Pre-reset: start a session
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
         expect(f.channel.startCalls, hasLength(1));
         // Reset — subscriptions stay alive
         f.target.reset();
         // Post-reset: drive another breath on the exact same stateCtrl
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
         // Second start call proves the subscription survived reset
         expect(f.channel.startCalls, hasLength(2));
@@ -820,10 +806,10 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         // Prime _previousPhase and _previousExerciseIndex
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Phase change: inhale → exhale
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 5000, currentPhaseTotalDuration: 3));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 5000, currentPhaseTotalDuration: 3));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
@@ -841,9 +827,9 @@ void main() {
           const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
         );
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 5000, currentPhaseTotalDuration: 4));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 5000, currentPhaseTotalDuration: 4));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
@@ -861,9 +847,9 @@ void main() {
           const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
         );
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 1, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 1, currentIntervalMs: 5000));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
@@ -881,10 +867,10 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         // First emission — dispatches (first-emission phase change is implicit: inhale != null)
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Same phase and exerciseIndex, different currentIntervalMs — no second dispatch
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0, currentIntervalMs: 5000));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
@@ -902,11 +888,11 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         // First breath emission — dispatches instruction
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Pause with different phase — !isActive guard prevents instruction dispatch;
         // _handleLifecycle emits the pause boundary marker (1 extra sendSample).
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.exhale));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(2));
@@ -926,14 +912,14 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         // First breath emission — dispatches
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
         // Complete — lifecycle calls end(), sets _ended=true
-        f.stateCtrl.add(_state(status: BreathSessionStatus.complete));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.completed));
         await Future<void>.delayed(Duration.zero);
         // Post-complete breath with phase change — _ended guard prevents dispatch
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
@@ -953,14 +939,14 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         // Prime _previousPhase=inhale, _previousExerciseIndex=0
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Breath starts the session; _handleLifecycle resets _previousPhase=null so the
         // first active emission always dispatches (inhale != null → phaseChanged=true)
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Rest with phase change — active check covers both breath and rest; 2nd dispatch
-        f.stateCtrl.add(_state(status: BreathSessionStatus.rest, phase: BreathPhase.exhale, currentIntervalMs: 6000, currentPhaseTotalDuration: 5));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, currentIntervalMs: 6000, currentPhaseTotalDuration: 5));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(2));
@@ -979,10 +965,10 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         // Prime
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Phase change with currentIntervalMs=-1 — tickCount comes from currentPhaseTotalDuration, not currentIntervalMs
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: -1, currentPhaseTotalDuration: 7));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: -1, currentPhaseTotalDuration: 7));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
@@ -1002,10 +988,10 @@ void main() {
         final f = _make();
         // No ModuleState seeded — _moduleSessionId stays null
         // Prime _previousPhase so the next emission is a genuine phase change
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale));
         await Future<void>.delayed(Duration.zero);
         // Phase change — sessionId null → buffered, not dispatched
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, currentIntervalMs: 5000));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, isEmpty);
@@ -1018,9 +1004,9 @@ void main() {
       'should call instructionStream.sendSample exactly once with the buffered phase and tickCount when a ModuleState with a non-null moduleSessionId arrives after a buffered phase change',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000, currentPhaseTotalDuration: 6));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, currentIntervalMs: 5000, currentPhaseTotalDuration: 6));
         await Future<void>.delayed(Duration.zero);
         // moduleSessionId becomes available — triggers _flushPending
         f.channel.stateController.add(
@@ -1039,9 +1025,9 @@ void main() {
       'should not call instructionStream.sendSample again when a second ModuleState with the same moduleSessionId arrives after a buffered phase change has already been flushed',
       () async {
         final f = _make();
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale));
         await Future<void>.delayed(Duration.zero);
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, currentIntervalMs: 5000));
         await Future<void>.delayed(Duration.zero);
         f.channel.stateController.add(
           const ModuleState(moduleSessionId: 'sid', status: ModuleStateStatus.active),
@@ -1080,14 +1066,14 @@ void main() {
       () async {
         final f = _make();
         // Prime
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale));
         await Future<void>.delayed(Duration.zero);
         // First phase change — buffered
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, currentIntervalMs: 5000));
         await Future<void>.delayed(Duration.zero);
         // Second phase change — lifecycle short-circuits (same status=breath), but _handleInstruction
         // still runs from _onState and overwrites _pendingInstruction with the latest state
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 6000, currentPhaseTotalDuration: 8));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 6000, currentPhaseTotalDuration: 8));
         await Future<void>.delayed(Duration.zero);
         // Flush
         f.channel.stateController.add(
@@ -1106,14 +1092,14 @@ void main() {
       () async {
         final f = _make();
         // Prime
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale));
         await Future<void>.delayed(Duration.zero);
         // Phase change — buffered
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000, currentPhaseTotalDuration: 9));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, currentIntervalMs: 5000, currentPhaseTotalDuration: 9));
         await Future<void>.delayed(Duration.zero);
         // Non-ready state — _onState returns early, _pendingInstruction is not touched
         f.stateCtrl.add(_state(
-          status: BreathSessionStatus.breath,
+          lifecycle: BreathLifecycle.running,
           loadState: SessionLoadState.loading,
           phase: BreathPhase.hold,
           currentIntervalMs: 9000,
@@ -1146,13 +1132,13 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         // First phase change — dispatches with sid-A
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
         // Reset — clears _moduleSessionId
         f.target.reset();
         // Post-reset phase change — _moduleSessionId=null → buffered (not dispatched immediately)
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, currentIntervalMs: 5000));
         await Future<void>.delayed(Duration.zero);
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
         // Push sid-B — flushed with the new sessionId, proving sid-A was cleared
@@ -1174,10 +1160,10 @@ void main() {
       () async {
         final f = _make();
         // Prime (no ModuleState seeded)
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale));
         await Future<void>.delayed(Duration.zero);
         // Phase change — buffered
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, currentIntervalMs: 5000));
         await Future<void>.delayed(Duration.zero);
         // Reset — clears _pendingInstruction
         f.target.reset();
@@ -1203,10 +1189,10 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         // Prime
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // First dispatch (inhale → exhale)
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 4000));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 4000));
         await Future<void>.delayed(Duration.zero);
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
         // Reset — clears _previousPhase (and _moduleSessionId)
@@ -1217,10 +1203,10 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         // Prime again (same starting phase as before reset)
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Second dispatch — same phase transition as before, but _previousPhase was cleared → phaseChanged=true
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 5000, currentPhaseTotalDuration: 10));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0, currentIntervalMs: 5000, currentPhaseTotalDuration: 10));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(2));
@@ -1241,10 +1227,10 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         // Prime
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // First dispatch (exerciseIndex 0 → 1)
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 4000));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 4000));
         await Future<void>.delayed(Duration.zero);
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
         // Reset — clears _previousExerciseIndex (and _moduleSessionId)
@@ -1255,10 +1241,10 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         // Prime again
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Second dispatch — same exerciseIndex transition, but _previousExerciseIndex was cleared → phaseChanged=true
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 5000, currentPhaseTotalDuration: 11));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 1, currentIntervalMs: 5000, currentPhaseTotalDuration: 11));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(2));
@@ -1281,10 +1267,10 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
         // Prime
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         // Phase change — uses sid-new from the live subscription
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, currentIntervalMs: 5000));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, currentIntervalMs: 5000));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls, hasLength(1));
@@ -1332,15 +1318,15 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         // First emission: starts session, stopwatch reset to 0, instruction offset=0
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         sw.elapsedMs = 100;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.hold, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.hold, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         sw.elapsedMs = 200;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 1));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 1));
         await Future<void>.delayed(Duration.zero);
 
         final offsets = f.instructionStream.sendSampleCalls.map((c) => c.$4).toList();
@@ -1367,11 +1353,11 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         // Start: stopwatch reset to 0, instruction offset=0
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         // Phase change without advancing stopwatch — offset stays 0
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.hold, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.hold, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         final offsets = f.instructionStream.sendSampleCalls.map((c) => c.$4).toList();
@@ -1394,14 +1380,14 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         // Start emission: stopwatch reset inside start branch → offset 0
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls.first.$4, 0);
 
         // Advance and emit second phase change
         sw.elapsedMs = 50;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.hold, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.hold, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         expect(f.instructionStream.sendSampleCalls.last.$4, 50);
@@ -1422,12 +1408,12 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         // Start
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         // Advance stopwatch, then pause
         sw.elapsedMs = 150;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         final pauseMarker = f.instructionStream.sendSampleCalls.firstWhere((c) => c.$2 == 'pause');
@@ -1448,11 +1434,11 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
 
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0, currentPhaseTotalDuration: 7));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0, currentPhaseTotalDuration: 7));
         await Future<void>.delayed(Duration.zero);
 
         sw.elapsedMs = 80;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         final pauseMarker = f.instructionStream.sendSampleCalls.firstWhere((c) => c.$2 == 'pause');
@@ -1474,11 +1460,11 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
 
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         sw.elapsedMs = 150;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         final pauseMarker = f.instructionStream.sendSampleCalls.firstWhere((c) => c.$2 == 'pause');
@@ -1500,19 +1486,19 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         // Start
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         // Pause at P=100
         sw.elapsedMs = 100;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         final pauseMarker = f.instructionStream.sendSampleCalls.firstWhere((c) => c.$2 == 'pause');
 
         // Resume at R=250 > P
         sw.elapsedMs = 250;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0, currentPhaseTotalDuration: 5));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0, currentPhaseTotalDuration: 5));
         await Future<void>.delayed(Duration.zero);
 
         // Resume marker is the last dispatched sample (phase='inhale')
@@ -1534,15 +1520,15 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
 
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         sw.elapsedMs = 100;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         sw.elapsedMs = 250;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0, currentPhaseTotalDuration: 5));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0, currentPhaseTotalDuration: 5));
         await Future<void>.delayed(Duration.zero);
 
         // Resume marker is the last dispatched sample
@@ -1564,17 +1550,17 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
 
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         sw.elapsedMs = 100;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         final countBeforeResume = f.instructionStream.sendSampleCalls.length;
 
         sw.elapsedMs = 250;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0, currentPhaseTotalDuration: 5));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0, currentPhaseTotalDuration: 5));
         await Future<void>.delayed(Duration.zero);
 
         // Only the resume marker is dispatched — no duplicate instruction
@@ -1597,16 +1583,16 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         // Start: clock called once to capture _originWallClock
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         // Subsequent phase changes dispatch instructions — no further clock calls
         sw.elapsedMs = 50;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.hold, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.hold, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         sw.elapsedMs = 100;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 1));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 1));
         await Future<void>.delayed(Duration.zero);
 
         expect(callCount(), 1);
@@ -1627,15 +1613,15 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
 
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         sw.elapsedMs = 50;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.hold, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.hold, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         sw.elapsedMs = 100;
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 1));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 1));
         await Future<void>.delayed(Duration.zero);
 
         final calls = f.instructionStream.sendSampleCalls;
@@ -1661,7 +1647,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
 
         // First lifecycle: start → clock called once
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.exhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         expect(callCount(), 1);
 
@@ -1669,7 +1655,7 @@ void main() {
         f.target.reset();
 
         // Second lifecycle: start → clock called again
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
         expect(callCount(), 2);
 
@@ -1691,11 +1677,11 @@ void main() {
         // No ModuleState seeded — instructions are buffered until moduleSessionId arrives
 
         // 1. Prime: sets _previousPhase=inhale, _previousStatus=pause; no instruction
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         // 2. Start: stopwatch reset to 0, buffers instruction with offset=0
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         // 3. Advance to T1
@@ -1704,7 +1690,7 @@ void main() {
 
         // 4. Second phase change: overwrites pending with offset=T1
         f.stateCtrl.add(_state(
-          status: BreathSessionStatus.breath,
+          lifecycle: BreathLifecycle.running,
           phase: BreathPhase.exhale,
           exerciseIndex: 0,
           currentPhaseTotalDuration: 9,
@@ -1738,18 +1724,18 @@ void main() {
         // No ModuleState seeded
 
         // 1. Prime
-        f.stateCtrl.add(_state(status: BreathSessionStatus.pause, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.paused, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         // 2. Start: buffers instruction with offset=0
-        f.stateCtrl.add(_state(status: BreathSessionStatus.breath, phase: BreathPhase.inhale, exerciseIndex: 0));
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0));
         await Future<void>.delayed(Duration.zero);
 
         // 3-4. Advance to T1 and emit second phase change: overwrites pending with offset=T1
         const t1 = 75;
         sw.elapsedMs = t1;
         f.stateCtrl.add(_state(
-          status: BreathSessionStatus.breath,
+          lifecycle: BreathLifecycle.running,
           phase: BreathPhase.exhale,
           exerciseIndex: 0,
           currentPhaseTotalDuration: 9,

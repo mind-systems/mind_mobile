@@ -10,7 +10,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:breath_module/breath_module.dart' show ITickService, TickData, TickSource, SetShape, BreathSessionStateMachine, BreathSessionStateMachineState, BreathExerciseDTO, BreathSessionDTO, BreathSessionState, BreathSessionStatus, SessionLoadState, BreathStepDTO, BreathPhase, ResetReason;
+import 'package:breath_module/breath_module.dart' show ITickService, TickData, TickSource, SetShape, BreathSessionStateMachine, BreathSessionStateMachineState, BreathExerciseDTO, BreathSessionDTO, BreathSessionState, BreathLifecycle, SessionLoadState, BreathStepDTO, BreathPhase, ResetReason;
 
 // ---------------------------------------------------------------------------
 // Fake tick service
@@ -217,7 +217,8 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       // Should now be in rest
-      expect(sm.currentState.status, equals(BreathSessionStatus.rest));
+      expect(sm.currentState.lifecycle, equals(BreathLifecycle.running));
+      expect(sm.currentState.phase, equals(BreathPhase.rest));
       expect(sm.currentState.currentPhaseTotalDuration, equals(3));
     });
   });
@@ -351,7 +352,8 @@ void main() {
       ticks.tick();
       await Future<void>.delayed(Duration.zero);
 
-      expect(sm.currentState.status, equals(BreathSessionStatus.rest));
+      expect(sm.currentState.lifecycle, equals(BreathLifecycle.running));
+      expect(sm.currentState.phase, equals(BreathPhase.rest));
 
       // Count emissions on a regular rest tick
       final emissions = <BreathSessionStateMachineState>[];
@@ -488,7 +490,8 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(sm.currentState.resetReason, equals(ResetReason.exerciseChange));
-      expect(sm.currentState.status, equals(BreathSessionStatus.rest));
+      expect(sm.currentState.lifecycle, equals(BreathLifecycle.running));
+      expect(sm.currentState.phase, equals(BreathPhase.rest));
     });
 
     test('resetReason is null after resume() even if paused right after transition', () async {
@@ -525,7 +528,7 @@ void main() {
       ticks.tick();
       await Future<void>.delayed(Duration.zero);
 
-      expect(sm.currentState.status, equals(BreathSessionStatus.complete));
+      expect(sm.currentState.lifecycle, equals(BreathLifecycle.completed));
       expect(sm.currentState.resetReason, isNull);
     });
   });
@@ -568,7 +571,7 @@ void main() {
     test('BreathSessionState copyWith preserves enriched fields when not overridden', () {
       const original = BreathSessionState(
         loadState: SessionLoadState.ready,
-        status: BreathSessionStatus.breath,
+        lifecycle: BreathLifecycle.running,
         phase: BreathPhase.inhale,
         exerciseIndex: 0,
         remainingTicks: 3,

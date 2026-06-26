@@ -165,7 +165,6 @@ class BreathViewModel extends Notifier<BreathSessionState> {
     state = BreathSessionState(
       loadState: SessionLoadState.ready,
       timelineSteps: timelineSteps,
-      status: initialEngineState.status,
       phase: initialEngineState.phase,
       exerciseIndex: initialEngineState.exerciseIndex,
       remainingTicks: initialEngineState.remainingTicks,
@@ -202,7 +201,6 @@ class BreathViewModel extends Notifier<BreathSessionState> {
     // mutated `step.duration`.
     state = BreathSessionState(
       loadState: state.loadState,
-      status: engineState.status,
       phase: engineState.phase,
       exerciseIndex: engineState.exerciseIndex,
       remainingTicks: engineState.remainingTicks,

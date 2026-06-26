@@ -8,7 +8,7 @@ class BreathTimelineWidget extends StatefulWidget {
   final List<TimelineStep> steps;
   final String? activeStepId;
   final ScrollController scrollController;
-  final BreathSessionStatus? status;
+  final BreathLifecycle? lifecycle;
   final ValueListenable<int> remainingTicksListenable;
 
   final double itemHeight;
@@ -20,7 +20,7 @@ class BreathTimelineWidget extends StatefulWidget {
     required this.activeStepId,
     required this.scrollController,
     required this.remainingTicksListenable,
-    this.status,
+    this.lifecycle,
     this.itemHeight = 48.0,
     this.fadeExtent = 0.15, // доля высоты под fade сверху/снизу
   });
@@ -92,10 +92,11 @@ class BreathTimelineWidgetState extends State<BreathTimelineWidget> {
   @override
   Widget build(BuildContext context) {
     final isPausedOrComplete =
-        widget.status == BreathSessionStatus.pause ||
-            widget.status == BreathSessionStatus.complete;
+        widget.lifecycle == BreathLifecycle.paused ||
+            widget.lifecycle == BreathLifecycle.notStarted ||
+            widget.lifecycle == BreathLifecycle.completed;
 
-    final isComplete = widget.status == BreathSessionStatus.complete;
+    final isComplete = widget.lifecycle == BreathLifecycle.completed;
 
     return SizedBox(
       width: double.infinity,

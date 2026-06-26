@@ -12,7 +12,6 @@ import 'Models/BreathSessionState.dart';
 import 'Models/TimelineStep.dart';
 
 class BreathSessionStateMachineState {
-  final BreathSessionStatus status;
   final BreathPhase phase;
   final int exerciseIndex;
   final int remainingTicks;
@@ -31,7 +30,6 @@ class BreathSessionStateMachineState {
   final BreathLifecycle lifecycle;
 
   const BreathSessionStateMachineState({
-    required this.status,
     required this.phase,
     required this.exerciseIndex,
     required this.remainingTicks,
@@ -47,7 +45,6 @@ class BreathSessionStateMachineState {
   });
 
   BreathSessionStateMachineState copyWith({
-    BreathSessionStatus? status,
     BreathPhase? phase,
     int? exerciseIndex,
     int? remainingTicks,
@@ -62,7 +59,6 @@ class BreathSessionStateMachineState {
     BreathLifecycle? lifecycle,
   }) {
     return BreathSessionStateMachineState(
-      status: status ?? this.status,
       phase: phase ?? this.phase,
       exerciseIndex: exerciseIndex ?? this.exerciseIndex,
       remainingTicks: remainingTicks ?? this.remainingTicks,
@@ -122,7 +118,6 @@ class BreathSessionStateMachine {
   BreathSessionStateMachineState _initialRestState() {
     final enriched = _computeEnrichedFields(0, isRest: true);
     return BreathSessionStateMachineState(
-      status: BreathSessionStatus.pause,
       phase: BreathPhase.rest,
       exerciseIndex: _exerciseIndex,
       remainingTicks: currentExercise.restDuration,
@@ -146,7 +141,6 @@ class BreathSessionStateMachine {
     final stepData = _getCurrentStepData(0);
     final enriched = _computeEnrichedFields(stepData.stepIndex);
     return BreathSessionStateMachineState(
-      status: BreathSessionStatus.pause,
       phase: stepData.phase,
       exerciseIndex: _exerciseIndex,
       remainingTicks: stepData.remainingTicks,
@@ -169,11 +163,10 @@ class BreathSessionStateMachine {
   // ===== Public controls =====
 
   void pause() {
-    if (_state.status == BreathSessionStatus.complete) return;
+    if (_lifecycle.current == BreathLifecycle.completed) return;
     _lifecycle.pause();
     // Full constructor to clear resetReason (copyWith cannot set nullable to null).
     _emit(BreathSessionStateMachineState(
-      status: BreathSessionStatus.pause,
       phase: _state.phase,
       exerciseIndex: _state.exerciseIndex,
       remainingTicks: _state.remainingTicks,
@@ -189,8 +182,7 @@ class BreathSessionStateMachine {
   }
 
   void resume() {
-    if (_state.status != BreathSessionStatus.pause) return;
-    final wasResting = _state.phase == BreathPhase.rest;
+    if (_lifecycle.isRunning || _lifecycle.current == BreathLifecycle.completed) return;
     // Emit ResetReason.start on the first activation only so animation
     // coordinators can initialize at origin. Subsequent resumes keep null,
     // preserving the resume-vs-start distinction.
@@ -198,7 +190,6 @@ class BreathSessionStateMachine {
     _lifecycle.run();
     // Full constructor to clear resetReason (copyWith cannot set nullable to null).
     _emit(BreathSessionStateMachineState(
-      status: wasResting ? BreathSessionStatus.rest : BreathSessionStatus.breath,
       phase: _state.phase,
       exerciseIndex: _state.exerciseIndex,
       remainingTicks: _state.remainingTicks,
@@ -223,7 +214,6 @@ class BreathSessionStateMachine {
     //
     // Full constructor to clear resetReason (copyWith cannot set nullable to null).
     _emit(BreathSessionStateMachineState(
-      status: BreathSessionStatus.complete,
       phase: _state.phase,
       exerciseIndex: _state.exerciseIndex,
       remainingTicks: 0,
@@ -245,15 +235,10 @@ class BreathSessionStateMachine {
     // No first emit here — currentIntervalMs is folded into the single emit below.
     if (!_lifecycle.isRunning) return;
 
-    switch (_state.status) {
-      case BreathSessionStatus.breath:
-        _onBreathTick(tickData.intervalMs);
-        break;
-      case BreathSessionStatus.rest:
-        _onRestTick(tickData.intervalMs);
-        break;
-      default:
-        break;
+    if (_state.phase == BreathPhase.rest) {
+      _onRestTick(tickData.intervalMs);
+    } else {
+      _onBreathTick(tickData.intervalMs);
     }
   }
 
@@ -282,7 +267,6 @@ class BreathSessionStateMachine {
     final stepData = _getCurrentStepData(_cycleTick);
     final enriched = _computeEnrichedFields(stepData.stepIndex);
     _emit(BreathSessionStateMachineState(
-      status: BreathSessionStatus.breath,
       phase: stepData.phase,
       exerciseIndex: _exerciseIndex,
       remainingTicks: stepData.remainingTicks,
@@ -319,7 +303,6 @@ class BreathSessionStateMachine {
 
     final enriched = _computeEnrichedFields(0, isRest: true);
     _emit(BreathSessionStateMachineState(
-      status: BreathSessionStatus.rest,
       phase: BreathPhase.rest,
       exerciseIndex: _exerciseIndex,
       remainingTicks: currentExercise.restDuration - _cycleTick,
@@ -347,7 +330,6 @@ class BreathSessionStateMachine {
 
     final enriched = _computeEnrichedFields(0, isRest: true);
     _emit(BreathSessionStateMachineState(
-      status: BreathSessionStatus.rest,
       phase: BreathPhase.rest,
       exerciseIndex: _exerciseIndex,
       remainingTicks: currentExercise.restDuration,
@@ -377,7 +359,6 @@ class BreathSessionStateMachine {
     final enriched = _computeEnrichedFields(stepData.stepIndex);
 
     _emit(BreathSessionStateMachineState(
-      status: BreathSessionStatus.breath,
       phase: stepData.phase,
       exerciseIndex: _exerciseIndex,
       remainingTicks: stepData.remainingTicks,
