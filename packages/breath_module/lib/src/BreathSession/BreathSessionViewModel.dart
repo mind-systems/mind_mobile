@@ -35,13 +35,18 @@ class BreathViewModel extends Notifier<BreathSessionState> {
 
   void Function()? _onModuleDispose;
   void Function()? _onModuleReset;
+  void Function(bool isLive)? _onIsLiveChanged;
+
+  bool _lastIsLive = false;
 
   void attachModuleChannel({
     required void Function() onDispose,
     required void Function() onReset,
+    void Function(bool isLive)? onIsLiveChanged,
   }) {
     _onModuleDispose = onDispose;
     _onModuleReset = onReset;
+    _onIsLiveChanged = onIsLiveChanged;
   }
 
   BreathSessionDTO? _sessionDTO;
@@ -76,6 +81,9 @@ class BreathViewModel extends Notifier<BreathSessionState> {
   @override
   BreathSessionState build() {
     ref.onDispose(() {
+      if (_lastIsLive) {
+        _onIsLiveChanged?.call(false);
+      }
       _onModuleDispose?.call();
       _sessionDeletionSubscription?.cancel();
       _sessionUpdateSubscription?.cancel();
@@ -111,6 +119,11 @@ class BreathViewModel extends Notifier<BreathSessionState> {
     }
     if (!_stateController.isClosed) {
       _stateController.add(value);
+    }
+    final next = value.isLive;
+    if (_onIsLiveChanged != null && next != _lastIsLive) {
+      _lastIsLive = next;
+      _onIsLiveChanged!(next);
     }
   }
 

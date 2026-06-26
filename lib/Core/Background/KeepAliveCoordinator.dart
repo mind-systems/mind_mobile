@@ -18,17 +18,30 @@ class KeepAliveCoordinator {
     required ForegroundKeepAlive foregroundKeepAlive,
     required Stream<ModuleStateEvent> moduleStateEvents,
     bool Function() isAndroid = _platformIsAndroid,
-  })  : _foregroundKeepAlive = foregroundKeepAlive {
-    if (!isAndroid()) return;
+  })  : _foregroundKeepAlive = foregroundKeepAlive,
+        _isAndroid = isAndroid() {
+    if (!_isAndroid) return;
     _subscription = moduleStateEvents.listen(_onEvent);
   }
 
   static bool _platformIsAndroid() => Platform.isAndroid;
 
   final ForegroundKeepAlive _foregroundKeepAlive;
+  final bool _isAndroid;
   StreamSubscription<ModuleStateEvent>? _subscription;
 
   void dispose() => _subscription?.cancel();
+
+  /// Starts or stops the foreground service in response to the breath
+  /// activity's local [isLive] edge. No-op on iOS.
+  Future<void> onLocalLifecycle(bool isLive) async {
+    if (!_isAndroid) return;
+    if (isLive) {
+      await _foregroundKeepAlive.start();
+    } else {
+      await _foregroundKeepAlive.stop();
+    }
+  }
 
   Future<void> _onEvent(ModuleStateEvent event) async {
     switch (event) {

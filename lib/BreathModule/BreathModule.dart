@@ -51,7 +51,11 @@ class BreathModule {
             instructionStream: App.shared.breathInstructionStream,
             sessionId: sessionId,
           );
-          vm.attachModuleChannel(onDispose: channel.dispose, onReset: channel.reset);
+          vm.attachModuleChannel(
+            onDispose: channel.dispose,
+            onReset: channel.reset,
+            onIsLiveChanged: App.shared.keepAliveCoordinator.onLocalLifecycle,
+          );
           return vm;
         }),
       ],
