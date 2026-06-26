@@ -33,7 +33,7 @@ The breath module has a mature **tick** FSM (`BreathSessionStateMachine` progres
 
 ## Phase 59 — Meditation session screen layout
 
-- [ ] **Swap timer and start button positions in `MeditationSessionScreen`** — Currently the `Expanded` center section renders [pose image → button] and the timer lives at the bottom (`Padding(bottom: 40)`). Swap so the center section renders [pose image → timer] and the button moves to the very bottom with the same `bottom: 40` padding. File: `packages/meditation_module/lib/src/MeditationSession/MeditationSessionScreen.dart`.
+- [x] **Swap timer and start button positions in `MeditationSessionScreen`** — Currently the `Expanded` center section renders [pose image → button] and the timer lives at the bottom (`Padding(bottom: 40)`). Swap so the center section renders [pose image → timer] and the button moves to the very bottom with the same `bottom: 40` padding. File: `packages/meditation_module/lib/src/MeditationSession/MeditationSessionScreen.dart`. [3m 28s]
 
 ## Phase 60 — Module session notes migration
 

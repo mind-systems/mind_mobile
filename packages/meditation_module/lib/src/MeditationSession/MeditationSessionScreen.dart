@@ -74,15 +74,14 @@ class _MeditationSessionScreenState
                     ),
                   ),
                   const SizedBox(height: 40),
-                  SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: ControlButton(
-                      icon: isActive ? Icons.stop : Icons.play_arrow,
-                      onPressed: () => isActive
-                          ? ref.read(meditationSessionViewModelProvider.notifier).stop()
-                          : ref.read(meditationSessionViewModelProvider.notifier).start(),
-                      iconSize: 40,
+                  ValueListenableBuilder<int>(
+                    valueListenable: ref.read(meditationSessionViewModelProvider.notifier).elapsedSeconds,
+                    builder: (context, seconds, _) => Text(
+                      _formatDuration(seconds),
+                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        color: AppColors.warmAccentDark,
+                        fontFeatures: [const FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
                 ],
@@ -91,14 +90,15 @@ class _MeditationSessionScreenState
           ),
           Padding(
             padding: const EdgeInsets.only(bottom: 40),
-            child: ValueListenableBuilder<int>(
-              valueListenable: ref.read(meditationSessionViewModelProvider.notifier).elapsedSeconds,
-              builder: (context, seconds, _) => Text(
-                _formatDuration(seconds),
-                style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  color: AppColors.warmAccentDark,
-                  fontFeatures: [const FontFeature.tabularFigures()],
-                ),
+            child: SizedBox(
+              width: 80,
+              height: 80,
+              child: ControlButton(
+                icon: isActive ? Icons.stop : Icons.play_arrow,
+                onPressed: () => isActive
+                    ? ref.read(meditationSessionViewModelProvider.notifier).stop()
+                    : ref.read(meditationSessionViewModelProvider.notifier).start(),
+                iconSize: 40,
               ),
             ),
           ),
