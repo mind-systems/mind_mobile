@@ -11,7 +11,7 @@
 
 ## Details
 
-Using the [[165-breath-headless-activity-harness]], add an **activity-boundary** suite that feeds `(DTO, ticks, resume/pause/complete/restart)` and asserts the emitted `BreathSessionState` sequence (`status`, `phase`, `exerciseIndex`, `resetReason`, `remainingTicks`) as an executable golden master — internals-agnostic. Cases:
+Using the [[03-breath-headless-activity-harness]], add an **activity-boundary** suite that feeds `(DTO, ticks, resume/pause/complete/restart)` and asserts the emitted `BreathSessionState` sequence (`status`, `phase`, `exerciseIndex`, `resetReason`, `remainingTicks`) as an executable golden master — internals-agnostic. Cases:
 
 - **first resume → `resetReason == start`; pause; second resume → `resetReason == null`** — the `_hasStarted` contract expressed as input→output ("resume from not-started" vs "resume from paused" differ observably).
 - **restart after complete → `status == pause`, `exerciseIndex == 0`, counters reset, fresh initial state.**
@@ -21,9 +21,9 @@ Using the [[165-breath-headless-activity-harness]], add an **activity-boundary**
 ## Guards
 
 - **Green NOW** — characterizes current behavior before any change.
-- Assertions are behavioral (input→output). In T2 they still assert on the **current** schema (`status`); [[167-breath-derive-lifecycle-islive]] adds the new fields and [[172-breath-retire-derived-status]] migrates these assertions. Do not pre-emptively assert on `lifecycle` here.
+- Assertions are behavioral (input→output). In T2 they still assert on the **current** schema (`status`); [[05-breath-derive-lifecycle-islive]] adds the new fields and [[10-breath-retire-derived-status]] migrates these assertions. Do not pre-emptively assert on `lifecycle` here.
 - No prod change. Do not rewrite the existing SM/channel suites in this task.
 
 ## Verify
 
-- Full suite green on the **pre-refactor** code; committed as the contract the surgery ([[171-breath-extract-owned-lifecycle-fsm]]) must preserve with no assertion edits.
+- Full suite green on the **pre-refactor** code; committed as the contract the surgery ([[09-breath-extract-owned-lifecycle-fsm]]) must preserve with no assertion edits.

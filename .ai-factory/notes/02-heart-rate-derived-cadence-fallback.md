@@ -22,7 +22,7 @@ Implements `ITickCadenceSource` over `IHeartRateSource.cardioStream` (`IHeartRat
   - **valid** when `metricsAvailable && !hasArtifacts && heartRate > 0` → `smoothedPeriodMs.add((60000 / heartRate).round())` (`int`, matches the `Stream<int>` contract), set `isUsable = true`, re-arm the staleness timer;
   - otherwise treat as a gap (do not emit, do not refresh staleness).
 - **Staleness** is this source's own concern (mirrors the RR source's grace). **Window = 10 s**, pinned to match the RR grace `_coastGraceWindow = Duration(seconds: 10)` (`HeartRateTickService.dart:54`) for one consistent gap-tolerance across both sources. No valid cardio within 10 s → `isUsable = false`. (Tunable later, but ship at 10 s — not an implementation-time guess.)
-- **No extra moving average initially.** BPM is already an SDK-side average of intervals; stacking another SMA on top would lag the live heart. Emit `60000/HR` directly. Whether a light smoothing helps is a **measurement to do later** — keep smoothing an internal, swappable detail of this class so it can be added without touching the contract.
+- **No moving average — ever.** BPM is already an SDK-side average of intervals; stacking another SMA lags the live heart. Emit `(60000 / heartRate).round()` directly. Decision is final — do not add smoothing to `HeartRateTickCadenceSource`.
 - HR is a **cadence source**, NOT an `IRrIntervalSource` injected into `ActiveRrSource`/the RR pipeline. We do not fabricate synthetic RR intervals into the raw RR merge — the HR derivation lives entirely inside this cadence source.
 - `dispose()` cancels the cardio sub + staleness timer + closes subjects; does not dispose the underlying `IHeartRateSource` (App-owned).
 
@@ -58,9 +58,5 @@ final heart     = HeartRateTickService(cadence: selector)..start();
 
 ## Decisions
 
-- **HR staleness window = 10 s** (pinned to `HeartRateTickService.dart:54`), no extra SMA — ship as-is.
+- **HR staleness window = 10 s** (pinned to `HeartRateTickService.dart:56`, field `_graceWindow`), no SMA — decision final.
 - **App surface = new `heartRateSource` field** holding `bciProvider` (no existing exposure to reuse, verified against `App.dart:103-104,193,258`).
-
-## Open Questions
-
-- Whether a light HR smoothing or a shorter window helps (lag vs jitter) — a **post-ship measurement**, not a blocker. Smoothing is an internal swappable detail of `HeartRateTickCadenceSource`, so it can change without touching the contract or wiring.

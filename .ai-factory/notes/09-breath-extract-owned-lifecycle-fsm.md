@@ -5,8 +5,8 @@
 
 ## Key Findings
 
-- After [[167-breath-derive-lifecycle-islive]] (derived `lifecycle`) and the consumers are migrated ([[168-breath-audio-islive]] / [[169-breath-fgs-local-keepalive]] / [[170-breath-channel-explicit-lifecycle]]), the engine's `status`/`_hasStarted` smear is redundant scaffolding. This task makes the lifecycle a **first-class owned sub-machine** so there is one source of truth, not a derivation — Option A, done surgically.
-- Pure cleanup: **zero observable change** (the golden master [[166-breath-activity-characterization-golden-master]] + the `isLive` suite [[167]] stay green). The keep-alive fix already shipped on the derived signal, so this carries no feature risk.
+- After [[05-breath-derive-lifecycle-islive]] (derived `lifecycle`) and the consumers are migrated ([[06-breath-audio-islive]] / [[07-breath-fgs-local-keepalive]] / [[08-breath-channel-explicit-lifecycle]]), the engine's `status`/`_hasStarted` smear is redundant scaffolding. This task makes the lifecycle a **first-class owned sub-machine** so there is one source of truth, not a derivation — Option A, done surgically.
+- Pure cleanup: **zero observable change** (the golden master [[04-breath-activity-characterization-golden-master]] + the `isLive` suite [[05]] stay green). The keep-alive fix already shipped on the derived signal, so this carries no feature risk.
 
 ## Details
 
@@ -17,8 +17,8 @@
 
 ## Guards
 
-- Behavior-preserving (green→green); no assertion edits to [[166]] / [[167]].
-- `status` may still be **derived** from `(lifecycle, phase)` until [[172-breath-retire-derived-status]] retires it — keep it so any not-yet-migrated reader and the golden master stay green.
+- Behavior-preserving (green→green); no assertion edits to [[166]] / [[05]].
+- `status` may still be **derived** from `(lifecycle, phase)` until [[10-breath-retire-derived-status]] retires it — keep it so any not-yet-migrated reader and the golden master stay green.
 - Don't touch tick progression. Don't re-add Phase 51's auto-`pause()`.
 
 ## Verify

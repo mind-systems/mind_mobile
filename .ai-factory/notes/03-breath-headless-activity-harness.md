@@ -25,7 +25,7 @@ Replicates the exact wiring of `BreathModule.buildSession()` with fakes (no `App
 **Three output channels exposed** (the contract surface):
 - the recorded `BreathSessionState` sequence (subscribe `vm.stream`);
 - the `_FakeChannel` call-log (`startCalls`/`pauseCount`/`unpauseCount`/`endCount`/`stopCount`);
-- a hook for the future `isLive` signal ([[167-breath-derive-lifecycle-islive]]).
+- a hook for the future `isLive` signal ([[05-breath-derive-lifecycle-islive]]).
 
 **Input surface:** `tick()`, `resume()`, `pause()`, `complete()`, `restartEngine()`, plus a DTO builder (reuse `makeExercise`/`makeSession` from the SM test).
 
