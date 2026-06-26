@@ -57,7 +57,7 @@ import 'package:mind/Core/Sync/SyncGrpcListener.dart';
 import 'package:mind/Bci/BciDevicesGrpcApi.dart';
 import 'package:mind/MeditationModule/MeditationPosesGrpcApi.dart';
 import 'package:mind/MeditationModule/MeditationNotesGrpcApi.dart';
-import 'package:mind/MeditationModule/MeditationNoteRepository.dart';
+import 'package:mind/MeditationModule/ModuleSessionNoteRepository.dart';
 import 'package:mind/Bci/BciDeviceManager.dart';
 import 'package:mind/Bci/BciDeviceRepository.dart';
 import 'package:mind/Bci/NfbCalibrationGrpcApi.dart';
@@ -112,7 +112,7 @@ class App {
   final KeepAliveCoordinator keepAliveCoordinator;
   late final MeditationPosesGrpcApi meditationPosesApi;
   late final MeditationNotesGrpcApi meditationNotesGrpcApi;
-  late final MeditationNoteRepository meditationNoteRepository;
+  late final ModuleSessionNoteRepository moduleSessionNoteRepository;
   Map<String, String> meditationPoseUuids = const {}; // slug → UUID; populated lazily when the meditation list opens, NOT in initialize()
 
   App._({
@@ -270,7 +270,7 @@ class App {
 
     shared.meditationPosesApi = MeditationPosesGrpcApi(grpcClient.meditationPosesService);
     shared.meditationNotesGrpcApi = MeditationNotesGrpcApi(grpcClient.meditationNotesService);
-    shared.meditationNoteRepository = MeditationNoteRepository(dao: db.meditationNotesDao);
+    shared.moduleSessionNoteRepository = ModuleSessionNoteRepository(dao: db.moduleSessionNotesDao);
     if (cachedPoseUuids != null) shared.meditationPoseUuids = cachedPoseUuids;
     await shared.deeplinkRouter.init();
 

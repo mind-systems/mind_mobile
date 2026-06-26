@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:meditation_module/meditation_module.dart'
     show IMeditationSessionCoordinator, MeditationNoteScreen;
-import 'package:mind/MeditationModule/IMeditationNoteService.dart';
+import 'package:mind/MeditationModule/IModuleSessionNoteService.dart';
 
 class MeditationSessionCoordinator implements IMeditationSessionCoordinator {
   MeditationSessionCoordinator(
@@ -13,7 +13,7 @@ class MeditationSessionCoordinator implements IMeditationSessionCoordinator {
   });
 
   final BuildContext context;
-  final IMeditationNoteService noteService;
+  final IModuleSessionNoteService noteService;
   final String? Function() getSessionId;
 
   @override

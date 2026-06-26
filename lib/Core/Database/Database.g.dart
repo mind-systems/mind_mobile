@@ -1344,25 +1344,16 @@ class MeditationPosesCompanion extends UpdateCompanion<MeditationPoseRow> {
   }
 }
 
-class $MeditationNotesTable extends MeditationNotes
-    with TableInfo<$MeditationNotesTable, MeditationNoteRow> {
+class $ModuleSessionNotesTable extends ModuleSessionNotes
+    with TableInfo<$ModuleSessionNotesTable, ModuleSessionNoteRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $MeditationNotesTable(this.attachedDatabase, [this._alias]);
+  $ModuleSessionNotesTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
     'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _poseIdMeta = const VerificationMeta('poseId');
-  @override
-  late final GeneratedColumn<String> poseId = GeneratedColumn<String>(
-    'pose_id',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -1404,7 +1395,6 @@ class $MeditationNotesTable extends MeditationNotes
   @override
   List<GeneratedColumn> get $columns => [
     id,
-    poseId,
     noteText,
     createdAt,
     serverSessionId,
@@ -1413,10 +1403,10 @@ class $MeditationNotesTable extends MeditationNotes
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'meditation_notes';
+  static const String $name = 'module_session_notes';
   @override
   VerificationContext validateIntegrity(
-    Insertable<MeditationNoteRow> instance, {
+    Insertable<ModuleSessionNoteRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -1425,14 +1415,6 @@ class $MeditationNotesTable extends MeditationNotes
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
       context.missing(_idMeta);
-    }
-    if (data.containsKey('pose_id')) {
-      context.handle(
-        _poseIdMeta,
-        poseId.isAcceptableOrUnknown(data['pose_id']!, _poseIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_poseIdMeta);
     }
     if (data.containsKey('note_text')) {
       context.handle(
@@ -1465,16 +1447,12 @@ class $MeditationNotesTable extends MeditationNotes
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  MeditationNoteRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+  ModuleSessionNoteRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return MeditationNoteRow(
+    return ModuleSessionNoteRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
-      )!,
-      poseId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}pose_id'],
       )!,
       noteText: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -1492,21 +1470,19 @@ class $MeditationNotesTable extends MeditationNotes
   }
 
   @override
-  $MeditationNotesTable createAlias(String alias) {
-    return $MeditationNotesTable(attachedDatabase, alias);
+  $ModuleSessionNotesTable createAlias(String alias) {
+    return $ModuleSessionNotesTable(attachedDatabase, alias);
   }
 }
 
-class MeditationNoteRow extends DataClass
-    implements Insertable<MeditationNoteRow> {
+class ModuleSessionNoteRow extends DataClass
+    implements Insertable<ModuleSessionNoteRow> {
   final String id;
-  final String poseId;
   final String noteText;
   final int createdAt;
   final String? serverSessionId;
-  const MeditationNoteRow({
+  const ModuleSessionNoteRow({
     required this.id,
-    required this.poseId,
     required this.noteText,
     required this.createdAt,
     this.serverSessionId,
@@ -1515,7 +1491,6 @@ class MeditationNoteRow extends DataClass
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
-    map['pose_id'] = Variable<String>(poseId);
     map['note_text'] = Variable<String>(noteText);
     map['created_at'] = Variable<int>(createdAt);
     if (!nullToAbsent || serverSessionId != null) {
@@ -1524,10 +1499,9 @@ class MeditationNoteRow extends DataClass
     return map;
   }
 
-  MeditationNotesCompanion toCompanion(bool nullToAbsent) {
-    return MeditationNotesCompanion(
+  ModuleSessionNotesCompanion toCompanion(bool nullToAbsent) {
+    return ModuleSessionNotesCompanion(
       id: Value(id),
-      poseId: Value(poseId),
       noteText: Value(noteText),
       createdAt: Value(createdAt),
       serverSessionId: serverSessionId == null && nullToAbsent
@@ -1536,14 +1510,13 @@ class MeditationNoteRow extends DataClass
     );
   }
 
-  factory MeditationNoteRow.fromJson(
+  factory ModuleSessionNoteRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return MeditationNoteRow(
+    return ModuleSessionNoteRow(
       id: serializer.fromJson<String>(json['id']),
-      poseId: serializer.fromJson<String>(json['poseId']),
       noteText: serializer.fromJson<String>(json['noteText']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       serverSessionId: serializer.fromJson<String?>(json['serverSessionId']),
@@ -1554,32 +1527,28 @@ class MeditationNoteRow extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'poseId': serializer.toJson<String>(poseId),
       'noteText': serializer.toJson<String>(noteText),
       'createdAt': serializer.toJson<int>(createdAt),
       'serverSessionId': serializer.toJson<String?>(serverSessionId),
     };
   }
 
-  MeditationNoteRow copyWith({
+  ModuleSessionNoteRow copyWith({
     String? id,
-    String? poseId,
     String? noteText,
     int? createdAt,
     Value<String?> serverSessionId = const Value.absent(),
-  }) => MeditationNoteRow(
+  }) => ModuleSessionNoteRow(
     id: id ?? this.id,
-    poseId: poseId ?? this.poseId,
     noteText: noteText ?? this.noteText,
     createdAt: createdAt ?? this.createdAt,
     serverSessionId: serverSessionId.present
         ? serverSessionId.value
         : this.serverSessionId,
   );
-  MeditationNoteRow copyWithCompanion(MeditationNotesCompanion data) {
-    return MeditationNoteRow(
+  ModuleSessionNoteRow copyWithCompanion(ModuleSessionNotesCompanion data) {
+    return ModuleSessionNoteRow(
       id: data.id.present ? data.id.value : this.id,
-      poseId: data.poseId.present ? data.poseId.value : this.poseId,
       noteText: data.noteText.present ? data.noteText.value : this.noteText,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       serverSessionId: data.serverSessionId.present
@@ -1590,9 +1559,8 @@ class MeditationNoteRow extends DataClass
 
   @override
   String toString() {
-    return (StringBuffer('MeditationNoteRow(')
+    return (StringBuffer('ModuleSessionNoteRow(')
           ..write('id: $id, ')
-          ..write('poseId: $poseId, ')
           ..write('noteText: $noteText, ')
           ..write('createdAt: $createdAt, ')
           ..write('serverSessionId: $serverSessionId')
@@ -1601,48 +1569,42 @@ class MeditationNoteRow extends DataClass
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, poseId, noteText, createdAt, serverSessionId);
+  int get hashCode => Object.hash(id, noteText, createdAt, serverSessionId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is MeditationNoteRow &&
+      (other is ModuleSessionNoteRow &&
           other.id == this.id &&
-          other.poseId == this.poseId &&
           other.noteText == this.noteText &&
           other.createdAt == this.createdAt &&
           other.serverSessionId == this.serverSessionId);
 }
 
-class MeditationNotesCompanion extends UpdateCompanion<MeditationNoteRow> {
+class ModuleSessionNotesCompanion
+    extends UpdateCompanion<ModuleSessionNoteRow> {
   final Value<String> id;
-  final Value<String> poseId;
   final Value<String> noteText;
   final Value<int> createdAt;
   final Value<String?> serverSessionId;
   final Value<int> rowid;
-  const MeditationNotesCompanion({
+  const ModuleSessionNotesCompanion({
     this.id = const Value.absent(),
-    this.poseId = const Value.absent(),
     this.noteText = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.serverSessionId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  MeditationNotesCompanion.insert({
+  ModuleSessionNotesCompanion.insert({
     required String id,
-    required String poseId,
     required String noteText,
     required int createdAt,
     this.serverSessionId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
-       poseId = Value(poseId),
        noteText = Value(noteText),
        createdAt = Value(createdAt);
-  static Insertable<MeditationNoteRow> custom({
+  static Insertable<ModuleSessionNoteRow> custom({
     Expression<String>? id,
-    Expression<String>? poseId,
     Expression<String>? noteText,
     Expression<int>? createdAt,
     Expression<String>? serverSessionId,
@@ -1650,7 +1612,6 @@ class MeditationNotesCompanion extends UpdateCompanion<MeditationNoteRow> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (poseId != null) 'pose_id': poseId,
       if (noteText != null) 'note_text': noteText,
       if (createdAt != null) 'created_at': createdAt,
       if (serverSessionId != null) 'server_session_id': serverSessionId,
@@ -1658,17 +1619,15 @@ class MeditationNotesCompanion extends UpdateCompanion<MeditationNoteRow> {
     });
   }
 
-  MeditationNotesCompanion copyWith({
+  ModuleSessionNotesCompanion copyWith({
     Value<String>? id,
-    Value<String>? poseId,
     Value<String>? noteText,
     Value<int>? createdAt,
     Value<String?>? serverSessionId,
     Value<int>? rowid,
   }) {
-    return MeditationNotesCompanion(
+    return ModuleSessionNotesCompanion(
       id: id ?? this.id,
-      poseId: poseId ?? this.poseId,
       noteText: noteText ?? this.noteText,
       createdAt: createdAt ?? this.createdAt,
       serverSessionId: serverSessionId ?? this.serverSessionId,
@@ -1681,9 +1640,6 @@ class MeditationNotesCompanion extends UpdateCompanion<MeditationNoteRow> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
-    }
-    if (poseId.present) {
-      map['pose_id'] = Variable<String>(poseId.value);
     }
     if (noteText.present) {
       map['note_text'] = Variable<String>(noteText.value);
@@ -1702,9 +1658,8 @@ class MeditationNotesCompanion extends UpdateCompanion<MeditationNoteRow> {
 
   @override
   String toString() {
-    return (StringBuffer('MeditationNotesCompanion(')
+    return (StringBuffer('ModuleSessionNotesCompanion(')
           ..write('id: $id, ')
-          ..write('poseId: $poseId, ')
           ..write('noteText: $noteText, ')
           ..write('createdAt: $createdAt, ')
           ..write('serverSessionId: $serverSessionId, ')
@@ -1723,9 +1678,8 @@ abstract class _$Database extends GeneratedDatabase {
   late final $MeditationPosesTable meditationPoses = $MeditationPosesTable(
     this,
   );
-  late final $MeditationNotesTable meditationNotes = $MeditationNotesTable(
-    this,
-  );
+  late final $ModuleSessionNotesTable moduleSessionNotes =
+      $ModuleSessionNotesTable(this);
   late final UserDao userDao = UserDao(this as Database);
   late final BreathSessionDao breathSessionDao = BreathSessionDao(
     this as Database,
@@ -1734,9 +1688,8 @@ abstract class _$Database extends GeneratedDatabase {
   late final MeditationPosesDao meditationPosesDao = MeditationPosesDao(
     this as Database,
   );
-  late final MeditationNotesDao meditationNotesDao = MeditationNotesDao(
-    this as Database,
-  );
+  late final ModuleSessionNotesDao moduleSessionNotesDao =
+      ModuleSessionNotesDao(this as Database);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1746,7 +1699,7 @@ abstract class _$Database extends GeneratedDatabase {
     breathSessions,
     syncState,
     meditationPoses,
-    meditationNotes,
+    moduleSessionNotes,
   ];
 }
 
@@ -2510,28 +2463,26 @@ typedef $$MeditationPosesTableProcessedTableManager =
       MeditationPoseRow,
       PrefetchHooks Function()
     >;
-typedef $$MeditationNotesTableCreateCompanionBuilder =
-    MeditationNotesCompanion Function({
+typedef $$ModuleSessionNotesTableCreateCompanionBuilder =
+    ModuleSessionNotesCompanion Function({
       required String id,
-      required String poseId,
       required String noteText,
       required int createdAt,
       Value<String?> serverSessionId,
       Value<int> rowid,
     });
-typedef $$MeditationNotesTableUpdateCompanionBuilder =
-    MeditationNotesCompanion Function({
+typedef $$ModuleSessionNotesTableUpdateCompanionBuilder =
+    ModuleSessionNotesCompanion Function({
       Value<String> id,
-      Value<String> poseId,
       Value<String> noteText,
       Value<int> createdAt,
       Value<String?> serverSessionId,
       Value<int> rowid,
     });
 
-class $$MeditationNotesTableFilterComposer
-    extends Composer<_$Database, $MeditationNotesTable> {
-  $$MeditationNotesTableFilterComposer({
+class $$ModuleSessionNotesTableFilterComposer
+    extends Composer<_$Database, $ModuleSessionNotesTable> {
+  $$ModuleSessionNotesTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -2540,11 +2491,6 @@ class $$MeditationNotesTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get poseId => $composableBuilder(
-    column: $table.poseId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2564,9 +2510,9 @@ class $$MeditationNotesTableFilterComposer
   );
 }
 
-class $$MeditationNotesTableOrderingComposer
-    extends Composer<_$Database, $MeditationNotesTable> {
-  $$MeditationNotesTableOrderingComposer({
+class $$ModuleSessionNotesTableOrderingComposer
+    extends Composer<_$Database, $ModuleSessionNotesTable> {
+  $$ModuleSessionNotesTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -2575,11 +2521,6 @@ class $$MeditationNotesTableOrderingComposer
   });
   ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get poseId => $composableBuilder(
-    column: $table.poseId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -2599,9 +2540,9 @@ class $$MeditationNotesTableOrderingComposer
   );
 }
 
-class $$MeditationNotesTableAnnotationComposer
-    extends Composer<_$Database, $MeditationNotesTable> {
-  $$MeditationNotesTableAnnotationComposer({
+class $$ModuleSessionNotesTableAnnotationComposer
+    extends Composer<_$Database, $ModuleSessionNotesTable> {
+  $$ModuleSessionNotesTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -2610,9 +2551,6 @@ class $$MeditationNotesTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get poseId =>
-      $composableBuilder(column: $table.poseId, builder: (column) => column);
 
   GeneratedColumn<String> get noteText =>
       $composableBuilder(column: $table.noteText, builder: (column) => column);
@@ -2626,50 +2564,53 @@ class $$MeditationNotesTableAnnotationComposer
   );
 }
 
-class $$MeditationNotesTableTableManager
+class $$ModuleSessionNotesTableTableManager
     extends
         RootTableManager<
           _$Database,
-          $MeditationNotesTable,
-          MeditationNoteRow,
-          $$MeditationNotesTableFilterComposer,
-          $$MeditationNotesTableOrderingComposer,
-          $$MeditationNotesTableAnnotationComposer,
-          $$MeditationNotesTableCreateCompanionBuilder,
-          $$MeditationNotesTableUpdateCompanionBuilder,
+          $ModuleSessionNotesTable,
+          ModuleSessionNoteRow,
+          $$ModuleSessionNotesTableFilterComposer,
+          $$ModuleSessionNotesTableOrderingComposer,
+          $$ModuleSessionNotesTableAnnotationComposer,
+          $$ModuleSessionNotesTableCreateCompanionBuilder,
+          $$ModuleSessionNotesTableUpdateCompanionBuilder,
           (
-            MeditationNoteRow,
+            ModuleSessionNoteRow,
             BaseReferences<
               _$Database,
-              $MeditationNotesTable,
-              MeditationNoteRow
+              $ModuleSessionNotesTable,
+              ModuleSessionNoteRow
             >,
           ),
-          MeditationNoteRow,
+          ModuleSessionNoteRow,
           PrefetchHooks Function()
         > {
-  $$MeditationNotesTableTableManager(_$Database db, $MeditationNotesTable table)
-    : super(
+  $$ModuleSessionNotesTableTableManager(
+    _$Database db,
+    $ModuleSessionNotesTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$MeditationNotesTableFilterComposer($db: db, $table: table),
+              $$ModuleSessionNotesTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$MeditationNotesTableOrderingComposer($db: db, $table: table),
+              $$ModuleSessionNotesTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$MeditationNotesTableAnnotationComposer($db: db, $table: table),
+              $$ModuleSessionNotesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
-                Value<String> poseId = const Value.absent(),
                 Value<String> noteText = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<String?> serverSessionId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => MeditationNotesCompanion(
+              }) => ModuleSessionNotesCompanion(
                 id: id,
-                poseId: poseId,
                 noteText: noteText,
                 createdAt: createdAt,
                 serverSessionId: serverSessionId,
@@ -2678,14 +2619,12 @@ class $$MeditationNotesTableTableManager
           createCompanionCallback:
               ({
                 required String id,
-                required String poseId,
                 required String noteText,
                 required int createdAt,
                 Value<String?> serverSessionId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => MeditationNotesCompanion.insert(
+              }) => ModuleSessionNotesCompanion.insert(
                 id: id,
-                poseId: poseId,
                 noteText: noteText,
                 createdAt: createdAt,
                 serverSessionId: serverSessionId,
@@ -2699,21 +2638,25 @@ class $$MeditationNotesTableTableManager
       );
 }
 
-typedef $$MeditationNotesTableProcessedTableManager =
+typedef $$ModuleSessionNotesTableProcessedTableManager =
     ProcessedTableManager<
       _$Database,
-      $MeditationNotesTable,
-      MeditationNoteRow,
-      $$MeditationNotesTableFilterComposer,
-      $$MeditationNotesTableOrderingComposer,
-      $$MeditationNotesTableAnnotationComposer,
-      $$MeditationNotesTableCreateCompanionBuilder,
-      $$MeditationNotesTableUpdateCompanionBuilder,
+      $ModuleSessionNotesTable,
+      ModuleSessionNoteRow,
+      $$ModuleSessionNotesTableFilterComposer,
+      $$ModuleSessionNotesTableOrderingComposer,
+      $$ModuleSessionNotesTableAnnotationComposer,
+      $$ModuleSessionNotesTableCreateCompanionBuilder,
+      $$ModuleSessionNotesTableUpdateCompanionBuilder,
       (
-        MeditationNoteRow,
-        BaseReferences<_$Database, $MeditationNotesTable, MeditationNoteRow>,
+        ModuleSessionNoteRow,
+        BaseReferences<
+          _$Database,
+          $ModuleSessionNotesTable,
+          ModuleSessionNoteRow
+        >,
       ),
-      MeditationNoteRow,
+      ModuleSessionNoteRow,
       PrefetchHooks Function()
     >;
 
@@ -2728,8 +2671,8 @@ class $DatabaseManager {
       $$SyncStateTableTableManager(_db, _db.syncState);
   $$MeditationPosesTableTableManager get meditationPoses =>
       $$MeditationPosesTableTableManager(_db, _db.meditationPoses);
-  $$MeditationNotesTableTableManager get meditationNotes =>
-      $$MeditationNotesTableTableManager(_db, _db.meditationNotes);
+  $$ModuleSessionNotesTableTableManager get moduleSessionNotes =>
+      $$ModuleSessionNotesTableTableManager(_db, _db.moduleSessionNotes);
 }
 
 mixin _$UserDaoMixin on DatabaseAccessor<Database> {
@@ -2744,6 +2687,7 @@ mixin _$SyncStateDaoMixin on DatabaseAccessor<Database> {
 mixin _$MeditationPosesDaoMixin on DatabaseAccessor<Database> {
   $MeditationPosesTable get meditationPoses => attachedDatabase.meditationPoses;
 }
-mixin _$MeditationNotesDaoMixin on DatabaseAccessor<Database> {
-  $MeditationNotesTable get meditationNotes => attachedDatabase.meditationNotes;
+mixin _$ModuleSessionNotesDaoMixin on DatabaseAccessor<Database> {
+  $ModuleSessionNotesTable get moduleSessionNotes =>
+      attachedDatabase.moduleSessionNotes;
 }

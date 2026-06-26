@@ -18,14 +18,14 @@ part 'UserDao.dart';
 part 'BreathSessionDao.dart';
 part 'SyncStateDao.dart';
 part 'MeditationPosesDao.dart';
-part 'MeditationNotesDao.dart';
+part 'ModuleSessionNotesDao.dart';
 
-@DriftDatabase(tables: [UserRecord, BreathSessions, SyncState, MeditationPoses, MeditationNotes], daos: [UserDao, BreathSessionDao, SyncStateDao, MeditationPosesDao, MeditationNotesDao])
+@DriftDatabase(tables: [UserRecord, BreathSessions, SyncState, MeditationPoses, ModuleSessionNotes], daos: [UserDao, BreathSessionDao, SyncStateDao, MeditationPosesDao, ModuleSessionNotesDao])
 class Database extends _$Database {
   Database([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -41,7 +41,18 @@ class Database extends _$Database {
           await migrator.createTable(meditationPoses);
         }
         if (step == 4) {
-          await migrator.createTable(meditationNotes);
+          // Legacy notes table; superseded and dropped in step 5.
+          await customStatement(
+            'CREATE TABLE IF NOT EXISTS meditation_notes ('
+            'id TEXT NOT NULL PRIMARY KEY, '
+            'pose_id TEXT NOT NULL, '
+            'note_text TEXT NOT NULL, '
+            'created_at INTEGER NOT NULL, '
+            'server_session_id TEXT)');
+        }
+        if (step == 5) {
+          await customStatement('DROP TABLE IF EXISTS meditation_notes');
+          await migrator.createTable(moduleSessionNotes);
         }
       }
     },
