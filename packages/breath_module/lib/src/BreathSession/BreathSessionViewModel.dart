@@ -167,6 +167,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
       currentExerciseShape: initialEngineState.currentExerciseShape,
       nextExerciseShape: initialEngineState.nextExerciseShape,
       tickSource: tickService.source,
+      lifecycle: initialEngineState.lifecycle,
     );
   }
 
@@ -204,6 +205,7 @@ class BreathViewModel extends Notifier<BreathSessionState> {
       currentExerciseShape: engineState.currentExerciseShape,
       nextExerciseShape: engineState.nextExerciseShape,
       tickSource: state.tickSource,
+      lifecycle: engineState.lifecycle,
     );
   }
 

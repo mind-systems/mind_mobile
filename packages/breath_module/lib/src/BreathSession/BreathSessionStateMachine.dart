@@ -26,6 +26,9 @@ class BreathSessionStateMachineState {
   final SetShape? currentExerciseShape;
   final SetShape? nextExerciseShape;
 
+  // Lifecycle signal (Phase 2)
+  final BreathLifecycle lifecycle;
+
   const BreathSessionStateMachineState({
     required this.status,
     required this.phase,
@@ -33,6 +36,7 @@ class BreathSessionStateMachineState {
     required this.remainingTicks,
     required this.activeStepId,
     required this.currentIntervalMs,
+    this.lifecycle = BreathLifecycle.notStarted,
     this.resetReason,
     this.totalPhases = 0,
     this.currentPhaseIndex = 0,
@@ -54,6 +58,7 @@ class BreathSessionStateMachineState {
     int? currentPhaseTotalDuration,
     SetShape? currentExerciseShape,
     SetShape? nextExerciseShape,
+    BreathLifecycle? lifecycle,
   }) {
     return BreathSessionStateMachineState(
       status: status ?? this.status,
@@ -68,6 +73,7 @@ class BreathSessionStateMachineState {
       currentPhaseTotalDuration: currentPhaseTotalDuration ?? this.currentPhaseTotalDuration,
       currentExerciseShape: currentExerciseShape ?? this.currentExerciseShape,
       nextExerciseShape: nextExerciseShape ?? this.nextExerciseShape,
+      lifecycle: lifecycle ?? this.lifecycle,
     );
   }
 }
@@ -478,8 +484,28 @@ class BreathSessionStateMachine {
 
   // ===== Internal =====
 
+  /// Derives the lifecycle value from the emitted [status] and the current
+  /// [_hasStarted] flag, implementing the single source-of-truth derivation rule:
+  ///
+  ///   status == complete              → completed
+  ///   status ∈ {breath, rest}        → running  (independent of _hasStarted)
+  ///   status == pause && _hasStarted  → paused
+  ///   status == pause && !_hasStarted → notStarted
+  BreathLifecycle _lifecycleFor(BreathSessionStatus status) {
+    switch (status) {
+      case BreathSessionStatus.complete:
+        return BreathLifecycle.completed;
+      case BreathSessionStatus.breath:
+      case BreathSessionStatus.rest:
+        return BreathLifecycle.running;
+      case BreathSessionStatus.pause:
+        return _hasStarted ? BreathLifecycle.paused : BreathLifecycle.notStarted;
+    }
+  }
+
+  /// Stamps [newState] with the derived lifecycle before publishing.
   void _emit(BreathSessionStateMachineState newState) {
-    _state = newState;
+    _state = newState.copyWith(lifecycle: _lifecycleFor(newState.status));
     _stateController.add(_state);
   }
 

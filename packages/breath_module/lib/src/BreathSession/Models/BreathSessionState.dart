@@ -7,6 +7,17 @@ enum BreathPhase { inhale, hold, exhale, rest }
 enum ResetReason { start, newCycle, rest, exerciseChange }
 enum SessionLoadState { loading, ready, error }
 
+/// Coarse lifecycle signal derived from `(status, _hasStarted)`.
+///
+/// - [notStarted] — session created, never resumed (status=pause, !_hasStarted).
+/// - [running] — actively breathing (status ∈ {breath, rest}).
+/// - [paused] — manually paused after at least one resume (status=pause, _hasStarted).
+/// - [completed] — session finished (status=complete).
+///
+/// `isLive` is true for [running] and [paused] — the keep-alive window holds
+/// through a manual pause so biometric/tracking channels stay open.
+enum BreathLifecycle { notStarted, running, paused, completed }
+
 class BreathSessionState {
   final SessionLoadState loadState;
   final BreathSessionStatus status;
@@ -37,6 +48,15 @@ class BreathSessionState {
   final SetShape? nextExerciseShape;
   final TickSource tickSource;
 
+  // Lifecycle signal (Phase 2 — derived from status + _hasStarted at emit time)
+  final BreathLifecycle lifecycle;
+
+  /// `true` while the session is actively running or manually paused.
+  /// `false` for [BreathLifecycle.notStarted] and [BreathLifecycle.completed].
+  bool get isLive =>
+      lifecycle == BreathLifecycle.running ||
+      lifecycle == BreathLifecycle.paused;
+
   const BreathSessionState({
     required this.loadState,
     required this.status,
@@ -55,6 +75,7 @@ class BreathSessionState {
     this.currentExerciseShape,
     this.nextExerciseShape,
     this.tickSource = TickSource.timer,
+    this.lifecycle = BreathLifecycle.notStarted,
   });
 
   factory BreathSessionState.initial() => const BreathSessionState(
@@ -106,6 +127,7 @@ class BreathSessionState {
         currentExerciseShape == other.currentExerciseShape &&
         nextExerciseShape == other.nextExerciseShape &&
         tickSource == other.tickSource &&
+        lifecycle == other.lifecycle &&
         identical(timelineSteps, other.timelineSteps);
   }
 
@@ -129,6 +151,7 @@ class BreathSessionState {
     SetShape? currentExerciseShape,
     SetShape? nextExerciseShape,
     TickSource? tickSource,
+    BreathLifecycle? lifecycle,
   }) {
     return BreathSessionState(
       loadState: loadState ?? this.loadState,
@@ -148,6 +171,7 @@ class BreathSessionState {
       currentExerciseShape: currentExerciseShape ?? this.currentExerciseShape,
       nextExerciseShape: nextExerciseShape ?? this.nextExerciseShape,
       tickSource: tickSource ?? this.tickSource,
+      lifecycle: lifecycle ?? this.lifecycle,
     );
   }
 }

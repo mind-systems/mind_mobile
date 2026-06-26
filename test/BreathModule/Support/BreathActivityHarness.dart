@@ -17,9 +17,8 @@ import '../Fakes/BreathActivityFakes.dart';
 /// 1. [states] — recorded `BreathSessionState` sequence.
 /// 2. [channel] / [instructionStream] — call-log of `FakeModuleStateChannel`
 ///    and `FakeInstructionStream` (startCalls, pauseCount, endCount, …).
-/// 3. [isLive] — placeholder for the future `isLive` lifecycle signal
-///    ([[05-breath-derive-lifecycle-islive]]). Always returns `false` until
-///    that milestone wires real logic here.
+/// 3. [isLive] — derived lifecycle signal; mirrors [BreathSessionState.isLive]
+///    on the last recorded state. `true` while running or manually paused.
 ///
 /// ## Input surface
 ///
@@ -59,9 +58,12 @@ class BreathActivityHarness {
   /// `BreathModuleStateChannel`. Exposes sendSampleCalls and phaseTickCalls.
   FakeInstructionStream get instructionStream => _fakeInstructionStream;
 
-  /// Placeholder for the future `isLive` lifecycle signal.
-  /// [[05-breath-derive-lifecycle-islive]] — wired to real logic in that milestone.
-  bool get isLive => false;
+  /// `true` while the most-recently-recorded session state has an active
+  /// lifecycle ([BreathLifecycle.running] or [BreathLifecycle.paused]).
+  ///
+  /// Mirrors [BreathSessionState.isLive] on the last recorded [states] entry.
+  /// Returns `false` when no states have been recorded yet.
+  bool get isLive => states.isNotEmpty && states.last.isLive;
 
   // ── Constructor ──────────────────────────────────────────────────────────
 
