@@ -5,16 +5,12 @@
 
 ## Key Findings
 
-- Blocked on mind_api Phase 53 task 1 (backend renames proto + entity + service). Do not start until that ships.
+- mind_api Phase 53 task 1 is shipped — proto, entity, and service renamed on the backend.
 - Replace `proto/meditation_notes.proto` with `proto/module_session_notes.proto` (copy from `mind_api/proto/`), regenerate Dart stubs, rename `MeditationNotesGrpcApi` → `ModuleSessionNotesGrpcApi`, remove `poseId` from `createNote()`.
 - Proto field numbers are immutable: `note_text` stays at field 4 in `ModuleSessionNote`, field 3 in `CreateNoteRequest`; field 3 / field 2 (old `pose_id`) left as a gap — never renumber.
 - After this task the `poseId: ''` bridge in `ModuleSessionNoteService._syncToServer` (added in note 11) is removed.
 
 ## Details
-
-### Prerequisite check
-
-Verify `mind_api/proto/module_session_notes.proto` exists and the backend service is renamed to `ModuleSessionNotesService` before starting.
 
 ### Proto replacement
 

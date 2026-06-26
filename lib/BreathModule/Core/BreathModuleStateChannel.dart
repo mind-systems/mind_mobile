@@ -6,7 +6,7 @@ import 'package:mind/Core/Grpc/ModuleState.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
 import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
 import 'package:mind/BreathModule/Core/BreathModuleInstructionStream.dart';
-import 'package:breath_module/breath_module.dart' show BreathSessionState, BreathSessionStatus, BreathPhase, SessionLoadState;
+import 'package:breath_module/breath_module.dart' show BreathSessionState, BreathLifecycle, BreathPhase, SessionLoadState;
 
 class BreathModuleStateChannel {
   final ModuleStateChannel _channel;
@@ -16,7 +16,7 @@ class BreathModuleStateChannel {
 
   bool _started = false;
   bool _ended = false;
-  BreathSessionStatus? _previousStatus;
+  BreathLifecycle? _previousLifecycle;
   BreathPhase? _previousPhase;
   int? _previousExerciseIndex;
   String? _moduleSessionId;
@@ -58,7 +58,7 @@ class BreathModuleStateChannel {
     if (state.loadState != SessionLoadState.ready) return;
     _handleLifecycle(state);
     _handleInstruction(state);
-    _previousStatus = state.status;
+    _previousLifecycle = state.lifecycle;
     _previousPhase = state.phase;
     _previousExerciseIndex = state.exerciseIndex;
   }
@@ -73,17 +73,16 @@ class BreathModuleStateChannel {
   }
 
   void _handleLifecycle(BreathSessionState state) {
-    final status = state.status;
-    if (status == _previousStatus) return;
+    final lifecycle = state.lifecycle;
+    if (lifecycle == _previousLifecycle) return;
 
-    final isActive = status == BreathSessionStatus.breath ||
-        status == BreathSessionStatus.rest;
-    final wasActive = _previousStatus == BreathSessionStatus.breath ||
-        _previousStatus == BreathSessionStatus.rest;
-    final wasPaused = _previousStatus == BreathSessionStatus.pause ||
-        _previousStatus == null;
+    final isRunning = lifecycle == BreathLifecycle.running;
+    final wasRunning = _previousLifecycle == BreathLifecycle.running;
+    final wasInactive = _previousLifecycle == BreathLifecycle.notStarted ||
+        _previousLifecycle == BreathLifecycle.paused ||
+        _previousLifecycle == null;
 
-    if (wasPaused && isActive) {
+    if (wasInactive && isRunning) {
       if (!_started) {
         logPrint('[BreathModuleState] BreathModuleStateChannel: session start [$_sessionId]');
         _stopwatch..reset()..start();
@@ -99,13 +98,13 @@ class BreathModuleStateChannel {
         _previousPhase = state.phase;
         _previousExerciseIndex = state.exerciseIndex;
       }
-    } else if (wasActive && status == BreathSessionStatus.pause) {
+    } else if (wasRunning && lifecycle == BreathLifecycle.paused) {
       if (_started && !_ended) {
         logPrint('[BreathModuleState] BreathModuleStateChannel: session pause [$_sessionId]');
         _channel.pause();
         _emitMarker('pause', 0, _stopwatch.elapsedMilliseconds);
       }
-    } else if (status == BreathSessionStatus.complete) {
+    } else if (lifecycle == BreathLifecycle.completed) {
       if (_started && !_ended) {
         logPrint('[BreathModuleState] session complete at offset=${_stopwatch.elapsedMilliseconds}ms — sending end [$_sessionId]');
         _channel.end(clientTimestampMs: _wireTimestamp(_stopwatch.elapsedMilliseconds));
@@ -116,9 +115,7 @@ class BreathModuleStateChannel {
 
   void _handleInstruction(BreathSessionState state) {
     final sessionId = _moduleSessionId;
-    final isActive = state.status == BreathSessionStatus.breath ||
-        state.status == BreathSessionStatus.rest;
-    if (!isActive || !_started || _ended) return;
+    if (state.lifecycle != BreathLifecycle.running || !_started || _ended) return;
 
     final phaseChanged = state.phase != _previousPhase ||
         state.exerciseIndex != _previousExerciseIndex;
@@ -148,7 +145,7 @@ class BreathModuleStateChannel {
     _moduleSessionId = null;
     _started = false;
     _ended = false;
-    _previousStatus = null;
+    _previousLifecycle = null;
     _previousPhase = null;
     _previousExerciseIndex = null;
     _pendingInstruction = null;

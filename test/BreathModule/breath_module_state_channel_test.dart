@@ -9,7 +9,7 @@ import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
 import 'package:mind/BreathModule/Core/BreathModuleInstructionStream.dart';
 import 'package:mind/BreathModule/Core/BreathModuleStateChannel.dart';
 import 'package:breath_module/breath_module.dart'
-    show BreathSessionState, BreathSessionStatus, BreathPhase, SessionLoadState;
+    show BreathSessionState, BreathSessionStatus, BreathLifecycle, BreathPhase, SessionLoadState;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Fakes
@@ -100,6 +100,14 @@ class _FakeStopwatch implements Stopwatch {
 /// are scoped to lifecycle tests; neither field is read by _handleLifecycle.
 /// Revisit when instruction-stream tests are added — the real initial state
 /// uses currentIntervalMs: -1, and positive defaults may mask off-by-one bugs.
+///
+/// [lifecycle] is derived from [status] when not explicitly provided:
+///   breath | rest → running, complete → completed, pause → paused.
+/// A single faked `pause` state cannot distinguish [BreathLifecycle.notStarted]
+/// from [BreathLifecycle.paused], but the channel treats both identically in the
+/// "was inactive" check — so `pause → paused` is the correct default and the
+/// only constraint (a pause following an active state must be `paused`) is
+/// satisfied because the real state machine stamps `paused` in that case.
 BreathSessionState _state({
   required BreathSessionStatus status,
   BreathPhase phase = BreathPhase.inhale,
@@ -108,6 +116,11 @@ BreathSessionState _state({
   int currentIntervalMs = 4000,
   int currentPhaseTotalDuration = 1,
 }) {
+  final lifecycle = switch (status) {
+    BreathSessionStatus.breath || BreathSessionStatus.rest => BreathLifecycle.running,
+    BreathSessionStatus.complete => BreathLifecycle.completed,
+    BreathSessionStatus.pause => BreathLifecycle.paused,
+  };
   return BreathSessionState(
     loadState: loadState,
     status: status,
@@ -116,6 +129,7 @@ BreathSessionState _state({
     remainingTicks: 0,
     currentIntervalMs: currentIntervalMs,
     currentPhaseTotalDuration: currentPhaseTotalDuration,
+    lifecycle: lifecycle,
   );
 }
 
