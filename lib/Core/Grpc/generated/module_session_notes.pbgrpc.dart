@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from meditation_notes.proto.
+// Generated from module_session_notes.proto.
 
 // @dart = 3.3
 
@@ -16,12 +16,12 @@ import 'dart:core' as $core;
 import 'package:grpc/service_api.dart' as $grpc;
 import 'package:protobuf/protobuf.dart' as $pb;
 
-import 'meditation_notes.pb.dart' as $0;
+import 'module_session_notes.pb.dart' as $0;
 
-export 'meditation_notes.pb.dart';
+export 'module_session_notes.pb.dart';
 
-@$pb.GrpcServiceName('mind.MeditationNotesService')
-class MeditationNotesServiceClient extends $grpc.Client {
+@$pb.GrpcServiceName('mind.ModuleSessionNotesService')
+class ModuleSessionNotesServiceClient extends $grpc.Client {
   /// The hostname for this service.
   static const $core.String defaultHost = '';
 
@@ -30,17 +30,17 @@ class MeditationNotesServiceClient extends $grpc.Client {
     '',
   ];
 
-  MeditationNotesServiceClient(super.channel,
+  ModuleSessionNotesServiceClient(super.channel,
       {super.options, super.interceptors});
 
-  $grpc.ResponseFuture<$0.MeditationNote> createNote(
+  $grpc.ResponseFuture<$0.ModuleSessionNote> createNote(
     $0.CreateNoteRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$createNote, request, options: options);
   }
 
-  $grpc.ResponseFuture<$0.MeditationNote> updateNote(
+  $grpc.ResponseFuture<$0.ModuleSessionNote> updateNote(
     $0.UpdateNoteRequest request, {
     $grpc.CallOptions? options,
   }) {
@@ -57,41 +57,41 @@ class MeditationNotesServiceClient extends $grpc.Client {
   // method descriptors
 
   static final _$createNote =
-      $grpc.ClientMethod<$0.CreateNoteRequest, $0.MeditationNote>(
-          '/mind.MeditationNotesService/CreateNote',
+      $grpc.ClientMethod<$0.CreateNoteRequest, $0.ModuleSessionNote>(
+          '/mind.ModuleSessionNotesService/CreateNote',
           ($0.CreateNoteRequest value) => value.writeToBuffer(),
-          $0.MeditationNote.fromBuffer);
+          $0.ModuleSessionNote.fromBuffer);
   static final _$updateNote =
-      $grpc.ClientMethod<$0.UpdateNoteRequest, $0.MeditationNote>(
-          '/mind.MeditationNotesService/UpdateNote',
+      $grpc.ClientMethod<$0.UpdateNoteRequest, $0.ModuleSessionNote>(
+          '/mind.ModuleSessionNotesService/UpdateNote',
           ($0.UpdateNoteRequest value) => value.writeToBuffer(),
-          $0.MeditationNote.fromBuffer);
+          $0.ModuleSessionNote.fromBuffer);
   static final _$listNotes =
       $grpc.ClientMethod<$0.ListNotesRequest, $0.ListNotesResponse>(
-          '/mind.MeditationNotesService/ListNotes',
+          '/mind.ModuleSessionNotesService/ListNotes',
           ($0.ListNotesRequest value) => value.writeToBuffer(),
           $0.ListNotesResponse.fromBuffer);
 }
 
-@$pb.GrpcServiceName('mind.MeditationNotesService')
-abstract class MeditationNotesServiceBase extends $grpc.Service {
-  $core.String get $name => 'mind.MeditationNotesService';
+@$pb.GrpcServiceName('mind.ModuleSessionNotesService')
+abstract class ModuleSessionNotesServiceBase extends $grpc.Service {
+  $core.String get $name => 'mind.ModuleSessionNotesService';
 
-  MeditationNotesServiceBase() {
-    $addMethod($grpc.ServiceMethod<$0.CreateNoteRequest, $0.MeditationNote>(
+  ModuleSessionNotesServiceBase() {
+    $addMethod($grpc.ServiceMethod<$0.CreateNoteRequest, $0.ModuleSessionNote>(
         'CreateNote',
         createNote_Pre,
         false,
         false,
         ($core.List<$core.int> value) => $0.CreateNoteRequest.fromBuffer(value),
-        ($0.MeditationNote value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$0.UpdateNoteRequest, $0.MeditationNote>(
+        ($0.ModuleSessionNote value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.UpdateNoteRequest, $0.ModuleSessionNote>(
         'UpdateNote',
         updateNote_Pre,
         false,
         false,
         ($core.List<$core.int> value) => $0.UpdateNoteRequest.fromBuffer(value),
-        ($0.MeditationNote value) => value.writeToBuffer()));
+        ($0.ModuleSessionNote value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.ListNotesRequest, $0.ListNotesResponse>(
         'ListNotes',
         listNotes_Pre,
@@ -101,20 +101,20 @@ abstract class MeditationNotesServiceBase extends $grpc.Service {
         ($0.ListNotesResponse value) => value.writeToBuffer()));
   }
 
-  $async.Future<$0.MeditationNote> createNote_Pre($grpc.ServiceCall $call,
+  $async.Future<$0.ModuleSessionNote> createNote_Pre($grpc.ServiceCall $call,
       $async.Future<$0.CreateNoteRequest> $request) async {
     return createNote($call, await $request);
   }
 
-  $async.Future<$0.MeditationNote> createNote(
+  $async.Future<$0.ModuleSessionNote> createNote(
       $grpc.ServiceCall call, $0.CreateNoteRequest request);
 
-  $async.Future<$0.MeditationNote> updateNote_Pre($grpc.ServiceCall $call,
+  $async.Future<$0.ModuleSessionNote> updateNote_Pre($grpc.ServiceCall $call,
       $async.Future<$0.UpdateNoteRequest> $request) async {
     return updateNote($call, await $request);
   }
 
-  $async.Future<$0.MeditationNote> updateNote(
+  $async.Future<$0.ModuleSessionNote> updateNote(
       $grpc.ServiceCall call, $0.UpdateNoteRequest request);
 
   $async.Future<$0.ListNotesResponse> listNotes_Pre($grpc.ServiceCall $call,

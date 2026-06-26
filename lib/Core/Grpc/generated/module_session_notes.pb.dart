@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from meditation_notes.proto.
+// Generated from module_session_notes.proto.
 
 // @dart = 3.3
 
@@ -16,17 +16,16 @@ import 'package:protobuf/protobuf.dart' as $pb;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
-/// Maps to MeditationNote entity in src/meditation-notes/.
+/// Maps to ModuleSessionNote entity in src/module-session-notes/.
 /// created_at / updated_at are ISO-8601 strings to match the project convention
 /// used in SyncEventDto (proto/sync.proto).
 /// user_id is intentionally absent — identity comes from the JWT/gRPC interceptor,
 /// matching BciDevice (proto/bci_devices.proto) and NfbCalibrationRecord
 /// (proto/nfb_calibration.proto).
-class MeditationNote extends $pb.GeneratedMessage {
-  factory MeditationNote({
+class ModuleSessionNote extends $pb.GeneratedMessage {
+  factory ModuleSessionNote({
     $core.String? id,
     $core.String? sessionId,
-    $core.String? poseId,
     $core.String? noteText,
     $core.String? createdAt,
     $core.String? updatedAt,
@@ -34,52 +33,50 @@ class MeditationNote extends $pb.GeneratedMessage {
     final result = create();
     if (id != null) result.id = id;
     if (sessionId != null) result.sessionId = sessionId;
-    if (poseId != null) result.poseId = poseId;
     if (noteText != null) result.noteText = noteText;
     if (createdAt != null) result.createdAt = createdAt;
     if (updatedAt != null) result.updatedAt = updatedAt;
     return result;
   }
 
-  MeditationNote._();
+  ModuleSessionNote._();
 
-  factory MeditationNote.fromBuffer($core.List<$core.int> data,
+  factory ModuleSessionNote.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory MeditationNote.fromJson($core.String json,
+  factory ModuleSessionNote.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'MeditationNote',
+      _omitMessageNames ? '' : 'ModuleSessionNote',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'id')
     ..aOS(2, _omitFieldNames ? '' : 'sessionId')
-    ..aOS(3, _omitFieldNames ? '' : 'poseId')
     ..aOS(4, _omitFieldNames ? '' : 'noteText')
     ..aOS(5, _omitFieldNames ? '' : 'createdAt')
     ..aOS(6, _omitFieldNames ? '' : 'updatedAt')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  MeditationNote clone() => deepCopy();
+  ModuleSessionNote clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  MeditationNote copyWith(void Function(MeditationNote) updates) =>
-      super.copyWith((message) => updates(message as MeditationNote))
-          as MeditationNote;
+  ModuleSessionNote copyWith(void Function(ModuleSessionNote) updates) =>
+      super.copyWith((message) => updates(message as ModuleSessionNote))
+          as ModuleSessionNote;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static MeditationNote create() => MeditationNote._();
+  static ModuleSessionNote create() => ModuleSessionNote._();
   @$core.override
-  MeditationNote createEmptyInstance() => create();
+  ModuleSessionNote createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static MeditationNote getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<MeditationNote>(create);
-  static MeditationNote? _defaultInstance;
+  static ModuleSessionNote getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ModuleSessionNote>(create);
+  static ModuleSessionNote? _defaultInstance;
 
   @$pb.TagNumber(1)
   $core.String get id => $_getSZ(0);
@@ -99,39 +96,30 @@ class MeditationNote extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   void clearSessionId() => $_clearField(2);
 
-  @$pb.TagNumber(3)
-  $core.String get poseId => $_getSZ(2);
-  @$pb.TagNumber(3)
-  set poseId($core.String value) => $_setString(2, value);
-  @$pb.TagNumber(3)
-  $core.bool hasPoseId() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearPoseId() => $_clearField(3);
-
   @$pb.TagNumber(4)
-  $core.String get noteText => $_getSZ(3);
+  $core.String get noteText => $_getSZ(2);
   @$pb.TagNumber(4)
-  set noteText($core.String value) => $_setString(3, value);
+  set noteText($core.String value) => $_setString(2, value);
   @$pb.TagNumber(4)
-  $core.bool hasNoteText() => $_has(3);
+  $core.bool hasNoteText() => $_has(2);
   @$pb.TagNumber(4)
   void clearNoteText() => $_clearField(4);
 
   @$pb.TagNumber(5)
-  $core.String get createdAt => $_getSZ(4);
+  $core.String get createdAt => $_getSZ(3);
   @$pb.TagNumber(5)
-  set createdAt($core.String value) => $_setString(4, value);
+  set createdAt($core.String value) => $_setString(3, value);
   @$pb.TagNumber(5)
-  $core.bool hasCreatedAt() => $_has(4);
+  $core.bool hasCreatedAt() => $_has(3);
   @$pb.TagNumber(5)
   void clearCreatedAt() => $_clearField(5);
 
   @$pb.TagNumber(6)
-  $core.String get updatedAt => $_getSZ(5);
+  $core.String get updatedAt => $_getSZ(4);
   @$pb.TagNumber(6)
-  set updatedAt($core.String value) => $_setString(5, value);
+  set updatedAt($core.String value) => $_setString(4, value);
   @$pb.TagNumber(6)
-  $core.bool hasUpdatedAt() => $_has(5);
+  $core.bool hasUpdatedAt() => $_has(4);
   @$pb.TagNumber(6)
   void clearUpdatedAt() => $_clearField(6);
 }
@@ -140,12 +128,10 @@ class MeditationNote extends $pb.GeneratedMessage {
 class CreateNoteRequest extends $pb.GeneratedMessage {
   factory CreateNoteRequest({
     $core.String? sessionId,
-    $core.String? poseId,
     $core.String? noteText,
   }) {
     final result = create();
     if (sessionId != null) result.sessionId = sessionId;
-    if (poseId != null) result.poseId = poseId;
     if (noteText != null) result.noteText = noteText;
     return result;
   }
@@ -164,7 +150,6 @@ class CreateNoteRequest extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'sessionId')
-    ..aOS(2, _omitFieldNames ? '' : 'poseId')
     ..aOS(3, _omitFieldNames ? '' : 'noteText')
     ..hasRequiredFields = false;
 
@@ -196,27 +181,18 @@ class CreateNoteRequest extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearSessionId() => $_clearField(1);
 
-  @$pb.TagNumber(2)
-  $core.String get poseId => $_getSZ(1);
-  @$pb.TagNumber(2)
-  set poseId($core.String value) => $_setString(1, value);
-  @$pb.TagNumber(2)
-  $core.bool hasPoseId() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearPoseId() => $_clearField(2);
-
   @$pb.TagNumber(3)
-  $core.String get noteText => $_getSZ(2);
+  $core.String get noteText => $_getSZ(1);
   @$pb.TagNumber(3)
-  set noteText($core.String value) => $_setString(2, value);
+  set noteText($core.String value) => $_setString(1, value);
   @$pb.TagNumber(3)
-  $core.bool hasNoteText() => $_has(2);
+  $core.bool hasNoteText() => $_has(1);
   @$pb.TagNumber(3)
   void clearNoteText() => $_clearField(3);
 }
 
 /// Update — auth identity comes from metadata/interceptor, not the message.
-/// Only note_text is mutable; pose_id and session binding are immutable after creation.
+/// Only note_text is mutable; session binding is immutable after creation.
 class UpdateNoteRequest extends $pb.GeneratedMessage {
   factory UpdateNoteRequest({
     $core.String? noteId,
@@ -353,7 +329,7 @@ class ListNotesRequest extends $pb.GeneratedMessage {
 
 class ListNotesResponse extends $pb.GeneratedMessage {
   factory ListNotesResponse({
-    $core.Iterable<MeditationNote>? notes,
+    $core.Iterable<ModuleSessionNote>? notes,
     $core.String? nextPageToken,
   }) {
     final result = create();
@@ -375,8 +351,8 @@ class ListNotesResponse extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'ListNotesResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
-    ..pPM<MeditationNote>(1, _omitFieldNames ? '' : 'notes',
-        subBuilder: MeditationNote.create)
+    ..pPM<ModuleSessionNote>(1, _omitFieldNames ? '' : 'notes',
+        subBuilder: ModuleSessionNote.create)
     ..aOS(2, _omitFieldNames ? '' : 'nextPageToken')
     ..hasRequiredFields = false;
 
@@ -400,7 +376,7 @@ class ListNotesResponse extends $pb.GeneratedMessage {
   static ListNotesResponse? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $pb.PbList<MeditationNote> get notes => $_getList(0);
+  $pb.PbList<ModuleSessionNote> get notes => $_getList(0);
 
   @$pb.TagNumber(2)
   $core.String get nextPageToken => $_getSZ(1);

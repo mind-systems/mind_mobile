@@ -7,7 +7,7 @@ import 'package:mind/Core/Grpc/generated/bci_devices.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/breath_sessions.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/device.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/module_biometric_stream.pbgrpc.dart';
-import 'package:mind/Core/Grpc/generated/meditation_notes.pbgrpc.dart';
+import 'package:mind/Core/Grpc/generated/module_session_notes.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/meditation_poses.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/module_instruction_stream.pbgrpc.dart';
 import 'package:mind/Core/Grpc/generated/module_state.pbgrpc.dart';
@@ -50,7 +50,7 @@ class GrpcClient {
   late final moduleBiometricStreamService = ModuleBiometricStreamServiceClient(_channel, interceptors: _interceptors);
   late final moduleStateService = ModuleStateServiceClient(_channel, interceptors: _interceptors);
   late final instructionStreamService = ModuleInstructionStreamServiceClient(_channel, interceptors: _interceptors);
-  late final meditationNotesService = MeditationNotesServiceClient(_channel, interceptors: _interceptors);
+  late final moduleSessionNotesService = ModuleSessionNotesServiceClient(_channel, interceptors: _interceptors);
   late final meditationPosesService = MeditationPosesServiceClient(_channel, interceptors: _interceptors);
   late final nfbCalibrationService = NfbCalibrationServiceClient(_channel, interceptors: _interceptors);
   late final statsService = StatsServiceClient(_channel, interceptors: _interceptors);

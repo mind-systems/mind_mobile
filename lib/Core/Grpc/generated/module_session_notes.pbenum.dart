@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from meditation_notes.proto.
+// Generated from module_session_notes.proto.
 
 // @dart = 3.3
 

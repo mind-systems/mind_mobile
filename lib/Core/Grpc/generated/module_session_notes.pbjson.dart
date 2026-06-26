@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from meditation_notes.proto.
+// Generated from module_session_notes.proto.
 
 // @dart = 3.3
 
@@ -15,40 +15,46 @@ import 'dart:convert' as $convert;
 import 'dart:core' as $core;
 import 'dart:typed_data' as $typed_data;
 
-@$core.Deprecated('Use meditationNoteDescriptor instead')
-const MeditationNote$json = {
-  '1': 'MeditationNote',
+@$core.Deprecated('Use moduleSessionNoteDescriptor instead')
+const ModuleSessionNote$json = {
+  '1': 'ModuleSessionNote',
   '2': [
     {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
     {'1': 'session_id', '3': 2, '4': 1, '5': 9, '10': 'sessionId'},
-    {'1': 'pose_id', '3': 3, '4': 1, '5': 9, '10': 'poseId'},
     {'1': 'note_text', '3': 4, '4': 1, '5': 9, '10': 'noteText'},
     {'1': 'created_at', '3': 5, '4': 1, '5': 9, '10': 'createdAt'},
     {'1': 'updated_at', '3': 6, '4': 1, '5': 9, '10': 'updatedAt'},
   ],
+  '9': [
+    {'1': 3, '2': 4},
+  ],
+  '10': ['pose_id'],
 };
 
-/// Descriptor for `MeditationNote`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List meditationNoteDescriptor = $convert.base64Decode(
-    'Cg5NZWRpdGF0aW9uTm90ZRIOCgJpZBgBIAEoCVICaWQSHQoKc2Vzc2lvbl9pZBgCIAEoCVIJc2'
-    'Vzc2lvbklkEhcKB3Bvc2VfaWQYAyABKAlSBnBvc2VJZBIbCglub3RlX3RleHQYBCABKAlSCG5v'
-    'dGVUZXh0Eh0KCmNyZWF0ZWRfYXQYBSABKAlSCWNyZWF0ZWRBdBIdCgp1cGRhdGVkX2F0GAYgAS'
-    'gJUgl1cGRhdGVkQXQ=');
+/// Descriptor for `ModuleSessionNote`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List moduleSessionNoteDescriptor = $convert.base64Decode(
+    'ChFNb2R1bGVTZXNzaW9uTm90ZRIOCgJpZBgBIAEoCVICaWQSHQoKc2Vzc2lvbl9pZBgCIAEoCV'
+    'IJc2Vzc2lvbklkEhsKCW5vdGVfdGV4dBgEIAEoCVIIbm90ZVRleHQSHQoKY3JlYXRlZF9hdBgF'
+    'IAEoCVIJY3JlYXRlZEF0Eh0KCnVwZGF0ZWRfYXQYBiABKAlSCXVwZGF0ZWRBdEoECAMQBFIHcG'
+    '9zZV9pZA==');
 
 @$core.Deprecated('Use createNoteRequestDescriptor instead')
 const CreateNoteRequest$json = {
   '1': 'CreateNoteRequest',
   '2': [
     {'1': 'session_id', '3': 1, '4': 1, '5': 9, '10': 'sessionId'},
-    {'1': 'pose_id', '3': 2, '4': 1, '5': 9, '10': 'poseId'},
     {'1': 'note_text', '3': 3, '4': 1, '5': 9, '10': 'noteText'},
   ],
+  '9': [
+    {'1': 2, '2': 3},
+  ],
+  '10': ['pose_id'],
 };
 
 /// Descriptor for `CreateNoteRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List createNoteRequestDescriptor = $convert.base64Decode(
-    'ChFDcmVhdGVOb3RlUmVxdWVzdBIdCgpzZXNzaW9uX2lkGAEgASgJUglzZXNzaW9uSWQSFwoHcG'
-    '9zZV9pZBgCIAEoCVIGcG9zZUlkEhsKCW5vdGVfdGV4dBgDIAEoCVIIbm90ZVRleHQ=');
+    'ChFDcmVhdGVOb3RlUmVxdWVzdBIdCgpzZXNzaW9uX2lkGAEgASgJUglzZXNzaW9uSWQSGwoJbm'
+    '90ZV90ZXh0GAMgASgJUghub3RlVGV4dEoECAIQA1IHcG9zZV9pZA==');
 
 @$core.Deprecated('Use updateNoteRequestDescriptor instead')
 const UpdateNoteRequest$json = {
@@ -87,7 +93,7 @@ const ListNotesResponse$json = {
       '3': 1,
       '4': 3,
       '5': 11,
-      '6': '.mind.MeditationNote',
+      '6': '.mind.ModuleSessionNote',
       '10': 'notes'
     },
     {'1': 'next_page_token', '3': 2, '4': 1, '5': 9, '10': 'nextPageToken'},
@@ -96,5 +102,5 @@ const ListNotesResponse$json = {
 
 /// Descriptor for `ListNotesResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List listNotesResponseDescriptor = $convert.base64Decode(
-    'ChFMaXN0Tm90ZXNSZXNwb25zZRIqCgVub3RlcxgBIAMoCzIULm1pbmQuTWVkaXRhdGlvbk5vdG'
-    'VSBW5vdGVzEiYKD25leHRfcGFnZV90b2tlbhgCIAEoCVINbmV4dFBhZ2VUb2tlbg==');
+    'ChFMaXN0Tm90ZXNSZXNwb25zZRItCgVub3RlcxgBIAMoCzIXLm1pbmQuTW9kdWxlU2Vzc2lvbk'
+    '5vdGVSBW5vdGVzEiYKD25leHRfcGFnZV90b2tlbhgCIAEoCVINbmV4dFBhZ2VUb2tlbg==');

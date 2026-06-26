@@ -21,9 +21,8 @@ class ModuleSessionNoteService implements IModuleSessionNoteService {
 
   Future<void> _syncToServer(String sessionId, String noteText) async {
     try {
-      await App.shared.meditationNotesGrpcApi.createNote(
+      await App.shared.moduleSessionNotesGrpcApi.createNote(
         sessionId: sessionId,
-        poseId: '',
         noteText: noteText,
       );
     } on GrpcError catch (e) {
