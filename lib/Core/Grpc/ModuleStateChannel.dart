@@ -50,6 +50,13 @@ class ModuleStateChannel {
 
   bool get isConnected => _sessionSub != null;
 
+  /// Fires whenever the session stream sink has just been (re)opened — a
+  /// deterministic "sink now exists" trigger for adapters (e.g.
+  /// `RootStateChannel`) that need to send on connect and every reconnect.
+  final _sessionStreamOpened = PublishSubject<void>();
+
+  Stream<void> get sessionStreamOpened => _sessionStreamOpened.stream;
+
   // ── Subscriptions ─────────────────────────────────────────────────────────
 
   late final StreamSubscription<GrpcConnectionState> _connectionSub;
@@ -123,6 +130,7 @@ class ModuleStateChannel {
         _connectionManager.scheduleReconnect();
       },
     );
+    _sessionStreamOpened.add(null);
   }
 
   void _closeSessionStream() {
@@ -135,6 +143,11 @@ class ModuleStateChannel {
   // ── Proto → typed mapping ─────────────────────────────────────────────────
 
   void _processProtoEvent(proto.StateEvent event) {
+    final activityType = _mapActivityTypeFromProto(event.activityType);
+    if (activityType == ActivityType.root) {
+      _handleRootFrame(event);
+      return;
+    }
     final status = event.status;
     if (status == proto.ActivityStatus.RESUMED) {
       final isPaused = event.isPaused;
@@ -200,6 +213,24 @@ class ModuleStateChannel {
     ));
   }
 
+  /// Routes a `ROOT` frame to the registry only — the root never drives the
+  /// legacy single-state and has no end/stop/pause/resume path.
+  ///
+  /// `COMPLETED`/`INTERRUPTED`/`ABANDONED` are handled defensively: the root
+  /// should never end, but if the server ever sent a terminal frame for it,
+  /// this drops the stale entry rather than leaving a dead root in the
+  /// registry. Any other status is ignored.
+  void _handleRootFrame(proto.StateEvent event) {
+    final status = event.status;
+    if (status == proto.ActivityStatus.ACTIVE || status == proto.ActivityStatus.RESUMED) {
+      _upsertRegistryEntry(event);
+    } else if (status == proto.ActivityStatus.COMPLETED ||
+        status == proto.ActivityStatus.INTERRUPTED ||
+        status == proto.ActivityStatus.ABANDONED) {
+      _registry.removeTerminal(event.moduleSessionId);
+    }
+  }
+
   // ── Public session commands ───────────────────────────────────────────────
 
   void start({required ActivityType type, String? refId, int? clientTimestampMs}) {
@@ -208,9 +239,20 @@ class ModuleStateChannel {
     _sendSessionRequest(proto.StateRequest(
       activityStart: proto.ActivityStartCmd(
         activityType: _mapActivityType(type),
-        refId: refId ?? '',
+        refId: refId,
         clientTimestampMs: clientTimestampMs != null ? Int64(clientTimestampMs) : null,
       ),
+    ));
+  }
+
+  /// Opens the root activity. Unlike [start], this bypasses the child
+  /// single-session guard and never touches `_isPendingStart` — the root is
+  /// idempotent server-side (same `root.id` on every call for a given user)
+  /// and must be re-sent on every reconnect, including while a child is
+  /// active. Root has no `refId` and no `clientTimestampMs`.
+  void startRoot() {
+    _sendSessionRequest(proto.StateRequest(
+      activityStart: proto.ActivityStartCmd(activityType: proto.ActivityType.ROOT),
     ));
   }
 
@@ -290,6 +332,7 @@ class ModuleStateChannel {
     _closeSessionStream();
     _state.close();
     _events.close();
+    _sessionStreamOpened.close();
     _registry.dispose();
   }
 }

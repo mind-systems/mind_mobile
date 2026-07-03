@@ -50,6 +50,7 @@ import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/ModuleInstructionStream.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
 import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
+import 'package:mind/Core/Grpc/RootStateChannel.dart';
 import 'package:mind/Core/Background/ForegroundKeepAlive.dart';
 import 'package:mind/Core/Background/KeepAliveCoordinator.dart';
 import 'package:mind/Core/Sync/SyncEngine.dart';
@@ -96,6 +97,7 @@ class App {
   final AppSettingsNotifier appSettingsNotifier;
   final GrpcConnectionManager connectionManager;
   final ModuleStateChannel moduleStateChannel;
+  final RootStateChannel rootStateChannel;
   final ModuleInstructionStream instructionStream;
   final BreathModuleInstructionStream breathInstructionStream;
   final TokenNotifier tokenNotifier;
@@ -130,6 +132,7 @@ class App {
     required this.appSettingsNotifier,
     required this.connectionManager,
     required this.moduleStateChannel,
+    required this.rootStateChannel,
     required this.instructionStream,
     required this.breathInstructionStream,
     required this.tokenNotifier,
@@ -219,6 +222,7 @@ class App {
 
     final connectionManager = GrpcConnectionManager(authStream: userNotifier.stream, connectivityStream: Connectivity().onConnectivityChanged, resumeStream: appLifecycleService.onResume);
     final moduleStateChannel = ModuleStateChannel(moduleStateService: grpcClient.moduleStateService, connectionManager: connectionManager, authStream: userNotifier.stream);
+    final rootStateChannel = RootStateChannel(channel: moduleStateChannel);
     final bioStreamRouter = BioStreamRouter();
     bioStreamRouter.registerHeartRateSource(bciProvider);
     bioStreamRouter.registerRrIntervalSource(bciProvider);
@@ -252,6 +256,7 @@ class App {
       appSettingsNotifier: appSettingsNotifier,
       connectionManager: connectionManager,
       moduleStateChannel: moduleStateChannel,
+      rootStateChannel: rootStateChannel,
       instructionStream: instructionStream,
       breathInstructionStream: breathInstructionStream,
       tokenNotifier: tokenNotifier,
