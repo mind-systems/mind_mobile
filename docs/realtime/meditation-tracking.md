@@ -1,6 +1,6 @@
 # Трекинг медитационных сессий
 
-`MeditationModuleStateChannel` адаптирует жизненный цикл медитации под общую gRPC-инфраструктуру (`ModuleStateChannel`). Контракт идентичен дыхательному трекингу — `activity:start` / `activity:end` — но адаптер намеренно проще: нет инструкций фаз, нет паузы/возобновления, нет автоматического приостановки в фоне.
+Медитация использует ту же общую инфраструктуру жизненного цикла активности, что и дыхание (см. [live-session-tracking.md](live-session-tracking.md)) — но как одна дочерняя сессия среди N на общем root'е, а не в одиночку: пока идёт медитация, пользователь может параллельно начать дыхательную сессию, и обе будут идти одновременно, независимо друг от друга. Адаптер медитации сознательно проще дыхательного: нет инструкций фаз, нет паузы/возобновления, нет автоматической приостановки в фоне.
 
 ## Жизненный цикл
 
@@ -8,13 +8,13 @@
 idle ──(active)──▶ active ──(idle)──▶ idle
 ```
 
-Переход `idle → active` (нажатие Start) вызывает `channel.start(type: ActivityType.meditation, refId: poseUuid, clientTimestampMs: DateTime.now().millisecondsSinceEpoch)`. Переход `active → idle` (нажатие Stop) вызывает `channel.end(clientTimestampMs: DateTime.now().millisecondsSinceEpoch)`. Флаги `_started` и `_ended` гарантируют единственный вызов каждой команды за жизнь объекта. После каждого `active → idle` канал ре-армируется — следующее нажатие Start создаёт новую активность.
+Переход `idle → active` (нажатие Start) открывает медитацию как дочернюю сессию, привязанную к позе (по её UUID) и к клиентской временной метке момента старта. Переход `active → idle` происходит только по явному нажатию Stop — и только по нему: уход с экрана медитации сессию не завершает, она остаётся живой дочерней сессией на root'е, и её биометрия продолжает записываться. Это то же самое поведение «биометрика пишется в фоне намеренно», о котором сказано ниже — теперь оно распространяется на любую дочернюю сессию, не только на медитацию. После каждого явного завершения адаптер готов к новому старту — следующее нажатие Start создаёт новую дочернюю сессию.
 
-Если сервер прислал событие `ABANDONED` (grace-период истёк), `MeditationModuleStateChannel` ре-армируется автоматически: сбрасывает `_started`, `_ended`, `_moduleSessionId` и `_previousStatus` без уничтожения объекта. Глобальный снекбар отображается через `GlobalListeners` — это общая реакция уровня приложения, не специфичная для медитации.
+Если сервер сообщил, что дерево сессий сброшено целиком (например, после разрыва связи дольше grace-периода), медитация автоматически возвращается в исходное состояние и готова к новому старту — без пересоздания экрана. Пользователю в этом случае показывается общий снекбар — это реакция уровня приложения, не специфичная для медитации.
 
-`refId` — UUID позы из серверного каталога `meditation_poses`, не slug. `MeditationModule.buildSession()` разрешает slug в UUID через `App.shared.meditationPoseUuids` перед передачей в канал. UUID кэш заполняется при открытии списка поз через `MeditationListService.refresh()`.
+`refId` — UUID позы из серверного каталога `meditation_poses`, не slug. Экран разрешает slug в UUID перед стартом сессии; UUID-кэш заполняется при открытии списка поз.
 
-`moduleSessionId` приходит от сервера в ответе `session:state`. Канал подписывается на `channel.state` и сохраняет `moduleSessionId` — координатор читает его после `active → idle`, чтобы передать в `MeditationNoteService` при сохранении заметки.
+Id сессии, присвоенный сервером, приходит в ответ на старт и используется при сохранении заметки после медитации.
 
 ## Сессионный таймер
 
@@ -32,47 +32,27 @@ idle ──(active)──▶ active ──(idle)──▶ idle
 | `poseId` | UUID позы (`meditation_poses.id`) — не slug |
 | `noteText` | Свободный текст |
 | `createdAt` | Unix ms |
-| `serverSessionId` | `moduleSessionId` текущей сессии (nullable) |
+| `serverSessionId` | Id сессии медитации на сервере (nullable) |
 
 Серверный `createNote` — идемпотентный; `ALREADY_EXISTS` не считается ошибкой.
 
-## Чего нет по сравнению с BreathModuleStateChannel
+## Чего нет по сравнению с дыханием
 
-| Возможность | Breath | Meditation |
-|-------------|--------|-----------|
-| Инструкции фаз (breath_phase) | ✅ | ❌ |
-| `activity:pause` / `activity:resume` | ✅ | ❌ |
+| Возможность | Дыхание | Медитация |
+|-------------|---------|-----------|
+| Инструкции фаз | ✅ | ❌ |
+| Пауза и возобновление | ✅ | ❌ |
 | Автопауза при уходе в фон | ✅ | ❌ — запись биометрики продолжается в фоне намеренно |
-| Ожидание `moduleSessionId` для flush инструкций | ✅ | ❌ |
-| `clientTimestampMs` в `start` / `end` | ✅ | ✅ |
-| Сброс при `ABANDONED` | ✅ | ✅ |
+| Ожидание id сессии перед отправкой инструкций | ✅ | ❌ |
+| Клиентская временная метка в старте/завершении | ✅ | ✅ |
+| Автоматическое восстановление после сброса дерева сессий | ✅ | ✅ |
 
-Биометрический pipeline гейтируется теми же событиями `ModuleStateChannel` — дополнительной настройки не требуется.
+Биометрический конвейер гейтируется той же самой общей инфраструктурой жизненного цикла — дополнительной настройки не требуется.
 
 ## Реализация
 
-```
-MeditationSessionScreen
-  └─ MeditationSessionViewModel.stream (idle / active)
-        ↓ подписка в конструкторе
-MeditationModuleStateChannel
-  ├─ channel.start(type: meditation, refId: poseUuid, clientTimestampMs: now)  ← при idle → active
-  ├─ channel.end(clientTimestampMs: now)                                        ← при active → idle (+ ре-арм)
-  ├─ _moduleSessionId ← из channel.state subscription
-  └─ reset() при ModuleSessionAbandoned ← из channel.events subscription
-
-MeditationModule.buildSession()
-  ├─ создаёт канал, подписывает на vm.stream
-  ├─ передаёт getSessionId: () => channel.moduleSessionId в координатор
-  └─ onDispose → channel.dispose()
-
-MeditationSessionCoordinator.onSessionStopped()
-  ├─ открывает MeditationNoteScreen
-  └─ при non-empty text → MeditationNoteService.saveNote(text, sessionId: moduleSessionId)
-```
-
-`dispose()` вызывает `channel.stop()` если сессия начата, но не завершена.
+Экран следит за состоянием сессии (idle/active) и транслирует переходы в команды жизненного цикла: переход в active отправляет старт с UUID позы и временем; переход в idle (нажатие Stop) отправляет явное завершение. Id сессии, пришедший от сервера, сохраняется и передаётся координатору, который после завершения открывает экран заметки и, при непустом тексте, сохраняет заметку с привязкой к этому id. Уход с экрана без нажатия Stop команду завершения не отправляет — сессия остаётся живой дочерней сессией на root'е, как описано выше.
 
 ## Связь с биометрическим конвейером
 
-Подробности о гейтинге по `moduleSessionId` и соотношении с биосигналами — в [docs/biometrics/stream-pipeline.md](../biometrics/stream-pipeline.md) и [docs/realtime/live-session-tracking.md](live-session-tracking.md).
+Подробности о гейтинге по id сессии и соотношении с биосигналами — в [docs/biometrics/stream-pipeline.md](../biometrics/stream-pipeline.md) и [docs/realtime/live-session-tracking.md](live-session-tracking.md).

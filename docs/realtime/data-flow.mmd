@@ -18,22 +18,22 @@ flowchart TB
 
     subgraph SERVER["SERVER"]
         direction TB
-        SessionEngine["Session engine<br/>one active session per user ·<br/>issues correlation key"]
+        SessionEngine["Session engine<br/>root + N concurrent children ·<br/>issues root.id / child id"]
         Collector["Sample collector<br/>buffers · periodic flush"]
     end
 
     subgraph STORE["STORE"]
-        SessionRec[("Session record")]
+        SessionRec[("Session tree record")]
         SampleLog[("Sample log")]
     end
 
-    %% ── Lifecycle: produces the correlation key ──
+    %% ── Lifecycle: produces root.id + child id ──
     Start --> SessionUI --> Adapter
     Adapter -->|"① lifecycle command"| Control
     Control --> SessionEngine --> SessionRec
-    SessionEngine -.->|"② correlation key + events"| Control
-    Control -->|"correlation key"| Adapter
-    Control -. "session events gate sending" .-> Bio
+    SessionEngine -.->|"② root.id + child id + events"| Control
+    Control -->|"child id"| Adapter
+    Control -. "root.id · session events gate sending" .-> Bio
 
     %% ── Instruction log ──
     Adapter -->|"③ phase change"| Instr --> Collector
@@ -43,7 +43,7 @@ flowchart TB
 
     %% ── Persist + correlation ──
     Collector --> SampleLog
-    SampleLog -. "analytics time-join:<br/>correlation key + timestamp" .- SessionRec
+    SampleLog -. "analytics time-join:<br/>root.id / child id + timestamp" .- SessionRec
 
     %% ── Transport raises every tunnel up front ──
     Transport -. opens on connect .-> Control
