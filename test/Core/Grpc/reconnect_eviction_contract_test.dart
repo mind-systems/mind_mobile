@@ -296,9 +296,7 @@ void main() {
 
           final callBaseline = f.service.calls.length;
 
-          // Not yet a real API — dynamic dispatch so this file still
-          // compiles ahead of note 20 adding the method.
-          (f.channel as dynamic).takeOverHere();
+          f.channel.takeOverHere();
           async.flushMicrotasks();
 
           expect(f.service.calls.length, callBaseline + 1);
@@ -314,7 +312,6 @@ void main() {
           f.channel.dispose();
         });
       },
-      skip: 'needs note 20\'s takeOverHere() seam (INV-3) — not yet public',
     );
   });
 }

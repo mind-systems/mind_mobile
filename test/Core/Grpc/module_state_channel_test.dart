@@ -436,29 +436,37 @@ void main() {
 
   group('ModuleStateChannel — CallOptions metadata', () {
     test(
-      'should attach module-session-id metadata when currentState is active with a non-empty id',
+      'should attach module-session-id metadata sourced from root.id when a root is known',
       () async {
         final f = _make();
-        // Activate so state = active('live-123')
-        await _activateSession(f, sessionId: 'live-123');
-        // Reconnect to open a fresh stream against the active state.
+        // Drive a ROOT ACTIVE frame so the registry has a known root.id.
+        await _connect(f);
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'root-1',
+          activityType: proto.ActivityType.ROOT,
+        ));
+        await Future<void>.delayed(Duration.zero);
+        expect(f.channel.rootId, 'root-1');
+
+        // Reconnect to open a fresh stream against the known root.
         await _disconnect(f);
         f.connManager._ctrl.add(GrpcConnectionState.connected);
         await Future<void>.delayed(Duration.zero);
 
         final latestOptions = f.service.latestCall!.options;
         expect(latestOptions, isNotNull);
-        expect(latestOptions!.metadata['module-session-id'], 'live-123');
+        expect(latestOptions!.metadata['module-session-id'], 'root-1');
 
         f.channel.dispose();
       },
     );
 
     test(
-      'should pass null options when currentState.status is not active',
+      'should pass null options on first connect when no root is known yet (idle)',
       () async {
         final f = _make();
-        // State = idle at first connection.
+        // No root has ever been seen — registry is empty at first connection.
         await _connect(f);
 
         expect(f.service.calls.first.options, isNull);
@@ -468,12 +476,11 @@ void main() {
     );
 
     test(
-      'should pass null options when moduleSessionId is null',
+      'should pass null options when the registry has never held a root entry',
       () async {
         final f = _make();
-        // Manually transition: connect, send RESUMED with a known id, then
-        // reset and reconnect with null id (hard to do without internal access).
-        // Simpler: connect when state is idle — moduleSessionId is null.
+        // Same setup as "idle" above — no ROOT frame has landed, so
+        // _registry.rootId is null regardless of any child single-state.
         await _connect(f);
         expect(f.service.calls.first.options, isNull);
 
@@ -482,10 +489,11 @@ void main() {
     );
 
     test(
-      'should pass null options when moduleSessionId is an empty string',
+      'should pass null options when a frame with no activityType arrives (registry stays empty, no root)',
       () async {
         final f = _make();
-        // Activate with an empty moduleSessionId.
+        // A frame with an unrecognized/absent activityType is dropped by
+        // _upsertRegistryEntry, so the registry never gains a root entry.
         await _connect(f);
         f.service.latestCall!.responseCtrl.add(proto.StateResponse(
           sessionState: proto.StateEvent(
@@ -506,31 +514,33 @@ void main() {
     );
 
     test(
-      'should recompute metadata from currentState on each reconnect (stream re-open)',
+      'should recompute metadata from the registry root.id on each reconnect (stream re-open)',
       () async {
         final f = _make();
-        // First connect while state is idle → no metadata.
+        // First connect while no root is known → no metadata.
         await _connect(f);
         expect(f.service.calls.first.options, isNull);
 
-        // Transition to active('s1') via ACTIVE frame.
+        // A ROOT ACTIVE frame lands, populating the registry's root.id.
         f.service.latestCall!.responseCtrl.add(proto.StateResponse(
           sessionState: proto.StateEvent(
             status: proto.ActivityStatus.ACTIVE,
-            moduleSessionId: 's1',
+            moduleSessionId: 'root-1',
+            activityType: proto.ActivityType.ROOT,
           ),
         ));
         await Future<void>.delayed(Duration.zero);
-        expect(f.channel.currentState.moduleSessionId, 's1');
+        expect(f.channel.rootId, 'root-1');
 
-        // Reconnect → _openSessionStream reads currentState which is now active.
+        // Reconnect → _openSessionStream reads the registry's root.id, which
+        // is now known.
         await _disconnect(f);
         f.connManager._ctrl.add(GrpcConnectionState.connected);
         await Future<void>.delayed(Duration.zero);
 
         expect(f.service.calls.length, 2);
         expect(f.service.latestCall!.options, isNotNull);
-        expect(f.service.latestCall!.options!.metadata['module-session-id'], 's1');
+        expect(f.service.latestCall!.options!.metadata['module-session-id'], 'root-1');
 
         f.channel.dispose();
       },
@@ -798,7 +808,7 @@ void main() {
     );
 
     test(
-      'should reset to initial and clear pending-start on an ACTIVITY_STATUS_UNSPECIFIED frame',
+      'should reset to initial and emit SessionTerminated(abandoned) on an ACTIVITY_STATUS_UNSPECIFIED frame',
       () async {
         final f = _make();
         await _activateSession(f);
@@ -810,9 +820,11 @@ void main() {
         );
         await Future<void>.delayed(Duration.zero);
 
-        // State resets; no event emitted.
+        // State resets; exactly one SessionTerminated(abandoned) is emitted.
         expect(f.channel.currentState.status, ModuleStateStatus.idle);
-        expect(received, isEmpty);
+        expect(received, hasLength(1));
+        expect(received.first, isA<SessionTerminated>());
+        expect((received.first as SessionTerminated).reason, SessionTerminationReason.abandoned);
 
         f.channel.dispose();
       },

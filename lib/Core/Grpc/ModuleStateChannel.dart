@@ -44,6 +44,25 @@ class ModuleStateChannel {
   bool _isPendingStart = false;
   bool _isPendingPause = false;
 
+  // ── Reconcile-by-arrival (armed on every `_openSessionStream`) ───────────
+
+  /// The settling window's timer — cancelled on the next reopen and in
+  /// `dispose()` so a pending `Timer` never survives its owning stream.
+  Timer? _reconcileTimer;
+
+  /// Real child arrivals recorded on the current settling window, or `null`
+  /// when no window is armed. Only ids present here survive the sweep at
+  /// window-close; a snapshotted child id absent from this set is evicted.
+  Set<String>? _arrivedChildIds;
+
+  // ── Close classification (per-stream transient) ──────────────────────────
+
+  /// Set when a `session_error{code:'CONNECTION_SUPERSEDED'}` frame is seen
+  /// on the current stream; read by `onDone` to classify the close as a
+  /// yield rather than a bare drop. Reset to `false` whenever the FSM enters
+  /// `opening` — a transition guard, not a cross-handler latch.
+  bool _supersededOnThisStream = false;
+
   // ── Connection lifecycle FSM ─────────────────────────────────────────────
 
   ConnectionLifecycle _lifecycle = ConnectionLifecycle.disconnected;
@@ -89,6 +108,10 @@ class ModuleStateChannel {
     _connectionSub = connectionManager.connectionState.listen((state) {
       switch (state) {
         case GrpcConnectionState.connected:
+          // A yielded session must not re-take on a connection-manager
+          // reopen (connectivity / app-resume / auth) — only takeOverHere()
+          // may leave `yielded`.
+          if (_lifecycle == ConnectionLifecycle.yielded) break;
           _openSessionStream();
         case GrpcConnectionState.disconnected:
           _closeSessionStream();
@@ -104,15 +127,38 @@ class ModuleStateChannel {
 
   // ── Session stream management ─────────────────────────────────────────────
 
-  // Future reconnect impl: gate reopening here on `_lifecycle ==
-  // ConnectionLifecycle.yielded` once `SUPERSEDED → yielded` is wired.
   void _openSessionStream() {
+    // Read root.id before any reconcile step drops the pre-reconnect root
+    // (note 20 Task 7), so the pre-reconnect root.id still reaches the
+    // header. Never a child id (note 20 — "send root.id only when known").
+    final rootId = _registry.rootId;
+    _supersededOnThisStream = false;
     _transition(ConnectionLifecycle.opening);
+
+    // Reconcile-by-arrival: snapshot the currently-cached child ids, drop the
+    // pre-reconnect root entry immediately (rootId is null until a fresh
+    // ROOT frame lands), and arm a 3s settling window. Every real child
+    // arrival is recorded into `_arrivedChildIds` by `_upsertRegistryEntry`;
+    // whatever snapshotted id never re-arrives is evicted when the window
+    // closes. Armed on every open, including the first connect, where the
+    // snapshot is empty and the sweep is a no-op.
+    _reconcileTimer?.cancel();
+    final snapshotChildIds = _registry.childIds;
+    if (rootId != null) _registry.removeById(rootId);
+    _arrivedChildIds = <String>{};
+    _reconcileTimer = Timer(const Duration(seconds: 3), () {
+      for (final id in snapshotChildIds) {
+        if (!_arrivedChildIds!.contains(id)) {
+          _registry.removeById(id);
+        }
+      }
+      _arrivedChildIds = null;
+      _reconcileTimer = null;
+    });
+
     _sessionSink = StreamController<proto.StateRequest>();
-    final liveId = currentState.moduleSessionId;
-    final options = (currentState.status == ModuleStateStatus.active &&
-            liveId != null && liveId.isNotEmpty)
-        ? CallOptions(metadata: {'module-session-id': liveId})
+    final options = (rootId != null && rootId.isNotEmpty)
+        ? CallOptions(metadata: {'module-session-id': rootId})
         : null;
     final response = _moduleStateService.trackActivity(_sessionSink!.stream, options: options);
     _sessionSub = response.listen(
@@ -131,6 +177,10 @@ class ModuleStateChannel {
             if (r.sessionError.code == 'no_active_session') {
               _state.add(ModuleState.initial());
               _registry.clear();
+            } else if (r.sessionError.code == 'CONNECTION_SUPERSEDED') {
+              // Do not reset state here — the close that follows drives the
+              // transition (see onDone below).
+              _supersededOnThisStream = true;
             }
           case proto.StateResponse_Event.notSet:
             break;
@@ -146,9 +196,15 @@ class ModuleStateChannel {
       onDone: () {
         logPrint('[ModuleStateChannel] session stream done');
         _closeSessionStream();
-        _connectionManager.disconnect();
-        _connectionManager.scheduleReconnect();
-        _transition(ConnectionLifecycle.reconnecting);
+        if (_supersededOnThisStream) {
+          _transition(ConnectionLifecycle.yielded);
+          _resetWholeTree();
+          _events.add(SessionTerminated(SessionTerminationReason.movedToAnotherDevice));
+        } else {
+          _connectionManager.disconnect();
+          _connectionManager.scheduleReconnect();
+          _transition(ConnectionLifecycle.reconnecting);
+        }
       },
     );
     _sessionStreamOpened.add(null);
@@ -203,12 +259,12 @@ class ModuleStateChannel {
       _events.add(ModuleSessionAbandoned());
       _registry.removeTerminal(event.moduleSessionId);
     } else if (status == proto.ActivityStatus.ACTIVITY_STATUS_UNSPECIFIED) {
-      _isPendingStart = false;
-      _state.add(ModuleState.initial());
-      // Parity with the single-state reset above: an UNSPECIFIED frame can
-      // still carry a moduleSessionId, so an upsert-skip alone would leave
-      // stale entries — clear() is what matches the single-state reset.
-      _registry.clear();
+      // Whole-tree reset: an UNSPECIFIED frame can still carry a
+      // moduleSessionId, so an upsert-skip alone would leave stale entries —
+      // _resetWholeTree() is what matches the single-state reset and also
+      // clears the pending guards.
+      _resetWholeTree();
+      _events.add(SessionTerminated(SessionTerminationReason.abandoned));
     } else {
       logPrint('[ModuleStateChannel] unhandled status: $status');
     }
@@ -226,6 +282,11 @@ class ModuleStateChannel {
   void _upsertRegistryEntry(proto.StateEvent event) {
     final activityType = _mapActivityTypeFromProto(event.activityType);
     if (activityType == null) return;
+    // Reconcile-by-arrival: record every real child arrival while a settling
+    // window is armed, so the sweep at window-close knows this id is alive.
+    if (_arrivedChildIds != null && activityType != ActivityType.root) {
+      _arrivedChildIds!.add(event.moduleSessionId);
+    }
     _registry.upsert(ModuleSession(
       id: event.moduleSessionId,
       activityType: activityType,
@@ -239,8 +300,10 @@ class ModuleStateChannel {
   ///
   /// `COMPLETED`/`INTERRUPTED`/`ABANDONED` are handled defensively: the root
   /// should never end, but if the server ever sent a terminal frame for it,
-  /// this drops the stale entry rather than leaving a dead root in the
-  /// registry. Any other status is ignored.
+  /// this is a whole-tree termination (note 26 groups `rootDeath` with
+  /// `abandoned`/`movedToAnotherDevice`) — the reset must land before any
+  /// freshly-minted root repopulates the registry. Any other status is
+  /// ignored.
   void _handleRootFrame(proto.StateEvent event) {
     final status = event.status;
     if (status == proto.ActivityStatus.ACTIVE || status == proto.ActivityStatus.RESUMED) {
@@ -248,8 +311,20 @@ class ModuleStateChannel {
     } else if (status == proto.ActivityStatus.COMPLETED ||
         status == proto.ActivityStatus.INTERRUPTED ||
         status == proto.ActivityStatus.ABANDONED) {
-      _registry.removeTerminal(event.moduleSessionId);
+      _resetWholeTree();
+      _events.add(SessionTerminated(SessionTerminationReason.rootDeath));
     }
+  }
+
+  /// The one caller allowed to leave `yielded` — the `yielded → opening`
+  /// transition. No-op unless currently `yielded`. Clears the close-latch
+  /// and reopens a fresh session stream directly (bypassing the
+  /// connected-handler guard above), which re-fires `sessionStreamOpened` so
+  /// `RootStateChannel` re-mints a clean root with no children.
+  void takeOverHere() {
+    if (_lifecycle != ConnectionLifecycle.yielded) return;
+    _supersededOnThisStream = false;
+    _openSessionStream();
   }
 
   // ── Public session commands ───────────────────────────────────────────────
@@ -343,11 +418,21 @@ class ModuleStateChannel {
     }
   }
 
-  void _reset() {
+  /// Whole-tree reset shared by every whole-tree termination site (SUPERSEDED
+  /// yield, `{abandoned}` UNSPECIFIED, root-level terminal): clears the
+  /// registry, resets single-state to idle, and clears both pending guards.
+  /// Idempotent — a second reset lands cleanly. Callers emit their own
+  /// `SessionTerminated(reason)` after calling this.
+  void _resetWholeTree() {
+    _registry.clear();
+    _state.add(ModuleState.initial());
     _isPendingStart = false;
     _isPendingPause = false;
-    _state.add(ModuleState.initial());
-    _registry.clear();
+  }
+
+  void _reset() {
+    _resetWholeTree();
+    _supersededOnThisStream = false;
     _transition(ConnectionLifecycle.disconnected);
   }
 
@@ -357,6 +442,7 @@ class ModuleStateChannel {
     _connectionSub.cancel();
     _authSub.cancel();
     _closeSessionStream();
+    _reconcileTimer?.cancel();
     _state.close();
     _events.close();
     _sessionStreamOpened.close();

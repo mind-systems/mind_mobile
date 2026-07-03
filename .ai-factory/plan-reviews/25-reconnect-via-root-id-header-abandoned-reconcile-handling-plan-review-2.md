@@ -1,0 +1,42 @@
+# Plan Review 2: Reconnect via `root.id` header + abandoned/reconcile handling
+
+**Plan:** `.ai-factory/plans/25-reconnect-via-root-id-header-abandoned-reconcile-handling.md`
+**Files Reviewed:** plan + `ModuleStateChannel.dart`, `ConnectionLifecycle.dart`, `SessionRegistry.dart`, `ModuleStateEvent.dart`, `RootStateChannel.dart`, `BreathModuleStateChannel.dart`, `MeditationModuleStateChannel.dart`, `reconnect_eviction_contract_test.dart`, `reconnect_concurrency_harness.dart`, `module_state_channel_test.dart`
+**Risk Level:** 🟢 Low — both review-1 blockers are resolved in the task text, every line pin re-verifies against the current tree, and a full trace of INV-1..7 / SC-3..6 against the revised plan goes green with no guard regression.
+
+## Context Gates
+- **ROADMAP.md:** WARN-clear. The plan heading matches the milestone line and correctly anchors to `Spec:` note 20 on the notes 25/26 refactor substrate. No linkage gap.
+- **Governing spec (note 20):** The two divergences flagged in review-1 are now folded into the plan; it mirrors §13/§37 (yield performs a whole-tree reset, "starts fresh … do not expect the old children back") and §36/§37 (guard scoped to connection-manager reopens; `takeOverHere()` is *the* `yielded → opening` transition).
+- **ARCHITECTURE.md / RULES.md:** No conflict. The change is confined to `lib/Core/Grpc/`; no module-boundary, DI, or App.dart convention is touched.
+- **No migration / proto change:** Pure Dart gRPC logic over existing statuses and the existing `CONNECTION_SUPERSEDED` string. No Drift schema, no `.proto`. Correct — no migration required.
+
+## Verification of review-1 fixes
+
+**Critical Issue 1 (yield path never reset the tree → INV-3 red): RESOLVED.** Task 3 now transitions `→ yielded`, calls a new `_resetWholeTree()` helper (`_registry.clear()` + `_state.add(ModuleState.initial())` + clear both pending guards), *then* emits `SessionTerminated(movedToAnotherDevice)` — no `disconnect()`/`scheduleReconnect()`. Traced against INV-3 (`reconnect_eviction_contract_test.dart:281-317`): after SUPERSEDED+close the registry and single-state are empty; `takeOverHere()` reopens onto an empty snapshot, so `currentState.status == idle` (`:308`) and `childOfType(breath) == null` (`:311`) hold immediately, without waiting on the 3s window. The `movedToAnotherDevice` path is now symmetric with Task 5's `abandoned`/`rootDeath` resets, and all three share the single `_resetWholeTree()` helper so the reset cannot drift between reasons.
+
+**Critical Issue 2 (guard placement self-blocks takeover): RESOLVED.** Task 4 pins the reopen guard to the `connected` handler only (`case connected: if (_lifecycle == yielded) break;`) and explicitly forbids placing it at the top of `_openSessionStream`, because `takeOverHere()` calls `_openSessionStream()` directly while still `yielded`. Traced: INV-2/SC-6 app-resume hits the guarded `connected` case and does not reopen (`calls.length` unchanged); INV-3's `takeOverHere()` bypasses the handler, so `_openSessionStream` runs and `calls.length == callBaseline + 1` (`:304`) holds. `_reset` (logout) already `→ disconnected`; Task 4 adds clearing `_supersededOnThisStream` there.
+
+**Minor notes from review-1: all folded in.** Task 7 now specifies `childIds` excludes the `ActivityType.root` entry (mirrors the `childOfType` guard at `SessionRegistry.dart:62-68`), `removeById` calls `_notify()` so `rootId` updates synchronously for Task 1's read-before-drop, and the settling `Timer` is cancelled on the next reopen and in `dispose()`. Task 3/4 keep the flag lifetime (reset-on-`opening`, cleared in `_reset`) in one commit.
+
+## Line-pin & blast-radius re-verification
+- **Production pins accurate:** `_openSessionStream:109-155`, header `:112-116`, `sessionError:129-134`, `onError:139-145`, `onDone:146-152`, `connected` case `:91-92`, UNSPECIFIED `:205-211`, `_handleRootFrame` terminal `:248-252`, `_upsertRegistryEntry:226-235`, pending guards `:44-45`, `_reset:346-352`, `dispose:356-364`, `_transition:54-57`. All correct.
+- **Test pins accurate:** Group 4 `:437-538`, positive assertions `:449-451`/`:531-533`; UNSPECIFIED test `:800-819`, `received, isEmpty` `:815`, state-idle `:814`; INV-3 skip `:317`, dynamic call `:301`, `calls.length` `:304`. All correct.
+- **Task 2 premise confirmed:** `_activateSession` (`:151-163`) drives a bare `ACTIVE` frame with **no** `activityType`, so `_upsertRegistryEntry` early-returns and the registry stays empty → `_registry.rootId` is null under the new source. The two positive header assertions therefore *must* be rewritten to drive a ROOT frame first, exactly as Task 2 specifies; the three null-options tests stay meaningful.
+- **Blast radius is complete.** A suite-wide grep for `module-session-id` / `CONNECTION_SUPERSEDED` / `takeOverHere` / `SessionTerminated` / `ActivityType.ROOT` hits only the three files the plan already scopes (`module_state_channel_test.dart`, `reconnect_eviction_contract_test.dart`, harness). The Group 11 UNSPECIFIED test (`:1240-1269`) attaches no event listener and asserts only state/`rootId`, so Task 5's new `SessionTerminated(abandoned)` emission does not touch it — correctly excluded.
+- **Emitter is inert on the wired consumers under test.** The concurrent harness wires *real* breath/meditation adapters, so I checked their `SessionTerminated` reactions: `BreathModuleStateChannel:52-54` calls `reset()` (internal bookkeeping only) and `MeditationModuleStateChannel:34-42` clears fields only — neither issues a `_channel.start/end/pause`, so firing the emitter in INV-3/INV-6 adds no `trackActivity` call and does not perturb `calls.length` or the `childOfType` assertions. The "do not touch the consumers" restraint is safe.
+
+## Minor Notes (non-blocking)
+- **Task 7 wording — "not while yielded" is effectively a no-op guard.** `_openSessionStream` transitions to `opening` on its first line (`:110`), so by the time the reconcile step runs the lifecycle is already `opening`, never `yielded`. The reconcile-skip clause therefore never actually fires, which is the correct behavior (both entry points — the guarded `connected` handler and `takeOverHere()` — should reconcile). Harmless, but the implementer should not add a literal `if (_lifecycle == yielded) return;` before the reconcile block expecting it to skip anything; the connected-handler guard is what makes yielded reopens inert.
+- **`_resetWholeTree()` helper straddles two commits.** Introduced inline in Commit 2 (Task 3) and reused in Commit 3 (Task 5). Since Commit 3 depends on Commit 2 this is fine; just ensure the helper is not accidentally duplicated when Task 5 lands.
+- **`no_active_session` branch left as-is.** The existing `sessionError` handler (`:131-134`) does a partial reset (`_state.add(initial())` + `_registry.clear()`, no pending-guard clear, no event). The plan does not touch it and note 20 does not require it — noted only so the implementer does not "helpfully" fold it into `_resetWholeTree()` and change its (untested) behavior.
+
+## Positive Notes
+- **The whole-tree-reset symmetry is now the plan's backbone.** Factoring `_resetWholeTree()` and calling it from all three reasons (`movedToAnotherDevice`/`abandoned`/`rootDeath`) is exactly the fix review-1 asked for and removes the internal inconsistency between Task 3 and Task 5.
+- **FSM-first discipline preserved.** `_supersededOnThisStream` is a per-stream transition guard reset on `opening`, not a reintroduced free latch; every state change is a `ConnectionLifecycle` transition or a `SessionTerminated(reason)` emission.
+- **Reconcile-by-arrival matches the spec precisely** — read-root-before-drop for the header, drop-root-immediately (INV-4), snapshot/arm/evict-silent (INV-5/SC-3), tolerate one-or-many collapsed frames, timer cancelled on reopen and dispose, and a clean settling-window seam for note 19's start-race with no retry implemented here.
+- **Commit plan pairs each production change with its migrated assertions**, so no commit lands red, and Task 8 un-skips INV-3 / swaps the dynamic dispatch only after Task 4 makes `takeOverHere()` public.
+
+## Verdict
+The two must-fix items from review-1 are resolved in the task text, the minor notes are folded in, every line pin and test premise re-verifies against the current tree, and a full trace of the executable spec goes green without weakening any GREEN-now guard. No blocking issues remain.
+
+PLAN_REVIEW_PASS

@@ -37,6 +37,29 @@ class SessionRegistry {
     _notify();
   }
 
+  /// Removes the entry with the given [id], if present, and fires the
+  /// change/rootId notifications synchronously.
+  ///
+  /// Used by reconnect-reconcile (`ModuleStateChannel._openSessionStream`)
+  /// to drop a single stale entry — the pre-reconnect root immediately on
+  /// reopen, or an un-arrived child once the settling window elapses.
+  /// Distinct from [removeTerminal]: this is not a terminal-status removal,
+  /// it is an eviction driven by reconnect timing.
+  void removeById(String id) {
+    if (_isDisposed) return;
+    _sessions.remove(id);
+    _notify();
+  }
+
+  /// The `id`s of every non-root entry currently cached — mirrors the root
+  /// exclusion in [childOfType]. Used to snapshot the pre-reconnect child
+  /// set for reconcile-by-arrival; the terminal-status decision stays in the
+  /// caller.
+  Set<String> get childIds => {
+        for (final session in _sessions.values)
+          if (session.activityType != ActivityType.root) session.id,
+      };
+
   /// Empties the registry and fires the change/rootId notifications.
   ///
   /// Used to reset the whole registry on logout / no-active-session, which
