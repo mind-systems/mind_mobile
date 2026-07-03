@@ -1763,4 +1763,40 @@ void main() {
       },
     );
   });
+
+  // ── Phase 15: root/child id decoupling guard (note 23) ────────────────────
+  //
+  // Bio's retarget to root.id (note 17) must never leak into the phase path —
+  // phase/instruction markers stay on the CHILD id. Expected GREEN now and
+  // after note 17 (regression lock).
+
+  group('BreathModuleStateChannel — phase samples stay on the CHILD id', () {
+    test(
+      'should tag phase/instruction samples with the CHILD moduleSessionId, never with a root id',
+      () async {
+        const rootSentinel = 'root-1';
+        final f = _make();
+
+        // ModuleState carries the CHILD id — never the root id.
+        f.channel.stateController.add(
+          const ModuleState(moduleSessionId: 'child-breath', status: ModuleStateStatus.active),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // Drive a running state (session start) then a phase change to emit a marker.
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.inhale, exerciseIndex: 0));
+        await Future<void>.delayed(Duration.zero);
+        f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running, phase: BreathPhase.exhale, exerciseIndex: 0, currentPhaseTotalDuration: 3));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.instructionStream.sendSampleCalls, isNotEmpty);
+        for (final call in f.instructionStream.sendSampleCalls) {
+          expect(call.$1, 'child-breath');
+          expect(call.$1, isNot(rootSentinel));
+        }
+
+        f.target.dispose();
+      },
+    );
+  });
 }

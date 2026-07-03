@@ -11,6 +11,7 @@ import 'package:mind/Core/Grpc/InstructionSample.dart';
 import 'package:mind/Core/Grpc/ModuleInstructionStream.dart';
 import 'package:mind/Core/Grpc/generated/module_instruction_stream.pb.dart';
 import 'package:mind/Core/Grpc/generated/module_instruction_stream.pbgrpc.dart';
+import 'package:mind/Core/Grpc/generated/module_state.pb.dart' show StateErrorEvent;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Fakes
@@ -915,6 +916,47 @@ void main() {
       () {
         final f = _make();
         expect(() => f.mis.dispose(), returnsNormally);
+      },
+    );
+  });
+
+  // ── Phase 8: late SESSION_NOT_FOUND is swallowed (note 23 guard) ──────────
+  //
+  // A phase sample arriving after its child ended races a benign
+  // SESSION_NOT_FOUND from the server. Note 17 relies on this being dropped
+  // silently — no throw, no teardown. Expected GREEN now and after note 17.
+
+  group('ModuleInstructionStream — late SESSION_NOT_FOUND is swallowed', () {
+    test(
+      'should not throw and should not tear down the stream when the server sends a SESSION_NOT_FOUND error frame',
+      () async {
+        final f = _make();
+        await _connect(f);
+        await _makeReady(f);
+
+        expect(
+          () => f.service.latestCall!.responseCtrl.add(
+            StreamResponse(
+              error: StateErrorEvent(
+                code: 'SESSION_NOT_FOUND',
+                message: 'late phase sample after child ended',
+              ),
+            ),
+          ),
+          returnsNormally,
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // No teardown / reconnect scheduled beyond current behavior.
+        expect(f.connManager.disconnectCount, 0);
+        expect(f.connManager.scheduleReconnectCount, 0);
+
+        // Stream is not torn down — a subsequent emit still reaches the wire.
+        f.mis.emit(_sample(timestamp: 1));
+        await Future<void>.delayed(Duration.zero);
+        expect(f.service.latestCall!.sentSamples, hasLength(1));
+
+        f.mis.dispose();
       },
     );
   });

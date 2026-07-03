@@ -26,6 +26,7 @@ class BiometricStreamClient {
   final $bio.ModuleBiometricStreamServiceClient _grpcStub;
   late final StreamSubscription<GrpcConnectionState> _connectionSub;
   late final StreamSubscription<ModuleStateEvent> _lifecycleSub;
+  StreamSubscription<String?>? _rootIdSub;
 
   String? _currentSessionId;
   bool _sessionConfirmed = false;
@@ -62,6 +63,7 @@ class BiometricStreamClient {
     required $bio.ModuleBiometricStreamServiceClient grpcStub,
     required Stream<ModuleStateEvent> moduleStateEvents,
     required Stream<GrpcConnectionState> connectionState,
+    Stream<String?>? rootIdChanges,
     DateTime Function() clock = DateTime.now,
     Duration readyTimeout = const Duration(seconds: 5),
   })  : _grpcStub = grpcStub,
@@ -79,6 +81,10 @@ class BiometricStreamClient {
           break;
       }
     });
+    // note 17: this is the injection point where bio will be retargeted to
+    // subscribe `_currentSessionId`/`_sessionConfirmed` off the root-id stream
+    // instead of `_onLifecycleEvent`. Additive no-op for now — behavior unchanged.
+    _rootIdSub = rootIdChanges?.listen(_onRootIdChanged);
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -105,6 +111,10 @@ class BiometricStreamClient {
     }
   }
 
+  /// No-op placeholder for the root-id seam (note 17 wires this into
+  /// `_currentSessionId`/`_sessionConfirmed`). Intentionally does nothing yet.
+  void _onRootIdChanged(String? rootId) {}
+
   // ── Public API ────────────────────────────────────────────────────────────
 
   void sendBatch(List<BioSample> samples) {
@@ -119,6 +129,7 @@ class BiometricStreamClient {
     _readyTimer = null;
     await _connectionSub.cancel();
     await _lifecycleSub.cancel();
+    await _rootIdSub?.cancel();
     await _responseSub?.cancel();
     await _sink?.close();
     _sink = null;
