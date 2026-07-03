@@ -348,14 +348,14 @@ void main() {
     );
 
     test(
-      'should call channel.stop exactly once when dispose is invoked while the session is active',
+      'should not call channel.stop when dispose is invoked while the session is active',
       () async {
         final f = _make();
         f.stateCtrl.add(_state(status: MeditationSessionStatus.active));
         await Future<void>.delayed(Duration.zero);
         f.target.dispose();
 
-        expect(f.channel.stopCount, 1);
+        expect(f.channel.stopCount, 0);
       },
     );
 

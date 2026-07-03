@@ -166,10 +166,6 @@ class BreathModuleStateChannel {
   }
 
   void dispose() {
-    if (_started && !_ended) {
-      logPrint('[BreathModuleState] BreathModuleStateChannel: dispose — stopping session [$_sessionId]');
-      _channel.stop(sessionId: _childSessionId);
-    }
     _stateSub.cancel();
     _channelSub.cancel();
     _eventsSub.cancel();

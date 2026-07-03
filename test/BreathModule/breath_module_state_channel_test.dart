@@ -665,19 +665,19 @@ void main() {
     );
 
     test(
-      'should call channel.stop exactly once when dispose is invoked while the session is started and not yet ended (breath -> dispose)',
+      'should not call channel.stop when dispose is invoked while the session is started and not yet ended (breath -> dispose)',
       () async {
         final f = _make();
         f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
         await Future<void>.delayed(Duration.zero);
         f.target.dispose();
 
-        expect(f.channel.stopCount, 1);
+        expect(f.channel.stopCount, 0);
       },
     );
 
     test(
-      'should call channel.stop exactly once when dispose is invoked while the session is paused after being started (breath -> pause -> dispose)',
+      'should not call channel.stop when dispose is invoked while the session is paused after being started (breath -> pause -> dispose)',
       () async {
         final f = _make();
         f.stateCtrl.add(_state(lifecycle: BreathLifecycle.running));
@@ -686,7 +686,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         f.target.dispose();
 
-        expect(f.channel.stopCount, 1);
+        expect(f.channel.stopCount, 0);
       },
     );
 

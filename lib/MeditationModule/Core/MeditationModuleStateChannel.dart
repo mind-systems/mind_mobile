@@ -71,7 +71,6 @@ class MeditationModuleStateChannel {
   }
 
   void dispose() {
-    if (_started && !_ended) _channel.stop(sessionId: _childSessionId);
     _stateSub.cancel();
     _channelSub.cancel();
     _eventsSub.cancel();
