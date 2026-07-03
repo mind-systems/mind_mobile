@@ -50,7 +50,13 @@ class BreathModuleStateChannel {
       if (sessionId != null) _flushPending(sessionId);
     });
     _eventsSub = channel.events.listen((event) {
-      if (event is ModuleSessionAbandoned || event is SessionTerminated) reset();
+      if (event is ModuleSessionAbandoned || event is SessionTerminated) {
+        reset();
+      } else if (event is SessionStartFailed && event.type == ActivityType.breath) {
+        // Only this adapter's own failed start — an unfiltered reset would
+        // clear a live concurrent sibling (e.g. meditation) mid-practice.
+        reset();
+      }
     });
   }
 

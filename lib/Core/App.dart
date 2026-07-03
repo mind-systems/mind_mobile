@@ -320,6 +320,7 @@ class MyApp extends ConsumerWidget {
           sessionExpiredStream: App.shared.userNotifier.sessionExpiredStream,
           sessionAbandonedStream: App.shared.moduleStateChannel.events.where((e) => e is ModuleSessionAbandoned).map((_) {}),
           sessionTerminatedStream: App.shared.moduleStateChannel.events.where((e) => e is SessionTerminated).map((e) => (e as SessionTerminated).reason),
+          sessionStartFailedStream: App.shared.moduleStateChannel.events.where((e) => e is SessionStartFailed).map((_) {}),
           child: child!,
         );
       },

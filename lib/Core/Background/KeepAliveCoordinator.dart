@@ -59,6 +59,8 @@ class KeepAliveCoordinator {
         break;
       case ModuleSessionUnpaused():
         break;
+      case SessionStartFailed():
+        break;
     }
   }
 }

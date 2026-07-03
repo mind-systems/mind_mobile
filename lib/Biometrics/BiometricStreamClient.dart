@@ -113,6 +113,8 @@ class BiometricStreamClient {
         _sessionConfirmed = false;
         _lastOpenAttempt = null;
         _replayRing.clear();
+      case SessionStartFailed():
+        break;
     }
   }
 

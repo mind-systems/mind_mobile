@@ -10,6 +10,7 @@
   "sessionExpired": "Session expired",
   "sessionAbandoned": "Session ended unexpectedly",
   "sessionMovedToAnotherDevice": "Session moved to another device",
+  "sessionStartFailed": "Couldn't start session",
   "heartTickNoSourceTitle": "Heart rate sensor",
   "heartTickNoSourceDescription": "To breathe in sync with your heart, connect a heart rate sensor.",
 

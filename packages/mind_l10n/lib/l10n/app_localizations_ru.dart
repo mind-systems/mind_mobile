@@ -37,6 +37,9 @@ class AppLocalizationsRu extends AppLocalizations {
       'Сессия перенесена на другое устройство';
 
   @override
+  String get sessionStartFailed => 'Не удалось начать сессию';
+
+  @override
   String get heartTickNoSourceTitle => 'Датчик пульса';
 
   @override

@@ -17,18 +17,22 @@ import 'package:mind_ui/mind_ui.dart';
 ///   confirms a session was abandoned while the client believed it was active)
 /// - Whole-tree termination via [sessionTerminatedStream] (fires with a
 ///   [SessionTerminationReason] — the snackbar copy is picked by reason)
+/// - Start give-up via [sessionStartFailedStream] (fires when a pending start
+///   never confirmed within its retry budget)
 ///
 /// Should wrap the root widget of the application.
 class GlobalListeners extends ConsumerStatefulWidget {
   final Stream<void> sessionExpiredStream;
   final Stream<void> sessionAbandonedStream;
   final Stream<SessionTerminationReason> sessionTerminatedStream;
+  final Stream<void> sessionStartFailedStream;
   final Widget child;
 
   const GlobalListeners({
     required this.sessionExpiredStream,
     required this.sessionAbandonedStream,
     required this.sessionTerminatedStream,
+    required this.sessionStartFailedStream,
     required this.child,
     super.key,
   });
@@ -41,6 +45,7 @@ class _GlobalListenersState extends ConsumerState<GlobalListeners> {
   StreamSubscription<void>? _sessionExpiredSubscription;
   StreamSubscription<void>? _sessionAbandonedSubscription;
   StreamSubscription<SessionTerminationReason>? _sessionTerminatedSubscription;
+  StreamSubscription<void>? _sessionStartFailedSubscription;
 
   @override
   void initState() {
@@ -60,6 +65,9 @@ class _GlobalListenersState extends ConsumerState<GlobalListeners> {
           _showSnackBar(SnackBarEvent.error(_sessionAbandonedMessage()));
       }
     });
+    _sessionStartFailedSubscription = widget.sessionStartFailedStream.listen((_) {
+      _showSnackBar(SnackBarEvent.error(_sessionStartFailedMessage()));
+    });
   }
 
   @override
@@ -67,6 +75,7 @@ class _GlobalListenersState extends ConsumerState<GlobalListeners> {
     _sessionExpiredSubscription?.cancel();
     _sessionAbandonedSubscription?.cancel();
     _sessionTerminatedSubscription?.cancel();
+    _sessionStartFailedSubscription?.cancel();
     super.dispose();
   }
 
@@ -105,6 +114,13 @@ class _GlobalListenersState extends ConsumerState<GlobalListeners> {
     final context = rootScaffoldMessengerKey.currentContext;
     if (context == null || !context.mounted) return fallback;
     return AppLocalizations.of(context)?.sessionMovedToAnotherDevice ?? fallback;
+  }
+
+  String _sessionStartFailedMessage() {
+    const fallback = "Couldn't start session";
+    final context = rootScaffoldMessengerKey.currentContext;
+    if (context == null || !context.mounted) return fallback;
+    return AppLocalizations.of(context)?.sessionStartFailed ?? fallback;
   }
 
   void _showSnackBar(SnackBarEvent event) {

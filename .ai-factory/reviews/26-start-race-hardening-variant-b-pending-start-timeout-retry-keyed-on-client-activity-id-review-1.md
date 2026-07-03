@@ -1,0 +1,30 @@
+# Code Review — Start-race hardening (variant B): pending-start + timeout + retry keyed on `client_activity_id`
+
+**Scope reviewed:** full `git diff HEAD` — `lib/Core/Grpc/ModuleStateChannel.dart` (the bulk), `ModuleStateEvent.dart`, both module adapters, `GlobalListeners.dart`, `App.dart`, `BiometricStreamClient.dart`, `KeepAliveCoordinator.dart`, l10n (arb + generated), and the test migration.
+**Verification:** `flutter test test/Core/Grpc/ test/BreathModule/ test/MeditationModule/` → **All 464 tests passed** (incl. the previously-RED `start_race_contract_test.dart` and the untouched `reconnect_eviction_contract_test.dart`). `flutter analyze` on all 7 changed production files → **No issues found**.
+
+## Verdict
+
+The implementation faithfully executes the plan and correctly greens every RED scenario (SC-1, SC-2, SC-3, INV-8/9/10-cross-type/11) while preserving the GREEN-now guards (INV-8 post-confirm, INV-10/SC-7 same-type adopt, INV-12 ceiling). All five plan-review-1 fixes are present and correct: `SessionStartFailed` + both exhaustive-switch cases land in the same commit as the emit site; adapter resets are type-scoped; `_beginStart` registers the pending before sending (so released deferred starts get a real retry lifecycle); the double-fire guard cancels carried-pending timers on reconnect open; and adopt precedes the settling defer in `start()`. Registry-based adopt fully subsumes the removed `currentState.status == active` guard (registry is upserted alongside every ACTIVE/RESUMED that flips single-state active). One low-severity latent race is noted below; it does not block.
+
+## Findings
+
+### [Low] Settling-window resolution can consume the retry budget on sends dropped while disconnected → premature `SessionStartFailed`
+
+`ModuleStateChannel._resolveSettling()` (`lib/Core/Grpc/ModuleStateChannel.dart:530-543`) re-sends carried pendings and releases deferred starts via `_sendStart`/`_beginStart` **without an `isConnected` guard** — unlike `_onConfirmTimeout` (`:510-517`), which deliberately does *not* consume a retry when the transport is down. `_resolveSettling` runs from the reconcile-timer callback (`:208-218`), and that timer is **not cancelled** when the stream drops mid-window: the `disconnected` handler (`:157-159`) and `onDone` (`:257-269`) both close the sink and go to `reconnecting` but leave `_reconcileTimer` armed (pre-existing note-20 behavior; this milestone adds the send-side effect).
+
+**Failure scenario:** a reconnect opens the settling window (t0, `_settlingActive=true`, 3s timer armed) with a carried pending breath start; at ~t1 the freshly-reopened stream drops again (flaky network — `disconnected` or bare `onDone`), closing `_sessionSink` but leaving the reconcile timer armed; at t3 the timer fires and `_resolveSettling` calls `_sendStart(p)`, which hits the `_sessionSink == null` guard in `_sendSessionRequest` (`:554-560`) → the request is **dropped/logged**, yet `p.attempts++` still runs and a fresh 5s timer is armed. The dropped send burns one of the 3 attempts even though nothing reached the server. Repeated across a few flaky reconnect cycles, the budget exhausts on never-delivered sends and `_onConfirmTimeout` emits `SessionStartFailed` → "Couldn't start session" snackbar + adapter reset, losing a practice that a genuine retry could still have recovered.
+
+**Why it matters:** the whole milestone exists to *not* silently lose a tap-into-void start; this path can surface a hard give-up precisely on the bad-network conditions the feature targets. It is narrow (requires a drop landing inside a 3s window) and not covered by the contract tests (they assert single clean reconnects), so it will not fail CI.
+
+**Suggested fix (pick one):** guard the two send loops in `_resolveSettling` with `if (isConnected)` (mirroring `_onConfirmTimeout`'s asymmetry — hold, don't consume, when the sink is gone); or cancel `_reconcileTimer` in the `disconnected`/`onDone` reconnect transitions so a window never resolves against a dead sink. The former is the smaller change and keeps resolution logic in one place.
+
+## Strengths / verified-correct behaviors
+
+- **Retry budget is per-pending and global across reconnects** (`attempts` lives on `_PendingStart`), so INV-12's ≤3-attempt ceiling holds even when a carried pending is re-sent by the settling window — no per-window reset that could overshoot.
+- **Double-fire guard is sound:** on a reconnect open, carried pendings' own timers are cancelled (`:203-206`) and only re-armed by `_resolveSettling`; a subsequent reopen cancels the prior `_reconcileTimer` (`:192`) so a superseded window's deferred/carried starts are inherited and resolved by the new window rather than stranded.
+- **`carriedTypes` snapshot before releasing deferred starts** (`:533`) correctly prevents a just-released deferred start from being re-sent twice in the same pass; deferred and carried maps are provably disjoint (step-2 pending guard in `start()` blocks a same-type defer while a pending exists).
+- **Confirmation clears pending by exact `activity_type`** on both ACTIVE and RESUMED (`_clearPendingStart`, `:293/:303/:549-552`), and `_resetWholeTree`/`dispose` cancel every pending timer (`:595-598/:617-619`) — no leaked `Timer`s.
+- **Type-scoped adapter reset** (`BreathModuleStateChannel.dart:53-59`, `MeditationModuleStateChannel.dart:35-55`) correctly avoids clearing a live concurrent sibling on the other type's give-up; whole-tree `ModuleSessionAbandoned`/`SessionTerminated` stay unfiltered as intended.
+- **l10n fully regenerated** — `sessionStartFailed` present in `app_en.arb`, `app_ru.arb`, and all three generated files; the only `GlobalListeners(` construction site (`App.dart:319`) supplies the new required `sessionStartFailedStream`, so the added required param breaks nothing.
+- **First-connect timing untouched:** `isReconnectOpen = _lifecycle != disconnected` leaves `_settlingActive=false` and skips `_resolveSettling` on the initial connect, so the 5s confirm-timeout retry cadence (SC-2) is preserved.

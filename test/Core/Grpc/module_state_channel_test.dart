@@ -299,7 +299,8 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         final countAfterFirstPause = f.service.latestCall!.sentRequests.length;
 
-        // RESUMED clears both _isPendingStart and _isPendingPause.
+        // RESUMED clears both the type's per-activity-type pending-start
+        // entry and _isPendingPause.
         f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
           proto.ActivityStatus.RESUMED,
           moduleSessionId: 'sid',

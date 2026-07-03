@@ -152,6 +152,12 @@ abstract class AppLocalizations {
   /// **'Session moved to another device'**
   String get sessionMovedToAnotherDevice;
 
+  /// No description provided for @sessionStartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start session'**
+  String get sessionStartFailed;
+
   /// No description provided for @heartTickNoSourceTitle.
   ///
   /// In en, this message translates to:

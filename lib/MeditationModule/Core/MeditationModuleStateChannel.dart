@@ -33,11 +33,11 @@ class MeditationModuleStateChannel {
     });
     _eventsSub = channel.events.listen((event) {
       if (event is ModuleSessionAbandoned || event is SessionTerminated) {
-        _started = false;
-        _ended = false;
-        _moduleSessionId = null;
-        _previousStatus = null;
-        _clientActivityId = null;
+        _reset();
+      } else if (event is SessionStartFailed && event.type == ActivityType.meditation) {
+        // Only this adapter's own failed start — an unfiltered reset would
+        // clear a live concurrent sibling (e.g. breath) mid-practice.
+        _reset();
       }
     });
   }
@@ -45,6 +45,14 @@ class MeditationModuleStateChannel {
   String? get moduleSessionId => _moduleSessionId;
 
   String? get _childSessionId => _channel.childOfType(ActivityType.meditation)?.id;
+
+  void _reset() {
+    _started = false;
+    _ended = false;
+    _moduleSessionId = null;
+    _previousStatus = null;
+    _clientActivityId = null;
+  }
 
   void _onState(MeditationSessionState state) {
     final status = state.status;
