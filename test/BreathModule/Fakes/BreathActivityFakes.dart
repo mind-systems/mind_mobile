@@ -12,6 +12,7 @@ import 'package:breath_module/breath_module.dart'
         TickData,
         TickSource;
 import 'package:mind/Core/Grpc/ActivityType.dart';
+import 'package:mind/Core/Grpc/ModuleSession.dart';
 import 'package:mind/Core/Grpc/ModuleState.dart';
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
 import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
@@ -79,20 +80,23 @@ class FakeModuleStateChannel implements ModuleStateChannel {
   Stream<ModuleStateEvent> get events => eventsController.stream;
 
   @override
-  void start({required ActivityType type, String? refId, int? clientTimestampMs}) =>
+  ModuleSession? childOfType(ActivityType type) => null;
+
+  @override
+  void start({required ActivityType type, String? refId, int? clientTimestampMs, String? clientActivityId}) =>
       startCalls.add((type, refId));
 
   @override
-  void unpause() => unpauseCount++;
+  void unpause({String? sessionId}) => unpauseCount++;
 
   @override
-  void pause() => pauseCount++;
+  void pause({String? sessionId}) => pauseCount++;
 
   @override
-  void end({int? clientTimestampMs}) => endCount++;
+  void end({int? clientTimestampMs, String? sessionId}) => endCount++;
 
   @override
-  void stop() => stopCount++;
+  void stop({String? sessionId}) => stopCount++;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

@@ -233,7 +233,7 @@ class ModuleStateChannel {
 
   // ── Public session commands ───────────────────────────────────────────────
 
-  void start({required ActivityType type, String? refId, int? clientTimestampMs}) {
+  void start({required ActivityType type, String? refId, int? clientTimestampMs, String? clientActivityId}) {
     if (currentState.status == ModuleStateStatus.active || _isPendingStart) return;
     _isPendingStart = true;
     _sendSessionRequest(proto.StateRequest(
@@ -241,6 +241,7 @@ class ModuleStateChannel {
         activityType: _mapActivityType(type),
         refId: refId,
         clientTimestampMs: clientTimestampMs != null ? Int64(clientTimestampMs) : null,
+        clientActivityId: clientActivityId,
       ),
     ));
   }
@@ -250,36 +251,40 @@ class ModuleStateChannel {
   /// idempotent server-side (same `root.id` on every call for a given user)
   /// and must be re-sent on every reconnect, including while a child is
   /// active. Root has no `refId` and no `clientTimestampMs`.
-  void startRoot() {
+  void startRoot({String? clientActivityId}) {
     _sendSessionRequest(proto.StateRequest(
-      activityStart: proto.ActivityStartCmd(activityType: proto.ActivityType.ROOT),
-    ));
-  }
-
-  void pause() {
-    if (currentState.status != ModuleStateStatus.active || currentState.isPaused || _isPendingPause) return;
-    _isPendingPause = true;
-    _sendSessionRequest(proto.StateRequest(activityPause: proto.ActivityPauseCmd()));
-  }
-
-  void unpause() {
-    if (!currentState.isPaused) return;
-    _isPendingPause = false;
-    _sendSessionRequest(proto.StateRequest(activityResume: proto.ActivityResumeCmd()));
-  }
-
-  void end({int? clientTimestampMs}) {
-    if (currentState.status == ModuleStateStatus.idle) return;
-    _sendSessionRequest(proto.StateRequest(
-      activityEnd: proto.ActivityEndCmd(
-        clientTimestampMs: clientTimestampMs != null ? Int64(clientTimestampMs) : null,
+      activityStart: proto.ActivityStartCmd(
+        activityType: proto.ActivityType.ROOT,
+        clientActivityId: clientActivityId,
       ),
     ));
   }
 
-  void stop() {
+  void pause({String? sessionId}) {
+    if (currentState.status != ModuleStateStatus.active || currentState.isPaused || _isPendingPause) return;
+    _isPendingPause = true;
+    _sendSessionRequest(proto.StateRequest(activityPause: proto.ActivityPauseCmd(sessionId: sessionId)));
+  }
+
+  void unpause({String? sessionId}) {
+    if (!currentState.isPaused) return;
+    _isPendingPause = false;
+    _sendSessionRequest(proto.StateRequest(activityResume: proto.ActivityResumeCmd(sessionId: sessionId)));
+  }
+
+  void end({int? clientTimestampMs, String? sessionId}) {
     if (currentState.status == ModuleStateStatus.idle) return;
-    _sendSessionRequest(proto.StateRequest(activityStop: proto.ActivityStopCmd()));
+    _sendSessionRequest(proto.StateRequest(
+      activityEnd: proto.ActivityEndCmd(
+        clientTimestampMs: clientTimestampMs != null ? Int64(clientTimestampMs) : null,
+        sessionId: sessionId,
+      ),
+    ));
+  }
+
+  void stop({String? sessionId}) {
+    if (currentState.status == ModuleStateStatus.idle) return;
+    _sendSessionRequest(proto.StateRequest(activityStop: proto.ActivityStopCmd(sessionId: sessionId)));
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────

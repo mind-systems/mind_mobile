@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:uuid/uuid.dart';
 import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Logger.dart';
 import 'package:mind/Core/Grpc/ModuleState.dart';
@@ -20,6 +21,7 @@ class BreathModuleStateChannel {
   BreathPhase? _previousPhase;
   int? _previousExerciseIndex;
   String? _moduleSessionId;
+  String? _clientActivityId;
   ({BreathSessionState state, int offsetMs})? _pendingInstruction;
 
   final Stopwatch _stopwatch;
@@ -54,6 +56,8 @@ class BreathModuleStateChannel {
 
   String? get moduleSessionId => _moduleSessionId;
 
+  String? get _childSessionId => _channel.childOfType(ActivityType.breath)?.id;
+
   void _onState(BreathSessionState state) {
     if (state.loadState != SessionLoadState.ready) return;
     _handleLifecycle(state);
@@ -87,13 +91,19 @@ class BreathModuleStateChannel {
         logPrint('[BreathModuleState] BreathModuleStateChannel: session start [$_sessionId]');
         _stopwatch..reset()..start();
         _originWallClock = _clock();
-        _channel.start(type: ActivityType.breath, refId: _sessionId, clientTimestampMs: _originWallClock!.millisecondsSinceEpoch);
+        _clientActivityId = const Uuid().v4();
+        _channel.start(
+          type: ActivityType.breath,
+          refId: _sessionId,
+          clientTimestampMs: _originWallClock!.millisecondsSinceEpoch,
+          clientActivityId: _clientActivityId,
+        );
         _started = true;
         _previousPhase = null;
         _previousExerciseIndex = null;
       } else {
         logPrint('[BreathModuleState] BreathModuleStateChannel: session resume [$_sessionId]');
-        _channel.unpause();
+        _channel.unpause(sessionId: _childSessionId);
         _emitMarker(state.phase.name, state.currentPhaseTotalDuration, _stopwatch.elapsedMilliseconds);
         _previousPhase = state.phase;
         _previousExerciseIndex = state.exerciseIndex;
@@ -101,13 +111,13 @@ class BreathModuleStateChannel {
     } else if (wasRunning && lifecycle == BreathLifecycle.paused) {
       if (_started && !_ended) {
         logPrint('[BreathModuleState] BreathModuleStateChannel: session pause [$_sessionId]');
-        _channel.pause();
+        _channel.pause(sessionId: _childSessionId);
         _emitMarker('pause', 0, _stopwatch.elapsedMilliseconds);
       }
     } else if (lifecycle == BreathLifecycle.completed) {
       if (_started && !_ended) {
         logPrint('[BreathModuleState] session complete at offset=${_stopwatch.elapsedMilliseconds}ms — sending end [$_sessionId]');
-        _channel.end(clientTimestampMs: _wireTimestamp(_stopwatch.elapsedMilliseconds));
+        _channel.end(clientTimestampMs: _wireTimestamp(_stopwatch.elapsedMilliseconds), sessionId: _childSessionId);
         _ended = true;
       }
     }
@@ -151,13 +161,14 @@ class BreathModuleStateChannel {
     _pendingInstruction = null;
     _stopwatch..stop()..reset();
     _originWallClock = null;
+    _clientActivityId = null;
     // Subscriptions stay alive — the stream is reused across restarts.
   }
 
   void dispose() {
     if (_started && !_ended) {
       logPrint('[BreathModuleState] BreathModuleStateChannel: dispose — stopping session [$_sessionId]');
-      _channel.stop();
+      _channel.stop(sessionId: _childSessionId);
     }
     _stateSub.cancel();
     _channelSub.cancel();

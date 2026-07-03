@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:uuid/uuid.dart';
 import 'package:mind/Logger.dart';
 
 import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
@@ -12,13 +13,14 @@ import 'package:mind/Core/Grpc/ModuleStateChannel.dart';
 /// tagging). There is no end/stop/pause/resume path — the root never ends.
 class RootStateChannel {
   final ModuleStateChannel _channel;
+  final String _clientActivityId = const Uuid().v4();
 
   late final StreamSubscription<void> _streamOpenedSub;
 
   RootStateChannel({required ModuleStateChannel channel}) : _channel = channel {
     _streamOpenedSub = _channel.sessionStreamOpened.listen((_) {
       logPrint('[RootStateChannel] opening root');
-      _channel.startRoot();
+      _channel.startRoot(clientActivityId: _clientActivityId);
     });
   }
 
