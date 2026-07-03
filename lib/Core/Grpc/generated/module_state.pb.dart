@@ -28,11 +28,13 @@ class ActivityStartCmd extends $pb.GeneratedMessage {
     ActivityType? activityType,
     $core.String? refId,
     $fixnum.Int64? clientTimestampMs,
+    $core.String? clientActivityId,
   }) {
     final result = create();
     if (activityType != null) result.activityType = activityType;
     if (refId != null) result.refId = refId;
     if (clientTimestampMs != null) result.clientTimestampMs = clientTimestampMs;
+    if (clientActivityId != null) result.clientActivityId = clientActivityId;
     return result;
   }
 
@@ -53,6 +55,7 @@ class ActivityStartCmd extends $pb.GeneratedMessage {
         enumValues: ActivityType.values)
     ..aOS(2, _omitFieldNames ? '' : 'refId')
     ..aInt64(4, _omitFieldNames ? '' : 'clientTimestampMs')
+    ..aOS(5, _omitFieldNames ? '' : 'clientActivityId')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -102,15 +105,29 @@ class ActivityStartCmd extends $pb.GeneratedMessage {
   $core.bool hasClientTimestampMs() => $_has(2);
   @$pb.TagNumber(4)
   void clearClientTimestampMs() => $_clearField(4);
+
+  /// Client idempotency token for deduplicating retried activity:start commands
+  /// (e.g. network retry or double-tap). Server uses this to avoid creating
+  /// duplicate sessions for the same logical start event.
+  @$pb.TagNumber(5)
+  $core.String get clientActivityId => $_getSZ(3);
+  @$pb.TagNumber(5)
+  set clientActivityId($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(5)
+  $core.bool hasClientActivityId() => $_has(3);
+  @$pb.TagNumber(5)
+  void clearClientActivityId() => $_clearField(5);
 }
 
 /// Maps to ActivityEndDto in src/realtime/dto/activity-end.dto.ts.
 class ActivityEndCmd extends $pb.GeneratedMessage {
   factory ActivityEndCmd({
     $fixnum.Int64? clientTimestampMs,
+    $core.String? sessionId,
   }) {
     final result = create();
     if (clientTimestampMs != null) result.clientTimestampMs = clientTimestampMs;
+    if (sessionId != null) result.sessionId = sessionId;
     return result;
   }
 
@@ -128,6 +145,7 @@ class ActivityEndCmd extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
     ..aInt64(1, _omitFieldNames ? '' : 'clientTimestampMs')
+    ..aOS(2, _omitFieldNames ? '' : 'sessionId')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -159,11 +177,27 @@ class ActivityEndCmd extends $pb.GeneratedMessage {
   $core.bool hasClientTimestampMs() => $_has(0);
   @$pb.TagNumber(1)
   void clearClientTimestampMs() => $_clearField(1);
+
+  /// Addresses a specific child session among concurrent ones.
+  @$pb.TagNumber(2)
+  $core.String get sessionId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set sessionId($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasSessionId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSessionId() => $_clearField(2);
 }
 
 /// Stop is handled inline in the gateway; no existing DTO.
 class ActivityStopCmd extends $pb.GeneratedMessage {
-  factory ActivityStopCmd() => create();
+  factory ActivityStopCmd({
+    $core.String? sessionId,
+  }) {
+    final result = create();
+    if (sessionId != null) result.sessionId = sessionId;
+    return result;
+  }
 
   ActivityStopCmd._();
 
@@ -178,6 +212,7 @@ class ActivityStopCmd extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'ActivityStopCmd',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'sessionId')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -198,10 +233,26 @@ class ActivityStopCmd extends $pb.GeneratedMessage {
   static ActivityStopCmd getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ActivityStopCmd>(create);
   static ActivityStopCmd? _defaultInstance;
+
+  /// Addresses a specific child session among concurrent ones.
+  @$pb.TagNumber(1)
+  $core.String get sessionId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set sessionId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSessionId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSessionId() => $_clearField(1);
 }
 
 class ActivityPauseCmd extends $pb.GeneratedMessage {
-  factory ActivityPauseCmd() => create();
+  factory ActivityPauseCmd({
+    $core.String? sessionId,
+  }) {
+    final result = create();
+    if (sessionId != null) result.sessionId = sessionId;
+    return result;
+  }
 
   ActivityPauseCmd._();
 
@@ -216,6 +267,7 @@ class ActivityPauseCmd extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'ActivityPauseCmd',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'sessionId')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -236,10 +288,26 @@ class ActivityPauseCmd extends $pb.GeneratedMessage {
   static ActivityPauseCmd getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ActivityPauseCmd>(create);
   static ActivityPauseCmd? _defaultInstance;
+
+  /// Addresses a specific child session among concurrent ones.
+  @$pb.TagNumber(1)
+  $core.String get sessionId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set sessionId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSessionId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSessionId() => $_clearField(1);
 }
 
 class ActivityResumeCmd extends $pb.GeneratedMessage {
-  factory ActivityResumeCmd() => create();
+  factory ActivityResumeCmd({
+    $core.String? sessionId,
+  }) {
+    final result = create();
+    if (sessionId != null) result.sessionId = sessionId;
+    return result;
+  }
 
   ActivityResumeCmd._();
 
@@ -254,6 +322,7 @@ class ActivityResumeCmd extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'ActivityResumeCmd',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'mind'),
       createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'sessionId')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -274,19 +343,33 @@ class ActivityResumeCmd extends $pb.GeneratedMessage {
   static ActivityResumeCmd getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ActivityResumeCmd>(create);
   static ActivityResumeCmd? _defaultInstance;
+
+  /// Addresses a specific child session among concurrent ones.
+  @$pb.TagNumber(1)
+  $core.String get sessionId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set sessionId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSessionId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSessionId() => $_clearField(1);
 }
 
 /// Maps to SessionStateDto in src/realtime/dto/session-state.dto.ts.
+/// activity_type = 4 is the per-frame discriminator: ROOT ⇒ the frame describes
+/// the root session; BREATH/MEDITATION ⇒ the frame describes a child session.
 class StateEvent extends $pb.GeneratedMessage {
   factory StateEvent({
     $core.String? moduleSessionId,
     ActivityStatus? status,
     $core.bool? isPaused,
+    ActivityType? activityType,
   }) {
     final result = create();
     if (moduleSessionId != null) result.moduleSessionId = moduleSessionId;
     if (status != null) result.status = status;
     if (isPaused != null) result.isPaused = isPaused;
+    if (activityType != null) result.activityType = activityType;
     return result;
   }
 
@@ -307,6 +390,8 @@ class StateEvent extends $pb.GeneratedMessage {
     ..aE<ActivityStatus>(2, _omitFieldNames ? '' : 'status',
         enumValues: ActivityStatus.values)
     ..aOB(3, _omitFieldNames ? '' : 'isPaused')
+    ..aE<ActivityType>(4, _omitFieldNames ? '' : 'activityType',
+        enumValues: ActivityType.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -353,6 +438,15 @@ class StateEvent extends $pb.GeneratedMessage {
   $core.bool hasIsPaused() => $_has(2);
   @$pb.TagNumber(3)
   void clearIsPaused() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  ActivityType get activityType => $_getN(3);
+  @$pb.TagNumber(4)
+  set activityType(ActivityType value) => $_setField(4, value);
+  @$pb.TagNumber(4)
+  $core.bool hasActivityType() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearActivityType() => $_clearField(4);
 }
 
 /// Maps to SessionErrorDto in src/realtime/dto/session-error.dto.ts.

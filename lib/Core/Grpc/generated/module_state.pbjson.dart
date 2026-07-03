@@ -22,13 +22,14 @@ const ActivityType$json = {
     {'1': 'ACTIVITY_TYPE_UNSPECIFIED', '2': 0},
     {'1': 'BREATH', '2': 1},
     {'1': 'MEDITATION', '2': 2},
+    {'1': 'ROOT', '2': 3},
   ],
 };
 
 /// Descriptor for `ActivityType`. Decode as a `google.protobuf.EnumDescriptorProto`.
 final $typed_data.Uint8List activityTypeDescriptor = $convert.base64Decode(
     'CgxBY3Rpdml0eVR5cGUSHQoZQUNUSVZJVFlfVFlQRV9VTlNQRUNJRklFRBAAEgoKBkJSRUFUSB'
-    'ABEg4KCk1FRElUQVRJT04QAg==');
+    'ABEg4KCk1FRElUQVRJT04QAhIICgRST09UEAM=');
 
 @$core.Deprecated('Use activityStatusDescriptor instead')
 const ActivityStatus$json = {
@@ -72,10 +73,20 @@ const ActivityStartCmd$json = {
       '10': 'clientTimestampMs',
       '17': true
     },
+    {
+      '1': 'client_activity_id',
+      '3': 5,
+      '4': 1,
+      '5': 9,
+      '9': 2,
+      '10': 'clientActivityId',
+      '17': true
+    },
   ],
   '8': [
     {'1': '_ref_id'},
     {'1': '_client_timestamp_ms'},
+    {'1': '_client_activity_id'},
   ],
   '9': [
     {'1': 3, '2': 4},
@@ -86,8 +97,9 @@ const ActivityStartCmd$json = {
 final $typed_data.Uint8List activityStartCmdDescriptor = $convert.base64Decode(
     'ChBBY3Rpdml0eVN0YXJ0Q21kEjcKDWFjdGl2aXR5X3R5cGUYASABKA4yEi5taW5kLkFjdGl2aX'
     'R5VHlwZVIMYWN0aXZpdHlUeXBlEhoKBnJlZl9pZBgCIAEoCUgAUgVyZWZJZIgBARIzChNjbGll'
-    'bnRfdGltZXN0YW1wX21zGAQgASgDSAFSEWNsaWVudFRpbWVzdGFtcE1ziAEBQgkKB19yZWZfaW'
-    'RCFgoUX2NsaWVudF90aW1lc3RhbXBfbXNKBAgDEAQ=');
+    'bnRfdGltZXN0YW1wX21zGAQgASgDSAFSEWNsaWVudFRpbWVzdGFtcE1ziAEBEjEKEmNsaWVudF'
+    '9hY3Rpdml0eV9pZBgFIAEoCUgCUhBjbGllbnRBY3Rpdml0eUlkiAEBQgkKB19yZWZfaWRCFgoU'
+    'X2NsaWVudF90aW1lc3RhbXBfbXNCFQoTX2NsaWVudF9hY3Rpdml0eV9pZEoECAMQBA==');
 
 @$core.Deprecated('Use activityEndCmdDescriptor instead')
 const ActivityEndCmd$json = {
@@ -102,43 +114,99 @@ const ActivityEndCmd$json = {
       '10': 'clientTimestampMs',
       '17': true
     },
+    {
+      '1': 'session_id',
+      '3': 2,
+      '4': 1,
+      '5': 9,
+      '9': 1,
+      '10': 'sessionId',
+      '17': true
+    },
   ],
   '8': [
     {'1': '_client_timestamp_ms'},
+    {'1': '_session_id'},
   ],
 };
 
 /// Descriptor for `ActivityEndCmd`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List activityEndCmdDescriptor = $convert.base64Decode(
     'Cg5BY3Rpdml0eUVuZENtZBIzChNjbGllbnRfdGltZXN0YW1wX21zGAEgASgDSABSEWNsaWVudF'
-    'RpbWVzdGFtcE1ziAEBQhYKFF9jbGllbnRfdGltZXN0YW1wX21z');
+    'RpbWVzdGFtcE1ziAEBEiIKCnNlc3Npb25faWQYAiABKAlIAVIJc2Vzc2lvbklkiAEBQhYKFF9j'
+    'bGllbnRfdGltZXN0YW1wX21zQg0KC19zZXNzaW9uX2lk');
 
 @$core.Deprecated('Use activityStopCmdDescriptor instead')
 const ActivityStopCmd$json = {
   '1': 'ActivityStopCmd',
+  '2': [
+    {
+      '1': 'session_id',
+      '3': 1,
+      '4': 1,
+      '5': 9,
+      '9': 0,
+      '10': 'sessionId',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_session_id'},
+  ],
 };
 
 /// Descriptor for `ActivityStopCmd`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List activityStopCmdDescriptor =
-    $convert.base64Decode('Cg9BY3Rpdml0eVN0b3BDbWQ=');
+final $typed_data.Uint8List activityStopCmdDescriptor = $convert.base64Decode(
+    'Cg9BY3Rpdml0eVN0b3BDbWQSIgoKc2Vzc2lvbl9pZBgBIAEoCUgAUglzZXNzaW9uSWSIAQFCDQ'
+    'oLX3Nlc3Npb25faWQ=');
 
 @$core.Deprecated('Use activityPauseCmdDescriptor instead')
 const ActivityPauseCmd$json = {
   '1': 'ActivityPauseCmd',
+  '2': [
+    {
+      '1': 'session_id',
+      '3': 1,
+      '4': 1,
+      '5': 9,
+      '9': 0,
+      '10': 'sessionId',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_session_id'},
+  ],
 };
 
 /// Descriptor for `ActivityPauseCmd`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List activityPauseCmdDescriptor =
-    $convert.base64Decode('ChBBY3Rpdml0eVBhdXNlQ21k');
+final $typed_data.Uint8List activityPauseCmdDescriptor = $convert.base64Decode(
+    'ChBBY3Rpdml0eVBhdXNlQ21kEiIKCnNlc3Npb25faWQYASABKAlIAFIJc2Vzc2lvbklkiAEBQg'
+    '0KC19zZXNzaW9uX2lk');
 
 @$core.Deprecated('Use activityResumeCmdDescriptor instead')
 const ActivityResumeCmd$json = {
   '1': 'ActivityResumeCmd',
+  '2': [
+    {
+      '1': 'session_id',
+      '3': 1,
+      '4': 1,
+      '5': 9,
+      '9': 0,
+      '10': 'sessionId',
+      '17': true
+    },
+  ],
+  '8': [
+    {'1': '_session_id'},
+  ],
 };
 
 /// Descriptor for `ActivityResumeCmd`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List activityResumeCmdDescriptor =
-    $convert.base64Decode('ChFBY3Rpdml0eVJlc3VtZUNtZA==');
+final $typed_data.Uint8List activityResumeCmdDescriptor = $convert.base64Decode(
+    'ChFBY3Rpdml0eVJlc3VtZUNtZBIiCgpzZXNzaW9uX2lkGAEgASgJSABSCXNlc3Npb25JZIgBAU'
+    'INCgtfc2Vzc2lvbl9pZA==');
 
 @$core.Deprecated('Use stateEventDescriptor instead')
 const StateEvent$json = {
@@ -162,6 +230,14 @@ const StateEvent$json = {
       '10': 'isPaused',
       '17': true
     },
+    {
+      '1': 'activity_type',
+      '3': 4,
+      '4': 1,
+      '5': 14,
+      '6': '.mind.ActivityType',
+      '10': 'activityType'
+    },
   ],
   '8': [
     {'1': '_is_paused'},
@@ -172,7 +248,8 @@ const StateEvent$json = {
 final $typed_data.Uint8List stateEventDescriptor = $convert.base64Decode(
     'CgpTdGF0ZUV2ZW50EioKEW1vZHVsZV9zZXNzaW9uX2lkGAEgASgJUg9tb2R1bGVTZXNzaW9uSW'
     'QSLAoGc3RhdHVzGAIgASgOMhQubWluZC5BY3Rpdml0eVN0YXR1c1IGc3RhdHVzEiAKCWlzX3Bh'
-    'dXNlZBgDIAEoCEgAUghpc1BhdXNlZIgBAUIMCgpfaXNfcGF1c2Vk');
+    'dXNlZBgDIAEoCEgAUghpc1BhdXNlZIgBARI3Cg1hY3Rpdml0eV90eXBlGAQgASgOMhIubWluZC'
+    '5BY3Rpdml0eVR5cGVSDGFjdGl2aXR5VHlwZUIMCgpfaXNfcGF1c2Vk');
 
 @$core.Deprecated('Use stateErrorEventDescriptor instead')
 const StateErrorEvent$json = {

@@ -9,11 +9,14 @@ package mind;
 // Maps to ActivityType enum in src/realtime/enums/activity-type.enum.ts.
 // ACTIVITY_TYPE_UNSPECIFIED = 0 is the sentinel to prevent uninitialized fields
 // from silently matching a real value.
+// ROOT = 3 is the client-addressable root session marker — the client opens it
+// via activity:start { activity_type: ROOT } and learns its id from the response.
 // Extension point for future activity types.
 enum ActivityType {
   ACTIVITY_TYPE_UNSPECIFIED = 0;
   BREATH = 1;
   MEDITATION = 2;
+  ROOT = 3;
 }
 
 // Maps to SessionStatus enum in src/realtime/enums/session-status.enum.ts.
@@ -42,6 +45,10 @@ message ActivityStartCmd {
   // Client wall-clock instant (Unix millis) that drives startedAt.
   // Optional for backward compatibility — absent means server now().
   optional int64 client_timestamp_ms = 4;
+  // Client idempotency token for deduplicating retried activity:start commands
+  // (e.g. network retry or double-tap). Server uses this to avoid creating
+  // duplicate sessions for the same logical start event.
+  optional string client_activity_id = 5;
 }
 
 // Maps to ActivityEndDto in src/realtime/dto/activity-end.dto.ts.
@@ -49,24 +56,38 @@ message ActivityEndCmd {
   // Client wall-clock instant (Unix millis) that drives endedAt.
   // Optional for backward compatibility — absent means server now().
   optional int64 client_timestamp_ms = 1;
+  // Addresses a specific child session among concurrent ones.
+  optional string session_id = 2;
 }
 
 // Stop is handled inline in the gateway; no existing DTO.
-message ActivityStopCmd {}
+message ActivityStopCmd {
+  // Addresses a specific child session among concurrent ones.
+  optional string session_id = 1;
+}
 
-message ActivityPauseCmd {}
+message ActivityPauseCmd {
+  // Addresses a specific child session among concurrent ones.
+  optional string session_id = 1;
+}
 
-message ActivityResumeCmd {}
+message ActivityResumeCmd {
+  // Addresses a specific child session among concurrent ones.
+  optional string session_id = 1;
+}
 
 // ---------------------------------------------------------------------------
 // Server → client events
 // ---------------------------------------------------------------------------
 
 // Maps to SessionStateDto in src/realtime/dto/session-state.dto.ts.
+// activity_type = 4 is the per-frame discriminator: ROOT ⇒ the frame describes
+// the root session; BREATH/MEDITATION ⇒ the frame describes a child session.
 message StateEvent {
   string module_session_id = 1;
   ActivityStatus status = 2;
   optional bool is_paused = 3;
+  ActivityType activity_type = 4;
 }
 
 // Maps to SessionErrorDto in src/realtime/dto/session-error.dto.ts.

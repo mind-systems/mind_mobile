@@ -216,6 +216,23 @@ class ModuleStateChannel {
         return proto.ActivityType.BREATH;
       case ActivityType.meditation:
         return proto.ActivityType.MEDITATION;
+      case ActivityType.root:
+        return proto.ActivityType.ROOT;
+    }
+  }
+
+  // ignore: unused_element
+  ActivityType? _mapActivityTypeFromProto(proto.ActivityType type) {
+    switch (type) {
+      case proto.ActivityType.BREATH:
+        return ActivityType.breath;
+      case proto.ActivityType.MEDITATION:
+        return ActivityType.meditation;
+      case proto.ActivityType.ROOT:
+        return ActivityType.root;
+      default:
+        logPrint('[ModuleStateChannel] dropping unknown activity type: $type');
+        return null;
     }
   }
 

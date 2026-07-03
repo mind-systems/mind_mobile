@@ -17,6 +17,8 @@ import 'package:protobuf/protobuf.dart' as $pb;
 /// Maps to ActivityType enum in src/realtime/enums/activity-type.enum.ts.
 /// ACTIVITY_TYPE_UNSPECIFIED = 0 is the sentinel to prevent uninitialized fields
 /// from silently matching a real value.
+/// ROOT = 3 is the client-addressable root session marker — the client opens it
+/// via activity:start { activity_type: ROOT } and learns its id from the response.
 /// Extension point for future activity types.
 class ActivityType extends $pb.ProtobufEnum {
   static const ActivityType ACTIVITY_TYPE_UNSPECIFIED =
@@ -25,15 +27,18 @@ class ActivityType extends $pb.ProtobufEnum {
       ActivityType._(1, _omitEnumNames ? '' : 'BREATH');
   static const ActivityType MEDITATION =
       ActivityType._(2, _omitEnumNames ? '' : 'MEDITATION');
+  static const ActivityType ROOT =
+      ActivityType._(3, _omitEnumNames ? '' : 'ROOT');
 
   static const $core.List<ActivityType> values = <ActivityType>[
     ACTIVITY_TYPE_UNSPECIFIED,
     BREATH,
     MEDITATION,
+    ROOT,
   ];
 
   static final $core.List<ActivityType?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 2);
+      $pb.ProtobufEnum.$_initByValueList(values, 3);
   static ActivityType? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
