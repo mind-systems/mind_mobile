@@ -15,6 +15,7 @@
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Core/Grpc/ModuleState.dart';
 import 'package:mind/Core/Grpc/generated/module_state.pb.dart' as proto;
 
@@ -302,6 +303,66 @@ void main() {
           expect(_starts(reopenedCall), isNotEmpty,
               reason: 'deferral must release, not drop — with no resume, '
                   'the start must be sent once the window elapses');
+
+          f.channel.dispose();
+        });
+      },
+    );
+
+    test(
+      // Note 29 — concurrent per-child RESUMED consumption closure: mind_api
+      // now emits a per-child RESUMED frame per live child (`47e6914`), each
+      // clearing only its own type's pending-start via the note-28
+      // `_clearPendingStart` chokepoint. GREEN on the current tree — the
+      // historical single collapsed frame (root only) cleared no child
+      // pending, so both carried starts would have been resent past the
+      // dedup window (duplicate); the per-child frames clear both before
+      // `_resolveSettling` snapshots, so neither resends.
+      'note 29: concurrent per-child RESUMED frames each consume their own carried pending — zero resend',
+      () {
+        fakeAsync((async) {
+          final f = wireConcurrent();
+          connectAndFlush(f, async);
+
+          // Both starts reach the wire on the first call, both unconfirmed.
+          f.breathStateCtrl.add(runningBreathState());
+          async.flushMicrotasks();
+          f.meditationStateCtrl.add(activeMeditationState());
+          async.flushMicrotasks();
+          expect(_starts(f.service.latestCall!).length, 2);
+
+          // Reconnect without a reset — the pendings must survive as carried.
+          f.service.latestCall!.responseCtrl.close();
+          async.flushMicrotasks();
+          f.connManager.pushConnected();
+          async.flushMicrotasks();
+          final reopenedCall = f.service.latestCall!;
+
+          // Two per-child RESUMED frames land inside the settling window.
+          reopenedCall.responseCtrl
+              .add(childResumedFrame(proto.ActivityType.BREATH, 'breath-1', isPaused: false));
+          async.flushMicrotasks();
+          reopenedCall.responseCtrl
+              .add(childResumedFrame(proto.ActivityType.MEDITATION, 'med-1', isPaused: false));
+          async.flushMicrotasks();
+
+          // Close the settling window.
+          async.elapse(const Duration(seconds: 3));
+          async.flushMicrotasks();
+
+          expect(_starts(reopenedCall), isEmpty,
+              reason: 'both per-child RESUMED frames must clear their own '
+                  "type's carried pending-start before the settling window "
+                  'resolves, so _resolveSettling resends neither — the '
+                  'historical single collapsed frame would have left both '
+                  'carried, resending both here (duplicate)');
+
+          expect(f.channel.childOfType(ActivityType.breath), isNotNull,
+              reason: 'both frames must be genuinely consumed into the '
+                  'registry, not merely absent from the wire');
+          expect(f.channel.childOfType(ActivityType.meditation), isNotNull,
+              reason: 'both frames must be genuinely consumed into the '
+                  'registry, not merely absent from the wire');
 
           f.channel.dispose();
         });
