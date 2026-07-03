@@ -40,6 +40,11 @@ class _PendingStart {
   });
 }
 
+/// Outcome of routing a pending start through [ModuleStateChannel._resolveStart] —
+/// the one place the retry-budget and transport-liveness preconditions are
+/// evaluated for a pending-start send.
+enum _StartOutcome { sent, gaveUp, held }
+
 class ModuleStateChannel {
   final proto.ModuleStateServiceClient _moduleStateService;
   final GrpcConnectionManager _connectionManager;
@@ -64,6 +69,24 @@ class ModuleStateChannel {
 
   // ── Pending guards ────────────────────────────────────────────────────────
 
+  /// A [_PendingStart] moves through five states, each encoded by map
+  /// membership + timer liveness rather than an explicit field — the two
+  /// maps below and `_PendingStart.timer` are the sole representation:
+  /// - **armed** — in `_pendingStarts` with a live confirm timer; the normal
+  ///   in-flight state, re-sent by `_onConfirmTimeout` on expiry.
+  /// - **carried** — in `_pendingStarts`, timer cancelled because a reconnect
+  ///   settling window is open (`_openSessionStream`'s per-`p` cancel loop);
+  ///   resolved by `_resolveSettling`'s carried loop when the window closes.
+  /// - **deferred** — in `_deferredStarts` only (never registered in
+  ///   `_pendingStarts`), awaiting the settling window's close; resolved by
+  ///   `_resolveSettling`'s deferred loop into either discarded (adopted),
+  ///   held (re-deferred), or **armed** (released via `_resolveStart`/
+  ///   `_beginStart`).
+  /// - **confirmed** — terminal; removed from `_pendingStarts` by
+  ///   `_clearPendingStart`, the sole confirmed-resolution seam.
+  /// - **given-up** — terminal; removed from `_pendingStarts` by `_giveUp`
+  ///   once `_resolveStart`'s budget check trips.
+  ///
   /// One in-flight, unconfirmed start per `activity_type` — replaces the
   /// single shared `_isPendingStart` bool (note 19) so a live child of one
   /// type never suppresses a fresh start of another type. Cleared by the
@@ -92,8 +115,11 @@ class ModuleStateChannel {
 
   /// Starts tapped while `_settlingActive` — held (never sent) until the
   /// settling window closes, so reconcile can resolve adopt-vs-new first.
-  /// Resolved by `_resolveSettling()`: adopted (discarded) if a same-type
-  /// child arrived, else released as a first-class pending via `_beginStart`.
+  /// This is the **deferred** state in the state model documented on
+  /// `_pendingStarts` above. Resolved by `_resolveSettling()`: adopted
+  /// (discarded) if a same-type child arrived, else routed through
+  /// `_resolveStart` — released as a first-class **armed** pending via
+  /// `_beginStart`, or re-deferred if still held.
   final Map<ActivityType, _PendingStart> _deferredStarts = {};
 
   // ── Close classification (per-stream transient) ──────────────────────────
@@ -473,6 +499,24 @@ class ModuleStateChannel {
     _sendStart(p);
   }
 
+  /// The ONE place the retry-budget and transport-liveness preconditions are
+  /// evaluated for a pending-start send. Every resolution trigger (confirm-
+  /// timeout retry, settling-window carried re-send, settling-window
+  /// deferred-release) routes through here rather than re-checking either
+  /// precondition itself — a caller reacts only to the returned outcome via
+  /// its own hold strategy, it never re-derives `gaveUp`/`held` on its own.
+  /// Order is budget-first-then-`isConnected`, mirroring the pre-existing
+  /// `_onConfirmTimeout` ordering.
+  _StartOutcome _resolveStart(_PendingStart p) {
+    if (p.attempts >= 3) {
+      _giveUp(p.type);
+      return _StartOutcome.gaveUp;
+    }
+    if (!isConnected) return _StartOutcome.held;
+    _beginStart(p);
+    return _StartOutcome.sent;
+  }
+
   /// Sends the `ActivityStartCmd` built from [p]'s stored fields — never
   /// regenerates the token, so a retry reuses the exact same
   /// `client_activity_id`. Does not itself register the pending in
@@ -502,16 +546,11 @@ class ModuleStateChannel {
   void _onConfirmTimeout(ActivityType type) {
     final p = _pendingStarts[type];
     if (p == null) return;
-    if (p.attempts >= 3) {
-      _giveUp(type);
-      return;
-    }
-    if (isConnected) {
-      _sendStart(p);
-    } else {
+    if (_resolveStart(p) == _StartOutcome.held) {
       // Transport is down — do not consume a retry. Re-arm and wait; the
-      // reconnect settling window (Task 4) owns resolution once the
-      // transport comes back.
+      // reconnect settling window owns resolution once the transport comes
+      // back. This re-arm is the hold strategy for this trigger — the
+      // precondition itself was already evaluated by `_resolveStart`.
       p.timer = Timer(const Duration(seconds: 5), () => _onConfirmTimeout(type));
     }
   }
@@ -527,21 +566,22 @@ class ModuleStateChannel {
 
   /// Resolves both settling-window maps when the window closes (called from
   /// the reconcile timer callback, reconnect opens only). Deferred starts
-  /// either adopt a now-live same-type child (discarded) or are released as
-  /// first-class pendings via `_beginStart` (own confirm-timeout + bounded
-  /// retry). Carried pendings — sends already on the wire before the window
-  /// armed — are re-sent via `_sendStart` unless a confirming frame already
-  /// cleared them from `_pendingStarts` during the window (`_clearPendingStart`),
-  /// or the retry budget is already spent, in which case this gives up via
-  /// `_giveUp` instead — without that check a carried pending could be
-  /// re-sent once per reconnect forever, overshooting INV-12's 3-attempt
-  /// ceiling and, past the server's idempotency window on a flapping
-  /// connection, risking a duplicate child.
+  /// either adopt a now-live same-type child (discarded, not a chokepoint
+  /// concern) or are routed through `_resolveStart` — `sent` registers them
+  /// as first-class pendings via `_beginStart` (own confirm-timeout +
+  /// bounded retry), `held` re-defers them, `gaveUp` is handled inside
+  /// `_resolveStart`. Carried pendings — sends already on the wire before
+  /// the window armed — are likewise routed through `_resolveStart` unless a
+  /// confirming frame already cleared them from `_pendingStarts` during the
+  /// window (`_clearPendingStart`); the chokepoint's own budget check is what
+  /// prevents a carried pending from being re-sent once per reconnect
+  /// forever, overshooting INV-12's 3-attempt ceiling and, past the server's
+  /// idempotency window on a flapping connection, risking a duplicate child.
   /// `carriedTypes` is snapshotted before releasing deferred starts so a
   /// freshly-released deferred start is never re-sent a second time in the
   /// same pass.
   ///
-  /// Both send paths are gated on `isConnected` — mirroring
+  /// Both paths share `_resolveStart`'s `isConnected` precondition — mirroring
   /// `_onConfirmTimeout`'s down-branch asymmetry (hold, don't consume a
   /// retry, when the sink is gone). Without this guard, a stream drop
   /// landing inside the settling window would let a resolved send hit the
@@ -553,21 +593,22 @@ class ModuleStateChannel {
     _deferredStarts.clear();
     final carriedTypes = _pendingStarts.keys.toList();
     for (final p in deferred.values) {
+      // Adopt short-circuit: a same-type child already arrived during the
+      // settling window, so this deferred start is discarded rather than
+      // routed through the chokepoint (not a precondition, an already-
+      // satisfied guard).
       if (_registry.childOfType(p.type) != null) continue;
-      if (!isConnected) {
-        _deferredStarts[p.type] = p;
-        continue;
-      }
-      _beginStart(p);
+      // Re-defer is this trigger's hold strategy; on `sent`, `_resolveStart`
+      // already registered `p` in `_pendingStarts` via `_beginStart`.
+      if (_resolveStart(p) == _StartOutcome.held) _deferredStarts[p.type] = p;
     }
     for (final type in carriedTypes) {
       final p = _pendingStarts[type];
-      if (p == null || !isConnected) continue;
-      if (p.attempts >= 3) {
-        _giveUp(type);
-        continue;
-      }
-      _sendStart(p);
+      if (p == null) continue;
+      // A `held` outcome leaves `p` dormant in `_pendingStarts` — matching
+      // the prior `continue` — the next reconnect's settling window (or a
+      // confirm-timeout re-arm) resolves it later.
+      _resolveStart(p);
     }
   }
 
@@ -575,6 +616,13 @@ class ModuleStateChannel {
   /// A no-op when [type] is `null` (frame carried no recognizable
   /// `activity_type`) or when nothing is pending for it — a confirming
   /// frame for an already-cleared type is not an error.
+  ///
+  /// The sole **confirmed** resolution point for the pending-start state
+  /// model (see `_pendingStarts` doc) — currently called from the RESUMED
+  /// and ACTIVE branches of `_processProtoEvent`. Mirrors `_resolveStart`
+  /// owning the send decision: the confirmed transition has exactly one
+  /// owner too. This is the seam note-29's per-child RESUMED consumption
+  /// will call.
   void _clearPendingStart(ActivityType? type) {
     if (type == null) return;
     _pendingStarts.remove(type)?.timer?.cancel();
