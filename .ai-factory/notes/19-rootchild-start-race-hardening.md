@@ -11,8 +11,11 @@
 - Concurrent-practice residue: on reconnect the server today emits **one** collapsed frame (`soleChild ?? root`, `activity-engine.service.ts:639`), so with 2 live children a second child's resume is not individually confirmed → could retry into a duplicate if >10s. This is closed by an **API-side follow-up (per-child RESUMED on reconnect)** owned by the mind_api side; the client is built to consume it via reconcile-by-arrival (note 20). Without it, B is airtight for single practices and leaves the rare concurrent duplicate.
 - Depends on notes 14, 16.
 - **This is the IMPL milestone.** The start-race invariants + red scenarios (retry-only-unconfirmed, same-token, adopt-existing, settling-window defer, 5s/2-retry/3s timings) are part of the **combined concurrency contract milestone (note 24)** laid first; this task turns the start-race half green.
+- **RE-PLAN after the refactor (notes 25/26) and the reconnect impl.** Land the pending-start/retry on the settled `ConnectionLifecycle` FSM (note 25) and the reconcile surface the reconnect impl builds — not on loose flags. Apply the same comprehensive test-migration discipline: audit and migrate every affected `module_state_channel_test.dart` assertion in one pass.
 
 ## Details
+
+> **Line numbers below are pre-refactor; re-pin at plan time against the post-refactor tree.** This task lands AFTER the connection-lifecycle FSM (note 25) and the reconnect impl (note 20), both of which move code inside `ModuleStateChannel`. The pending-start logic stays **command-level** (note 25 explicitly keeps `_isPendingStart`/`_isPendingPause` out of the FSM), so it is orthogonal to the FSM — but the exact `:NN` refs will shift.
 
 ### Current state (exact)
 - Adapters set local started/ended flags on `start`/`end` and never verify the server confirmed (`BreathModuleStateChannel.dart:86-93`, `MeditationModuleStateChannel.dart:48-50`). No pending-start tracking, no timeout, no retry.
