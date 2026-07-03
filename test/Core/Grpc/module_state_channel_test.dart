@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:grpc/grpc.dart' as grpc;
 
 import 'package:mind/Core/Grpc/ActivityType.dart';
+import 'package:mind/Core/Grpc/ConnectionLifecycle.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
 import 'package:mind/Core/Grpc/ModuleState.dart';
@@ -1339,6 +1340,127 @@ void main() {
         expect(received, hasLength(2));
         expect(received[0], isA<ModuleSessionStarted>());
         expect(received[1], isA<ModuleSessionEnded>());
+
+        f.channel.dispose();
+      },
+    );
+  });
+
+  // ── Group 12: connection lifecycle FSM (additive) ─────────────────────────
+
+  group('ModuleStateChannel — connection lifecycle FSM', () {
+    test(
+      'should resolve to opening right after connect, before the first frame arrives',
+      () async {
+        final f = _make();
+        await _connect(f);
+
+        expect(f.channel.lifecycle, ConnectionLifecycle.opening);
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should resolve to active once the first frame is received after connect',
+      () async {
+        final f = _make();
+        await _activateSession(f);
+
+        expect(f.channel.lifecycle, ConnectionLifecycle.active);
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should resolve to reconnecting when connectionState becomes disconnected',
+      () async {
+        final f = _make();
+        await _activateSession(f);
+
+        await _disconnect(f);
+
+        expect(f.channel.lifecycle, ConnectionLifecycle.reconnecting);
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should resolve to reconnecting when the response stream errors',
+      () async {
+        final f = _make();
+        await _connect(f);
+
+        f.service.latestCall!.responseCtrl.addError(Exception('transport error'));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.channel.lifecycle, ConnectionLifecycle.reconnecting);
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should resolve to reconnecting when the response stream is done',
+      () async {
+        final f = _make();
+        await _connect(f);
+
+        await f.service.latestCall!.responseCtrl.close();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.channel.lifecycle, ConnectionLifecycle.reconnecting);
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should resolve to disconnected when authStream emits GuestState (logout)',
+      () async {
+        final f = _make();
+        await _activateSession(f);
+
+        f.authCtrl.add(GuestState(_guestUser));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.channel.lifecycle, ConnectionLifecycle.disconnected);
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should never reach yielded across connect/active/disconnect/error/done/logout paths (dormant in this milestone)',
+      () async {
+        final f = _make();
+        await _connect(f);
+        expect(f.channel.lifecycle, isNot(ConnectionLifecycle.yielded));
+
+        f.service.latestCall!.responseCtrl.add(
+          _sessionStateResponse(proto.ActivityStatus.ACTIVE),
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(f.channel.lifecycle, isNot(ConnectionLifecycle.yielded));
+
+        await _disconnect(f);
+        expect(f.channel.lifecycle, isNot(ConnectionLifecycle.yielded));
+
+        await _connect(f);
+        f.service.latestCall!.responseCtrl.addError(Exception('transport error'));
+        await Future<void>.delayed(Duration.zero);
+        expect(f.channel.lifecycle, isNot(ConnectionLifecycle.yielded));
+
+        await _connect(f);
+        await f.service.latestCall!.responseCtrl.close();
+        await Future<void>.delayed(Duration.zero);
+        expect(f.channel.lifecycle, isNot(ConnectionLifecycle.yielded));
+
+        f.authCtrl.add(GuestState(_guestUser));
+        await Future<void>.delayed(Duration.zero);
+        expect(f.channel.lifecycle, isNot(ConnectionLifecycle.yielded));
 
         f.channel.dispose();
       },

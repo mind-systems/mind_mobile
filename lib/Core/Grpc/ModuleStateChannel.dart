@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:fixnum/fixnum.dart';
+import 'package:flutter/foundation.dart';
 import 'package:grpc/grpc.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:mind/Logger.dart';
 
 import 'package:mind/Core/Grpc/ActivityType.dart';
+import 'package:mind/Core/Grpc/ConnectionLifecycle.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
 import 'package:mind/Core/Grpc/ModuleSession.dart';
@@ -41,7 +43,21 @@ class ModuleStateChannel {
 
   bool _isPendingStart = false;
   bool _isPendingPause = false;
-  bool _backoffConfirmed = false;
+
+  // ── Connection lifecycle FSM ─────────────────────────────────────────────
+
+  ConnectionLifecycle _lifecycle = ConnectionLifecycle.disconnected;
+
+  /// Sole mutation point for `_lifecycle`. Logs the transition then assigns —
+  /// no stream/socket side effects here; callers still perform those
+  /// themselves around the call to `_transition`.
+  void _transition(ConnectionLifecycle to) {
+    logPrint('[ModuleStateChannel] lifecycle: $_lifecycle → $to');
+    _lifecycle = to;
+  }
+
+  @visibleForTesting
+  ConnectionLifecycle get lifecycle => _lifecycle;
 
   // ── Stream handles ────────────────────────────────────────────────────────
 
@@ -76,6 +92,7 @@ class ModuleStateChannel {
           _openSessionStream();
         case GrpcConnectionState.disconnected:
           _closeSessionStream();
+          _transition(ConnectionLifecycle.reconnecting);
         case GrpcConnectionState.connecting:
           break;
       }
@@ -87,8 +104,10 @@ class ModuleStateChannel {
 
   // ── Session stream management ─────────────────────────────────────────────
 
+  // Future reconnect impl: gate reopening here on `_lifecycle ==
+  // ConnectionLifecycle.yielded` once `SUPERSEDED → yielded` is wired.
   void _openSessionStream() {
-    _backoffConfirmed = false;
+    _transition(ConnectionLifecycle.opening);
     _sessionSink = StreamController<proto.StateRequest>();
     final liveId = currentState.moduleSessionId;
     final options = (currentState.status == ModuleStateStatus.active &&
@@ -98,8 +117,8 @@ class ModuleStateChannel {
     final response = _moduleStateService.trackActivity(_sessionSink!.stream, options: options);
     _sessionSub = response.listen(
       (proto.StateResponse r) {
-        if (!_backoffConfirmed) {
-          _backoffConfirmed = true;
+        if (_lifecycle == ConnectionLifecycle.opening) {
+          _transition(ConnectionLifecycle.active);
           _connectionManager.confirmConnected();
         }
         switch (r.whichEvent()) {
@@ -122,12 +141,14 @@ class ModuleStateChannel {
         _closeSessionStream();
         _connectionManager.disconnect();
         _connectionManager.scheduleReconnect();
+        _transition(ConnectionLifecycle.reconnecting);
       },
       onDone: () {
         logPrint('[ModuleStateChannel] session stream done');
         _closeSessionStream();
         _connectionManager.disconnect();
         _connectionManager.scheduleReconnect();
+        _transition(ConnectionLifecycle.reconnecting);
       },
     );
     _sessionStreamOpened.add(null);
@@ -327,6 +348,7 @@ class ModuleStateChannel {
     _isPendingPause = false;
     _state.add(ModuleState.initial());
     _registry.clear();
+    _transition(ConnectionLifecycle.disconnected);
   }
 
   // ── Disposal ──────────────────────────────────────────────────────────────
