@@ -32,7 +32,7 @@ class MeditationModuleStateChannel {
       }
     });
     _eventsSub = channel.events.listen((event) {
-      if (event is ModuleSessionAbandoned) {
+      if (event is ModuleSessionAbandoned || event is SessionTerminated) {
         _started = false;
         _ended = false;
         _moduleSessionId = null;

@@ -50,7 +50,7 @@ class BreathModuleStateChannel {
       if (sessionId != null) _flushPending(sessionId);
     });
     _eventsSub = channel.events.listen((event) {
-      if (event is ModuleSessionAbandoned) reset();
+      if (event is ModuleSessionAbandoned || event is SessionTerminated) reset();
     });
   }
 

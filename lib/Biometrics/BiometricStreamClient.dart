@@ -108,7 +108,7 @@ class BiometricStreamClient {
         break;
       case ModuleSessionUnpaused():
         break;
-      case ModuleSessionEnded() || ModuleSessionAbandoned():
+      case ModuleSessionEnded() || ModuleSessionAbandoned() || SessionTerminated():
         _currentSessionId = null;
         _sessionConfirmed = false;
         _lastOpenAttempt = null;

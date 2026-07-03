@@ -9,6 +9,7 @@
   "comingSoon": "Скоро",
   "sessionExpired": "Сессия истекла",
   "sessionAbandoned": "Сессия неожиданно завершилась",
+  "sessionMovedToAnotherDevice": "Сессия перенесена на другое устройство",
   "heartTickNoSourceTitle": "Датчик пульса",
   "heartTickNoSourceDescription": "Чтобы дышать в ритм с сердцем, подключите датчик пульса.",
 

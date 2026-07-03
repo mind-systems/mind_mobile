@@ -51,6 +51,8 @@ class KeepAliveCoordinator {
         await _foregroundKeepAlive.stop();
       case ModuleSessionAbandoned():
         await _foregroundKeepAlive.stop();
+      case SessionTerminated():
+        await _foregroundKeepAlive.stop();
       case ModuleSessionResumed():
         break;
       case ModuleSessionPaused():

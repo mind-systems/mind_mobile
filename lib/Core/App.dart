@@ -319,6 +319,7 @@ class MyApp extends ConsumerWidget {
         return GlobalListeners(
           sessionExpiredStream: App.shared.userNotifier.sessionExpiredStream,
           sessionAbandonedStream: App.shared.moduleStateChannel.events.where((e) => e is ModuleSessionAbandoned).map((_) {}),
+          sessionTerminatedStream: App.shared.moduleStateChannel.events.where((e) => e is SessionTerminated).map((e) => (e as SessionTerminated).reason),
           child: child!,
         );
       },

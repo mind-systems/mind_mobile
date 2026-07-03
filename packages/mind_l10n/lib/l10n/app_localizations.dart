@@ -146,6 +146,12 @@ abstract class AppLocalizations {
   /// **'Session ended unexpectedly'**
   String get sessionAbandoned;
 
+  /// No description provided for @sessionMovedToAnotherDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Session moved to another device'**
+  String get sessionMovedToAnotherDevice;
+
   /// No description provided for @heartTickNoSourceTitle.
   ///
   /// In en, this message translates to:
