@@ -160,4 +160,20 @@ void main() {
       },
     );
   });
+
+  group('SessionRegistry — clear', () {
+    test(
+      'should empty the registry so rootId is null and childOfType resolves nothing',
+      () {
+        registry.upsert(sess('root-1', ActivityType.root));
+        registry.upsert(sess('breath-1', ActivityType.breath));
+
+        registry.clear();
+
+        expect(registry.rootId, isNull);
+        expect(registry.childOfType(ActivityType.breath), isNull);
+        expect(registry.childOfType(ActivityType.root), isNull);
+      },
+    );
+  });
 }

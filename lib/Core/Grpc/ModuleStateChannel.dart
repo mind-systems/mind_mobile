@@ -8,8 +8,10 @@ import 'package:mind/Logger.dart';
 import 'package:mind/Core/Grpc/ActivityType.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionManager.dart';
 import 'package:mind/Core/Grpc/GrpcConnectionState.dart';
+import 'package:mind/Core/Grpc/ModuleSession.dart';
 import 'package:mind/Core/Grpc/ModuleState.dart';
 import 'package:mind/Core/Grpc/ModuleStateEvent.dart';
+import 'package:mind/Core/Grpc/SessionRegistry.dart';
 import 'package:mind/Core/Grpc/generated/module_state.pbgrpc.dart' as proto;
 import 'package:mind/User/Models/AuthState.dart';
 
@@ -25,6 +27,15 @@ class ModuleStateChannel {
   Stream<ModuleState> get state => _state.stream;
   Stream<ModuleStateEvent> get events => _events.stream;
   ModuleState get currentState => _state.value;
+
+  // ── Session registry (root + N children) ────────────────────────────────
+
+  final SessionRegistry _registry = SessionRegistry();
+
+  String? get rootId => _registry.rootId;
+  ModuleSession? childOfType(ActivityType type) => _registry.childOfType(type);
+  Stream<String?> get rootIdChanges => _registry.rootIdChanges;
+  Stream<void> get registryChanges => _registry.changes;
 
   // ── Pending guards ────────────────────────────────────────────────────────
 
@@ -93,6 +104,7 @@ class ModuleStateChannel {
             logPrint('[ModuleStateChannel] session error: ${r.sessionError.code} — ${r.sessionError.message}');
             if (r.sessionError.code == 'no_active_session') {
               _state.add(ModuleState.initial());
+              _registry.clear();
             }
           case proto.StateResponse_Event.notSet:
             break;
@@ -131,6 +143,7 @@ class ModuleStateChannel {
       _isPendingPause = false;
       _state.add(ModuleState(moduleSessionId: moduleSessionId, status: ModuleStateStatus.active, isPaused: isPaused));
       _events.add(ModuleSessionResumed(moduleSessionId: moduleSessionId));
+      _upsertRegistryEntry(event);
     } else if (status == proto.ActivityStatus.ACTIVE) {
       final isPaused = event.isPaused;
       final moduleSessionId = event.moduleSessionId;
@@ -146,18 +159,45 @@ class ModuleStateChannel {
       } else if (wasPaused && !isPaused) {
         _events.add(ModuleSessionUnpaused());
       }
+      _upsertRegistryEntry(event);
     } else if (status == proto.ActivityStatus.COMPLETED || status == proto.ActivityStatus.INTERRUPTED) {
       _state.add(ModuleState.initial());
       _events.add(ModuleSessionEnded());
+      _registry.removeTerminal(event.moduleSessionId);
     } else if (status == proto.ActivityStatus.ABANDONED) {
       _state.add(ModuleState.initial());
       _events.add(ModuleSessionAbandoned());
+      _registry.removeTerminal(event.moduleSessionId);
     } else if (status == proto.ActivityStatus.ACTIVITY_STATUS_UNSPECIFIED) {
       _isPendingStart = false;
       _state.add(ModuleState.initial());
+      // Parity with the single-state reset above: an UNSPECIFIED frame can
+      // still carry a moduleSessionId, so an upsert-skip alone would leave
+      // stale entries — clear() is what matches the single-state reset.
+      _registry.clear();
     } else {
       logPrint('[ModuleStateChannel] unhandled status: $status');
     }
+  }
+
+  /// Drives the session registry from a `RESUMED`/`ACTIVE` frame.
+  ///
+  /// Load-bearing assumption: every `ACTIVE`/`RESUMED` state frame from the
+  /// server carries a populated `activity_type` (guaranteed by note 13's
+  /// contract). Nothing else backfills the registry in this milestone
+  /// (reconnect rebuild is note 20) — if the server omitted `activity_type`
+  /// on a live frame, the single-state would go active while the registry
+  /// stayed silently empty (`rootId == null` for a live root), the exact
+  /// silent failure this milestone prevents.
+  void _upsertRegistryEntry(proto.StateEvent event) {
+    final activityType = _mapActivityTypeFromProto(event.activityType);
+    if (activityType == null) return;
+    _registry.upsert(ModuleSession(
+      id: event.moduleSessionId,
+      activityType: activityType,
+      status: ModuleStateStatus.active,
+      isPaused: event.isPaused,
+    ));
   }
 
   // ── Public session commands ───────────────────────────────────────────────
@@ -221,7 +261,6 @@ class ModuleStateChannel {
     }
   }
 
-  // ignore: unused_element
   ActivityType? _mapActivityTypeFromProto(proto.ActivityType type) {
     switch (type) {
       case proto.ActivityType.BREATH:
@@ -240,6 +279,7 @@ class ModuleStateChannel {
     _isPendingStart = false;
     _isPendingPause = false;
     _state.add(ModuleState.initial());
+    _registry.clear();
   }
 
   // ── Disposal ──────────────────────────────────────────────────────────────
@@ -250,5 +290,6 @@ class ModuleStateChannel {
     _closeSessionStream();
     _state.close();
     _events.close();
+    _registry.dispose();
   }
 }

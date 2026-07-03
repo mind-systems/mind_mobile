@@ -162,12 +162,13 @@ Future<void> _activateSession(
 }
 
 proto.StateResponse _sessionStateResponse(proto.ActivityStatus status,
-    {String moduleSessionId = '', bool isPaused = false}) {
+    {String moduleSessionId = '', bool isPaused = false, proto.ActivityType? activityType}) {
   return proto.StateResponse(
     sessionState: proto.StateEvent(
       status: status,
       moduleSessionId: moduleSessionId,
       isPaused: isPaused,
+      activityType: activityType,
     ),
   );
 }
@@ -1121,6 +1122,225 @@ void main() {
 
         expect(stateDone.isCompleted, isTrue);
         expect(eventsDone.isCompleted, isTrue);
+      },
+    );
+  });
+
+  // ── Group 11: session registry routing ────────────────────────────────────
+
+  group('ModuleStateChannel — session registry routing', () {
+    test(
+      'should hold two distinct entries resolvable via rootId and childOfType(breath) after a root and breath ACTIVE frame',
+      () async {
+        final f = _make();
+        await _connect(f);
+
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'root-1',
+          activityType: proto.ActivityType.ROOT,
+        ));
+        await Future<void>.delayed(Duration.zero);
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'breath-1',
+          activityType: proto.ActivityType.BREATH,
+        ));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.channel.rootId, 'root-1');
+        expect(f.channel.childOfType(ActivityType.breath)?.id, 'breath-1');
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should remove only the child on a child COMPLETED frame, leaving the root resolvable',
+      () async {
+        final f = _make();
+        await _connect(f);
+
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'root-1',
+          activityType: proto.ActivityType.ROOT,
+        ));
+        await Future<void>.delayed(Duration.zero);
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'breath-1',
+          activityType: proto.ActivityType.BREATH,
+        ));
+        await Future<void>.delayed(Duration.zero);
+
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.COMPLETED,
+          moduleSessionId: 'breath-1',
+        ));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.channel.childOfType(ActivityType.breath), isNull);
+        expect(f.channel.rootId, 'root-1');
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should update the stored entry in place (not duplicate) when a second ACTIVE frame for the same child id flips isPaused',
+      () async {
+        final f = _make();
+        await _connect(f);
+
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'breath-1',
+          activityType: proto.ActivityType.BREATH,
+          isPaused: false,
+        ));
+        await Future<void>.delayed(Duration.zero);
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'breath-1',
+          activityType: proto.ActivityType.BREATH,
+          isPaused: true,
+        ));
+        await Future<void>.delayed(Duration.zero);
+
+        final child = f.channel.childOfType(ActivityType.breath);
+        expect(child, isNotNull);
+        expect(child!.id, 'breath-1');
+        expect(child.isPaused, isTrue);
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should populate the registry from a normal breath ACTIVE frame with activityType set (regression guard)',
+      () async {
+        final f = _make();
+        await _connect(f);
+
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'breath-1',
+          activityType: proto.ActivityType.BREATH,
+        ));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.channel.childOfType(ActivityType.breath)?.id, 'breath-1');
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should clear the registry (rootId == null) and reset single-state to idle on an ACTIVITY_STATUS_UNSPECIFIED frame',
+      () async {
+        final f = _make();
+        await _connect(f);
+
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'root-1',
+          activityType: proto.ActivityType.ROOT,
+        ));
+        await Future<void>.delayed(Duration.zero);
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'breath-1',
+          activityType: proto.ActivityType.BREATH,
+        ));
+        await Future<void>.delayed(Duration.zero);
+
+        f.service.latestCall!.responseCtrl.add(
+          _sessionStateResponse(proto.ActivityStatus.ACTIVITY_STATUS_UNSPECIFIED),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.channel.currentState.status, ModuleStateStatus.idle);
+        expect(f.channel.rootId, isNull);
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should clear the registry (rootId == null) when authStream emits GuestState (logout)',
+      () async {
+        final f = _make();
+        await _connect(f);
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'root-1',
+          activityType: proto.ActivityType.ROOT,
+        ));
+        await Future<void>.delayed(Duration.zero);
+        expect(f.channel.rootId, 'root-1');
+
+        f.authCtrl.add(GuestState(_guestUser));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.channel.rootId, isNull);
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should clear the registry (rootId == null) on a no_active_session sessionError',
+      () async {
+        final f = _make();
+        await _connect(f);
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'root-1',
+          activityType: proto.ActivityType.ROOT,
+        ));
+        await Future<void>.delayed(Duration.zero);
+        expect(f.channel.rootId, 'root-1');
+
+        f.service.latestCall!.responseCtrl.add(proto.StateResponse(
+          sessionError: proto.StateErrorEvent(
+            code: 'no_active_session',
+            message: 'no session running',
+          ),
+        ));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(f.channel.rootId, isNull);
+
+        f.channel.dispose();
+      },
+    );
+
+    test(
+      'should still emit the legacy ModuleSessionStarted -> ModuleSessionEnded sequence for a single-session breath-only flow (additive-wiring characterization)',
+      () async {
+        final f = _make();
+        await _connect(f);
+        final received = <ModuleStateEvent>[];
+        f.channel.events.listen(received.add);
+
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.ACTIVE,
+          moduleSessionId: 'breath-1',
+          activityType: proto.ActivityType.BREATH,
+        ));
+        await Future<void>.delayed(Duration.zero);
+        f.service.latestCall!.responseCtrl.add(_sessionStateResponse(
+          proto.ActivityStatus.COMPLETED,
+          moduleSessionId: 'breath-1',
+        ));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(received, hasLength(2));
+        expect(received[0], isA<ModuleSessionStarted>());
+        expect(received[1], isA<ModuleSessionEnded>());
+
+        f.channel.dispose();
       },
     );
   });
