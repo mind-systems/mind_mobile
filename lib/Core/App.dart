@@ -231,7 +231,7 @@ class App {
     bioStreamRouter.registerMotionSource(bciProvider);
     final activeRrSource = ActiveRrSource([bciProvider]);
     final smoothedRrSource = SmoothedRrSource(activeRrSource);
-    final biometricStreamClient = BiometricStreamClient(grpcStub: grpcClient.moduleBiometricStreamService, moduleStateEvents: moduleStateChannel.events, connectionState: connectionManager.connectionState);
+    final biometricStreamClient = BiometricStreamClient(grpcStub: grpcClient.moduleBiometricStreamService, moduleStateEvents: moduleStateChannel.events, connectionState: connectionManager.connectionState, rootIdChanges: rootStateChannel.rootIdChanges);
     final biometricBatcher = BiometricBatcher(router: bioStreamRouter, client: biometricStreamClient);
     final foregroundKeepAlive = ForegroundKeepAlive(currentLanguageCode: () => appSettingsNotifier.currentState.language);
     final keepAliveCoordinator = KeepAliveCoordinator(foregroundKeepAlive: foregroundKeepAlive, moduleStateEvents: moduleStateChannel.events);

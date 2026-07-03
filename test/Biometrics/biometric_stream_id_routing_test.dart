@@ -283,5 +283,76 @@ void main() {
         });
       },
     );
+
+    test(
+      // Reconnect hazard (plan review 1): `rootIdChanges` is `.distinct()`, so
+      // a transient gRPC reconnect that re-sends the same idempotent root.id
+      // never re-enters `_onRootIdChanged`. A disconnect must not be treated
+      // as "root gone" in root-sourced mode, or bio would silently stop for
+      // the rest of the session.
+      'bio keeps flowing under root.id across a disconnect/reconnect (no rootIdChanges re-emission)',
+      () {
+        fakeAsync((async) {
+          var fakeNow = DateTime(2024, 1, 1, 12, 0, 0);
+          final stub = _FakeStub();
+          final rootIdCtrl = StreamController<String?>.broadcast();
+          final lifecycleCtrl = StreamController<ModuleStateEvent>.broadcast();
+          final connectionCtrl =
+              StreamController<GrpcConnectionState>.broadcast();
+          final sut = BiometricStreamClient(
+            grpcStub: stub,
+            moduleStateEvents: lifecycleCtrl.stream,
+            connectionState: connectionCtrl.stream,
+            rootIdChanges: rootIdCtrl.stream,
+            clock: () => fakeNow,
+            readyTimeout: const Duration(hours: 1),
+          );
+
+          // 1. Root known → open → ready → send flows under root-1.
+          rootIdCtrl.add('root-1');
+          async.flushMicrotasks();
+
+          sut.sendBatch([_sample(1)]);
+          async.flushMicrotasks();
+          stub.latest.injectReady();
+          async.flushMicrotasks();
+
+          expect(stub.latest.batches, isNotEmpty);
+          expect(stub.latest.batches.first.samples.first.sessionId, 'root-1');
+
+          // 2. Transient disconnect/reconnect — rootIdChanges does NOT
+          // re-emit (`.distinct()` would suppress a redundant 'root-1').
+          connectionCtrl.add(GrpcConnectionState.disconnected);
+          async.flushMicrotasks();
+
+          // Advance the injected clock past the 2 s reopen cooldown between
+          // teardown and reopen (fakeAsync does not freeze DateTime.now).
+          fakeNow = fakeNow.add(const Duration(seconds: 3));
+          async.elapse(const Duration(seconds: 3));
+
+          connectionCtrl.add(GrpcConnectionState.connected);
+          async.flushMicrotasks();
+
+          // 3. Send again — a fresh stream must open and, once ready, the
+          // batch must still flow under root-1: _sessionConfirmed was not
+          // stuck false by the disconnect clear.
+          sut.sendBatch([_sample(2)]);
+          async.flushMicrotasks();
+
+          expect(stub.callCount, 2);
+
+          stub.latest.injectReady();
+          async.flushMicrotasks();
+
+          expect(stub.latest.batches, isNotEmpty);
+          expect(stub.latest.batches.first.samples.first.sessionId, 'root-1');
+
+          sut.dispose();
+          rootIdCtrl.close();
+          lifecycleCtrl.close();
+          connectionCtrl.close();
+        });
+      },
+    );
   });
 }

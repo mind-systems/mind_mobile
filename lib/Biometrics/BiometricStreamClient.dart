@@ -14,12 +14,13 @@ import 'BioSample.dart';
 /// gRPC sink for the biometric pipeline.
 ///
 /// Owns the [ModuleBiometricStreamService.streamData] bidi stream and the
-/// current-module-session gating flag. [sendBatch] is a silent no-op when there
-/// is no active session — by design (architecture note 26 §7).
+/// session-id gating flag. The session id is sourced from `root.id` (via
+/// `rootIdChanges`); [sendBatch] is a silent no-op until the root id is known —
+/// by design (architecture note 26 §7).
 /// On send failure, samples are enqueued into a bounded drop-oldest replay ring
 /// (max 75). On stream reconnect the ring drains first before new samples are pushed.
-/// Session ended / abandoned clears the ring — samples buffered for a completed
-/// session are not worth re-shipping.
+/// The ring is cleared only when the root is gone — samples buffered for a dead
+/// root are not worth re-shipping.
 ///
 /// Reference: `.ai-factory/notes/28-biometric-stream-pipeline.md` "Milestone 7".
 class BiometricStreamClient {
@@ -30,6 +31,11 @@ class BiometricStreamClient {
 
   String? _currentSessionId;
   bool _sessionConfirmed = false;
+
+  /// True when constructed with a non-null `rootIdChanges` — the bio session
+  /// id is then sourced solely from the root id, and `_onLifecycleEvent` no
+  /// longer drives it.
+  final bool _rootSourced;
 
   final Queue<BioSample> _replayRing = Queue<BioSample>();
   static const int _replayRingMax = 75;
@@ -66,7 +72,8 @@ class BiometricStreamClient {
     Stream<String?>? rootIdChanges,
     DateTime Function() clock = DateTime.now,
     Duration readyTimeout = const Duration(seconds: 5),
-  })  : _grpcStub = grpcStub,
+  })  : _rootSourced = rootIdChanges != null,
+        _grpcStub = grpcStub,
         _clock = clock,
         _readyTimeout = readyTimeout {
     _lifecycleSub = moduleStateEvents.listen(_onLifecycleEvent);
@@ -76,20 +83,18 @@ class BiometricStreamClient {
           _ensureSinkOpen();
         case GrpcConnectionState.disconnected:
           _teardownSink();
-          _sessionConfirmed = false;
+          if (!_rootSourced) _sessionConfirmed = false;
         case GrpcConnectionState.connecting:
           break;
       }
     });
-    // note 17: this is the injection point where bio will be retargeted to
-    // subscribe `_currentSessionId`/`_sessionConfirmed` off the root-id stream
-    // instead of `_onLifecycleEvent`. Additive no-op for now — behavior unchanged.
     _rootIdSub = rootIdChanges?.listen(_onRootIdChanged);
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   void _onLifecycleEvent(ModuleStateEvent event) {
+    if (_rootSourced) return;
     switch (event) {
       case ModuleSessionStarted(:final moduleSessionId):
         _currentSessionId = moduleSessionId;
@@ -111,9 +116,24 @@ class BiometricStreamClient {
     }
   }
 
-  /// No-op placeholder for the root-id seam (note 17 wires this into
-  /// `_currentSessionId`/`_sessionConfirmed`). Intentionally does nothing yet.
-  void _onRootIdChanged(String? rootId) {}
+  /// Sources the bio session id from `root.id`. `rootId != null` means a root
+  /// is known — confirm and re-arm the reopen cooldown so a fresh root can
+  /// open the stream immediately. `rootId == null` means the root is gone (or
+  /// a global reset) — clear the id, drop confirmation, and discard buffered
+  /// samples; they belong to a dead root. Sink lifecycle is left to the
+  /// connection-state path.
+  void _onRootIdChanged(String? rootId) {
+    if (rootId != null) {
+      _currentSessionId = rootId;
+      _sessionConfirmed = true;
+      _lastOpenAttempt = null;
+    } else {
+      _currentSessionId = null;
+      _sessionConfirmed = false;
+      _lastOpenAttempt = null;
+      _replayRing.clear();
+    }
+  }
 
   // ── Public API ────────────────────────────────────────────────────────────
 

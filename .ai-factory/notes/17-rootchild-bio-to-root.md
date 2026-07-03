@@ -19,7 +19,7 @@
 
 ### Change
 - Source `_currentSessionId` from the **root** id (`RootStateChannel.rootId` / registry `rootId` getter, notes 14/15) instead of the current-activity lifecycle events. Concretely: subscribe bio to the root-id stream and set `_currentSessionId = rootId`; set `_sessionConfirmed = true` when `rootId` is known.
-- **Change the clear conditions:** the `ModuleSessionEnded || ModuleSessionAbandoned` case (`:100-104`) must **no longer** clear `_currentSessionId` on a child's end — only clear on the new global-reset event (`AllSessionsReset`, note 20) or when `rootId` goes null. Keep the `disconnect` path clearing `_sessionConfirmed` (`:76-77`) and re-arming on reconnect (root id re-learned via note 15 re-open).
+- **Change the clear conditions:** the `ModuleSessionEnded || ModuleSessionAbandoned` case (`:100-104`) must **no longer** clear `_currentSessionId` on a child's end — only clear on the new global-reset event (`AllSessionsReset`, note 20) or when `rootId` goes null. **The `disconnect` path must NOT clear `_sessionConfirmed` in root-sourced mode.** `SessionRegistry.rootIdChanges` is `.distinct()`: a transient reconnect re-sends the same idempotent `root.id`, which is suppressed as a no-op re-emission, so nothing would re-arm `_sessionConfirmed` if `disconnect` cleared it — bio would silently stop for the rest of the session. Root liveness — not the transport — is the gate: `_sessionConfirmed` is set/cleared solely by the root-id stream (`rootId != null` → true, `rootId == null` → false), and the `disconnect` case only tears down the sink.
 - Keep the `_sessionConfirmed` + `_currentSessionId != null` gate (`:111`); "root id known" is the precondition (bio held until root open, note 15).
 
 ### Guards
