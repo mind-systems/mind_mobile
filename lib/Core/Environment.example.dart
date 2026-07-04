@@ -22,6 +22,7 @@ class Environment {
   bool grpcSecure;
   String apiBaseUrl;
   String? otlpEndpoint;
+  String? otlpAuthToken;
 
   Environment._({
     required this.name,
@@ -67,6 +68,8 @@ class Environment {
       grpcSecure: true,
       apiBaseUrl: 'https://YOUR_STAGING_API_URL',
     );
+    _instance.otlpEndpoint = 'https://YOUR_STAGING_OTLP_ENDPOINT/v1/logs';
+    _instance.otlpAuthToken = 'YOUR_STAGING_OTLP_WRITE_TOKEN';
     if (kDebugMode) overrideForDev();
   }
 
@@ -75,7 +78,8 @@ class Environment {
     _instance.grpcPort = 50051;
     _instance.grpcSecure = false;
     _instance.apiBaseUrl = 'http://YOUR_DEV_IP:3001';
-    _instance.otlpEndpoint = 'http://YOUR_DEV_IP:3100/otlp/v1/logs';
+    _instance.otlpEndpoint = 'http://YOUR_DEV_IP:4318/v1/logs';
+    _instance.otlpAuthToken = 'YOUR_DEV_OTLP_WRITE_TOKEN';
   }
 
   static void initProd() {

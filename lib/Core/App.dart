@@ -150,7 +150,16 @@ class App {
   });
 
   static Future<void> initialize() async {
-    if (logToObserver && Environment.instance.otlpEndpoint != null) { init(project: 'mind', service: 'mind_mobile', endpoint: Environment.instance.otlpEndpoint!, onError: kDebugMode ? (e) => debugPrint('observe: $e') : null); }
+    if (logToObserver && Environment.instance.otlpEndpoint != null) {
+      final token = Environment.instance.otlpAuthToken;
+      init(
+        project: 'mind',
+        service: 'mind_mobile',
+        endpoint: Environment.instance.otlpEndpoint!,
+        headers: token == null ? const {} : {'Authorization': 'Bearer $token'},
+        onError: kDebugMode ? (e) => debugPrint('observe: $e') : null,
+      );
+    }
     WidgetsFlutterBinding.ensureInitialized();
     await configureAudioSession();
 

@@ -86,7 +86,7 @@ dependencies:
   observe:
     git:
       url: https://github.com/mind-systems/observe-dart.git
-      ref: main
+      ref: v0.2.0
   flutter_foreground_task: ^9.2.2
 
 dev_dependencies:
