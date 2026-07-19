@@ -133,10 +133,7 @@ GoRouter is configured in `lib/router.dart`. Routes:
 
 ## Proto contract ownership
 
-`mind_api/proto/` is the single source of truth. This project **must not modify `.proto` files**.
-
-- When `mind_api/proto/` changes, copy the updated files into `mind_mobile/proto/` and run the codegen script (`scripts/gen_proto.sh`) to regenerate Dart stubs.
-- Never symlink — copy explicitly so the proto snapshot in this repo is stable and independent of `mind_api` checkout state.
+Consumer of `mind_api/proto/` (see root CLAUDE.md for ownership policy). On upstream change, copy the updated files into `mind_mobile/proto/` and run the codegen script (`scripts/gen_proto.sh`) to regenerate Dart stubs.
 
 ## Patterns to follow
 
