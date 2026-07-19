@@ -1,7 +1,3 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Logging
 
 Write **all** logs through the project logger facade `logPrint`. Never log with raw `print` / `debugPrint` / `dart:developer`'s `log` or any other logger.
